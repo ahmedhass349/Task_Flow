@@ -1,0 +1,36 @@
+2026-03-11 00:15:55.881 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-11 00:16:09.761 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-11 00:16:09.829 +02:00 [INF] Executing endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-11 00:16:09.932 +02:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Index() on controller taskflow.Controllers.HomeController (taskflow).
+2026-03-11 00:16:09.963 +02:00 [INF] Executing ViewResult, running view Index.
+2026-03-11 00:16:10.076 +02:00 [INF] Executed ViewResult - view Index executed in 100.0639ms.
+2026-03-11 00:16:10.078 +02:00 [INF] Executed action taskflow.Controllers.HomeController.Index (taskflow) in 142.3923ms
+2026-03-11 00:16:10.078 +02:00 [INF] Executed endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-11 00:16:10.088 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/ - 200 null text/html; charset=utf-8 333.9538ms
+2026-03-11 00:16:10.093 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-11 00:16:10.093 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-11 00:16:10.093 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-11 00:16:10.158 +02:00 [INF] Sending file. Request path: '/dist/main.css'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.css'
+2026-03-11 00:16:10.159 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 200 43884 text/css 65.644ms
+2026-03-11 00:16:10.201 +02:00 [INF] Sending file. Request path: '/dist/main.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.js'
+2026-03-11 00:16:10.202 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 200 246317 text/javascript 108.7646ms
+2026-03-11 00:16:10.551 +02:00 [INF] Sending file. Request path: '/dist/vendor.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\vendor.js'
+2026-03-11 00:16:10.551 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 200 1973249 text/javascript 458.4218ms
+2026-03-11 00:25:24.691 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-11 00:25:45.351 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-11 00:25:45.400 +02:00 [INF] Executing endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-11 00:25:45.437 +02:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Index() on controller taskflow.Controllers.HomeController (taskflow).
+2026-03-11 00:25:45.457 +02:00 [INF] Executing ViewResult, running view Index.
+2026-03-11 00:25:45.533 +02:00 [INF] Executed ViewResult - view Index executed in 59.9975ms.
+2026-03-11 00:25:45.535 +02:00 [INF] Executed action taskflow.Controllers.HomeController.Index (taskflow) in 96.5276ms
+2026-03-11 00:25:45.535 +02:00 [INF] Executed endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-11 00:25:45.542 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/ - 200 null text/html; charset=utf-8 195.103ms
+2026-03-11 00:25:45.548 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-11 00:25:45.548 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-11 00:25:45.548 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-11 00:25:45.555 +02:00 [INF] The file /dist/main.js was not modified
+2026-03-11 00:25:45.555 +02:00 [INF] The file /dist/vendor.js was not modified
+2026-03-11 00:25:45.555 +02:00 [INF] The file /dist/main.css was not modified
+2026-03-11 00:25:45.557 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 304 null text/css 9.1925ms
+2026-03-11 00:25:45.557 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 304 null text/javascript 8.8251ms
+2026-03-11 00:25:45.557 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 304 null text/javascript 8.8188ms

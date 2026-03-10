@@ -1,0 +1,99 @@
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\package-lock.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\package.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\tsconfig.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\taskflow.staticwebassets.endpoints.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\taskflow.exe
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\taskflow.deps.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\taskflow.runtimeconfig.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\taskflow.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\taskflow.pdb
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\AutoMapper.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.Logging.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Serilog.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Serilog.Extensions.Logging.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Serilog.Sinks.Console.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\Serilog.Sinks.File.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\TaskFlow.csproj.AssemblyReference.cache
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\TaskFlow.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\TaskFlow.AssemblyInfoInputs.cache
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\TaskFlow.AssemblyInfo.cs
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\TaskFlow.csproj.CoreCompileInputs.cache
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\taskflow.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\TaskFlow.RazorAssemblyInfo.cache
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\TaskFlow.RazorAssemblyInfo.cs
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\rjimswa.dswa.cache.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\scopedcss\bundle\taskflow.styles.css
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\staticwebassets.build.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\staticwebassets.build.json.cache
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\staticwebassets.development.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\swae.build.ex.cache
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\TaskFlow.csproj.Up2Date
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\taskflow.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\refint\taskflow.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\taskflow.pdb
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\TaskFlow.genruntimeconfig.cache
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\net8.0\ref\taskflow.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\net8.0\taskflow.staticwebassets.runtime.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Figma\package.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\package-lock.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\package.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\tsconfig.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\taskflow.staticwebassets.runtime.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\taskflow.staticwebassets.endpoints.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\taskflow.exe
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\taskflow.deps.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\taskflow.runtimeconfig.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\taskflow.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\taskflow.pdb
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\AutoMapper.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.Logging.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Serilog.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Serilog.Extensions.Logging.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Serilog.Sinks.Console.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\Serilog.Sinks.File.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\TaskFlow.csproj.AssemblyReference.cache
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\TaskFlow.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\TaskFlow.AssemblyInfoInputs.cache
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\TaskFlow.AssemblyInfo.cs
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\TaskFlow.csproj.CoreCompileInputs.cache
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\taskflow.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\TaskFlow.RazorAssemblyInfo.cache
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\TaskFlow.RazorAssemblyInfo.cs
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\rjimswa.dswa.cache.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\scopedcss\bundle\taskflow.styles.css
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\staticwebassets.build.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\staticwebassets.build.json.cache
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\staticwebassets.development.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\swae.build.ex.cache
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\TaskFlow.csproj.Up2Date
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\taskflow.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\refint\taskflow.dll
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\taskflow.pdb
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\TaskFlow.genruntimeconfig.cache
+C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\obj\Debug\net8.0\ref\taskflow.dll

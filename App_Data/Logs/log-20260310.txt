@@ -1,0 +1,116 @@
+2026-03-10 15:39:19.454 +02:00 [WRN] The WebRootPath was not found: C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\wwwroot. Static files may be unavailable.
+2026-03-10 15:39:19.554 +02:00 [WRN] The WebRootPath was not found: C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\wwwroot. Static files may be unavailable.
+2026-03-10 15:39:19.759 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-10 15:39:20.210 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-10 15:39:20.241 +02:00 [INF] Executing endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 15:39:20.287 +02:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Index() on controller taskflow.Controllers.HomeController (taskflow).
+2026-03-10 15:39:20.296 +02:00 [INF] Executing ViewResult, running view Index.
+2026-03-10 15:39:20.477 +02:00 [INF] Executed ViewResult - view Index executed in 171.8393ms.
+2026-03-10 15:39:20.479 +02:00 [INF] Executed action taskflow.Controllers.HomeController.Index (taskflow) in 191.0275ms
+2026-03-10 15:39:20.479 +02:00 [INF] Executed endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 15:39:20.494 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/ - 200 null text/html; charset=utf-8 286.4268ms
+2026-03-10 15:39:20.532 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-10 15:39:20.536 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-10 15:39:20.536 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-10 15:39:20.536 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/_framework/aspnetcore-browser-refresh.js - null null
+2026-03-10 15:39:20.537 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 404 0 null 1.8199ms
+2026-03-10 15:39:20.538 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 404 0 null 2.3884ms
+2026-03-10 15:39:20.538 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 404 0 null 6.4014ms
+2026-03-10 15:39:20.539 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/dist/vendor.js, Response status code: 404
+2026-03-10 15:39:20.539 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/dist/main.css, Response status code: 404
+2026-03-10 15:39:20.539 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/dist/main.js, Response status code: 404
+2026-03-10 15:39:20.540 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/_framework/aspnetcore-browser-refresh.js - 200 14879 application/javascript; charset=utf-8 3.6239ms
+2026-03-10 15:39:48.981 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-10 15:39:48.982 +02:00 [INF] Executing endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 15:39:48.982 +02:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Index() on controller taskflow.Controllers.HomeController (taskflow).
+2026-03-10 15:39:48.984 +02:00 [INF] Executing ViewResult, running view Index.
+2026-03-10 15:39:48.988 +02:00 [INF] Executed ViewResult - view Index executed in 4.3389ms.
+2026-03-10 15:39:48.989 +02:00 [INF] Executed action taskflow.Controllers.HomeController.Index (taskflow) in 6.6316ms
+2026-03-10 15:39:48.989 +02:00 [INF] Executed endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 15:39:48.990 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/ - 200 null text/html; charset=utf-8 8.6654ms
+2026-03-10 15:39:49.013 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-10 15:39:49.014 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 404 0 null 0.377ms
+2026-03-10 15:39:49.014 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/dist/main.css, Response status code: 404
+2026-03-10 15:39:49.016 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-10 15:39:49.016 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 404 0 null 0.4632ms
+2026-03-10 15:39:49.017 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/dist/vendor.js, Response status code: 404
+2026-03-10 15:39:49.019 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-10 15:39:49.019 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/_framework/aspnetcore-browser-refresh.js - null null
+2026-03-10 15:39:49.020 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 404 0 null 0.3391ms
+2026-03-10 15:39:49.020 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/_framework/aspnetcore-browser-refresh.js - 200 14879 application/javascript; charset=utf-8 0.4019ms
+2026-03-10 15:39:49.020 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/dist/main.js, Response status code: 404
+2026-03-10 15:40:01.654 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-10 15:40:01.655 +02:00 [INF] Executing endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 15:40:01.655 +02:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Index() on controller taskflow.Controllers.HomeController (taskflow).
+2026-03-10 15:40:01.656 +02:00 [INF] Executing ViewResult, running view Index.
+2026-03-10 15:40:01.658 +02:00 [INF] Executed ViewResult - view Index executed in 2.4014ms.
+2026-03-10 15:40:01.658 +02:00 [INF] Executed action taskflow.Controllers.HomeController.Index (taskflow) in 2.8513ms
+2026-03-10 15:40:01.658 +02:00 [INF] Executed endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 15:40:01.659 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/ - 200 null text/html; charset=utf-8 4.6071ms
+2026-03-10 15:40:01.678 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-10 15:40:01.678 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 404 0 null 0.2634ms
+2026-03-10 15:40:01.678 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/dist/main.css, Response status code: 404
+2026-03-10 15:40:01.689 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/_framework/aspnetcore-browser-refresh.js - null null
+2026-03-10 15:40:01.689 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-10 15:40:01.689 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-10 15:40:01.689 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 404 0 null 0.3463ms
+2026-03-10 15:40:01.689 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/_framework/aspnetcore-browser-refresh.js - 200 14879 application/javascript; charset=utf-8 0.3207ms
+2026-03-10 15:40:01.689 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/dist/vendor.js, Response status code: 404
+2026-03-10 15:40:01.689 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 404 0 null 0.3326ms
+2026-03-10 15:40:01.690 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/dist/main.js, Response status code: 404
+2026-03-10 16:39:06.708 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-10 16:39:13.117 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-10 16:39:13.215 +02:00 [INF] Executing endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 16:39:13.314 +02:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Index() on controller taskflow.Controllers.HomeController (taskflow).
+2026-03-10 16:39:13.351 +02:00 [INF] Executing ViewResult, running view Index.
+2026-03-10 16:39:13.476 +02:00 [INF] Executed ViewResult - view Index executed in 109.7187ms.
+2026-03-10 16:39:13.478 +02:00 [INF] Executed action taskflow.Controllers.HomeController.Index (taskflow) in 161.8371ms
+2026-03-10 16:39:13.478 +02:00 [INF] Executed endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 16:39:13.483 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/ - 200 null text/html; charset=utf-8 374.6299ms
+2026-03-10 16:39:13.530 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-10 16:39:13.530 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-10 16:39:13.530 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-10 16:39:13.608 +02:00 [INF] Sending file. Request path: '/dist/main.css'. Physical path: 'C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\wwwroot\dist\main.css'
+2026-03-10 16:39:13.610 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 200 549 text/css 80.0031ms
+2026-03-10 16:39:13.661 +02:00 [INF] Sending file. Request path: '/dist/main.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\wwwroot\dist\main.js'
+2026-03-10 16:39:13.664 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 200 17897 text/javascript 132.9175ms
+2026-03-10 16:39:15.105 +02:00 [INF] Sending file. Request path: '/dist/vendor.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\wwwroot\dist\vendor.js'
+2026-03-10 16:39:15.106 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 200 1085293 text/javascript 1575.9155ms
+2026-03-10 16:39:59.105 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-10 16:44:11.533 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-10 16:45:20.997 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-10 16:46:13.797 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-10 16:47:40.885 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-10 16:47:40.936 +02:00 [INF] Executing endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 16:47:40.980 +02:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Index() on controller taskflow.Controllers.HomeController (taskflow).
+2026-03-10 16:47:41.001 +02:00 [INF] Executing ViewResult, running view Index.
+2026-03-10 16:47:41.078 +02:00 [INF] Executed ViewResult - view Index executed in 64.7314ms.
+2026-03-10 16:47:41.080 +02:00 [INF] Executed action taskflow.Controllers.HomeController.Index (taskflow) in 98.5212ms
+2026-03-10 16:47:41.080 +02:00 [INF] Executed endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 16:47:41.085 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/ - 200 null text/html; charset=utf-8 207.0471ms
+2026-03-10 16:47:41.119 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-10 16:47:41.119 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-10 16:47:41.119 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-10 16:47:41.129 +02:00 [INF] The file /dist/main.css was not modified
+2026-03-10 16:47:41.129 +02:00 [INF] The file /dist/main.js was not modified
+2026-03-10 16:47:41.129 +02:00 [INF] The file /dist/vendor.js was not modified
+2026-03-10 16:47:41.130 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 304 null text/javascript 10.6438ms
+2026-03-10 16:47:41.130 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 304 null text/css 10.6467ms
+2026-03-10 16:47:41.130 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 304 null text/javascript 10.6515ms
+2026-03-10 16:48:26.369 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-10 16:48:26.372 +02:00 [INF] Executing endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 16:48:26.372 +02:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Index() on controller taskflow.Controllers.HomeController (taskflow).
+2026-03-10 16:48:26.374 +02:00 [INF] Executing ViewResult, running view Index.
+2026-03-10 16:48:26.386 +02:00 [INF] Executed ViewResult - view Index executed in 11.9693ms.
+2026-03-10 16:48:26.387 +02:00 [INF] Executed action taskflow.Controllers.HomeController.Index (taskflow) in 13.9212ms
+2026-03-10 16:48:26.388 +02:00 [INF] Executed endpoint 'taskflow.Controllers.HomeController.Index (taskflow)'
+2026-03-10 16:48:26.389 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/ - 200 null text/html; charset=utf-8 20.0403ms
+2026-03-10 16:48:26.424 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-10 16:48:26.426 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-10 16:48:26.427 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-10 16:48:26.452 +02:00 [INF] Sending file. Request path: '/dist/main.css'. Physical path: 'C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\wwwroot\dist\main.css'
+2026-03-10 16:48:26.452 +02:00 [INF] Sending file. Request path: '/dist/main.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\wwwroot\dist\main.js'
+2026-03-10 16:48:26.453 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 200 17897 text/javascript 26.2973ms
+2026-03-10 16:48:26.453 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 200 549 text/css 28.3655ms
+2026-03-10 16:48:26.459 +02:00 [INF] Sending file. Request path: '/dist/vendor.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\wwwroot\dist\vendor.js'
+2026-03-10 16:48:26.459 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 200 1085293 text/javascript 33.5736ms

@@ -1,0 +1,16 @@
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\netcoreapp2.0\package-lock.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\netcoreapp2.0\package.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\netcoreapp2.0\tsconfig.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\netcoreapp2.0\taskflow.deps.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\netcoreapp2.0\taskflow.runtimeconfig.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\netcoreapp2.0\taskflow.runtimeconfig.dev.json
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\netcoreapp2.0\taskflow.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\bin\Debug\netcoreapp2.0\taskflow.pdb
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\netcoreapp2.0\TaskFlow.csproj.AssemblyReference.cache
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\netcoreapp2.0\TaskFlow.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\netcoreapp2.0\TaskFlow.AssemblyInfoInputs.cache
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\netcoreapp2.0\TaskFlow.AssemblyInfo.cs
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\netcoreapp2.0\TaskFlow.csproj.CoreCompileInputs.cache
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\netcoreapp2.0\taskflow.dll
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\netcoreapp2.0\taskflow.pdb
+C:\Users\Ahmed Abdelbarr\source\repos\Task_Flow\obj\Debug\netcoreapp2.0\TaskFlow.genruntimeconfig.cache
