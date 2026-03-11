@@ -1,23 +1,31 @@
 export function TaskFlowLogo() {
   return (
-    <div className="flex items-center gap-[8px] h-[40px]">
-      {/* Icon */}
-      <div className="relative w-[40px] h-[40px]">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-          <path
-            d="M20 0C8.954 0 0 8.954 0 20s8.954 20 20 20 20-8.954 20-20S31.046 0 20 0z"
-            fill="#3B82F6"
-          />
-          <path
-            d="M28 14l-2-2-8 8-4-4-2 2 6 6 10-10z"
-            fill="white"
-          />
-        </svg>
+    <div style={{ width: '100%', height: '100%', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 10, display: 'inline-flex' }}>
+      {/* Pixel-grid icon */}
+      <div style={{ width: 40, height: 48, position: 'relative' }}>
+        <div style={{ width: 10, height: 10, left: 0,  top: 4,  position: 'absolute', background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 10, top: 4,  position: 'absolute', opacity: 0,    background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 20, top: 4,  position: 'absolute', opacity: 0.60, background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 30, top: 4,  position: 'absolute', opacity: 0,    background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 0,  top: 14, position: 'absolute', opacity: 0,    background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 10, top: 14, position: 'absolute', opacity: 0.60, background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 20, top: 14, position: 'absolute', opacity: 0.45, background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 30, top: 14, position: 'absolute', opacity: 0.30, background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 0,  top: 24, position: 'absolute', opacity: 0.60, background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 10, top: 24, position: 'absolute', opacity: 0.45, background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 20, top: 24, position: 'absolute', opacity: 0.30, background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 30, top: 24, position: 'absolute', opacity: 0.15, background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 0,  top: 34, position: 'absolute', opacity: 0,    background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 10, top: 34, position: 'absolute', opacity: 0.30, background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 20, top: 34, position: 'absolute', opacity: 0.15, background: '#155EEF' }} />
+        <div style={{ width: 10, height: 10, left: 30, top: 34, position: 'absolute', opacity: 0,    background: '#155EEF' }} />
       </div>
-      {/* Text */}
-      <span className="font-['Roboto',sans-serif] font-bold text-[22px] text-black tracking-[0.15px] whitespace-nowrap">
-        TaskFlow <span className="font-normal">Pro</span>
-      </span>
+      {/* Wordmark */}
+      <div style={{ height: 48, display: 'flex', alignItems: 'center' }}>
+        <span style={{ color: '#0A0D12', fontFamily: '"Press Start 2P", monospace', fontSize: 18, whiteSpace: 'nowrap', lineHeight: 2.2, letterSpacing: '0.05em' }}>
+          TaskFlow
+        </span>
+      </div>
     </div>
   );
 }

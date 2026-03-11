@@ -1,6 +1,7 @@
 import { Home, FolderKanban, CheckSquare, Users, Filter, Calendar, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { useState } from "react";
+import { TaskFlowLogo } from "./TaskFlowLogo";
 
 interface NavItem {
   icon: React.ReactNode;
@@ -29,18 +30,28 @@ export default function Sidebar() {
       onMouseLeave={() => setIsCollapsed(true)}
     >
       {/* Logo/Brand */}
-      <div className="h-14 border-b border-gray-800 bg-black flex items-center px-4">
+      <div className="h-14 border-b border-gray-200 flex items-center px-4 overflow-hidden">
         {isCollapsed ? (
-          <div className="bg-blue-500 size-8 rounded flex items-center justify-center mx-auto">
-            <FolderKanban className="size-4 text-white" />
+          <div style={{ width: 40, height: 48, position: 'relative', flexShrink: 0 }}>
+            <div style={{ width: 10, height: 10, left: 0,  top: 4,  position: 'absolute', background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 10, top: 4,  position: 'absolute', opacity: 0,    background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 20, top: 4,  position: 'absolute', opacity: 0.60, background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 30, top: 4,  position: 'absolute', opacity: 0,    background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 0,  top: 14, position: 'absolute', opacity: 0,    background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 10, top: 14, position: 'absolute', opacity: 0.60, background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 20, top: 14, position: 'absolute', opacity: 0.45, background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 30, top: 14, position: 'absolute', opacity: 0.30, background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 0,  top: 24, position: 'absolute', opacity: 0.60, background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 10, top: 24, position: 'absolute', opacity: 0.45, background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 20, top: 24, position: 'absolute', opacity: 0.30, background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 30, top: 24, position: 'absolute', opacity: 0.15, background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 0,  top: 34, position: 'absolute', opacity: 0,    background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 10, top: 34, position: 'absolute', opacity: 0.30, background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 20, top: 34, position: 'absolute', opacity: 0.15, background: '#155EEF' }} />
+            <div style={{ width: 10, height: 10, left: 30, top: 34, position: 'absolute', opacity: 0,    background: '#155EEF' }} />
           </div>
         ) : (
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-500 size-8 rounded flex items-center justify-center">
-              <FolderKanban className="size-4 text-white" />
-            </div>
-            <span className="font-semibold text-white">TaskFlow Pro</span>
-          </div>
+          <TaskFlowLogo />
         )}
       </div>
 
