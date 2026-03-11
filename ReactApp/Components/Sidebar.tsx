@@ -20,7 +20,7 @@ export default function Sidebar() {
     { icon: <BarChart2      className="size-5 shrink-0" />, label: "Board",         path: "/board" },
     { icon: <Bell          className="size-5 shrink-0" />, label: "Notification",  path: "/notifications" },
     { icon: <User          className="size-5 shrink-0" />, label: "User",          path: "/teams" },
-    { icon: <Settings      className="size-5 shrink-0" />, label: "Setting",       path: "/settings" },
+    { icon: <Settings      className="size-5 shrink-0" />, label: "Settings",      path: "/settings" },
     { icon: <CalendarCheck  className="size-5 shrink-0" />, label: "Plans",         path: "/plans" },
   ];
 

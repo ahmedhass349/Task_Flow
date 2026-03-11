@@ -10,6 +10,7 @@ import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPasswordEmailMessage from "./pages/ResetPasswordEmailMessage";
 import ResetPassword from "./pages/ResetPassword";
+import Settings from "./pages/Settings";
 import ErrorBoundary from "./Components/ErrorBoundary";
 
 export const router = createBrowserRouter([
@@ -66,6 +67,11 @@ export const router = createBrowserRouter([
   {
     path: "/calendar",
     element: <Calendar />,
+    errorElement: <ErrorBoundary />,
+  },
+  {
+    path: "/settings",
+    element: <Settings />,
     errorElement: <ErrorBoundary />,
   },
 ]);

@@ -50,7 +50,7 @@ export default function Header() {
               className="text-white"
               style={{ fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: 500, letterSpacing: '0.48px' }}
             >
-              Ahmed Abdelbarr
+              Demo User
             </span>
             <img
               src="https://placehold.co/32x32"
@@ -70,7 +70,7 @@ export default function Header() {
                   <span className="text-gray-700 font-semibold text-sm">AA</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm truncate">Ahmed Abdelbarr</p>
+                  <p className="font-semibold text-gray-900 text-sm truncate">Demo User</p>
                 </div>
               </div>
 
