@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, MessageSquare, BarChart2, Bell, User, Settings, CalendarCheck, LogOut } from "lucide-react";
+import { LayoutDashboard, FolderKanban, MessageSquare, ClipboardList, Bell, User, Settings, CalendarCheck, LogOut } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { useState } from "react";
 import { TaskFlowLogo } from "./TaskFlowLogo";
@@ -14,12 +14,12 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   const navItems: NavItem[] = [
-    { icon: <LayoutDashboard className="size-5 shrink-0" />, label: "Dashboard",    path: "/" },
-    { icon: <FolderKanban  className="size-5 shrink-0" />, label: "Project",       path: "/projects" },
-    { icon: <MessageSquare className="size-5 shrink-0" />, label: "Message",       path: "/message" },
-    { icon: <BarChart2      className="size-5 shrink-0" />, label: "Board",         path: "/board" },
-    { icon: <Bell          className="size-5 shrink-0" />, label: "Notification",  path: "/notifications" },
-    { icon: <User          className="size-5 shrink-0" />, label: "User",          path: "/teams" },
+    { icon: <LayoutDashboard className="size-5 shrink-0" />, label: "Dashboard",     path: "/" },
+    { icon: <FolderKanban  className="size-5 shrink-0" />, label: "Projects",      path: "/projects" },
+    { icon: <ClipboardList  className="size-5 shrink-0" />, label: "My Tasks",      path: "/board" },
+    { icon: <MessageSquare className="size-5 shrink-0" />, label: "Messages",      path: "/message" },
+    { icon: <Bell          className="size-5 shrink-0" />, label: "Notifications", path: "/notifications" },
+    { icon: <User          className="size-5 shrink-0" />, label: "Users",         path: "/teams" },
     { icon: <Settings      className="size-5 shrink-0" />, label: "Settings",      path: "/settings" },
     { icon: <CalendarCheck  className="size-5 shrink-0" />, label: "Plans",         path: "/plans" },
   ];

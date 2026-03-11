@@ -11,6 +11,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPasswordEmailMessage from "./pages/ResetPasswordEmailMessage";
 import ResetPassword from "./pages/ResetPassword";
 import Settings from "./pages/Settings";
+import Message from "./pages/Message";
 import ErrorBoundary from "./Components/ErrorBoundary";
 
 export const router = createBrowserRouter([
@@ -72,6 +73,11 @@ export const router = createBrowserRouter([
   {
     path: "/settings",
     element: <Settings />,
+    errorElement: <ErrorBoundary />,
+  },
+  {
+    path: "/message",
+    element: <Message />,
     errorElement: <ErrorBoundary />,
   },
 ]);
