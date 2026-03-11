@@ -1,5 +1,6 @@
 import { Filter, Plus, Clock, Calendar, Users, Tag } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
+import Footer from "../Components/Footer";
 import Header from "../Components/Header";
 import DashboardCard from "../Components/DashboardCard";
 import TaskItem from "../Components/TaskItem";
@@ -165,6 +166,7 @@ export default function Filters() {
               </div>
             </DashboardCard>
           </div>
+          <Footer />
         </main>
       </div>
     </div>

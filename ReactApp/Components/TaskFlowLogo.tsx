@@ -1,6 +1,6 @@
 export function TaskFlowLogo() {
   return (
-    <div style={{ width: '100%', height: '100%', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 10, display: 'inline-flex' }}>
+    <div style={{ justifyContent: 'flex-start', alignItems: 'center', gap: 10, display: 'inline-flex' }}>
       {/* Pixel-grid icon */}
       <div style={{ width: 40, height: 48, position: 'relative' }}>
         <div style={{ width: 10, height: 10, left: 0,  top: 4,  position: 'absolute', background: '#155EEF' }} />

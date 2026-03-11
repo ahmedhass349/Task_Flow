@@ -1,5 +1,6 @@
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
+import Footer from "../Components/Footer";
 import Header from "../Components/Header";
 import { useState } from "react";
 
@@ -185,6 +186,7 @@ export default function Calendar() {
               </div>
             </div>
           </div>
+          <Footer />
         </main>
       </div>
     </div>

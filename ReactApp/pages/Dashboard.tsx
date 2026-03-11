@@ -6,6 +6,7 @@ import DashboardCard from "../Components/DashboardCard";
 import TaskItem from "../Components/TaskItem";
 import CalendarWidget from "../Components/CalendarWidget";
 import TaskLineWidget from "../Components/TaskLineWidget";
+import Footer from "../Components/Footer";
 
 export default function Dashboard() {
   const [calYear, setCalYear] = useState(2022);
@@ -228,6 +229,7 @@ export default function Dashboard() {
               <TaskLineWidget year={calYear} month={calMonth} selectedDay={calDay} />
             </div>
           </div>
+          <Footer />
         </main>
       </div>
     </div>

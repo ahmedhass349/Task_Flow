@@ -1,5 +1,6 @@
 import { CheckSquare, Clock, AlertCircle } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
+import Footer from "../Components/Footer";
 import Header from "../Components/Header";
 import TaskItem from "../Components/TaskItem";
 
@@ -183,6 +184,7 @@ export default function MyWork() {
               </div>
             </div>
           </div>
+          <Footer />
         </main>
       </div>
     </div>

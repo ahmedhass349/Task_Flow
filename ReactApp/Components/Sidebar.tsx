@@ -31,7 +31,7 @@ export default function Sidebar() {
       onMouseLeave={() => setIsCollapsed(true)}
     >
       {/* Logo/Brand */}
-      <div className="h-16 border-b border-gray-200 flex items-center px-4 overflow-hidden">
+      <div className="h-16 border-b border-gray-200 flex items-center justify-center overflow-hidden px-4">
         {isCollapsed ? (
           <div style={{ width: 40, height: 48, position: 'relative', flexShrink: 0 }}>
             <div style={{ width: 10, height: 10, left: 0,  top: 4,  position: 'absolute', background: '#155EEF' }} />

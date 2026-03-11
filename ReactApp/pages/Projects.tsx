@@ -1,5 +1,6 @@
 import { FolderKanban, Grid3x3, List, MoreVertical, Star, Users } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
+import Footer from "../Components/Footer";
 import Header from "../Components/Header";
 
 interface Project {
@@ -168,6 +169,7 @@ export default function Projects() {
               ))}
             </div>
           </div>
+          <Footer />
         </main>
       </div>
     </div>

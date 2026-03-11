@@ -1,5 +1,6 @@
 import { Users, Mail, MoreVertical } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
+import Footer from "../Components/Footer";
 import Header from "../Components/Header";
 
 interface TeamMember {
@@ -222,6 +223,7 @@ export default function Teams() {
               </div>
             </div>
           </div>
+          <Footer />
         </main>
       </div>
     </div>
