@@ -1,10 +1,16 @@
+import { useState } from 'react';
 import { Clock, CheckSquare, Calendar, Users, FileText, TrendingUp } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import DashboardCard from "../Components/DashboardCard";
 import TaskItem from "../Components/TaskItem";
+import CalendarWidget from "../Components/CalendarWidget";
+import TaskLineWidget from "../Components/TaskLineWidget";
 
 export default function Dashboard() {
+  const [calYear, setCalYear] = useState(2022);
+  const [calMonth, setCalMonth] = useState(5); // 0-indexed, 5 = Jun
+  const [calDay, setCalDay] = useState(10);
   const currentTime = new Date().getHours();
   const greeting = currentTime < 12 ? "Good morning" : currentTime < 18 ? "Good afternoon" : "Good evening";
 
@@ -16,7 +22,8 @@ export default function Dashboard() {
         <Header />
         
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto p-6 space-y-6">
+          <div className="flex gap-6 p-6 items-start">
+          <div className="flex-1 min-w-0 space-y-6">
             {/* Greeting */}
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{greeting}, Demo User</h1>
@@ -205,6 +212,20 @@ export default function Dashboard() {
                   </div>
                 </div>
               </DashboardCard>
+            </div>
+            </div>
+
+            {/* Right Panel */}
+            <div className="flex flex-col gap-4 flex-shrink-0 pt-16">
+              <CalendarWidget
+                year={calYear}
+                month={calMonth}
+                selectedDay={calDay}
+                onYearChange={setCalYear}
+                onMonthChange={setCalMonth}
+                onDaySelect={setCalDay}
+              />
+              <TaskLineWidget year={calYear} month={calMonth} selectedDay={calDay} />
             </div>
           </div>
         </main>
