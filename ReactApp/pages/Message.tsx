@@ -10,6 +10,8 @@ import {
 interface Contact {
   id: number;
   name: string;
+  initials: string;
+  avatarClass: string;
   preview: string;
   time: string;
   unread: number;
@@ -27,36 +29,36 @@ interface ChatMessage {
 
 /* ── Static data ── */
 const INITIAL_CONTACTS: Contact[] = [
-  { id: 1, name: "Jennifer Markus", preview: "Hey! Did you finish the Hi-FI wireframes for flora app design?", time: "05:30 PM", unread: 0, starred: false },
-  { id: 2, name: "Iva Ryan",         preview: "Hey! Did you finish the Hi-FI wireframes for flora app design?", time: "05:30 PM", unread: 2, starred: false },
-  { id: 3, name: "Jerry Helfer",     preview: "Hey! Did you finish the Hi-FI wireframes for flora app design?", time: "05:30 PM", unread: 0, starred: false },
-  { id: 4, name: "David Elson",      preview: "Hey! Did you finish the Hi-FI wireframes for flora app design?", time: "05:30 PM", unread: 0, starred: false },
-  { id: 5, name: "Mary Freund",      preview: "Hey! Did you finish the Hi-FI wireframes for flora app design?", time: "05:30 PM", unread: 0, starred: false },
+  { id: 1, name: "Sarah Chen",      initials: "SC", avatarClass: "bg-pink-200 text-pink-700",     preview: "Can you review the latest mockups when you get a chance?", time: "Just now",   unread: 1, starred: false },
+  { id: 2, name: "Mike Johnson",    initials: "MJ", avatarClass: "bg-blue-200 text-blue-700",     preview: "The API docs are ready for review.",                        time: "10 min ago", unread: 1, starred: false },
+  { id: 3, name: "Alex Kim",        initials: "AK", avatarClass: "bg-green-200 text-green-700",   preview: "Pushed the backend fix. Let me know if it resolves it.",   time: "45 min ago", unread: 1, starred: false },
+  { id: 4, name: "Emily Rodriguez", initials: "ER", avatarClass: "bg-purple-200 text-purple-700", preview: "Thanks for the feedback on the wireframes!",               time: "2 hr ago",   unread: 0, starred: false },
+  { id: 5, name: "Dev Team",        initials: "DT", avatarClass: "bg-orange-200 text-orange-700", preview: "Standup is moved to 10 AM tomorrow.",                     time: "Yesterday",  unread: 0, starred: false },
 ];
 
 const INITIAL_MSGS: Record<number, ChatMessage[]> = {
   1: [
-    { id: 1, side: "received", type: "text",  text: "Oh, hello! All perfectly.\nI will check it and get back to you soon", time: "04:45 PM" },
-    { id: 2, side: "sent",     type: "text",  text: "Oh, hello! All perfectly.\nI will check it and get back to you soon", time: "04:45 PM" },
+    { id: 1, side: "received", type: "text", text: "Can you review the latest mockups when you get a chance?", time: "Just now" },
+    { id: 2, side: "sent",     type: "text", text: "Sure! Sending you my feedback shortly.", time: "Just now" },
   ],
   2: [
-    { id: 1, side: "received", type: "text",  text: "Oh, hello! All perfectly.\nI will check it and get back to you soon", time: "04:45 PM" },
-    { id: 2, side: "received", type: "text",  text: "Oh, hello! All perfectly.\nI will check it and get back to you soon", time: "04:45 PM" },
-    { id: 3, side: "received", type: "voice", duration: "01:24", time: "04:45 PM" },
-    { id: 4, side: "sent",     type: "text",  text: "Oh, hello! All perfectly.\nI will check it and get back to you soon", time: "04:50 PM" },
-    { id: 5, side: "sent",     type: "text",  text: "Oh, hello! All perfectly.\nI will check it and get back to you soon", time: "04:55 PM" },
+    { id: 1, side: "received", type: "text",  text: "The API docs are ready for review.", time: "10 min ago" },
+    { id: 2, side: "received", type: "voice", duration: "00:42", time: "10 min ago" },
+    { id: 3, side: "sent",     type: "text",  text: "Great, I'll take a look now.", time: "8 min ago" },
+    { id: 4, side: "sent",     type: "text",  text: "Looks good so far! A few minor comments coming.", time: "5 min ago" },
   ],
   3: [
-    { id: 1, side: "received", type: "text", text: "Hey! Did you finish the Hi-FI wireframes for flora app design?", time: "05:10 PM" },
-    { id: 2, side: "sent",     type: "text", text: "Almost done, will send it over tonight!", time: "05:15 PM" },
+    { id: 1, side: "received", type: "text", text: "Pushed the backend fix. Let me know if it resolves it.", time: "45 min ago" },
+    { id: 2, side: "sent",     type: "text", text: "Testing now...", time: "40 min ago" },
+    { id: 3, side: "sent",     type: "text", text: "Confirmed! The issue is fixed. Thanks!", time: "38 min ago" },
   ],
   4: [
-    { id: 1, side: "received", type: "text", text: "Can you review the PR when you get a chance?", time: "03:00 PM" },
-    { id: 2, side: "sent",     type: "text", text: "Sure, I'll take a look now.", time: "03:05 PM" },
+    { id: 1, side: "sent",     type: "text", text: "Your wireframes look great overall. A few small tweaks on the nav section.", time: "2 hr ago" },
+    { id: 2, side: "received", type: "text", text: "Thanks for the feedback on the wireframes!", time: "2 hr ago" },
   ],
   5: [
-    { id: 1, side: "sent",     type: "text", text: "Team standup moved to 10 AM tomorrow.", time: "02:00 PM" },
-    { id: 2, side: "received", type: "text", text: "Got it, thanks!", time: "02:05 PM" },
+    { id: 1, side: "received", type: "text", text: "Standup is moved to 10 AM tomorrow.", time: "Yesterday" },
+    { id: 2, side: "sent",     type: "text", text: "Got it, thanks for the heads up!", time: "Yesterday" },
   ],
 };
 
@@ -182,7 +184,9 @@ export default function Message() {
                     c.id === activeId ? "bg-blue-50 border-l-2 border-l-blue-600" : "hover:bg-gray-50"
                   }`}
                 >
-                  <img src="https://placehold.co/36x36" alt={c.name} className="size-9 rounded-xl flex-shrink-0 object-cover" />
+                  <div className={`size-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${c.avatarClass}`}>
+                    {c.initials}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className={`text-sm font-medium ${c.id === activeId ? "text-blue-700" : "text-gray-900"}`}>{c.name}</span>
@@ -203,7 +207,7 @@ export default function Message() {
                     <p className="text-xs text-gray-500 truncate mb-1">{c.preview}</p>
                     <div className="flex items-center gap-1">
                       <Clock className="size-3 text-gray-400" />
-                      <span className="text-xs text-gray-400">Today · {c.time}</span>
+                      <span className="text-xs text-gray-400">{c.time}</span>
                     </div>
                   </div>
                 </button>
@@ -217,7 +221,9 @@ export default function Message() {
             {/* Chat header */}
             <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src="https://placehold.co/36x36" alt={activeContact?.name} className="size-9 rounded-xl object-cover" />
+                <div className={`size-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${activeContact?.avatarClass}`}>
+                  {activeContact?.initials}
+                </div>
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{activeContact?.name}</p>
                   <p className="text-xs text-green-500">Online</p>
