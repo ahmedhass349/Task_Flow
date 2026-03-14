@@ -399,45 +399,192 @@ export default function MyWork() {
     }
 
     if (viewMode === "gantt") {
-      const timeAxis = ["W1", "W2", "W3", "W4", "W5"];
+      type GanttCat = "Data Collection" | "Data Analysis" | "Strategy Development" | "Final Delivery" | "Milestone";
+
+      interface GanttRow {
+        id: string;
+        title: string;
+        category: GanttCat;
+        durationLabel: string;
+        barLeft: number;
+        barWidth: number;
+        isMilestone?: boolean;
+      }
+
+      const catColor: Record<GanttCat, string> = {
+        "Data Collection":      "#2B7FFF",
+        "Data Analysis":        "#AD46FF",
+        "Strategy Development": "#00BC7D",
+        "Final Delivery":       "#FE9A00",
+        "Milestone":            "#0A0A0A",
+      };
+
+      const catTextColor: Record<GanttCat, string> = {
+        "Data Collection":      "#1447E6",
+        "Data Analysis":        "#8200DB",
+        "Strategy Development": "#007A55",
+        "Final Delivery":       "#BB4D00",
+        "Milestone":            "#C70036",
+      };
+
+      const weekLabels = ["Jan 19", "Jan 26", "Feb 2", "Feb 9", "Feb 16", "Feb 23", "Mar 2", "Mar 9", "Mar 16", "Mar 23"];
+
+      const ganttRows: GanttRow[] = [
+        { id: "g-01", title: "Extended Survey Distribution",             category: "Data Collection",      durationLabel: "3 weeks", barLeft: 0,      barWidth: 240    },
+        { id: "g-02", title: "Stakeholder Interviews",                   category: "Data Collection",      durationLabel: "1 day",   barLeft: 34.28,  barWidth: 11.43  },
+        { id: "g-03", title: "Competitor & Market Research",             category: "Data Collection",      durationLabel: "1 week",  barLeft: 0,      barWidth: 91.43  },
+        { id: "g-04", title: "Prepare Data for Analysis",                category: "Data Analysis",        durationLabel: "1 week",  barLeft: 240,    barWidth: 80     },
+        { id: "g-05", title: "Thematic & Statistical Analysis",          category: "Data Analysis",        durationLabel: "4 weeks", barLeft: 240,    barWidth: 320    },
+        { id: "g-06", title: "Midterm Presentation",                     category: "Milestone",            durationLabel: "1 day",   barLeft: 308.56, barWidth: 11.43, isMilestone: true },
+        { id: "g-07", title: "Draft AI-Driven L&D Adoption Strategies",  category: "Strategy Development", durationLabel: "4 days",  barLeft: 548.56, barWidth: 45.71  },
+        { id: "g-08", title: "Stakeholder Feedback Session",             category: "Strategy Development", durationLabel: "1 day",   barLeft: 571.43, barWidth: 11.43  },
+        { id: "g-09", title: "Review & Final Editing",                   category: "Final Delivery",       durationLabel: "1 week",  barLeft: 628.56, barWidth: 91.43  },
+        { id: "g-10", title: "Final Report Submission",                  category: "Milestone",            durationLabel: "1 day",   barLeft: 720,    barWidth: 11.43, isMilestone: true },
+      ];
+
+      const legendItems: Array<{ label: string; cat: GanttCat }> = [
+        { label: "Data Collection",      cat: "Data Collection"      },
+        { label: "Data Analysis",        cat: "Data Analysis"        },
+        { label: "Strategy Development", cat: "Strategy Development" },
+        { label: "Final Delivery",       cat: "Final Delivery"       },
+        { label: "Milestone",            cat: "Milestone"            },
+      ];
 
       return (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="grid grid-cols-[minmax(220px,1fr)_2fr] border-b border-gray-200 bg-gray-50 text-xs font-medium text-gray-600">
-            <div className="px-4 py-3">Task</div>
-            <div className="px-4 py-3 grid grid-cols-5 gap-2">
-              {timeAxis.map((slot) => (
-                <span key={slot}>{slot}</span>
-              ))}
-            </div>
+        <div style={{
+          alignSelf: "stretch",
+          paddingTop: 32, paddingBottom: 32, paddingLeft: 32, paddingRight: 32,
+          background: "white",
+          boxShadow: "0px 4px 6px -4px rgba(0,0,0,0.10), 0px 10px 15px -3px rgba(0,0,0,0.10)",
+          borderRadius: 14,
+          display: "flex", flexDirection: "column", gap: 32,
+        }}>
+          {/* ── Header ─────────────────────────────────────────────────────── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <h2 style={{ margin: 0, color: "#0A0A0A", fontSize: 24, fontWeight: 500, lineHeight: "36px" }}>
+              Capstone Project Gantt Chart
+            </h2>
+            <p style={{ margin: 0, color: "#45556C", fontSize: 16, fontWeight: 400, lineHeight: "24px" }}>
+              Summary View - January to March 2026
+            </p>
           </div>
 
-          <div>
-            {visibleTasks.map((task) => {
-              const start = Math.min(Math.max(task.dueOrder, 0), 4);
-              const width = task.status === "completed" ? 1 : task.priority === "high" ? 2 : 1;
-              return (
-                <div key={task.id} className="grid grid-cols-[minmax(220px,1fr)_2fr] border-b border-gray-100 last:border-0">
-                  <div className="px-4 py-3">
-                    <p className="text-sm font-medium text-gray-900">{task.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{task.project}</p>
-                  </div>
-                  <div className="px-4 py-3">
-                    <div className="grid grid-cols-5 gap-2 h-full items-center">
-                      {timeAxis.map((_, index) => {
-                        const active = index >= start && index < start + width;
-                        return (
-                          <div
-                            key={`${task.id}-${index}`}
-                            className={`h-7 rounded ${active ? "bg-blue-500/80" : "bg-gray-100"}`}
-                          />
-                        );
-                      })}
+          {/* ── Body ───────────────────────────────────────────────────────── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+
+            {/* Legend */}
+            <div style={{ borderBottom: "0.8px solid #E2E8F0", paddingBottom: 12, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+              {legendItems.map(({ label, cat }) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {cat === "Milestone" ? (
+                    <div style={{ width: 16, height: 16, position: "relative", overflow: "hidden", flexShrink: 0 }}>
+                      <div style={{
+                        width: 11.43, height: 11.43,
+                        position: "absolute", left: 2.28, top: 2.28,
+                        background: "#0A0A0A",
+                        outline: "1.14px #0A0A0A solid", outlineOffset: "-0.57px",
+                      }} />
                     </div>
+                  ) : (
+                    <div style={{ width: 16, height: 16, background: catColor[cat], borderRadius: 4, flexShrink: 0 }} />
+                  )}
+                  <span style={{ color: "#314158", fontSize: 14, whiteSpace: "nowrap" }}>{label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Timeline */}
+            <div style={{ overflowX: "auto" }}>
+              <div style={{ minWidth: 976, display: "flex", flexDirection: "column", gap: 16 }}>
+
+                {/* Week header */}
+                <div style={{ paddingLeft: 256, display: "flex" }}>
+                  <div style={{ width: 720, display: "flex", borderBottom: "1.6px solid #CAD5E2" }}>
+                    {weekLabels.map((wl) => (
+                      <div key={wl} style={{ flex: "1 1 0", borderLeft: "0.8px solid #E2E8F0", paddingBottom: 8 }}>
+                        <span style={{ display: "block", textAlign: "center", color: "#314158", fontSize: 14, fontWeight: 500, lineHeight: "20px" }}>
+                          {wl}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Task rows */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {ganttRows.map((row) => {
+                    const color = catColor[row.category];
+                    return (
+                      <div key={row.id} style={{ position: "relative", height: 48 }}>
+
+                        {/* Label */}
+                        <div style={{ position: "absolute", left: 0, top: 6, width: 256, paddingRight: 16, display: "flex", flexDirection: "column" }}>
+                          <span style={{ color: "#0F172B", fontSize: 14, fontWeight: 500, lineHeight: "20px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                            {row.title}
+                          </span>
+                          <span style={{ color: catTextColor[row.category], fontSize: 12, lineHeight: "16px" }}>
+                            {row.category} • {row.durationLabel}
+                          </span>
+                        </div>
+
+                        {/* Timeline track */}
+                        <div style={{ position: "absolute", left: 256, top: 0, width: 720, height: 48, overflow: "hidden" }}>
+                          {/* Grid lines */}
+                          <div style={{ position: "absolute", inset: 0, display: "flex" }}>
+                            {weekLabels.map((_, i) => (
+                              <div key={i} style={{ flex: "1 1 0", height: "100%", borderLeft: "0.8px solid #F1F5F9" }} />
+                            ))}
+                          </div>
+
+                          {/* Milestone marker */}
+                          {row.isMilestone && (
+                            <div style={{
+                              position: "absolute", left: row.barLeft, top: 8,
+                              width: 11.43, height: 24,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              boxShadow: "0px 3px 6px rgba(0,0,0,0.12)", overflow: "hidden",
+                            }}>
+                              <div style={{
+                                width: 9.52, height: 9.52,
+                                background: "#0A0A0A",
+                                outline: "0.95px #0A0A0A solid", outlineOffset: "-0.48px",
+                              }} />
+                            </div>
+                          )}
+
+                          {/* Duration bar */}
+                          {!row.isMilestone && (
+                            <div style={{
+                              position: "absolute", left: row.barLeft, top: 8,
+                              width: row.barWidth, height: 32,
+                              background: color, borderRadius: 10,
+                              boxShadow: "0px 2px 4px -2px rgba(0,0,0,0.10), 0px 4px 6px -1px rgba(0,0,0,0.10)",
+                              outline: `1.6px ${color} solid`, outlineOffset: "-1.6px",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              overflow: "hidden",
+                            }}>
+                              {row.barWidth >= 40 && (
+                                <span style={{ color: "white", fontSize: 12, fontWeight: 500, lineHeight: "16px", whiteSpace: "nowrap" }}>
+                                  {row.durationLabel}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                      </div>
+                    );
+                  })}
+                </div>
+
+              </div>
+            </div>
+
+            {/* Footer */}
+            <p style={{ margin: 0, textAlign: "center", color: "#62748E", fontSize: 14, lineHeight: "20px" }}>
+              Current Date: March 14, 2026
+            </p>
+
           </div>
         </div>
       );

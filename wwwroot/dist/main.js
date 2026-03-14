@@ -1855,15 +1855,73 @@ function MyWork() {
             return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-white border border-gray-200 rounded-xl overflow-hidden", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "overflow-x-auto", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("table", { className: "w-full text-sm", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("thead", { className: "bg-gray-50 border-b border-gray-200 text-left text-gray-600", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("tr", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Task" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Project" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Assignee" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Due" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Priority" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Status" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("tbody", { children: visibleTasks.map((task) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("tr", { className: "border-b border-gray-100 last:border-0 hover:bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3 text-gray-900 font-medium", children: task.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3 text-gray-600", children: task.project }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3 text-gray-600", children: task.assignee }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3 text-gray-600", children: task.dueDateLabel }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `text-xs px-2 py-1 rounded border ${priorityTone(task.priority)}`, children: task.priority }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `text-xs px-2 py-1 rounded-full ${statusTone(task.status)}`, children: task.status === "inProgress" ? "In Progress" : task.status === "todo" ? "To Do" : task.status === "review" ? "Review" : "Completed" }) })] }, task.id))) })] }) }) }));
         }
         if (viewMode === "gantt") {
-            const timeAxis = ["W1", "W2", "W3", "W4", "W5"];
-            return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-[minmax(220px,1fr)_2fr] border-b border-gray-200 bg-gray-50 text-xs font-medium text-gray-600", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "px-4 py-3", children: "Task" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "px-4 py-3 grid grid-cols-5 gap-2", children: timeAxis.map((slot) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { children: slot }, slot))) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { children: visibleTasks.map((task) => {
-                            const start = Math.min(Math.max(task.dueOrder, 0), 4);
-                            const width = task.status === "completed" ? 1 : task.priority === "high" ? 2 : 1;
-                            return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-[minmax(220px,1fr)_2fr] border-b border-gray-100 last:border-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-4 py-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm font-medium text-gray-900", children: task.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5", children: task.project })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "px-4 py-3", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "grid grid-cols-5 gap-2 h-full items-center", children: timeAxis.map((_, index) => {
-                                                const active = index >= start && index < start + width;
-                                                return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `h-7 rounded ${active ? "bg-blue-500/80" : "bg-gray-100"}` }, `${task.id}-${index}`));
-                                            }) }) })] }, task.id));
-                        }) })] }));
+            const catColor = {
+                "Data Collection": "#2B7FFF",
+                "Data Analysis": "#AD46FF",
+                "Strategy Development": "#00BC7D",
+                "Final Delivery": "#FE9A00",
+                "Milestone": "#0A0A0A",
+            };
+            const catTextColor = {
+                "Data Collection": "#1447E6",
+                "Data Analysis": "#8200DB",
+                "Strategy Development": "#007A55",
+                "Final Delivery": "#BB4D00",
+                "Milestone": "#C70036",
+            };
+            const weekLabels = ["Jan 19", "Jan 26", "Feb 2", "Feb 9", "Feb 16", "Feb 23", "Mar 2", "Mar 9", "Mar 16", "Mar 23"];
+            const ganttRows = [
+                { id: "g-01", title: "Extended Survey Distribution", category: "Data Collection", durationLabel: "3 weeks", barLeft: 0, barWidth: 240 },
+                { id: "g-02", title: "Stakeholder Interviews", category: "Data Collection", durationLabel: "1 day", barLeft: 34.28, barWidth: 11.43 },
+                { id: "g-03", title: "Competitor & Market Research", category: "Data Collection", durationLabel: "1 week", barLeft: 0, barWidth: 91.43 },
+                { id: "g-04", title: "Prepare Data for Analysis", category: "Data Analysis", durationLabel: "1 week", barLeft: 240, barWidth: 80 },
+                { id: "g-05", title: "Thematic & Statistical Analysis", category: "Data Analysis", durationLabel: "4 weeks", barLeft: 240, barWidth: 320 },
+                { id: "g-06", title: "Midterm Presentation", category: "Milestone", durationLabel: "1 day", barLeft: 308.56, barWidth: 11.43, isMilestone: true },
+                { id: "g-07", title: "Draft AI-Driven L&D Adoption Strategies", category: "Strategy Development", durationLabel: "4 days", barLeft: 548.56, barWidth: 45.71 },
+                { id: "g-08", title: "Stakeholder Feedback Session", category: "Strategy Development", durationLabel: "1 day", barLeft: 571.43, barWidth: 11.43 },
+                { id: "g-09", title: "Review & Final Editing", category: "Final Delivery", durationLabel: "1 week", barLeft: 628.56, barWidth: 91.43 },
+                { id: "g-10", title: "Final Report Submission", category: "Milestone", durationLabel: "1 day", barLeft: 720, barWidth: 11.43, isMilestone: true },
+            ];
+            const legendItems = [
+                { label: "Data Collection", cat: "Data Collection" },
+                { label: "Data Analysis", cat: "Data Analysis" },
+                { label: "Strategy Development", cat: "Strategy Development" },
+                { label: "Final Delivery", cat: "Final Delivery" },
+                { label: "Milestone", cat: "Milestone" },
+            ];
+            return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: {
+                    alignSelf: "stretch",
+                    paddingTop: 32, paddingBottom: 32, paddingLeft: 32, paddingRight: 32,
+                    background: "white",
+                    boxShadow: "0px 4px 6px -4px rgba(0,0,0,0.10), 0px 10px 15px -3px rgba(0,0,0,0.10)",
+                    borderRadius: 14,
+                    display: "flex", flexDirection: "column", gap: 32,
+                }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h2", { style: { margin: 0, color: "#0A0A0A", fontSize: 24, fontWeight: 500, lineHeight: "36px" }, children: "Capstone Project Gantt Chart" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { style: { margin: 0, color: "#45556C", fontSize: 16, fontWeight: 400, lineHeight: "24px" }, children: "Summary View - January to March 2026" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 24 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { borderBottom: "0.8px solid #E2E8F0", paddingBottom: 12, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }, children: legendItems.map(({ label, cat }) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [cat === "Milestone" ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 16, height: 16, position: "relative", overflow: "hidden", flexShrink: 0 }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                                    width: 11.43, height: 11.43,
+                                                    position: "absolute", left: 2.28, top: 2.28,
+                                                    background: "#0A0A0A",
+                                                    outline: "1.14px #0A0A0A solid", outlineOffset: "-0.57px",
+                                                } }) })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 16, height: 16, background: catColor[cat], borderRadius: 4, flexShrink: 0 } })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { color: "#314158", fontSize: 14, whiteSpace: "nowrap" }, children: label })] }, label))) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { overflowX: "auto" }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { minWidth: 976, display: "flex", flexDirection: "column", gap: 16 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { paddingLeft: 256, display: "flex" }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 720, display: "flex", borderBottom: "1.6px solid #CAD5E2" }, children: weekLabels.map((wl) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { flex: "1 1 0", borderLeft: "0.8px solid #E2E8F0", paddingBottom: 8 }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { display: "block", textAlign: "center", color: "#314158", fontSize: 14, fontWeight: 500, lineHeight: "20px" }, children: wl }) }, wl))) }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: ganttRows.map((row) => {
+                                                const color = catColor[row.category];
+                                                return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { position: "relative", height: 48 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { position: "absolute", left: 0, top: 6, width: 256, paddingRight: 16, display: "flex", flexDirection: "column" }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { color: "#0F172B", fontSize: 14, fontWeight: 500, lineHeight: "20px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }, children: row.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { style: { color: catTextColor[row.category], fontSize: 12, lineHeight: "16px" }, children: [row.category, " \u2022 ", row.durationLabel] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { position: "absolute", left: 256, top: 0, width: 720, height: 48, overflow: "hidden" }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { position: "absolute", inset: 0, display: "flex" }, children: weekLabels.map((_, i) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { flex: "1 1 0", height: "100%", borderLeft: "0.8px solid #F1F5F9" } }, i))) }), row.isMilestone && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                                                        position: "absolute", left: row.barLeft, top: 8,
+                                                                        width: 11.43, height: 24,
+                                                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                                                        boxShadow: "0px 3px 6px rgba(0,0,0,0.12)", overflow: "hidden",
+                                                                    }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                                                            width: 9.52, height: 9.52,
+                                                                            background: "#0A0A0A",
+                                                                            outline: "0.95px #0A0A0A solid", outlineOffset: "-0.48px",
+                                                                        } }) })), !row.isMilestone && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                                                        position: "absolute", left: row.barLeft, top: 8,
+                                                                        width: row.barWidth, height: 32,
+                                                                        background: color, borderRadius: 10,
+                                                                        boxShadow: "0px 2px 4px -2px rgba(0,0,0,0.10), 0px 4px 6px -1px rgba(0,0,0,0.10)",
+                                                                        outline: `1.6px ${color} solid`, outlineOffset: "-1.6px",
+                                                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                                                        overflow: "hidden",
+                                                                    }, children: row.barWidth >= 40 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { color: "white", fontSize: 12, fontWeight: 500, lineHeight: "16px", whiteSpace: "nowrap" }, children: row.durationLabel })) }))] })] }, row.id));
+                                            }) })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { style: { margin: 0, textAlign: "center", color: "#62748E", fontSize: 14, lineHeight: "20px" }, children: "Current Date: March 14, 2026" })] })] }));
         }
         // ─── Calendar view data ───────────────────────────────────────────────────
         const today = 14; // "today" in our demo = March 14
