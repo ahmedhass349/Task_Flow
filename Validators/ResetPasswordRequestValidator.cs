@@ -8,7 +8,8 @@ namespace taskflow.Validators
         public ResetPasswordRequestValidator()
         {
             RuleFor(x => x.Token)
-                .NotEmpty().WithMessage("Reset token is required.");
+                .NotEmpty().WithMessage("Recovery code is required.")
+                .Matches(@"^[A-Z0-9]{4}-[A-Z0-9]{4}$").WithMessage("Invalid code format. Expected: XXXX-XXXX.");
 
             RuleFor(x => x.Email)
                 .NotEmpty().WithMessage("Email is required.")

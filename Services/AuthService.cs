@@ -88,21 +88,36 @@ namespace taskflow.Services
             };
         }
 
-        public async Task ForgotPasswordAsync(ForgotPasswordRequest request)
+        // Alphanumeric charset — excludes visually ambiguous chars (I, O, 0, 1)
+        private static readonly char[] CodeChars =
+            "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".ToCharArray();
+
+        private static string GenerateRecoveryCode()
+        {
+            var bytes = RandomNumberGenerator.GetBytes(8);
+            var part1 = new char[4];
+            var part2 = new char[4];
+            for (int i = 0; i < 4; i++)
+                part1[i] = CodeChars[bytes[i] % CodeChars.Length];
+            for (int i = 0; i < 4; i++)
+                part2[i] = CodeChars[bytes[4 + i] % CodeChars.Length];
+            return $"{new string(part1)}-{new string(part2)}";
+        }
+
+        public async Task<string> ForgotPasswordAsync(ForgotPasswordRequest request)
         {
             var user = await _userRepository.GetByEmailAsync(request.Email);
             if (user == null)
                 throw new KeyNotFoundException("No account found with this email address.");
 
-            // Generate a secure reset token and store it (#1, #18)
-            var tokenBytes = RandomNumberGenerator.GetBytes(32);
-            user.ResetToken = Convert.ToBase64String(tokenBytes);
-            user.ResetTokenExpiry = DateTime.UtcNow.AddHours(1);
+            var code = GenerateRecoveryCode();
+            user.ResetToken = code;
+            user.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(15);
 
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
 
-            // MVP: Token is stored. In production, send via email.
+            return code;
         }
 
         public async Task ResetPasswordAsync(ResetPasswordRequest request)
@@ -113,7 +128,7 @@ namespace taskflow.Services
 
             // Validate the reset token (#1)
             if (string.IsNullOrEmpty(user.ResetToken) ||
-                user.ResetToken != request.Token ||
+                !string.Equals(user.ResetToken, request.Token.ToUpperInvariant(), StringComparison.Ordinal) ||
                 !user.ResetTokenExpiry.HasValue ||
                 user.ResetTokenExpiry.Value < DateTime.UtcNow)
             {

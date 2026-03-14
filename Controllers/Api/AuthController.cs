@@ -68,8 +68,8 @@ namespace taskflow.Controllers.Api
         [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
-            await _authService.ForgotPasswordAsync(request);
-            return Ok(ApiResponse<string>.Ok("Password reset email sent", "If the email exists, a reset link has been sent"));
+            var code = await _authService.ForgotPasswordAsync(request);
+            return Ok(ApiResponse<string>.Ok(code, "Recovery code generated"));
         }
 
         /// <summary>
