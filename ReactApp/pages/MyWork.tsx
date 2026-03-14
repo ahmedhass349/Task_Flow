@@ -443,52 +443,676 @@ export default function MyWork() {
       );
     }
 
-    const days = Array.from({ length: 31 }, (_, index) => index + 1);
-    const eventsByDay = visibleTasks.reduce<Record<number, Task[]>>((acc, task) => {
+    // ─── Calendar view data ───────────────────────────────────────────────────
+    const today = 14; // "today" in our demo = March 14
+
+    // Mini-calendar: task dots per day (March 2026)
+    const taskDotsByDay = visibleTasks.reduce<Record<number, string[]>>((acc, task) => {
       if (!task.dueDay) return acc;
-      if (!acc[task.dueDay]) {
-        acc[task.dueDay] = [];
-      }
-      acc[task.dueDay].push(task);
+      if (!acc[task.dueDay]) acc[task.dueDay] = [];
+      const color =
+        task.priority === "high"
+          ? "#EF4444"
+          : task.priority === "medium"
+            ? "#A855F7"
+            : "#2DD4BF";
+      acc[task.dueDay].push(color);
       return acc;
     }, {});
 
+    // Week: Sun Mar 9 → Sat Mar 15 (week containing "today" = 14)
+    const weekDays = [
+      { label: "SUN", day: 9 },
+      { label: "MON", day: 10 },
+      { label: "TUE", day: 11 },
+      { label: "WED", day: 12 },
+      { label: "THU", day: 13 },
+      { label: "FRI", day: 14 }, // today
+      { label: "SAT", day: 15 },
+    ];
+
+    // Events mapped to the week grid (column index 0-6, startHour 7-17)
+    interface CalEvent {
+      col: number;
+      startHour: number;
+      durationHours: number;
+      title: string;
+      color: "blue" | "violet" | "amber";
+      hasLink?: boolean;
+    }
+
+    const calEvents: CalEvent[] = [
+      { col: 1, startHour: 8, durationHours: 1, title: "Monthly catch-up", color: "blue", hasLink: true },
+      { col: 1, startHour: 9, durationHours: 1, title: "Quarterly review", color: "blue", hasLink: true },
+      { col: 1, startHour: 10, durationHours: 1.5, title: "🍔 New Employee Welcome Lunch!", color: "violet" },
+      { col: 2, startHour: 9, durationHours: 1, title: "City Sales Pitch", color: "blue" },
+      { col: 3, startHour: 10, durationHours: 1, title: "Design Review", color: "blue", hasLink: true },
+      { col: 4, startHour: 8, durationHours: 1, title: "Follow up proposal", color: "amber", hasLink: true },
+      { col: 4, startHour: 11, durationHours: 1, title: "Visit to discuss improvements", color: "blue" },
+      { col: 5, startHour: 9, durationHours: 1, title: "Presentation of new products", color: "blue" },
+      { col: 5, startHour: 13, durationHours: 1, title: "Design Review", color: "blue", hasLink: true },
+      { col: 6, startHour: 10, durationHours: 1, title: "1:1 with Jon", color: "amber", hasLink: true },
+    ];
+
+    const colorClasses = {
+      blue: {
+        bg: "bg-sky-50",
+        bar: "bg-sky-400",
+        text: "text-sky-700",
+        time: "text-sky-600",
+      },
+      violet: {
+        bg: "bg-violet-50",
+        bar: "bg-violet-500",
+        text: "text-violet-700",
+        time: "text-violet-600",
+      },
+      amber: {
+        bg: "bg-amber-50",
+        bar: "bg-amber-400",
+        text: "text-amber-700",
+        time: "text-amber-600",
+      },
+    };
+
+    // Hour rows 7 AM → 5 PM (inclusive = 11 rows)
+    const hourRows = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+    const ROW_HEIGHT = 64; // px per hour
+    const START_HOUR = 7;
+
+    // Mini-calendar helpers (March 2026 starts on Sunday)
+    const miniCalDays: (number | null)[] = [
+      ...Array(0).fill(null), // March starts on Sunday (offset = 0)
+      ...Array.from({ length: 31 }, (_, i) => i + 1),
+    ];
+    // Pad to complete last week
+    while (miniCalDays.length % 7 !== 0) miniCalDays.push(null);
+
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
-        <div className="mb-4">
-          <h3 className="text-base font-semibold text-gray-900">March 2026</h3>
-          <p className="text-sm text-gray-500">Calendar view of your filtered tasks</p>
-        </div>
+      <div
+        className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
+        style={{ display: "flex", minHeight: 700, fontFamily: "'Inter', sans-serif" }}
+      >
+        {/* ── Dark left sidebar ─────────────────────────────────────────────── */}
+        <aside
+          style={{
+            width: 280,
+            flexShrink: 0,
+            background: "#18181B",
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            padding: 16,
+            overflowY: "auto",
+          }}
+        >
+          {/* Traffic-light dots */}
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {[
+              { bg: "#ED6B60", border: "#D05147" },
+              { bg: "#F5C250", border: "#D6A343" },
+              { bg: "#62C656", border: "#52A842" },
+            ].map((c, i) => (
+              <span
+                key={i}
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  background: c.bg,
+                  border: `1px solid ${c.border}`,
+                  display: "inline-block",
+                }}
+              />
+            ))}
+          </div>
 
-        <div className="grid grid-cols-7 gap-2 text-xs text-gray-500 mb-2 px-1">
-          <span>Sun</span>
-          <span>Mon</span>
-          <span>Tue</span>
-          <span>Wed</span>
-          <span>Thu</span>
-          <span>Fri</span>
-          <span>Sat</span>
-        </div>
+          {/* Month + year */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 4, alignItems: "baseline" }}>
+              <span style={{ color: "white", fontSize: 22, fontWeight: 400 }}>March</span>
+              <span style={{ color: "#EF4444", fontSize: 22, fontWeight: 400 }}>2026</span>
+            </div>
+            <div style={{ display: "flex", gap: 0 }}>
+              {["‹", "›"].map((ch, i) => (
+                <button
+                  key={i}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "white",
+                    fontSize: 18,
+                    cursor: "pointer",
+                    padding: "0 4px",
+                    lineHeight: 1,
+                    opacity: 0.7,
+                  }}
+                >
+                  {ch}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <div className="grid grid-cols-7 gap-2">
-          {days.map((day) => {
-            const dayEvents = eventsByDay[day] ?? [];
-            return (
-              <div key={day} className="min-h-24 rounded-lg border border-gray-200 p-2 bg-gray-50">
-                <div className="text-xs font-semibold text-gray-700">{day}</div>
-                <div className="mt-1 space-y-1">
-                  {dayEvents.slice(0, 2).map((task) => (
-                    <div key={task.id} className="text-[11px] rounded bg-blue-100 text-blue-700 px-1.5 py-0.5 truncate">
-                      {task.title}
+          {/* Mini calendar */}
+          <div>
+            {/* Day-of-week headers */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(7, 1fr)",
+                marginBottom: 2,
+              }}
+            >
+              {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((d) => (
+                <div
+                  key={d}
+                  style={{
+                    textAlign: "center",
+                    fontSize: 9,
+                    fontWeight: 700,
+                    color: "#71717A",
+                    padding: "2px 0",
+                  }}
+                >
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            {/* Day cells */}
+            {Array.from({ length: miniCalDays.length / 7 }, (_, week) => (
+              <div
+                key={week}
+                style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}
+              >
+                {miniCalDays.slice(week * 7, week * 7 + 7).map((day, cellIdx) => {
+                  const dots = day ? (taskDotsByDay[day] ?? []) : [];
+                  const isToday = day === today;
+                  const isOtherMonth = day === null;
+                  return (
+                    <div
+                      key={cellIdx}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        padding: "2px 0",
+                      }}
+                    >
+                      {isToday ? (
+                        <div
+                          style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: "50%",
+                            background: "#3B82F6",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "white", lineHeight: 1 }}>
+                            {day}
+                          </span>
+                          {dots.length > 0 && (
+                            <span
+                              style={{
+                                width: 4,
+                                height: 4,
+                                borderRadius: "50%",
+                                background: "white",
+                                marginTop: 1,
+                              }}
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 600,
+                              color: isOtherMonth ? "#3F3F46" : day ? "white" : "transparent",
+                              lineHeight: "16px",
+                            }}
+                          >
+                            {day ?? ""}
+                          </span>
+                          {dots.length > 0 && (
+                            <div style={{ display: "flex", gap: 2, marginTop: 1 }}>
+                              {dots.slice(0, 3).map((dotColor, di) => (
+                                <span
+                                  key={di}
+                                  style={{
+                                    width: 4,
+                                    height: 4,
+                                    borderRadius: "50%",
+                                    background: dotColor,
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                          {dots.length === 0 && (
+                            <div style={{ height: 6 }} /> // spacing placeholder
+                          )}
+                        </>
+                      )}
                     </div>
-                  ))}
-                  {dayEvents.length > 2 && (
-                    <div className="text-[11px] text-gray-500">+{dayEvents.length - 2} more</div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: "#27272A" }} />
+
+          {/* Upcoming events list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, overflow: "hidden" }}>
+            {/* TODAY */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 4 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6" }}>TODAY</span>
+                <span style={{ fontSize: 12, color: "#3B82F6" }}>3/14/2026</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>
+                  ☀️ 55°<span style={{ fontWeight: 400 }}>/40°</span>
+                </span>
+              </div>
+            </div>
+
+            {[
+              { time: "8:30 AM", title: "Monthly catch-up", color: "#3B82F6", link: true },
+              { time: "9:00 AM", title: "Quarterly review", color: "#3B82F6", link: true },
+            ].map((ev, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: ev.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ fontSize: 10, color: "#A1A1AA", fontWeight: 600 }}>{ev.time}</span>
+                  {ev.link && (
+                    <span
+                      style={{
+                        fontSize: 9,
+                        background: "#A1A1AA",
+                        borderRadius: "50%",
+                        width: 12,
+                        height: 12,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#18181B",
+                        fontWeight: 700,
+                      }}
+                    >
+                      ⤴
+                    </span>
                   )}
                 </div>
+                <div style={{ paddingLeft: 16, fontSize: 11, color: "white" }}>{ev.title}</div>
               </div>
-            );
-          })}
+            ))}
+
+            {/* Upcoming day headers */}
+            {[
+              {
+                label: "TOMORROW",
+                date: "3/15/2026",
+                events: [{ time: "9:00 AM", title: "City Sales Pitch", color: "#EC4899", link: true }],
+              },
+              {
+                label: "MONDAY",
+                date: "3/16/2026",
+                events: [
+                  { time: "10:00 AM", title: "Design Review", color: "#3B82F6", link: true },
+                  { time: "2:00 PM", title: "1:1 with Jon", color: "#FBBF24", link: true },
+                ],
+              },
+            ].map((section, si) => (
+              <div key={si} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>
+                      {section.label}
+                    </span>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{section.date}</span>
+                  </div>
+                </div>
+                {section.events.map((ev, ei) => (
+                  <div key={ei} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          background: ev.color,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span style={{ fontSize: 10, color: "#A1A1AA", fontWeight: 600 }}>{ev.time}</span>
+                    </div>
+                    <div style={{ paddingLeft: 16, fontSize: 11, color: "white" }}>{ev.title}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        {/* ── Main week grid ────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flex: 1,
+            background: "white",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          {/* Top toolbar */}
+          <div
+            style={{
+              padding: "10px 16px",
+              borderBottom: "1px solid #E5E7EB",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+              background: "white",
+            }}
+          >
+            {/* Prev / Today / Next */}
+            <div style={{ display: "flex", gap: 1 }}>
+              {["‹", "Today", "›"].map((label, li) => (
+                <button
+                  key={li}
+                  style={{
+                    padding: label === "Today" ? "4px 12px" : "4px 8px",
+                    background: "#F4F4F5",
+                    border: "none",
+                    borderRadius: li === 0 ? "6px 0 0 6px" : li === 2 ? "0 6px 6px 0" : 0,
+                    cursor: "pointer",
+                    fontSize: 12,
+                    color: "#18181B",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Day / Week / Month / Year */}
+            <div style={{ display: "flex", gap: 4 }}>
+              {["Day", "Week", "Month", "Year"].map((label) => (
+                <button
+                  key={label}
+                  style={{
+                    padding: "4px 14px",
+                    borderRadius: 8,
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    background: label === "Week" ? "#DC2626" : "transparent",
+                    color: label === "Week" ? "white" : "#71717A",
+                    fontWeight: label === "Week" ? 600 : 400,
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                background: "#F4F4F5",
+                borderRadius: 6,
+                padding: "4px 8px",
+                minWidth: 160,
+              }}
+            >
+              <Search className="size-3.5 text-gray-400" />
+              <span style={{ fontSize: 12, color: "#A1A1AA" }}>Search</span>
+            </div>
+          </div>
+
+          {/* Grid area */}
+          <div style={{ flex: 1, overflowY: "auto", position: "relative" }}>
+            {/* Day column headers */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `48px repeat(7, 1fr)`,
+                borderBottom: "1px solid #E5E7EB",
+                position: "sticky",
+                top: 0,
+                background: "white",
+                zIndex: 10,
+              }}
+            >
+              {/* timezone offset cell */}
+              <div
+                style={{
+                  padding: "6px 4px 4px",
+                  textAlign: "right",
+                  fontSize: 10,
+                  color: "#71717A",
+                  borderRight: "1px solid #E5E7EB",
+                }}
+              >
+                <div>EST</div>
+                <div>GMT-5</div>
+              </div>
+
+              {weekDays.map((wd) => {
+                const isWeekToday = wd.day === today;
+                return (
+                  <div
+                    key={wd.day}
+                    style={{
+                      padding: "6px 8px 4px",
+                      borderLeft: "1px solid #E5E7EB",
+                      background: isWeekToday ? "#EFF6FF" : wd.label === "SUN" || wd.label === "SAT" ? "#FAFAFA" : "white",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: "#71717A",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {wd.label}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 22,
+                        fontWeight: 400,
+                        color: isWeekToday ? "#1D4ED8" : "#111827",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {wd.day}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Time + column grid */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `48px repeat(7, 1fr)`,
+                position: "relative",
+              }}
+            >
+              {/* Time labels column */}
+              <div style={{ borderRight: "1px solid #E5E7EB" }}>
+                {hourRows.map((hour) => (
+                  <div
+                    key={hour}
+                    style={{
+                      height: ROW_HEIGHT,
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "flex-end",
+                      paddingRight: 6,
+                      paddingTop: 4,
+                      fontSize: 11,
+                      color: "#71717A",
+                      borderTop: "1px solid #E5E7EB",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    {hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
+                  </div>
+                ))}
+              </div>
+
+              {/* Day columns */}
+              {weekDays.map((wd, colIdx) => {
+                const isWeekend = wd.label === "SUN" || wd.label === "SAT";
+                const isWeekToday = wd.day === today;
+                const columnEvents = calEvents.filter((e) => e.col === colIdx);
+
+                return (
+                  <div
+                    key={wd.day}
+                    style={{
+                      position: "relative",
+                      borderLeft: "1px solid #E5E7EB",
+                      background: isWeekToday ? "#EFF6FF" : isWeekend ? "#FAFAFA" : "white",
+                    }}
+                  >
+                    {/* Hour-slot rows (just horizontal lines) */}
+                    {hourRows.map((hour) => (
+                      <div
+                        key={hour}
+                        style={{
+                          height: ROW_HEIGHT,
+                          borderTop: "1px solid #E5E7EB",
+                          boxSizing: "border-box",
+                        }}
+                      >
+                        {/* half-hour divider */}
+                        <div
+                          style={{
+                            marginTop: ROW_HEIGHT / 2 - 1,
+                            borderTop: "1px dashed #F3F4F6",
+                          }}
+                        />
+                      </div>
+                    ))}
+
+                    {/* Event blocks absolutely positioned */}
+                    {columnEvents.map((ev, ei) => {
+                      const topPx = (ev.startHour - START_HOUR) * ROW_HEIGHT + 1;
+                      const heightPx = ev.durationHours * ROW_HEIGHT - 4;
+                      const cc = colorClasses[ev.color];
+                      const startLabel =
+                        ev.startHour < 12
+                          ? `${ev.startHour}:00 AM`
+                          : ev.startHour === 12
+                            ? "12:00 PM"
+                            : `${ev.startHour - 12}:00 PM`;
+                      return (
+                        <div
+                          key={ei}
+                          style={{
+                            position: "absolute",
+                            top: topPx,
+                            left: 2,
+                            right: 2,
+                            height: heightPx,
+                            borderRadius: 6,
+                            overflow: "hidden",
+                            display: "flex",
+                            cursor: "pointer",
+                          }}
+                          className={cc.bg}
+                        >
+                          {/* Colored left bar */}
+                          <div
+                            style={{ width: 3, flexShrink: 0 }}
+                            className={cc.bar}
+                          />
+                          <div
+                            style={{
+                              flex: 1,
+                              padding: "4px 5px",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 2,
+                              overflow: "hidden",
+                            }}
+                          >
+                            <div
+                              style={{ display: "flex", alignItems: "center", gap: 3 }}
+                            >
+                              <span
+                                style={{ fontSize: 10, fontWeight: 600 }}
+                                className={cc.time}
+                              >
+                                {startLabel}
+                              </span>
+                              {ev.hasLink && (
+                                <span
+                                  style={{
+                                    width: 12,
+                                    height: 12,
+                                    borderRadius: "50%",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: 8,
+                                    flexShrink: 0,
+                                  }}
+                                  className={`${cc.bar} text-white`}
+                                >
+                                  ⤴
+                                </span>
+                              )}
+                            </div>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                lineHeight: 1.3,
+                                overflow: "hidden",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                              }}
+                              className={cc.text}
+                            >
+                              {ev.title}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     );
