@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Settings from "./pages/Settings";
 import Message from "./pages/Message";
 import Notifications from "./pages/Notifications";
+import Chatbot from "./pages/Chatbot";
 import ErrorBoundary from "./Components/ErrorBoundary";
 
 export const router = createBrowserRouter([
@@ -84,6 +85,11 @@ export const router = createBrowserRouter([
   {
     path: "/notifications",
     element: <Notifications />,
+    errorElement: <ErrorBoundary />,
+  },
+  {
+    path: "/plans",
+    element: <Chatbot />,
     errorElement: <ErrorBoundary />,
   },
 ]);
