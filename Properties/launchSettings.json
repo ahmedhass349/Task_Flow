@@ -16,7 +16,7 @@
           "ASPNETCORE_ENVIRONMENT": "Development"
         }
       },
-      "www.arragro.com": {
+      "TaskFlow": {
         "commandName": "Project",
         "launchBrowser": true,
         "environmentVariables": {

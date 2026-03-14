@@ -1,27 +1,8 @@
 import { useState } from "react";
-import { Search, Bell, Mail, User, Settings, LogOut, UserCircle, CheckSquare, AtSign, FolderKanban, Clock } from "lucide-react";
+import { Search, Bell, Mail, User, Settings, LogOut, UserCircle } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Link } from "react-router";
-
-/* ─── Notifications data ─── */
-interface Notification {
-  id: number;
-  icon: React.ElementType;
-  iconBg: string;
-  iconColor: string;
-  title: string;
-  body: string;
-  time: string;
-  unread: boolean;
-}
-
-const INITIAL_NOTIFS: Notification[] = [
-  { id: 1, icon: CheckSquare,  iconBg: "bg-green-100",  iconColor: "text-green-600",  title: "Task completed",      body: 'Sarah Chen completed "Design system update"',       time: "2 min ago",  unread: true  },
-  { id: 2, icon: AtSign,       iconBg: "bg-blue-100",   iconColor: "text-blue-600",   title: "You were mentioned",  body: 'Mike Johnson mentioned you in "API Service"',        time: "14 min ago", unread: true  },
-  { id: 3, icon: FolderKanban, iconBg: "bg-purple-100", iconColor: "text-purple-600", title: "New project created", body: 'Alex Kim created project "Mobile Redesign"',         time: "1 hr ago",   unread: true  },
-  { id: 4, icon: Clock,        iconBg: "bg-orange-100", iconColor: "text-orange-600", title: "Deadline tomorrow",   body: 'Task "Fix checkout flow" is due tomorrow',           time: "3 hr ago",   unread: false },
-  { id: 5, icon: CheckSquare,  iconBg: "bg-green-100",  iconColor: "text-green-600",  title: "Task assigned",       body: 'Emily Rodriguez assigned "Write unit tests" to you', time: "Yesterday",  unread: false },
-];
+import { SEED_NOTIFICATIONS, NotificationItem } from "../data/notifications";
 
 /* ─── Messages data ─── */
 interface Message {
@@ -51,7 +32,7 @@ const AVATAR_COLORS: Record<string, string> = {
 
 /* ═══════════════════════════════ */
 export default function Header() {
-  const [notifs, setNotifs] = useState(INITIAL_NOTIFS);
+  const [notifs, setNotifs] = useState<NotificationItem[]>(SEED_NOTIFICATIONS);
   const [msgs, setMsgs]     = useState(INITIAL_MSGS);
 
   const unreadNotifCount = notifs.filter(n => n.unread).length;

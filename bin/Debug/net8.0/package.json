@@ -2,7 +2,7 @@
   "name": "taskflow",
   "version": "0.0.1-alpha",
   "description": "taskflow template project",
-  "main": "dist/main.js.js",
+  "main": "dist/main.js",
   "scripts": {
     "build:dev": "webpack --progress",
     "build": "cross-env NODE_ENV=production webpack --env prod --progress",
@@ -16,19 +16,19 @@
   "typings": "./dist/types/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Arragro/ArragroCMS.git"
+    "url": "git+https://github.com/Ahmed-Abdelbarr/Task_Flow.git"
   },
   "keywords": [
     "dotnet",
     "core",
-    "cms"
+    "taskflow"
   ],
-  "author": "Michael Jewell",
+  "author": "Ahmed Abdelbarr",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Arragro/taskflow/issues"
+    "url": "https://github.com/Ahmed-Abdelbarr/Task_Flow/issues"
   },
-  "homepage": "https://github.com/Arragro/taskflow#readme",
+  "homepage": "https://github.com/Ahmed-Abdelbarr/Task_Flow#readme",
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "class-variance-authority": "^0.7.1",
@@ -61,6 +61,5 @@
     "webpack": "^5.105.4",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.2.3"
-  },
-  "dev": "concurrently \"dotnet run --project TaskFlow.csproj\" \"webpack --progress --watch\""
+  }
 }

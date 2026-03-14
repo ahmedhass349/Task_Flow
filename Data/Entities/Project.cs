@@ -10,6 +10,7 @@ namespace taskflow.Data.Entities
         public string? Description { get; set; }
         public string? Color { get; set; }   // hex colour, e.g. "#3B82F6"
         public int OwnerId { get; set; }
+        public bool IsStarred { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation

@@ -1,7 +1,6 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import {
   Bot,
-  Sparkles,
   Send,
   Clock3,
   Plus,

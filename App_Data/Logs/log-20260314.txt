@@ -1,0 +1,435 @@
+2026-03-14 17:43:18.203 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-14 17:43:44.520 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-14 17:43:51.016 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/swagger/index.html - null null
+2026-03-14 17:43:51.395 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/swagger/index.html - 200 null text/html;charset=utf-8 403.706ms
+2026-03-14 17:43:51.568 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/swagger/v1/swagger.json - null null
+2026-03-14 17:43:52.028 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 459.0955ms
+2026-03-14 17:44:00.050 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/register - application/json 76
+2026-03-14 17:44:04.316 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Register (taskflow)'
+2026-03-14 17:44:04.383 +02:00 [INF] Route matched with {action = "Register", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Register(taskflow.DTOs.Auth.RegisterRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-14 17:44:07.367 +02:00 [INF] Executing BadRequestObjectResult, writing value of type 'Microsoft.AspNetCore.Mvc.ValidationProblemDetails'.
+2026-03-14 17:44:07.502 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Register (taskflow) in 3097.2281ms
+2026-03-14 17:44:07.502 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Register (taskflow)'
+2026-03-14 17:44:07.517 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/register - 400 376 application/problem+json; charset=utf-8 7466.4133ms
+2026-03-14 17:44:14.017 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/register - application/json 107
+2026-03-14 17:44:14.027 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Register (taskflow)'
+2026-03-14 17:44:14.028 +02:00 [INF] Route matched with {action = "Register", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Register(taskflow.DTOs.Auth.RegisterRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-14 17:44:16.422 +02:00 [INF] Executed DbCommand (214ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-14 17:44:17.993 +02:00 [INF] Executed DbCommand (54ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (Size = 200), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (Size = 320), @p5='?' (Size = 200), @p6='?' (Size = 4000), @p7='?' (Size = 30), @p8='?' (Size = 100)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [AppUsers] ([AvatarUrl], [Company], [Country], [CreatedAt], [Email], [FullName], [PasswordHash], [Phone], [Timezone])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8);
+2026-03-14 17:44:18.237 +02:00 [INF] Executing ObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:44:18.250 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Register (taskflow) in 4222.0467ms
+2026-03-14 17:44:18.251 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Register (taskflow)'
+2026-03-14 17:44:18.259 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/register - 201 641 application/json; charset=utf-8 4242.8111ms
+2026-03-14 17:44:24.337 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/login - application/json 53
+2026-03-14 17:44:24.342 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-14 17:44:24.349 +02:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(taskflow.DTOs.Auth.LoginRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-14 17:44:24.420 +02:00 [INF] Executed DbCommand (4ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-14 17:44:24.799 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:44:24.801 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Login (taskflow) in 450.9373ms
+2026-03-14 17:44:24.801 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-14 17:44:24.802 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/login - 200 634 application/json; charset=utf-8 465.0558ms
+2026-03-14 17:44:35.323 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - null null
+2026-03-14 17:44:35.414 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-14 17:44:35.420 +02:00 [INF] Route matched with {action = "GetCurrentUser", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCurrentUser() on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-14 17:44:35.834 +02:00 [INF] Executed DbCommand (331ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Id] = @__p_0
+2026-03-14 17:44:35.837 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.UserDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:44:35.843 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow) in 422.0911ms
+2026-03-14 17:44:35.844 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-14 17:44:35.845 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 200 134 application/json; charset=utf-8 521.2541ms
+2026-03-14 17:44:35.961 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/dashboard/stats - null null
+2026-03-14 17:44:35.968 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.DashboardController.GetStats (taskflow)'
+2026-03-14 17:44:35.973 +02:00 [INF] Route matched with {action = "GetStats", controller = "Dashboard"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetStats() on controller taskflow.Controllers.Api.DashboardController (taskflow).
+2026-03-14 17:44:36.100 +02:00 [INF] Executed DbCommand (13ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [TaskItems] AS [t]
+WHERE [t].[AssigneeId] = @__userId_0 AND [t].[Status] <> N'Completed'
+2026-03-14 17:44:36.124 +02:00 [INF] Executed DbCommand (5ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [TaskItems] AS [t]
+WHERE [t].[AssigneeId] = @__userId_0 AND [t].[Status] = N'InProgress'
+2026-03-14 17:44:36.666 +02:00 [INF] Executed DbCommand (290ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [p].[Id], [p].[Color], [p].[CreatedAt], [p].[Description], [p].[IsStarred], [p].[Name], [p].[OwnerId], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone], [t].[ProjectId], [t].[UserId], [t].[Role], [t].[Id], [t].[AvatarUrl], [t].[Company], [t].[Country], [t].[CreatedAt], [t].[Email], [t].[FullName], [t].[PasswordHash], [t].[Phone], [t].[Timezone]
+FROM [Projects] AS [p]
+INNER JOIN [AppUsers] AS [a] ON [p].[OwnerId] = [a].[Id]
+LEFT JOIN (
+    SELECT [p1].[ProjectId], [p1].[UserId], [p1].[Role], [a0].[Id], [a0].[AvatarUrl], [a0].[Company], [a0].[Country], [a0].[CreatedAt], [a0].[Email], [a0].[FullName], [a0].[PasswordHash], [a0].[Phone], [a0].[Timezone]
+    FROM [ProjectMembers] AS [p1]
+    INNER JOIN [AppUsers] AS [a0] ON [p1].[UserId] = [a0].[Id]
+) AS [t] ON [p].[Id] = [t].[ProjectId]
+WHERE [p].[OwnerId] = @__userId_0 OR EXISTS (
+    SELECT 1
+    FROM [ProjectMembers] AS [p0]
+    WHERE [p].[Id] = [p0].[ProjectId] AND [p0].[UserId] = @__userId_0)
+ORDER BY [p].[CreatedAt] DESC, [p].[Id], [a].[Id], [t].[ProjectId], [t].[UserId]
+2026-03-14 17:44:36.740 +02:00 [INF] Executed DbCommand (27ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t].[TeamId], [t].[UserId], [t].[Role]
+FROM [TeamMembers] AS [t]
+WHERE [t].[UserId] = @__userId_0
+2026-03-14 17:44:36.746 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Dashboard.DashboardStatsDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:44:36.754 +02:00 [INF] Executed action taskflow.Controllers.Api.DashboardController.GetStats (taskflow) in 780.4996ms
+2026-03-14 17:44:36.755 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.DashboardController.GetStats (taskflow)'
+2026-03-14 17:44:36.755 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/dashboard/stats - 200 136 application/json; charset=utf-8 793.9089ms
+2026-03-14 17:44:36.904 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/projects - null null
+2026-03-14 17:44:36.907 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.ProjectsController.GetUserProjects (taskflow)'
+2026-03-14 17:44:36.915 +02:00 [INF] Route matched with {action = "GetUserProjects", controller = "Projects"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetUserProjects() on controller taskflow.Controllers.Api.ProjectsController (taskflow).
+2026-03-14 17:44:37.055 +02:00 [INF] Executed DbCommand (83ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [p].[Id], [p].[Color], [p].[CreatedAt], [p].[Description], [p].[IsStarred], [p].[Name], [p].[OwnerId], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone], [t].[ProjectId], [t].[UserId], [t].[Role], [t].[Id], [t].[AvatarUrl], [t].[Company], [t].[Country], [t].[CreatedAt], [t].[Email], [t].[FullName], [t].[PasswordHash], [t].[Phone], [t].[Timezone]
+FROM [Projects] AS [p]
+INNER JOIN [AppUsers] AS [a] ON [p].[OwnerId] = [a].[Id]
+LEFT JOIN (
+    SELECT [p1].[ProjectId], [p1].[UserId], [p1].[Role], [a0].[Id], [a0].[AvatarUrl], [a0].[Company], [a0].[Country], [a0].[CreatedAt], [a0].[Email], [a0].[FullName], [a0].[PasswordHash], [a0].[Phone], [a0].[Timezone]
+    FROM [ProjectMembers] AS [p1]
+    INNER JOIN [AppUsers] AS [a0] ON [p1].[UserId] = [a0].[Id]
+) AS [t] ON [p].[Id] = [t].[ProjectId]
+WHERE [p].[OwnerId] = @__userId_0 OR EXISTS (
+    SELECT 1
+    FROM [ProjectMembers] AS [p0]
+    WHERE [p].[Id] = [p0].[ProjectId] AND [p0].[UserId] = @__userId_0)
+ORDER BY [p].[CreatedAt] DESC, [p].[Id], [a].[Id], [t].[ProjectId], [t].[UserId]
+2026-03-14 17:44:37.057 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[System.Collections.Generic.IEnumerable`1[[taskflow.DTOs.Projects.ProjectDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2026-03-14 17:44:37.065 +02:00 [INF] Executed action taskflow.Controllers.Api.ProjectsController.GetUserProjects (taskflow) in 149.4591ms
+2026-03-14 17:44:37.065 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.ProjectsController.GetUserProjects (taskflow)'
+2026-03-14 17:44:37.066 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/projects - 200 60 application/json; charset=utf-8 162.1052ms
+2026-03-14 17:44:37.158 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/tasks - null null
+2026-03-14 17:44:37.159 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.TasksController.GetTasks (taskflow)'
+2026-03-14 17:44:37.172 +02:00 [INF] Route matched with {action = "GetTasks", controller = "Tasks"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetTasks(taskflow.DTOs.Tasks.TaskFilterRequest) on controller taskflow.Controllers.Api.TasksController (taskflow).
+2026-03-14 17:44:37.365 +02:00 [INF] Executed DbCommand (108ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [p].[Id], [p].[Color], [p].[CreatedAt], [p].[Description], [p].[IsStarred], [p].[Name], [p].[OwnerId], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+FROM [TaskItems] AS [t]
+INNER JOIN [Projects] AS [p] ON [t].[ProjectId] = [p].[Id]
+LEFT JOIN [AppUsers] AS [a] ON [t].[AssigneeId] = [a].[Id]
+WHERE [t].[AssigneeId] = @__userId_0
+ORDER BY [t].[CreatedAt] DESC
+2026-03-14 17:44:37.384 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[System.Collections.Generic.IEnumerable`1[[taskflow.DTOs.Tasks.TaskDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2026-03-14 17:44:37.389 +02:00 [INF] Executed action taskflow.Controllers.Api.TasksController.GetTasks (taskflow) in 216.3175ms
+2026-03-14 17:44:37.389 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.TasksController.GetTasks (taskflow)'
+2026-03-14 17:44:37.390 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/tasks - 200 60 application/json; charset=utf-8 231.9863ms
+2026-03-14 17:44:37.486 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/notifications - null null
+2026-03-14 17:44:37.488 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.NotificationsController.GetNotifications (taskflow)'
+2026-03-14 17:44:37.495 +02:00 [INF] Route matched with {action = "GetNotifications", controller = "Notifications"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetNotifications() on controller taskflow.Controllers.Api.NotificationsController (taskflow).
+2026-03-14 17:44:37.538 +02:00 [INF] Executed DbCommand (13ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n].[Id], [n].[Body], [n].[CreatedAt], [n].[IsRead], [n].[Title], [n].[UserId]
+FROM [Notifications] AS [n]
+WHERE [n].[UserId] = @__userId_0
+ORDER BY [n].[CreatedAt] DESC
+2026-03-14 17:44:37.553 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[System.Collections.Generic.IEnumerable`1[[taskflow.DTOs.Notifications.NotificationDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2026-03-14 17:44:37.560 +02:00 [INF] Executed action taskflow.Controllers.Api.NotificationsController.GetNotifications (taskflow) in 64.2673ms
+2026-03-14 17:44:37.560 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.NotificationsController.GetNotifications (taskflow)'
+2026-03-14 17:44:37.561 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/notifications - 200 60 application/json; charset=utf-8 74.3936ms
+2026-03-14 17:44:37.632 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/projects - null null
+2026-03-14 17:44:37.634 +02:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+2026-03-14 17:44:37.639 +02:00 [INF] AuthenticationScheme: Bearer was challenged.
+2026-03-14 17:44:37.639 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/projects - 401 0 null 7.5285ms
+2026-03-14 17:44:52.383 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/projects - application/json 71
+2026-03-14 17:44:52.384 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.ProjectsController.CreateProject (taskflow)'
+2026-03-14 17:44:52.390 +02:00 [INF] Route matched with {action = "CreateProject", controller = "Projects"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] CreateProject(taskflow.DTOs.Projects.CreateProjectRequest) on controller taskflow.Controllers.Api.ProjectsController (taskflow).
+2026-03-14 17:44:52.492 +02:00 [INF] Executed DbCommand (13ms) [Parameters=[@p0='?' (Size = 20), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (DbType = Boolean), @p4='?' (Size = 200), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [Projects] ([Color], [CreatedAt], [Description], [IsStarred], [Name], [OwnerId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-03-14 17:44:52.572 +02:00 [WRN] Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Framework will use 'QuerySplittingBehavior.SingleQuery', which can potentially result in slow query performance. See https://go.microsoft.com/fwlink/?linkid=2134277 for more information. To identify the query that's triggering this warning call 'ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning))'.
+2026-03-14 17:44:52.792 +02:00 [INF] Executed DbCommand (191ms) [Parameters=[@__projectId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t].[Id], [t].[Color], [t].[CreatedAt], [t].[Description], [t].[IsStarred], [t].[Name], [t].[OwnerId], [t].[Id0], [t].[AvatarUrl], [t].[Company], [t].[Country], [t].[CreatedAt0], [t].[Email], [t].[FullName], [t].[PasswordHash], [t].[Phone], [t].[Timezone], [t0].[ProjectId], [t0].[UserId], [t0].[Role], [t0].[Id], [t0].[AvatarUrl], [t0].[Company], [t0].[Country], [t0].[CreatedAt], [t0].[Email], [t0].[FullName], [t0].[PasswordHash], [t0].[Phone], [t0].[Timezone], [t1].[Id], [t1].[AssigneeId], [t1].[CreatedAt], [t1].[Description], [t1].[DueDate], [t1].[IsStarred], [t1].[Priority], [t1].[ProjectId], [t1].[Status], [t1].[Title], [t1].[Id0], [t1].[AvatarUrl], [t1].[Company], [t1].[Country], [t1].[CreatedAt0], [t1].[Email], [t1].[FullName], [t1].[PasswordHash], [t1].[Phone], [t1].[Timezone]
+FROM (
+    SELECT TOP(1) [p].[Id], [p].[Color], [p].[CreatedAt], [p].[Description], [p].[IsStarred], [p].[Name], [p].[OwnerId], [a].[Id] AS [Id0], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt] AS [CreatedAt0], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+    FROM [Projects] AS [p]
+    INNER JOIN [AppUsers] AS [a] ON [p].[OwnerId] = [a].[Id]
+    WHERE [p].[Id] = @__projectId_0
+) AS [t]
+LEFT JOIN (
+    SELECT [p0].[ProjectId], [p0].[UserId], [p0].[Role], [a0].[Id], [a0].[AvatarUrl], [a0].[Company], [a0].[Country], [a0].[CreatedAt], [a0].[Email], [a0].[FullName], [a0].[PasswordHash], [a0].[Phone], [a0].[Timezone]
+    FROM [ProjectMembers] AS [p0]
+    INNER JOIN [AppUsers] AS [a0] ON [p0].[UserId] = [a0].[Id]
+) AS [t0] ON [t].[Id] = [t0].[ProjectId]
+LEFT JOIN (
+    SELECT [t2].[Id], [t2].[AssigneeId], [t2].[CreatedAt], [t2].[Description], [t2].[DueDate], [t2].[IsStarred], [t2].[Priority], [t2].[ProjectId], [t2].[Status], [t2].[Title], [a1].[Id] AS [Id0], [a1].[AvatarUrl], [a1].[Company], [a1].[Country], [a1].[CreatedAt] AS [CreatedAt0], [a1].[Email], [a1].[FullName], [a1].[PasswordHash], [a1].[Phone], [a1].[Timezone]
+    FROM [TaskItems] AS [t2]
+    LEFT JOIN [AppUsers] AS [a1] ON [t2].[AssigneeId] = [a1].[Id]
+) AS [t1] ON [t].[Id] = [t1].[ProjectId]
+ORDER BY [t].[Id], [t].[Id0], [t0].[ProjectId], [t0].[UserId], [t0].[Id], [t1].[Id]
+2026-03-14 17:44:52.834 +02:00 [INF] Executing ObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Projects.ProjectDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:44:52.844 +02:00 [INF] Executed action taskflow.Controllers.Api.ProjectsController.CreateProject (taskflow) in 453.1731ms
+2026-03-14 17:44:52.845 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.ProjectsController.CreateProject (taskflow)'
+2026-03-14 17:44:52.845 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/projects - 201 304 application/json; charset=utf-8 462.5233ms
+2026-03-14 17:44:52.949 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/tasks - application/json 137
+2026-03-14 17:44:52.950 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.TasksController.CreateTask (taskflow)'
+2026-03-14 17:44:52.956 +02:00 [INF] Route matched with {action = "CreateTask", controller = "Tasks"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] CreateTask(taskflow.DTOs.Tasks.CreateTaskRequest) on controller taskflow.Controllers.Api.TasksController (taskflow).
+2026-03-14 17:44:53.200 +02:00 [INF] Executed DbCommand (17ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Boolean), @p5='?' (Size = 50), @p6='?' (DbType = Int32), @p7='?' (Size = 50), @p8='?' (Size = 500)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [TaskItems] ([AssigneeId], [CreatedAt], [Description], [DueDate], [IsStarred], [Priority], [ProjectId], [Status], [Title])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8);
+2026-03-14 17:44:53.299 +02:00 [INF] Executed DbCommand (19ms) [Parameters=[@__taskId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [p].[Id], [p].[Color], [p].[CreatedAt], [p].[Description], [p].[IsStarred], [p].[Name], [p].[OwnerId], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+FROM [TaskItems] AS [t]
+INNER JOIN [Projects] AS [p] ON [t].[ProjectId] = [p].[Id]
+LEFT JOIN [AppUsers] AS [a] ON [t].[AssigneeId] = [a].[Id]
+WHERE [t].[Id] = @__taskId_0
+2026-03-14 17:44:53.309 +02:00 [INF] Executing ObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Tasks.TaskDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:44:53.319 +02:00 [INF] Executed action taskflow.Controllers.Api.TasksController.CreateTask (taskflow) in 362.9446ms
+2026-03-14 17:44:53.319 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.TasksController.CreateTask (taskflow)'
+2026-03-14 17:44:53.320 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/tasks - 201 333 application/json; charset=utf-8 370.9918ms
+2026-03-14 17:44:53.397 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/teams - application/json 54
+2026-03-14 17:44:53.398 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.TeamsController.CreateTeam (taskflow)'
+2026-03-14 17:44:53.404 +02:00 [INF] Route matched with {action = "CreateTeam", controller = "Teams"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] CreateTeam(taskflow.DTOs.Teams.CreateTeamRequest) on controller taskflow.Controllers.Api.TeamsController (taskflow).
+2026-03-14 17:44:53.475 +02:00 [INF] Executed DbCommand (7ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 4000), @p2='?' (Size = 200), @p3='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [Teams] ([CreatedAt], [Description], [Name], [OwnerId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3);
+2026-03-14 17:44:53.542 +02:00 [INF] Executed DbCommand (12ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32), @p2='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [TeamMembers] ([TeamId], [UserId], [Role])
+VALUES (@p0, @p1, @p2);
+2026-03-14 17:44:53.612 +02:00 [INF] Executed DbCommand (24ms) [Parameters=[@__team_Id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t0].[Id], [t0].[CreatedAt], [t0].[Description], [t0].[Name], [t0].[OwnerId], [t0].[Id0], [t0].[AvatarUrl], [t0].[Company], [t0].[Country], [t0].[CreatedAt0], [t0].[Email], [t0].[FullName], [t0].[PasswordHash], [t0].[Phone], [t0].[Timezone], [t1].[TeamId], [t1].[UserId], [t1].[Role]
+FROM (
+    SELECT TOP(1) [t].[Id], [t].[CreatedAt], [t].[Description], [t].[Name], [t].[OwnerId], [a].[Id] AS [Id0], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt] AS [CreatedAt0], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+    FROM [Teams] AS [t]
+    INNER JOIN [AppUsers] AS [a] ON [t].[OwnerId] = [a].[Id]
+    WHERE [t].[Id] = @__team_Id_0
+) AS [t0]
+LEFT JOIN [TeamMembers] AS [t1] ON [t0].[Id] = [t1].[TeamId]
+ORDER BY [t0].[Id], [t0].[Id0], [t1].[TeamId]
+2026-03-14 17:44:53.628 +02:00 [INF] Executing ObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Teams.TeamDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:44:53.635 +02:00 [INF] Executed action taskflow.Controllers.Api.TeamsController.CreateTeam (taskflow) in 230.7034ms
+2026-03-14 17:44:53.635 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.TeamsController.CreateTeam (taskflow)'
+2026-03-14 17:44:53.636 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/teams - 201 232 application/json; charset=utf-8 239.0196ms
+2026-03-14 17:44:53.728 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/calendar-events - application/json 105
+2026-03-14 17:44:53.731 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.CalendarEventsController.CreateEvent (taskflow)'
+2026-03-14 17:44:53.736 +02:00 [INF] Route matched with {action = "CreateEvent", controller = "CalendarEvents"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] CreateEvent(taskflow.DTOs.Calendar.CreateCalendarEventRequest) on controller taskflow.Controllers.Api.CalendarEventsController (taskflow).
+2026-03-14 17:44:53.837 +02:00 [INF] Executed DbCommand (10ms) [Parameters=[@p0='?' (Size = 20), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (DbType = DateTime2), @p4='?' (Size = 2048), @p5='?' (DbType = Int32), @p6='?' (DbType = DateTime2), @p7='?' (Size = 500)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [CalendarEvents] ([Color], [CreatedAt], [Description], [EndAt], [MeetingLink], [OwnerId], [StartAt], [Title])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7);
+2026-03-14 17:44:53.847 +02:00 [INF] Executing ObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Calendar.CalendarEventDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:44:53.854 +02:00 [INF] Executed action taskflow.Controllers.Api.CalendarEventsController.CreateEvent (taskflow) in 117.7421ms
+2026-03-14 17:44:53.854 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.CalendarEventsController.CreateEvent (taskflow)'
+2026-03-14 17:44:53.854 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/calendar-events - 201 270 application/json; charset=utf-8 125.7719ms
+2026-03-14 17:45:06.496 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/projects - null null
+2026-03-14 17:45:06.498 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.ProjectsController.GetUserProjects (taskflow)'
+2026-03-14 17:45:06.499 +02:00 [INF] Route matched with {action = "GetUserProjects", controller = "Projects"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetUserProjects() on controller taskflow.Controllers.Api.ProjectsController (taskflow).
+2026-03-14 17:45:06.587 +02:00 [INF] Executed DbCommand (77ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [p].[Id], [p].[Color], [p].[CreatedAt], [p].[Description], [p].[IsStarred], [p].[Name], [p].[OwnerId], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone], [t].[ProjectId], [t].[UserId], [t].[Role], [t].[Id], [t].[AvatarUrl], [t].[Company], [t].[Country], [t].[CreatedAt], [t].[Email], [t].[FullName], [t].[PasswordHash], [t].[Phone], [t].[Timezone]
+FROM [Projects] AS [p]
+INNER JOIN [AppUsers] AS [a] ON [p].[OwnerId] = [a].[Id]
+LEFT JOIN (
+    SELECT [p1].[ProjectId], [p1].[UserId], [p1].[Role], [a0].[Id], [a0].[AvatarUrl], [a0].[Company], [a0].[Country], [a0].[CreatedAt], [a0].[Email], [a0].[FullName], [a0].[PasswordHash], [a0].[Phone], [a0].[Timezone]
+    FROM [ProjectMembers] AS [p1]
+    INNER JOIN [AppUsers] AS [a0] ON [p1].[UserId] = [a0].[Id]
+) AS [t] ON [p].[Id] = [t].[ProjectId]
+WHERE [p].[OwnerId] = @__userId_0 OR EXISTS (
+    SELECT 1
+    FROM [ProjectMembers] AS [p0]
+    WHERE [p].[Id] = [p0].[ProjectId] AND [p0].[UserId] = @__userId_0)
+ORDER BY [p].[CreatedAt] DESC, [p].[Id], [a].[Id], [t].[ProjectId], [t].[UserId]
+2026-03-14 17:45:06.590 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[System.Collections.Generic.IEnumerable`1[[taskflow.DTOs.Projects.ProjectDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2026-03-14 17:45:06.591 +02:00 [INF] Executed action taskflow.Controllers.Api.ProjectsController.GetUserProjects (taskflow) in 92.0225ms
+2026-03-14 17:45:06.592 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.ProjectsController.GetUserProjects (taskflow)'
+2026-03-14 17:45:06.593 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/projects - 200 284 application/json; charset=utf-8 97.0316ms
+2026-03-14 17:45:06.686 +02:00 [INF] Request starting HTTP/1.1 PATCH http://localhost:5001/api/projects/1/star - null null
+2026-03-14 17:45:06.688 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.ProjectsController.ToggleStar (taskflow)'
+2026-03-14 17:45:06.693 +02:00 [INF] Route matched with {action = "ToggleStar", controller = "Projects"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] ToggleStar(Int32) on controller taskflow.Controllers.Api.ProjectsController (taskflow).
+2026-03-14 17:45:06.834 +02:00 [INF] Executed DbCommand (114ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [p].[Id], [p].[Color], [p].[CreatedAt], [p].[Description], [p].[IsStarred], [p].[Name], [p].[OwnerId]
+FROM [Projects] AS [p]
+WHERE [p].[Id] = @__p_0
+2026-03-14 17:45:06.878 +02:00 [INF] Executed DbCommand (27ms) [Parameters=[@p6='?' (DbType = Int32), @p0='?' (Size = 20), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (DbType = Boolean), @p4='?' (Size = 200), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Projects] SET [Color] = @p0, [CreatedAt] = @p1, [Description] = @p2, [IsStarred] = @p3, [Name] = @p4, [OwnerId] = @p5
+OUTPUT 1
+WHERE [Id] = @p6;
+2026-03-14 17:45:06.948 +02:00 [INF] Executed DbCommand (57ms) [Parameters=[@__projectId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t].[Id], [t].[Color], [t].[CreatedAt], [t].[Description], [t].[IsStarred], [t].[Name], [t].[OwnerId], [t].[Id0], [t].[AvatarUrl], [t].[Company], [t].[Country], [t].[CreatedAt0], [t].[Email], [t].[FullName], [t].[PasswordHash], [t].[Phone], [t].[Timezone], [t0].[ProjectId], [t0].[UserId], [t0].[Role], [t0].[Id], [t0].[AvatarUrl], [t0].[Company], [t0].[Country], [t0].[CreatedAt], [t0].[Email], [t0].[FullName], [t0].[PasswordHash], [t0].[Phone], [t0].[Timezone], [t1].[Id], [t1].[AssigneeId], [t1].[CreatedAt], [t1].[Description], [t1].[DueDate], [t1].[IsStarred], [t1].[Priority], [t1].[ProjectId], [t1].[Status], [t1].[Title], [t1].[Id0], [t1].[AvatarUrl], [t1].[Company], [t1].[Country], [t1].[CreatedAt0], [t1].[Email], [t1].[FullName], [t1].[PasswordHash], [t1].[Phone], [t1].[Timezone]
+FROM (
+    SELECT TOP(1) [p].[Id], [p].[Color], [p].[CreatedAt], [p].[Description], [p].[IsStarred], [p].[Name], [p].[OwnerId], [a].[Id] AS [Id0], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt] AS [CreatedAt0], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+    FROM [Projects] AS [p]
+    INNER JOIN [AppUsers] AS [a] ON [p].[OwnerId] = [a].[Id]
+    WHERE [p].[Id] = @__projectId_0
+) AS [t]
+LEFT JOIN (
+    SELECT [p0].[ProjectId], [p0].[UserId], [p0].[Role], [a0].[Id], [a0].[AvatarUrl], [a0].[Company], [a0].[Country], [a0].[CreatedAt], [a0].[Email], [a0].[FullName], [a0].[PasswordHash], [a0].[Phone], [a0].[Timezone]
+    FROM [ProjectMembers] AS [p0]
+    INNER JOIN [AppUsers] AS [a0] ON [p0].[UserId] = [a0].[Id]
+) AS [t0] ON [t].[Id] = [t0].[ProjectId]
+LEFT JOIN (
+    SELECT [t2].[Id], [t2].[AssigneeId], [t2].[CreatedAt], [t2].[Description], [t2].[DueDate], [t2].[IsStarred], [t2].[Priority], [t2].[ProjectId], [t2].[Status], [t2].[Title], [a1].[Id] AS [Id0], [a1].[AvatarUrl], [a1].[Company], [a1].[Country], [a1].[CreatedAt] AS [CreatedAt0], [a1].[Email], [a1].[FullName], [a1].[PasswordHash], [a1].[Phone], [a1].[Timezone]
+    FROM [TaskItems] AS [t2]
+    LEFT JOIN [AppUsers] AS [a1] ON [t2].[AssigneeId] = [a1].[Id]
+) AS [t1] ON [t].[Id] = [t1].[ProjectId]
+ORDER BY [t].[Id], [t].[Id0], [t0].[ProjectId], [t0].[UserId], [t0].[Id], [t1].[Id]
+2026-03-14 17:45:06.955 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Projects.ProjectDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:45:06.955 +02:00 [INF] Executed action taskflow.Controllers.Api.ProjectsController.ToggleStar (taskflow) in 257.2747ms
+2026-03-14 17:45:06.955 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.ProjectsController.ToggleStar (taskflow)'
+2026-03-14 17:45:06.956 +02:00 [INF] Request finished HTTP/1.1 PATCH http://localhost:5001/api/projects/1/star - 200 294 application/json; charset=utf-8 269.4602ms
+2026-03-14 17:45:07.043 +02:00 [INF] Request starting HTTP/1.1 PATCH http://localhost:5001/api/tasks/1/star - null null
+2026-03-14 17:45:07.044 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.TasksController.ToggleStar (taskflow)'
+2026-03-14 17:45:07.051 +02:00 [INF] Route matched with {action = "ToggleStar", controller = "Tasks"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] ToggleStar(Int32) on controller taskflow.Controllers.Api.TasksController (taskflow).
+2026-03-14 17:45:07.075 +02:00 [INF] Executed DbCommand (4ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title]
+FROM [TaskItems] AS [t]
+WHERE [t].[Id] = @__p_0
+2026-03-14 17:45:07.105 +02:00 [INF] Executed DbCommand (18ms) [Parameters=[@p9='?' (DbType = Int32), @p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Boolean), @p5='?' (Size = 50), @p6='?' (DbType = Int32), @p7='?' (Size = 50), @p8='?' (Size = 500)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [TaskItems] SET [AssigneeId] = @p0, [CreatedAt] = @p1, [Description] = @p2, [DueDate] = @p3, [IsStarred] = @p4, [Priority] = @p5, [ProjectId] = @p6, [Status] = @p7, [Title] = @p8
+OUTPUT 1
+WHERE [Id] = @p9;
+2026-03-14 17:45:07.131 +02:00 [INF] Executed DbCommand (10ms) [Parameters=[@__taskId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [p].[Id], [p].[Color], [p].[CreatedAt], [p].[Description], [p].[IsStarred], [p].[Name], [p].[OwnerId], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+FROM [TaskItems] AS [t]
+INNER JOIN [Projects] AS [p] ON [t].[ProjectId] = [p].[Id]
+LEFT JOIN [AppUsers] AS [a] ON [t].[AssigneeId] = [a].[Id]
+WHERE [t].[Id] = @__taskId_0
+2026-03-14 17:45:07.133 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Tasks.TaskDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:45:07.133 +02:00 [INF] Executed action taskflow.Controllers.Api.TasksController.ToggleStar (taskflow) in 82.1001ms
+2026-03-14 17:45:07.133 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.TasksController.ToggleStar (taskflow)'
+2026-03-14 17:45:07.133 +02:00 [INF] Request finished HTTP/1.1 PATCH http://localhost:5001/api/tasks/1/star - 200 323 application/json; charset=utf-8 90.445ms
+2026-03-14 17:45:07.227 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/settings/profile - null null
+2026-03-14 17:45:07.229 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.SettingsController.GetProfile (taskflow)'
+2026-03-14 17:45:07.235 +02:00 [INF] Route matched with {action = "GetProfile", controller = "Settings"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetProfile() on controller taskflow.Controllers.Api.SettingsController (taskflow).
+2026-03-14 17:45:07.254 +02:00 [INF] Executed DbCommand (5ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Id] = @__p_0
+2026-03-14 17:45:07.261 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Settings.ProfileDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:45:07.269 +02:00 [INF] Executed action taskflow.Controllers.Api.SettingsController.GetProfile (taskflow) in 33.8504ms
+2026-03-14 17:45:07.269 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.SettingsController.GetProfile (taskflow)'
+2026-03-14 17:45:07.270 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/settings/profile - 200 193 application/json; charset=utf-8 42.3172ms
+2026-03-14 17:45:07.346 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/dashboard/stats - null null
+2026-03-14 17:45:07.348 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.DashboardController.GetStats (taskflow)'
+2026-03-14 17:45:07.349 +02:00 [INF] Route matched with {action = "GetStats", controller = "Dashboard"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetStats() on controller taskflow.Controllers.Api.DashboardController (taskflow).
+2026-03-14 17:45:07.365 +02:00 [INF] Executed DbCommand (9ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [TaskItems] AS [t]
+WHERE [t].[AssigneeId] = @__userId_0 AND [t].[Status] <> N'Completed'
+2026-03-14 17:45:07.378 +02:00 [INF] Executed DbCommand (5ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [TaskItems] AS [t]
+WHERE [t].[AssigneeId] = @__userId_0 AND [t].[Status] = N'InProgress'
+2026-03-14 17:45:07.388 +02:00 [INF] Executed DbCommand (2ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [p].[Id], [p].[Color], [p].[CreatedAt], [p].[Description], [p].[IsStarred], [p].[Name], [p].[OwnerId], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone], [t].[ProjectId], [t].[UserId], [t].[Role], [t].[Id], [t].[AvatarUrl], [t].[Company], [t].[Country], [t].[CreatedAt], [t].[Email], [t].[FullName], [t].[PasswordHash], [t].[Phone], [t].[Timezone]
+FROM [Projects] AS [p]
+INNER JOIN [AppUsers] AS [a] ON [p].[OwnerId] = [a].[Id]
+LEFT JOIN (
+    SELECT [p1].[ProjectId], [p1].[UserId], [p1].[Role], [a0].[Id], [a0].[AvatarUrl], [a0].[Company], [a0].[Country], [a0].[CreatedAt], [a0].[Email], [a0].[FullName], [a0].[PasswordHash], [a0].[Phone], [a0].[Timezone]
+    FROM [ProjectMembers] AS [p1]
+    INNER JOIN [AppUsers] AS [a0] ON [p1].[UserId] = [a0].[Id]
+) AS [t] ON [p].[Id] = [t].[ProjectId]
+WHERE [p].[OwnerId] = @__userId_0 OR EXISTS (
+    SELECT 1
+    FROM [ProjectMembers] AS [p0]
+    WHERE [p].[Id] = [p0].[ProjectId] AND [p0].[UserId] = @__userId_0)
+ORDER BY [p].[CreatedAt] DESC, [p].[Id], [a].[Id], [t].[ProjectId], [t].[UserId]
+2026-03-14 17:45:07.498 +02:00 [INF] Executed DbCommand (103ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t].[TeamId], [t].[UserId], [t].[Role]
+FROM [TeamMembers] AS [t]
+WHERE [t].[UserId] = @__userId_0
+2026-03-14 17:45:07.516 +02:00 [INF] Executed DbCommand (5ms) [Parameters=[@__teamId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [TeamMembers] AS [t]
+WHERE [t].[TeamId] = @__teamId_0
+2026-03-14 17:45:07.519 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Dashboard.DashboardStatsDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:45:07.519 +02:00 [INF] Executed action taskflow.Controllers.Api.DashboardController.GetStats (taskflow) in 170.7205ms
+2026-03-14 17:45:07.520 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.DashboardController.GetStats (taskflow)'
+2026-03-14 17:45:07.520 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/dashboard/stats - 200 136 application/json; charset=utf-8 173.5657ms
+2026-03-14 17:45:07.589 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/dashboard/activity - null null
+2026-03-14 17:45:07.590 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.DashboardController.GetRecentActivity (taskflow)'
+2026-03-14 17:45:07.594 +02:00 [INF] Route matched with {action = "GetRecentActivity", controller = "Dashboard"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetRecentActivity() on controller taskflow.Controllers.Api.DashboardController (taskflow).
+2026-03-14 17:45:07.649 +02:00 [INF] Executed DbCommand (30ms) [Parameters=[@__p_1='?' (DbType = Int32), @__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t0].[Id], [t0].[AssigneeId], [t0].[CreatedAt], [t0].[Description], [t0].[DueDate], [t0].[IsStarred], [t0].[Priority], [t0].[ProjectId], [t0].[Status], [t0].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+FROM (
+    SELECT TOP(@__p_1) [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title]
+    FROM [TaskItems] AS [t]
+    WHERE [t].[AssigneeId] = @__userId_0
+    ORDER BY [t].[CreatedAt] DESC
+) AS [t0]
+LEFT JOIN [AppUsers] AS [a] ON [t0].[AssigneeId] = [a].[Id]
+ORDER BY [t0].[CreatedAt] DESC
+2026-03-14 17:45:07.651 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[System.Collections.Generic.IEnumerable`1[[taskflow.DTOs.Dashboard.ActivityItemDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2026-03-14 17:45:07.658 +02:00 [INF] Executed action taskflow.Controllers.Api.DashboardController.GetRecentActivity (taskflow) in 63.6609ms
+2026-03-14 17:45:07.658 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.DashboardController.GetRecentActivity (taskflow)'
+2026-03-14 17:45:07.658 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/dashboard/activity - 200 189 application/json; charset=utf-8 69.3955ms
+2026-03-14 17:45:07.737 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/messages/contacts - null null
+2026-03-14 17:45:07.739 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.MessagesController.GetContacts (taskflow)'
+2026-03-14 17:45:07.746 +02:00 [INF] Route matched with {action = "GetContacts", controller = "Messages"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetContacts() on controller taskflow.Controllers.Api.MessagesController (taskflow).
+2026-03-14 17:45:07.870 +02:00 [INF] Executed DbCommand (63ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Id] IN (
+    SELECT [m].[ReceiverId]
+    FROM [Messages] AS [m]
+    WHERE [m].[SenderId] = @__userId_0
+    UNION
+    SELECT [m0].[SenderId] AS [ReceiverId]
+    FROM [Messages] AS [m0]
+    WHERE [m0].[ReceiverId] = @__userId_0
+)
+2026-03-14 17:45:07.872 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[System.Collections.Generic.IEnumerable`1[[taskflow.DTOs.Messages.ContactDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2026-03-14 17:45:07.875 +02:00 [INF] Executed action taskflow.Controllers.Api.MessagesController.GetContacts (taskflow) in 129.1283ms
+2026-03-14 17:45:07.875 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.MessagesController.GetContacts (taskflow)'
+2026-03-14 17:45:07.876 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/messages/contacts - 200 84 application/json; charset=utf-8 138.386ms
+2026-03-14 17:45:07.958 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/chatbot/conversations - application/json 30
+2026-03-14 17:45:07.959 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.ChatbotController.CreateConversation (taskflow)'
+2026-03-14 17:45:07.965 +02:00 [INF] Route matched with {action = "CreateConversation", controller = "Chatbot"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] CreateConversation(taskflow.DTOs.Chatbot.CreateConversationRequest) on controller taskflow.Controllers.Api.ChatbotController (taskflow).
+2026-03-14 17:45:08.019 +02:00 [INF] Executed DbCommand (10ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 500), @p2='?' (DbType = DateTime2), @p3='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatbotConversations] ([CreatedAt], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3);
+2026-03-14 17:45:08.022 +02:00 [INF] Executing ObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Chatbot.ConversationDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-14 17:45:08.029 +02:00 [INF] Executed action taskflow.Controllers.Api.ChatbotController.CreateConversation (taskflow) in 63.6285ms
+2026-03-14 17:45:08.029 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.ChatbotController.CreateConversation (taskflow)'
+2026-03-14 17:45:08.029 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/chatbot/conversations - 201 179 application/json; charset=utf-8 71.3662ms
+2026-03-14 17:45:08.107 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/teams - null null
+2026-03-14 17:45:08.108 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.TeamsController.GetUserTeams (taskflow)'
+2026-03-14 17:45:08.116 +02:00 [INF] Route matched with {action = "GetUserTeams", controller = "Teams"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetUserTeams() on controller taskflow.Controllers.Api.TeamsController (taskflow).
+2026-03-14 17:45:08.177 +02:00 [INF] Executed DbCommand (22ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t].[Id], [t].[CreatedAt], [t].[Description], [t].[Name], [t].[OwnerId], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FullName], [a].[PasswordHash], [a].[Phone], [a].[Timezone], [t1].[TeamId], [t1].[UserId], [t1].[Role]
+FROM [Teams] AS [t]
+INNER JOIN [AppUsers] AS [a] ON [t].[OwnerId] = [a].[Id]
+LEFT JOIN [TeamMembers] AS [t1] ON [t].[Id] = [t1].[TeamId]
+WHERE [t].[OwnerId] = @__userId_0 OR EXISTS (
+    SELECT 1
+    FROM [TeamMembers] AS [t0]
+    WHERE [t].[Id] = [t0].[TeamId] AND [t0].[UserId] = @__userId_0)
+ORDER BY [t].[Id], [a].[Id], [t1].[TeamId]
+2026-03-14 17:45:08.182 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[System.Collections.Generic.IEnumerable`1[[taskflow.DTOs.Teams.TeamDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2026-03-14 17:45:08.188 +02:00 [INF] Executed action taskflow.Controllers.Api.TeamsController.GetUserTeams (taskflow) in 72.0035ms
+2026-03-14 17:45:08.188 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.TeamsController.GetUserTeams (taskflow)'
+2026-03-14 17:45:08.189 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/teams - 200 236 application/json; charset=utf-8 81.7093ms
+2026-03-14 17:45:08.280 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/calendar-events?start=2026-03-01&end=2026-04-01 - null null
+2026-03-14 17:45:08.281 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.CalendarEventsController.GetEvents (taskflow)'
+2026-03-14 17:45:08.287 +02:00 [INF] Route matched with {action = "GetEvents", controller = "CalendarEvents"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetEvents(System.Nullable`1[System.DateTime], System.Nullable`1[System.DateTime]) on controller taskflow.Controllers.Api.CalendarEventsController (taskflow).
+2026-03-14 17:45:08.325 +02:00 [INF] Executed DbCommand (8ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c].[Id], [c].[Color], [c].[CreatedAt], [c].[Description], [c].[EndAt], [c].[MeetingLink], [c].[OwnerId], [c].[StartAt], [c].[Title]
+FROM [CalendarEvents] AS [c]
+WHERE [c].[OwnerId] = @__userId_0
+2026-03-14 17:45:08.335 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[System.Collections.Generic.IEnumerable`1[[taskflow.DTOs.Calendar.CalendarEventDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2026-03-14 17:45:08.338 +02:00 [INF] Executed action taskflow.Controllers.Api.CalendarEventsController.GetEvents (taskflow) in 51.2109ms
+2026-03-14 17:45:08.338 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.CalendarEventsController.GetEvents (taskflow)'
+2026-03-14 17:45:08.338 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/calendar-events?start=2026-03-01&end=2026-04-01 - 200 274 application/json; charset=utf-8 57.9716ms

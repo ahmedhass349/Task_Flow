@@ -33,6 +33,14 @@ namespace TaskFlow.Migrations
                     b.Property<string>("AvatarUrl")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Company")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -49,6 +57,14 @@ namespace TaskFlow.Migrations
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Timezone")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
@@ -99,6 +115,65 @@ namespace TaskFlow.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("CalendarEvents");
+                });
+
+            modelBuilder.Entity("taskflow.Data.Entities.ChatbotConversation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ChatbotConversations");
+                });
+
+            modelBuilder.Entity("taskflow.Data.Entities.ChatbotMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ConversationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId");
+
+                    b.ToTable("ChatbotMessages");
                 });
 
             modelBuilder.Entity("taskflow.Data.Entities.Message", b =>
@@ -183,6 +258,9 @@ namespace TaskFlow.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsStarred")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -359,6 +437,28 @@ namespace TaskFlow.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("taskflow.Data.Entities.ChatbotConversation", b =>
+                {
+                    b.HasOne("taskflow.Data.Entities.AppUser", "User")
+                        .WithMany("ChatbotConversations")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("taskflow.Data.Entities.ChatbotMessage", b =>
+                {
+                    b.HasOne("taskflow.Data.Entities.ChatbotConversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+                });
+
             modelBuilder.Entity("taskflow.Data.Entities.Message", b =>
                 {
                     b.HasOne("taskflow.Data.Entities.AppUser", "Receiver")
@@ -492,6 +592,8 @@ namespace TaskFlow.Migrations
 
                     b.Navigation("CalendarEvents");
 
+                    b.Navigation("ChatbotConversations");
+
                     b.Navigation("Notifications");
 
                     b.Navigation("OwnedProjects");
@@ -507,6 +609,11 @@ namespace TaskFlow.Migrations
                     b.Navigation("TaskComments");
 
                     b.Navigation("TeamMemberships");
+                });
+
+            modelBuilder.Entity("taskflow.Data.Entities.ChatbotConversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("taskflow.Data.Entities.Project", b =>

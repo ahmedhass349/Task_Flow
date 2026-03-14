@@ -1,34 +1,16 @@
 import React, { useState, useMemo } from "react";
-import { Search, CheckSquare, AtSign, FolderKanban, Clock, ChevronDown, Lightbulb } from "lucide-react";
+import { Search, ChevronDown, Lightbulb } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
-
-interface Notif {
-  id: number;
-  icon: React.ElementType;
-  iconBg: string;
-  iconColor: string;
-  title: string;
-  body: string;
-  time: string;
-  unread: boolean;
-}
-
-const INITIAL: Notif[] = [
-  { id: 1, icon: CheckSquare,  iconBg: "bg-green-100",  iconColor: "text-green-600",  title: "Task completed",      body: 'Sarah Chen completed "Design system update"',       time: "2 min ago",  unread: true  },
-  { id: 2, icon: AtSign,       iconBg: "bg-blue-100",   iconColor: "text-blue-600",   title: "You were mentioned",  body: 'Mike Johnson mentioned you in "API Service"',        time: "14 min ago", unread: true  },
-  { id: 3, icon: FolderKanban, iconBg: "bg-purple-100", iconColor: "text-purple-600", title: "New project created", body: 'Alex Kim created project "Mobile Redesign"',         time: "1 hr ago",   unread: true  },
-  { id: 4, icon: Clock,        iconBg: "bg-orange-100", iconColor: "text-orange-600", title: "Deadline tomorrow",   body: 'Task "Fix checkout flow" is due tomorrow',           time: "3 hr ago",   unread: false },
-  { id: 5, icon: CheckSquare,  iconBg: "bg-green-100",  iconColor: "text-green-600",  title: "Task assigned",       body: 'Emily Rodriguez assigned "Write unit tests" to you', time: "Yesterday",  unread: false },
-];
+import { SEED_NOTIFICATIONS, NotificationItem } from "../data/notifications";
 
 export default function Notifications() {
-  const [notifs, setNotifs] = useState<Notif[]>(INITIAL);
+  const [notifs, setNotifs] = useState<NotificationItem[]>(SEED_NOTIFICATIONS);
   const [tab, setTab] = useState<"all" | "unread">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [groupBy] = useState("Date");
+  const groupBy = "Date";
 
   const visible = useMemo(() => {
     let list = tab === "unread" ? notifs.filter((n) => n.unread) : notifs;

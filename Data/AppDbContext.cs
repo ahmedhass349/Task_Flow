@@ -18,6 +18,8 @@ namespace taskflow.Data
         public DbSet<Message> Messages => Set<Message>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
+        public DbSet<ChatbotConversation> ChatbotConversations => Set<ChatbotConversation>();
+        public DbSet<ChatbotMessage> ChatbotMessages => Set<ChatbotMessage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,8 +31,15 @@ namespace taskflow.Data
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.Email).IsUnique();
                 entity.Property(e => e.FullName).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.FirstName).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.LastName).HasMaxLength(100).IsRequired();
                 entity.Property(e => e.Email).HasMaxLength(320).IsRequired();
                 entity.Property(e => e.PasswordHash).IsRequired();
+                entity.Property(e => e.Company).HasMaxLength(200);
+                entity.Property(e => e.Country).HasMaxLength(100);
+                entity.Property(e => e.Phone).HasMaxLength(30);
+                entity.Property(e => e.Timezone).HasMaxLength(100);
+                entity.Property(e => e.ResetToken).HasMaxLength(500);
             });
 
             // ── Project ───────────────────────────────────────────────────────
@@ -180,6 +189,31 @@ namespace taskflow.Data
                 entity.HasOne(ce => ce.Owner)
                       .WithMany(u => u.CalendarEvents)
                       .HasForeignKey(ce => ce.OwnerId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ── ChatbotConversation ───────────────────────────────────────────
+            modelBuilder.Entity<ChatbotConversation>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).HasMaxLength(500).IsRequired();
+
+                entity.HasOne(c => c.User)
+                      .WithMany(u => u.ChatbotConversations)
+                      .HasForeignKey(c => c.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ── ChatbotMessage ────────────────────────────────────────────────
+            modelBuilder.Entity<ChatbotMessage>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Role).HasMaxLength(20).IsRequired();
+                entity.Property(e => e.Text).IsRequired();
+
+                entity.HasOne(m => m.Conversation)
+                      .WithMany(c => c.Messages)
+                      .HasForeignKey(m => m.ConversationId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
         }
