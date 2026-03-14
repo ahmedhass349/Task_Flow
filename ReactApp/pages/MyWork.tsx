@@ -323,39 +323,202 @@ export default function MyWork() {
     }
 
     if (viewMode === "kanban") {
-      const columns = [
-        { key: "todo" as Status, title: "To Do" },
-        { key: "inProgress" as Status, title: "In Progress" },
-        { key: "review" as Status, title: "In Review" },
-        { key: "completed" as Status, title: "Completed" },
+      type KanbanCol = { key: Status; title: string; borderColor: string };
+
+      const kanbanColumns: KanbanCol[] = [
+        { key: "todo",       title: "To Do",       borderColor: "rgba(255, 167, 38, 0.70)"  },
+        { key: "inProgress", title: "In Progress", borderColor: "rgba(0, 102, 204, 0.70)"   },
+        { key: "review",     title: "In Review",   borderColor: "rgba(108, 75, 153, 0.70)"  },
+        { key: "completed",  title: "Completed",   borderColor: "rgba(0, 184, 148, 0.70)"   },
       ];
 
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {columns.map((column) => {
-            const columnTasks = visibleTasks.filter((task) => task.status === column.key);
-            return (
-              <section key={column.key} className="bg-white border border-gray-200 rounded-xl p-3 space-y-3">
-                <header className="flex items-center justify-between px-1">
-                  <h3 className="text-sm font-semibold text-gray-900">{column.title}</h3>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{columnTasks.length}</span>
-                </header>
+      const priorityDot: Record<Priority, string> = {
+        high:   "#EB5757",
+        medium: "#F2994A",
+        low:    "#219653",
+      };
 
-                <div className="space-y-2">
-                  {columnTasks.map((task) => (
-                    <article key={task.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                      <p className="text-sm font-medium text-gray-900">{task.title}</p>
-                      <p className="text-xs text-gray-500 mt-1">{task.project}</p>
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className={`text-xs px-2 py-1 rounded border ${priorityTone(task.priority)}`}>{task.priority}</span>
-                        <span className="text-xs text-gray-500">{task.dueDateLabel}</span>
+      const statusChip: Record<Status, { bg: string; color: string; label: string }> = {
+        todo:       { bg: "rgba(99, 110, 114, 0.10)", color: "#636E72", label: "To Do"     },
+        inProgress: { bg: "rgba(47, 128, 237, 0.10)", color: "#2F80ED", label: "Ongoing"   },
+        review:     { bg: "rgba(108, 75, 153, 0.10)", color: "#6C4B99", label: "In Review" },
+        completed:  { bg: "rgba(33, 150, 83, 0.10)",  color: "#219653", label: "Done"      },
+      };
+
+      return (
+        <div style={{ overflowX: "auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(280px, 1fr))", gap: 16, minWidth: 960 }}>
+            {kanbanColumns.map((col) => {
+              const colTasks = visibleTasks.filter((t) => t.status === col.key);
+              return (
+                <div key={col.key} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+                  {/* Column header */}
+                  <div style={{
+                    padding: "14px 16px 12px 16px",
+                    background: "#F9F9F9",
+                    borderTopLeftRadius: 16,
+                    borderTopRightRadius: 16,
+                    borderTop: `4px solid ${col.borderColor}`,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 17, fontFamily: "Roboto, sans-serif", fontWeight: 700, color: "#131313" }}>
+                        {col.title}
+                      </span>
+                      <div style={{
+                        background: "rgba(19, 19, 19, 0.10)",
+                        borderRadius: 22,
+                        padding: "4px 10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}>
+                        <span style={{ fontSize: 13, fontFamily: "Roboto, sans-serif", fontWeight: 800, color: "#131313" }}>
+                          {colTasks.length}
+                        </span>
                       </div>
-                    </article>
-                  ))}
+                    </div>
+                    {/* Add button */}
+                    <div style={{
+                      width: 28, height: 28,
+                      background: "#00B894",
+                      borderRadius: 6,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer",
+                    }}>
+                      <span style={{ color: "#fff", fontSize: 18, lineHeight: 1, fontWeight: 300, marginTop: -1 }}>+</span>
+                    </div>
+                  </div>
+
+                  {/* Task cards */}
+                  {colTasks.map((task) => {
+                    const chip = statusChip[task.status];
+                    const dot  = priorityDot[task.priority];
+                    return (
+                      <div key={task.id} style={{
+                        padding: 16,
+                        background: "#fff",
+                        borderRadius: 16,
+                        border: "1px solid #E0E0E0",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10,
+                      }}>
+
+                        {/* Top row: priority icon + title + status chip */}
+                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flex: 1, minWidth: 0 }}>
+                            {/* Priority flag icon */}
+                            <div style={{ width: 24, height: 24, borderRadius: 40, overflow: "hidden", flexShrink: 0, position: "relative" }}>
+                              <div style={{ width: 15.82, height: 13.99, left: 4.94, top: 5, position: "absolute", background: dot }} />
+                            </div>
+                            <span style={{ fontSize: 14, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#131313", lineHeight: "20px" }}>
+                              {task.title}
+                            </span>
+                          </div>
+                          {/* Status chip */}
+                          <div style={{ padding: "3px 8px", background: chip.bg, borderRadius: 16, flexShrink: 0 }}>
+                            <span style={{ fontSize: 11, fontFamily: "Inter, sans-serif", fontWeight: 500, color: chip.color, whiteSpace: "nowrap" }}>
+                              {chip.label}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <p style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 300, color: "#636E72", margin: 0, lineHeight: "18px" }}>
+                          {task.project} — work tracked for sprint delivery and review.
+                        </p>
+
+                        {/* Deadline row */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          {/* Calendar icon (orange rect) */}
+                          <div style={{ width: 16, height: 16, position: "relative", flexShrink: 0 }}>
+                            <div style={{ width: 12, height: 14, left: 2, top: 1, position: "absolute", background: "#FFA726", borderRadius: 2 }} />
+                          </div>
+                          <span style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#FFA726" }}>Deadline</span>
+                          <span style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#636E72" }}>:</span>
+                          <span style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#636E72" }}>{task.dueDateLabel}</span>
+                        </div>
+
+                        {/* Footer: avatars + action counts */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          {/* Avatars */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ display: "flex" }}>
+                              <img
+                                style={{ width: 28, height: 28, borderRadius: 28, border: "1.5px solid white", marginRight: -8, display: "block" }}
+                                src="https://placehold.co/28x28"
+                                alt=""
+                              />
+                              <img
+                                style={{ width: 28, height: 28, borderRadius: 28, border: "1.5px solid white", marginRight: -8, display: "block" }}
+                                src="https://placehold.co/28x28"
+                                alt=""
+                              />
+                              <div style={{
+                                width: 28, height: 28, borderRadius: 28,
+                                background: "#F2F2F2", border: "1.5px solid white",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                              }}>
+                                <span style={{ fontSize: 9, fontFamily: "Inter, sans-serif", fontWeight: 800, color: "#636E72" }}>+1</span>
+                              </div>
+                            </div>
+                            {/* Add member */}
+                            <div style={{
+                              width: 28, height: 28, borderRadius: 28,
+                              border: "1px solid #BDBDBD",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              marginLeft: 8,
+                            }}>
+                              <span style={{ fontSize: 15, color: "#BDBDBD", lineHeight: 1, fontWeight: 300 }}>+</span>
+                            </div>
+                          </div>
+
+                          {/* Attachment + comment counts */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            {/* Attachment */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                              <div style={{ width: 14, height: 16, position: "relative" }}>
+                                <div style={{ width: 10, height: 14, left: 2, top: 1, position: "absolute", background: "#BDBDBD", borderRadius: 2 }} />
+                              </div>
+                              <span style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 700, color: "#BDBDBD" }}>2</span>
+                            </div>
+                            {/* Message */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                              <div style={{ width: 14, height: 14, position: "relative" }}>
+                                <div style={{ width: 12, height: 11, left: 1, top: 1.5, position: "absolute", background: "#BDBDBD", borderRadius: 2 }} />
+                              </div>
+                              <span style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 700, color: "#BDBDBD" }}>3</span>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                    );
+                  })}
+
+                  {/* Empty column placeholder */}
+                  {colTasks.length === 0 && (
+                    <div style={{
+                      padding: "32px 16px",
+                      background: "#fff",
+                      borderRadius: 16,
+                      border: "1px dashed #E0E0E0",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}>
+                      <span style={{ fontSize: 13, fontFamily: "Inter, sans-serif", color: "#BDBDBD" }}>No tasks</span>
+                    </div>
+                  )}
+
                 </div>
-              </section>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       );
     }

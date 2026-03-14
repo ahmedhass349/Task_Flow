@@ -1841,16 +1841,78 @@ function MyWork() {
             return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-5", children: [activeTab !== "completed" && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [renderTaskGroup("Overdue", (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-5 text-red-600" }), grouped.overdue, "danger"), renderTaskGroup("Today", (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "size-5 text-amber-600" }), grouped.today, "warning"), renderTaskGroup("This Week", (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "size-5 text-blue-600" }), grouped.thisWeek), renderTaskGroup("Later", (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "size-5 text-gray-500" }), grouped.later)] })), renderTaskGroup("Completed", (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "size-5 text-green-600" }), grouped.completed)] }));
         }
         if (viewMode === "kanban") {
-            const columns = [
-                { key: "todo", title: "To Do" },
-                { key: "inProgress", title: "In Progress" },
-                { key: "review", title: "In Review" },
-                { key: "completed", title: "Completed" },
+            const kanbanColumns = [
+                { key: "todo", title: "To Do", borderColor: "rgba(255, 167, 38, 0.70)" },
+                { key: "inProgress", title: "In Progress", borderColor: "rgba(0, 102, 204, 0.70)" },
+                { key: "review", title: "In Review", borderColor: "rgba(108, 75, 153, 0.70)" },
+                { key: "completed", title: "Completed", borderColor: "rgba(0, 184, 148, 0.70)" },
             ];
-            return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4", children: columns.map((column) => {
-                    const columnTasks = visibleTasks.filter((task) => task.status === column.key);
-                    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("section", { className: "bg-white border border-gray-200 rounded-xl p-3 space-y-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("header", { className: "flex items-center justify-between px-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "text-sm font-semibold text-gray-900", children: column.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700", children: columnTasks.length })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "space-y-2", children: columnTasks.map((task) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("article", { className: "rounded-lg border border-gray-200 bg-gray-50 p-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm font-medium text-gray-900", children: task.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-1", children: task.project }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "mt-3 flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `text-xs px-2 py-1 rounded border ${priorityTone(task.priority)}`, children: task.priority }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-xs text-gray-500", children: task.dueDateLabel })] })] }, task.id))) })] }, column.key));
-                }) }));
+            const priorityDot = {
+                high: "#EB5757",
+                medium: "#F2994A",
+                low: "#219653",
+            };
+            const statusChip = {
+                todo: { bg: "rgba(99, 110, 114, 0.10)", color: "#636E72", label: "To Do" },
+                inProgress: { bg: "rgba(47, 128, 237, 0.10)", color: "#2F80ED", label: "Ongoing" },
+                review: { bg: "rgba(108, 75, 153, 0.10)", color: "#6C4B99", label: "In Review" },
+                completed: { bg: "rgba(33, 150, 83, 0.10)", color: "#219653", label: "Done" },
+            };
+            return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { overflowX: "auto" }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, minmax(280px, 1fr))", gap: 16, minWidth: 960 }, children: kanbanColumns.map((col) => {
+                        const colTasks = visibleTasks.filter((t) => t.status === col.key);
+                        return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: {
+                                        padding: "14px 16px 12px 16px",
+                                        background: "#F9F9F9",
+                                        borderTopLeftRadius: 16,
+                                        borderTopRightRadius: 16,
+                                        borderTop: `4px solid ${col.borderColor}`,
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                    }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 17, fontFamily: "Roboto, sans-serif", fontWeight: 700, color: "#131313" }, children: col.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                                        background: "rgba(19, 19, 19, 0.10)",
+                                                        borderRadius: 22,
+                                                        padding: "4px 10px",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                    }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 13, fontFamily: "Roboto, sans-serif", fontWeight: 800, color: "#131313" }, children: colTasks.length }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                                width: 28, height: 28,
+                                                background: "#00B894",
+                                                borderRadius: 6,
+                                                display: "flex", alignItems: "center", justifyContent: "center",
+                                                cursor: "pointer",
+                                            }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { color: "#fff", fontSize: 18, lineHeight: 1, fontWeight: 300, marginTop: -1 }, children: "+" }) })] }), colTasks.map((task) => {
+                                    const chip = statusChip[task.status];
+                                    const dot = priorityDot[task.priority];
+                                    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: {
+                                            padding: 16,
+                                            background: "#fff",
+                                            borderRadius: 16,
+                                            border: "1px solid #E0E0E0",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 10,
+                                        }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", gap: 8, flex: 1, minWidth: 0 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 24, height: 24, borderRadius: 40, overflow: "hidden", flexShrink: 0, position: "relative" }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 15.82, height: 13.99, left: 4.94, top: 5, position: "absolute", background: dot } }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 14, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#131313", lineHeight: "20px" }, children: task.title })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { padding: "3px 8px", background: chip.bg, borderRadius: 16, flexShrink: 0 }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 11, fontFamily: "Inter, sans-serif", fontWeight: 500, color: chip.color, whiteSpace: "nowrap" }, children: chip.label }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("p", { style: { fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 300, color: "#636E72", margin: 0, lineHeight: "18px" }, children: [task.project, " \u2014 work tracked for sprint delivery and review."] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 16, height: 16, position: "relative", flexShrink: 0 }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 12, height: 14, left: 2, top: 1, position: "absolute", background: "#FFA726", borderRadius: 2 } }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#FFA726" }, children: "Deadline" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#636E72" }, children: ":" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#636E72" }, children: task.dueDateLabel })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex" }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("img", { style: { width: 28, height: 28, borderRadius: 28, border: "1.5px solid white", marginRight: -8, display: "block" }, src: "https://placehold.co/28x28", alt: "" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("img", { style: { width: 28, height: 28, borderRadius: 28, border: "1.5px solid white", marginRight: -8, display: "block" }, src: "https://placehold.co/28x28", alt: "" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                                                            width: 28, height: 28, borderRadius: 28,
+                                                                            background: "#F2F2F2", border: "1.5px solid white",
+                                                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                                                        }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 9, fontFamily: "Inter, sans-serif", fontWeight: 800, color: "#636E72" }, children: "+1" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                                                    width: 28, height: 28, borderRadius: 28,
+                                                                    border: "1px solid #BDBDBD",
+                                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                                    marginLeft: 8,
+                                                                }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 15, color: "#BDBDBD", lineHeight: 1, fontWeight: 300 }, children: "+" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 3 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 14, height: 16, position: "relative" }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 10, height: 14, left: 2, top: 1, position: "absolute", background: "#BDBDBD", borderRadius: 2 } }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 700, color: "#BDBDBD" }, children: "2" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 3 }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 14, height: 14, position: "relative" }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 12, height: 11, left: 1, top: 1.5, position: "absolute", background: "#BDBDBD", borderRadius: 2 } }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 700, color: "#BDBDBD" }, children: "3" })] })] })] })] }, task.id));
+                                }), colTasks.length === 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                        padding: "32px 16px",
+                                        background: "#fff",
+                                        borderRadius: 16,
+                                        border: "1px dashed #E0E0E0",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 13, fontFamily: "Inter, sans-serif", color: "#BDBDBD" }, children: "No tasks" }) }))] }, col.key));
+                    }) }) }));
         }
         if (viewMode === "table") {
             const subTasks = {
