@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "fxkP64d82W8=",
+  "dgSpecHash": "VtFQ9Ka1LRU=",
   "success": true,
   "projectFilePath": "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Ahmed-Abdelbarr\\ASP .NET Core\\Task_Flow\\TaskFlow.csproj",
   "expectedPackageFiles": [
@@ -27,15 +27,5 @@
     "C:\\Users\\Ahmed Abdelbarr\\.nuget\\packages\\serilog.sinks.file\\5.0.0\\serilog.sinks.file.5.0.0.nupkg.sha512",
     "C:\\Users\\Ahmed Abdelbarr\\.nuget\\packages\\system.identitymodel.tokens.jwt\\7.0.3\\system.identitymodel.tokens.jwt.7.0.3.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1900",
-      "level": "Warning",
-      "message": "Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.",
-      "projectPath": "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Ahmed-Abdelbarr\\ASP .NET Core\\Task_Flow\\TaskFlow.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Ahmed-Abdelbarr\\ASP .NET Core\\Task_Flow\\TaskFlow.csproj",
-      "targetGraphs": []
-    }
-  ]
+  "logs": []
 }
