@@ -9,6 +9,7 @@ import NewTaskCard from "../Components/NewTaskCard";
 type Priority = "high" | "medium" | "low";
 type Status = "todo" | "inProgress" | "review" | "completed";
 type Tab = "assigned" | "today" | "upcoming" | "completed";
+type ViewMode = "default" | "kanban" | "table" | "gantt" | "calendar";
 
 interface Task {
   id: string;
@@ -17,6 +18,7 @@ interface Task {
   assignee: string;
   dueDateLabel: string;
   dueOrder: number;
+  dueDay?: number;
   priority: Priority;
   status: Status;
   starred?: boolean;
@@ -24,6 +26,7 @@ interface Task {
 
 export default function MyWork() {
   const [activeTab, setActiveTab] = useState<Tab>("assigned");
+  const [viewMode, setViewMode] = useState<ViewMode>("default");
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
   const [showNewTaskCard, setShowNewTaskCard] = useState(false);
@@ -48,6 +51,7 @@ export default function MyWork() {
       assignee: "You",
       dueDateLabel: "Overdue · Mar 10",
       dueOrder: 0,
+      dueDay: 10,
       priority: "high",
       status: "inProgress",
       starred: true,
@@ -59,6 +63,7 @@ export default function MyWork() {
       assignee: "You",
       dueDateLabel: "Overdue · Mar 11",
       dueOrder: 0,
+      dueDay: 11,
       priority: "high",
       status: "review",
     },
@@ -69,6 +74,7 @@ export default function MyWork() {
       assignee: "You",
       dueDateLabel: "Today",
       dueOrder: 1,
+      dueDay: 14,
       priority: "medium",
       status: "todo",
     },
@@ -79,6 +85,7 @@ export default function MyWork() {
       assignee: "You",
       dueDateLabel: "Today",
       dueOrder: 1,
+      dueDay: 14,
       priority: "high",
       status: "review",
       starred: true,
@@ -90,6 +97,7 @@ export default function MyWork() {
       assignee: "You",
       dueDateLabel: "Mar 16",
       dueOrder: 2,
+      dueDay: 16,
       priority: "low",
       status: "inProgress",
     },
@@ -100,6 +108,7 @@ export default function MyWork() {
       assignee: "You",
       dueDateLabel: "Mar 17",
       dueOrder: 2,
+      dueDay: 17,
       priority: "medium",
       status: "todo",
     },
@@ -110,6 +119,7 @@ export default function MyWork() {
       assignee: "You",
       dueDateLabel: "Mar 19",
       dueOrder: 3,
+      dueDay: 19,
       priority: "low",
       status: "todo",
     },
@@ -120,6 +130,7 @@ export default function MyWork() {
       assignee: "You",
       dueDateLabel: "Mar 20",
       dueOrder: 3,
+      dueDay: 20,
       priority: "medium",
       status: "inProgress",
     },
@@ -130,6 +141,7 @@ export default function MyWork() {
       assignee: "You",
       dueDateLabel: "Completed · Mar 13",
       dueOrder: 4,
+      dueDay: 13,
       priority: "medium",
       status: "completed",
     },
@@ -140,6 +152,7 @@ export default function MyWork() {
       assignee: "You",
       dueDateLabel: "Completed · Mar 12",
       dueOrder: 4,
+      dueDay: 12,
       priority: "high",
       status: "completed",
     },
@@ -208,6 +221,27 @@ export default function MyWork() {
     { key: "completed", label: "Completed", count: tasks.filter((task) => task.status === "completed").length },
   ];
 
+  const views: { key: ViewMode; label: string }[] = [
+    { key: "default", label: "Default" },
+    { key: "kanban", label: "Kanban" },
+    { key: "table", label: "Table" },
+    { key: "gantt", label: "Gantt" },
+    { key: "calendar", label: "Calendar" },
+  ];
+
+  const priorityTone = (priority: Priority) => {
+    if (priority === "high") return "bg-red-100 text-red-700 border-red-200";
+    if (priority === "medium") return "bg-amber-100 text-amber-700 border-amber-200";
+    return "bg-sky-100 text-sky-700 border-sky-200";
+  };
+
+  const statusTone = (status: Status) => {
+    if (status === "todo") return "bg-slate-100 text-slate-700";
+    if (status === "inProgress") return "bg-blue-100 text-blue-700";
+    if (status === "review") return "bg-violet-100 text-violet-700";
+    return "bg-green-100 text-green-700";
+  };
+
   const renderTaskGroup = (title: string, icon: React.ReactNode, groupTasks: Task[], tone: "neutral" | "warning" | "danger" = "neutral") => {
     if (!groupTasks.length) {
       return null;
@@ -256,6 +290,207 @@ export default function MyWork() {
           ))}
         </div>
       </section>
+    );
+  };
+
+  const renderView = () => {
+    if (visibleTasks.length === 0) {
+      return (
+        <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
+          <CircleEllipsis className="size-7 text-gray-400 mx-auto" />
+          <h3 className="text-lg font-semibold text-gray-900 mt-3">No tasks match your filters</h3>
+          <p className="text-sm text-gray-500 mt-1">Try changing the search text or priority filter.</p>
+        </div>
+      );
+    }
+
+    if (viewMode === "default") {
+      return (
+        <div className="space-y-5">
+          {activeTab !== "completed" && (
+            <>
+              {renderTaskGroup("Overdue", <AlertCircle className="size-5 text-red-600" />, grouped.overdue, "danger")}
+              {renderTaskGroup("Today", <Clock className="size-5 text-amber-600" />, grouped.today, "warning")}
+              {renderTaskGroup("This Week", <CheckSquare className="size-5 text-blue-600" />, grouped.thisWeek)}
+              {renderTaskGroup("Later", <Clock className="size-5 text-gray-500" />, grouped.later)}
+            </>
+          )}
+
+          {renderTaskGroup("Completed", <CheckSquare className="size-5 text-green-600" />, grouped.completed)}
+        </div>
+      );
+    }
+
+    if (viewMode === "kanban") {
+      const columns = [
+        { key: "todo" as Status, title: "To Do" },
+        { key: "inProgress" as Status, title: "In Progress" },
+        { key: "review" as Status, title: "In Review" },
+        { key: "completed" as Status, title: "Completed" },
+      ];
+
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {columns.map((column) => {
+            const columnTasks = visibleTasks.filter((task) => task.status === column.key);
+            return (
+              <section key={column.key} className="bg-white border border-gray-200 rounded-xl p-3 space-y-3">
+                <header className="flex items-center justify-between px-1">
+                  <h3 className="text-sm font-semibold text-gray-900">{column.title}</h3>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{columnTasks.length}</span>
+                </header>
+
+                <div className="space-y-2">
+                  {columnTasks.map((task) => (
+                    <article key={task.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                      <p className="text-xs text-gray-500 mt-1">{task.project}</p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className={`text-xs px-2 py-1 rounded border ${priorityTone(task.priority)}`}>{task.priority}</span>
+                        <span className="text-xs text-gray-500">{task.dueDateLabel}</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (viewMode === "table") {
+      return (
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200 text-left text-gray-600">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Task</th>
+                  <th className="px-4 py-3 font-medium">Project</th>
+                  <th className="px-4 py-3 font-medium">Assignee</th>
+                  <th className="px-4 py-3 font-medium">Due</th>
+                  <th className="px-4 py-3 font-medium">Priority</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleTasks.map((task) => (
+                  <tr key={task.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-900 font-medium">{task.title}</td>
+                    <td className="px-4 py-3 text-gray-600">{task.project}</td>
+                    <td className="px-4 py-3 text-gray-600">{task.assignee}</td>
+                    <td className="px-4 py-3 text-gray-600">{task.dueDateLabel}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs px-2 py-1 rounded border ${priorityTone(task.priority)}`}>{task.priority}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs px-2 py-1 rounded-full ${statusTone(task.status)}`}>
+                        {task.status === "inProgress" ? "In Progress" : task.status === "todo" ? "To Do" : task.status === "review" ? "Review" : "Completed"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    if (viewMode === "gantt") {
+      const timeAxis = ["W1", "W2", "W3", "W4", "W5"];
+
+      return (
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="grid grid-cols-[minmax(220px,1fr)_2fr] border-b border-gray-200 bg-gray-50 text-xs font-medium text-gray-600">
+            <div className="px-4 py-3">Task</div>
+            <div className="px-4 py-3 grid grid-cols-5 gap-2">
+              {timeAxis.map((slot) => (
+                <span key={slot}>{slot}</span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            {visibleTasks.map((task) => {
+              const start = Math.min(Math.max(task.dueOrder, 0), 4);
+              const width = task.status === "completed" ? 1 : task.priority === "high" ? 2 : 1;
+              return (
+                <div key={task.id} className="grid grid-cols-[minmax(220px,1fr)_2fr] border-b border-gray-100 last:border-0">
+                  <div className="px-4 py-3">
+                    <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{task.project}</p>
+                  </div>
+                  <div className="px-4 py-3">
+                    <div className="grid grid-cols-5 gap-2 h-full items-center">
+                      {timeAxis.map((_, index) => {
+                        const active = index >= start && index < start + width;
+                        return (
+                          <div
+                            key={`${task.id}-${index}`}
+                            className={`h-7 rounded ${active ? "bg-blue-500/80" : "bg-gray-100"}`}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    const days = Array.from({ length: 31 }, (_, index) => index + 1);
+    const eventsByDay = visibleTasks.reduce<Record<number, Task[]>>((acc, task) => {
+      if (!task.dueDay) return acc;
+      if (!acc[task.dueDay]) {
+        acc[task.dueDay] = [];
+      }
+      acc[task.dueDay].push(task);
+      return acc;
+    }, {});
+
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <div className="mb-4">
+          <h3 className="text-base font-semibold text-gray-900">March 2026</h3>
+          <p className="text-sm text-gray-500">Calendar view of your filtered tasks</p>
+        </div>
+
+        <div className="grid grid-cols-7 gap-2 text-xs text-gray-500 mb-2 px-1">
+          <span>Sun</span>
+          <span>Mon</span>
+          <span>Tue</span>
+          <span>Wed</span>
+          <span>Thu</span>
+          <span>Fri</span>
+          <span>Sat</span>
+        </div>
+
+        <div className="grid grid-cols-7 gap-2">
+          {days.map((day) => {
+            const dayEvents = eventsByDay[day] ?? [];
+            return (
+              <div key={day} className="min-h-24 rounded-lg border border-gray-200 p-2 bg-gray-50">
+                <div className="text-xs font-semibold text-gray-700">{day}</div>
+                <div className="mt-1 space-y-1">
+                  {dayEvents.slice(0, 2).map((task) => (
+                    <div key={task.id} className="text-[11px] rounded bg-blue-100 text-blue-700 px-1.5 py-0.5 truncate">
+                      {task.title}
+                    </div>
+                  ))}
+                  {dayEvents.length > 2 && (
+                    <div className="text-[11px] text-gray-500">+{dayEvents.length - 2} more</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     );
   };
 
@@ -326,6 +561,27 @@ export default function MyWork() {
               </nav>
             </div>
 
+            <div className="bg-white border border-gray-200 rounded-xl p-3">
+              <div className="flex flex-wrap gap-2">
+                {views.map((view) => {
+                  const active = viewMode === view.key;
+                  return (
+                    <button
+                      key={view.key}
+                      onClick={() => setViewMode(view.key)}
+                      className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                        active
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      {view.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
               <div className="relative w-full md:max-w-md">
                 <Search className="size-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -385,28 +641,7 @@ export default function MyWork() {
               </div>
             </div>
 
-            <div className="space-y-5">
-              {visibleTasks.length === 0 ? (
-                <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-                  <CircleEllipsis className="size-7 text-gray-400 mx-auto" />
-                  <h3 className="text-lg font-semibold text-gray-900 mt-3">No tasks match your filters</h3>
-                  <p className="text-sm text-gray-500 mt-1">Try changing the search text or priority filter.</p>
-                </div>
-              ) : (
-                <>
-                  {activeTab !== "completed" && (
-                    <>
-                      {renderTaskGroup("Overdue", <AlertCircle className="size-5 text-red-600" />, grouped.overdue, "danger")}
-                      {renderTaskGroup("Today", <Clock className="size-5 text-amber-600" />, grouped.today, "warning")}
-                      {renderTaskGroup("This Week", <CheckSquare className="size-5 text-blue-600" />, grouped.thisWeek)}
-                      {renderTaskGroup("Later", <Clock className="size-5 text-gray-500" />, grouped.later)}
-                    </>
-                  )}
-
-                  {renderTaskGroup("Completed", <CheckSquare className="size-5 text-green-600" />, grouped.completed)}
-                </>
-              )}
-            </div>
+            {renderView()}
           </div>
           <Footer />
         </main>
