@@ -1617,6 +1617,7 @@ function MyWork() {
     const [searchQuery, setSearchQuery] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
     const [priorityFilter, setPriorityFilter] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("all");
     const [showNewTaskCard, setShowNewTaskCard] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
+    const [expandedRowId, setExpandedRowId] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("t-001");
     (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
         if (!showNewTaskCard) {
             document.body.style.overflow = "";
@@ -1852,7 +1853,121 @@ function MyWork() {
                 }) }));
         }
         if (viewMode === "table") {
-            return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-white border border-gray-200 rounded-xl overflow-hidden", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "overflow-x-auto", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("table", { className: "w-full text-sm", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("thead", { className: "bg-gray-50 border-b border-gray-200 text-left text-gray-600", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("tr", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Task" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Project" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Assignee" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Due" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Priority" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("th", { className: "px-4 py-3 font-medium", children: "Status" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("tbody", { children: visibleTasks.map((task) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("tr", { className: "border-b border-gray-100 last:border-0 hover:bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3 text-gray-900 font-medium", children: task.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3 text-gray-600", children: task.project }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3 text-gray-600", children: task.assignee }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3 text-gray-600", children: task.dueDateLabel }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `text-xs px-2 py-1 rounded border ${priorityTone(task.priority)}`, children: task.priority }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("td", { className: "px-4 py-3", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `text-xs px-2 py-1 rounded-full ${statusTone(task.status)}`, children: task.status === "inProgress" ? "In Progress" : task.status === "todo" ? "To Do" : task.status === "review" ? "Review" : "Completed" }) })] }, task.id))) })] }) }) }));
+            const subTasks = {
+                "t-001": [
+                    { id: "st-1a", title: "Create empty state illustrations", dueDate: "Mar 11", priority: "low", status: "completed" },
+                    { id: "st-1b", title: "Write empty state copy", dueDate: "Mar 12", priority: "medium", status: "completed" },
+                    { id: "st-1c", title: "Implement UI component", dueDate: "Mar 14", priority: "high", status: "inProgress" },
+                    { id: "st-1d", title: "QA review", dueDate: "Mar 16", priority: "medium", status: "todo" },
+                ],
+            };
+            function getStatusBadge(s) {
+                const map = {
+                    inProgress: { bg: "#FFFBEB", border: "#C69F10", color: "#C9A41C", label: "In Progress" },
+                    review: { bg: "#EEF2FF", border: "#6366F1", color: "#4F46E5", label: "In Review" },
+                    todo: { bg: "#F8FAFC", border: "#94A3B8", color: "#64748B", label: "To Do" },
+                    completed: { bg: "#F3FFEB", border: "#47AD08", color: "#47AD08", label: "Completed" },
+                };
+                const t = map[s];
+                return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: {
+                        background: t.bg, border: `1px solid ${t.border}`, color: t.color,
+                        borderRadius: 100, fontSize: 12, fontWeight: 500,
+                        padding: "2px 10px", whiteSpace: "nowrap",
+                        fontFamily: "Open Sans, sans-serif",
+                    }, children: t.label }));
+            }
+            function getPriorityBadge(p) {
+                const map = {
+                    high: { bg: "#FFF2F3", border: "#C61F30", color: "#C61F30" },
+                    medium: { bg: "#FFFBEB", border: "#C69F10", color: "#C9A41C" },
+                    low: { bg: "#F3FFEB", border: "#47AD08", color: "#47AD08" },
+                };
+                const t = map[p];
+                const label = p.charAt(0).toUpperCase() + p.slice(1);
+                return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: {
+                        background: t.bg, border: `1px solid ${t.border}`, color: t.color,
+                        borderRadius: 100, fontSize: 12, fontWeight: 500,
+                        padding: "2px 10px", whiteSpace: "nowrap",
+                        fontFamily: "Open Sans, sans-serif",
+                    }, children: label }));
+            }
+            const colGrid = "52px minmax(180px,2fr) 1fr 1fr 110px 100px 120px";
+            const subColGrid = "40px 1fr 120px 110px 130px";
+            const headerColor = "#949494";
+            const headerFont = { fontSize: 14, fontWeight: 600, fontFamily: "Open Sans, sans-serif", color: headerColor };
+            const cellFont = { fontSize: 14, fontFamily: "Open Sans, sans-serif" };
+            const dividerColor = "#DCDCDC";
+            const purpleAccent = "#6C4B99";
+            return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: {
+                    background: "#fff",
+                    borderRadius: 12,
+                    boxShadow: "0px 4px 4px rgba(212,212,212,0.25)",
+                    overflow: "hidden",
+                }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { padding: "20px 24px 12px 24px" }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { style: { fontSize: 18, fontWeight: 600, fontFamily: "Open Sans, sans-serif", color: "#0A0A0A" }, children: "My Tasks" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: {
+                            display: "grid",
+                            gridTemplateColumns: colGrid,
+                            padding: "0 24px",
+                            borderBottom: `1px solid ${dividerColor}`,
+                            paddingBottom: 10,
+                            alignItems: "center",
+                            gap: 8,
+                        }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: headerFont, children: "Task" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: headerFont, children: "Project" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: headerFont, children: "Assignee" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: headerFont, children: "Due Date" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: headerFont, children: "Priority" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: headerFont, children: "Status" })] }), visibleTasks.map((task, idx) => {
+                        const isExpanded = expandedRowId === task.id;
+                        const hasChildren = !!subTasks[task.id];
+                        const isLast = idx === visibleTasks.length - 1;
+                        return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react__WEBPACK_IMPORTED_MODULE_1__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { onClick: () => hasChildren && setExpandedRowId(isExpanded ? null : task.id), style: {
+                                        display: "grid",
+                                        gridTemplateColumns: colGrid,
+                                        padding: "12px 24px",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        cursor: hasChildren ? "pointer" : "default",
+                                        borderTop: isExpanded ? `1px solid ${purpleAccent}` : "none",
+                                        borderBottom: isExpanded
+                                            ? "none"
+                                            : !isLast
+                                                ? `1px solid ${dividerColor}`
+                                                : "none",
+                                        background: "#fff",
+                                    }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { display: "flex", alignItems: "center", justifyContent: "center" }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                                    width: 24, height: 24, borderRadius: "50%",
+                                                    background: isExpanded ? purpleAccent : "#D9D9D9",
+                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                    flexShrink: 0,
+                                                }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                                        width: 10.67, height: 10.67,
+                                                        background: isExpanded ? "#fff" : "#555555",
+                                                        borderRadius: 2,
+                                                    } }) }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: Object.assign(Object.assign({}, cellFont), { fontWeight: 600, color: "#0A0A0A" }), children: task.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: Object.assign(Object.assign({}, cellFont), { color: "#555555" }), children: task.project }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: Object.assign(Object.assign({}, cellFont), { color: "#555555" }), children: task.assignee }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: Object.assign(Object.assign({}, cellFont), { color: "#555555" }), children: task.dueDateLabel }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { children: getPriorityBadge(task.priority) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { children: getStatusBadge(task.status) })] }), isExpanded && hasChildren && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: {
+                                        borderBottom: `1px solid ${purpleAccent}`,
+                                        background: "#FAF6FF",
+                                        borderLeft: `4px solid ${purpleAccent}`,
+                                        marginBottom: 0,
+                                    }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: {
+                                                display: "grid",
+                                                gridTemplateColumns: subColGrid,
+                                                padding: "8px 20px",
+                                                background: "#F6F6F6",
+                                                border: `1px solid ${dividerColor}`,
+                                                borderRadius: "4px 4px 0 0",
+                                                alignItems: "center",
+                                                gap: 8,
+                                            }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: Object.assign(Object.assign({}, headerFont), { fontSize: 12 }), children: "Sub-Task" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: Object.assign(Object.assign({}, headerFont), { fontSize: 12 }), children: "Due Date" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: Object.assign(Object.assign({}, headerFont), { fontSize: 12 }), children: "Priority" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: Object.assign(Object.assign({}, headerFont), { fontSize: 12 }), children: "Status" })] }), subTasks[task.id].map((sub) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { style: {
+                                                display: "grid",
+                                                gridTemplateColumns: subColGrid,
+                                                padding: "10px 20px",
+                                                background: "#fff",
+                                                border: `1px solid ${dividerColor}`,
+                                                borderTop: "none",
+                                                alignItems: "center",
+                                                gap: 8,
+                                            }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { display: "flex", alignItems: "center", justifyContent: "center" }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: {
+                                                            width: 20, height: 20, borderRadius: "50%",
+                                                            background: "#D9D9D9",
+                                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                                            flexShrink: 0,
+                                                        }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { width: 8, height: 8, background: "#555555", borderRadius: 1.5 } }) }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: Object.assign(Object.assign({}, cellFont), { fontSize: 13, color: "#0A0A0A" }), children: sub.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: Object.assign(Object.assign({}, cellFont), { fontSize: 13, color: "#555555" }), children: sub.dueDate }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { children: getPriorityBadge(sub.priority) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { children: getStatusBadge(sub.status) })] }, sub.id)))] })), isExpanded && !isLast && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { style: { borderBottom: `1px solid ${dividerColor}` } }))] }, task.id));
+                    })] }));
         }
         if (viewMode === "gantt") {
             const catColor = {

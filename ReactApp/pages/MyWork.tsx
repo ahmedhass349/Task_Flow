@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { CheckSquare, Clock, AlertCircle, Search, SlidersHorizontal, Star, CircleEllipsis } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Footer from "../Components/Footer";
@@ -30,6 +30,7 @@ export default function MyWork() {
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
   const [showNewTaskCard, setShowNewTaskCard] = useState(false);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>("t-001");
 
   useEffect(() => {
     if (!showNewTaskCard) {
@@ -360,40 +361,207 @@ export default function MyWork() {
     }
 
     if (viewMode === "table") {
+      const subTasks: Record<string, { id: string; title: string; dueDate: string; priority: Priority; status: Status }[]> = {
+        "t-001": [
+          { id: "st-1a", title: "Create empty state illustrations", dueDate: "Mar 11", priority: "low",    status: "completed"  },
+          { id: "st-1b", title: "Write empty state copy",           dueDate: "Mar 12", priority: "medium", status: "completed"  },
+          { id: "st-1c", title: "Implement UI component",           dueDate: "Mar 14", priority: "high",   status: "inProgress" },
+          { id: "st-1d", title: "QA review",                        dueDate: "Mar 16", priority: "medium", status: "todo"       },
+        ],
+      };
+
+      function getStatusBadge(s: Status) {
+        const map: Record<Status, { bg: string; border: string; color: string; label: string }> = {
+          inProgress: { bg: "#FFFBEB", border: "#C69F10", color: "#C9A41C", label: "In Progress" },
+          review:     { bg: "#EEF2FF", border: "#6366F1", color: "#4F46E5", label: "In Review"   },
+          todo:       { bg: "#F8FAFC", border: "#94A3B8", color: "#64748B", label: "To Do"       },
+          completed:  { bg: "#F3FFEB", border: "#47AD08", color: "#47AD08", label: "Completed"   },
+        };
+        const t = map[s];
+        return (
+          <span style={{
+            background: t.bg, border: `1px solid ${t.border}`, color: t.color,
+            borderRadius: 100, fontSize: 12, fontWeight: 500,
+            padding: "2px 10px", whiteSpace: "nowrap",
+            fontFamily: "Open Sans, sans-serif",
+          }}>{t.label}</span>
+        );
+      }
+
+      function getPriorityBadge(p: Priority) {
+        const map: Record<Priority, { bg: string; border: string; color: string }> = {
+          high:   { bg: "#FFF2F3", border: "#C61F30", color: "#C61F30" },
+          medium: { bg: "#FFFBEB", border: "#C69F10", color: "#C9A41C" },
+          low:    { bg: "#F3FFEB", border: "#47AD08", color: "#47AD08" },
+        };
+        const t = map[p];
+        const label = p.charAt(0).toUpperCase() + p.slice(1);
+        return (
+          <span style={{
+            background: t.bg, border: `1px solid ${t.border}`, color: t.color,
+            borderRadius: 100, fontSize: 12, fontWeight: 500,
+            padding: "2px 10px", whiteSpace: "nowrap",
+            fontFamily: "Open Sans, sans-serif",
+          }}>{label}</span>
+        );
+      }
+
+      const colGrid = "52px minmax(180px,2fr) 1fr 1fr 110px 100px 120px";
+      const subColGrid = "40px 1fr 120px 110px 130px";
+      const headerColor = "#949494";
+      const headerFont: React.CSSProperties = { fontSize: 14, fontWeight: 600, fontFamily: "Open Sans, sans-serif", color: headerColor };
+      const cellFont: React.CSSProperties = { fontSize: 14, fontFamily: "Open Sans, sans-serif" };
+      const dividerColor = "#DCDCDC";
+      const purpleAccent = "#6C4B99";
+
       return (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200 text-left text-gray-600">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Task</th>
-                  <th className="px-4 py-3 font-medium">Project</th>
-                  <th className="px-4 py-3 font-medium">Assignee</th>
-                  <th className="px-4 py-3 font-medium">Due</th>
-                  <th className="px-4 py-3 font-medium">Priority</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleTasks.map((task) => (
-                  <tr key={task.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-900 font-medium">{task.title}</td>
-                    <td className="px-4 py-3 text-gray-600">{task.project}</td>
-                    <td className="px-4 py-3 text-gray-600">{task.assignee}</td>
-                    <td className="px-4 py-3 text-gray-600">{task.dueDateLabel}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-1 rounded border ${priorityTone(task.priority)}`}>{task.priority}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-1 rounded-full ${statusTone(task.status)}`}>
-                        {task.status === "inProgress" ? "In Progress" : task.status === "todo" ? "To Do" : task.status === "review" ? "Review" : "Completed"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div style={{
+          background: "#fff",
+          borderRadius: 12,
+          boxShadow: "0px 4px 4px rgba(212,212,212,0.25)",
+          overflow: "hidden",
+        }}>
+          {/* Card header */}
+          <div style={{ padding: "20px 24px 12px 24px" }}>
+            <span style={{ fontSize: 18, fontWeight: 600, fontFamily: "Open Sans, sans-serif", color: "#0A0A0A" }}>
+              My Tasks
+            </span>
           </div>
+
+          {/* Column header row */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: colGrid,
+            padding: "0 24px",
+            borderBottom: `1px solid ${dividerColor}`,
+            paddingBottom: 10,
+            alignItems: "center",
+            gap: 8,
+          }}>
+            <div />
+            <div style={headerFont}>Task</div>
+            <div style={headerFont}>Project</div>
+            <div style={headerFont}>Assignee</div>
+            <div style={headerFont}>Due Date</div>
+            <div style={headerFont}>Priority</div>
+            <div style={headerFont}>Status</div>
+          </div>
+
+          {/* Rows */}
+          {visibleTasks.map((task, idx) => {
+            const isExpanded = expandedRowId === task.id;
+            const hasChildren = !!subTasks[task.id];
+            const isLast = idx === visibleTasks.length - 1;
+
+            return (
+              <Fragment key={task.id}>
+                {/* Main row */}
+                <div
+                  onClick={() => hasChildren && setExpandedRowId(isExpanded ? null : task.id)}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: colGrid,
+                    padding: "12px 24px",
+                    alignItems: "center",
+                    gap: 8,
+                    cursor: hasChildren ? "pointer" : "default",
+                    borderTop: isExpanded ? `1px solid ${purpleAccent}` : "none",
+                    borderBottom: isExpanded
+                      ? "none"
+                      : !isLast
+                        ? `1px solid ${dividerColor}`
+                        : "none",
+                    background: "#fff",
+                  }}
+                >
+                  {/* Bullet indicator */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{
+                      width: 24, height: 24, borderRadius: "50%",
+                      background: isExpanded ? purpleAccent : "#D9D9D9",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0,
+                    }}>
+                      <div style={{
+                        width: 10.67, height: 10.67,
+                        background: isExpanded ? "#fff" : "#555555",
+                        borderRadius: 2,
+                      }} />
+                    </div>
+                  </div>
+
+                  <div style={{ ...cellFont, fontWeight: 600, color: "#0A0A0A" }}>{task.title}</div>
+                  <div style={{ ...cellFont, color: "#555555" }}>{task.project}</div>
+                  <div style={{ ...cellFont, color: "#555555" }}>{task.assignee}</div>
+                  <div style={{ ...cellFont, color: "#555555" }}>{task.dueDateLabel}</div>
+                  <div>{getPriorityBadge(task.priority)}</div>
+                  <div>{getStatusBadge(task.status)}</div>
+                </div>
+
+                {/* Expanded sub-task panel */}
+                {isExpanded && hasChildren && (
+                  <div style={{
+                    borderBottom: `1px solid ${purpleAccent}`,
+                    background: "#FAF6FF",
+                    borderLeft: `4px solid ${purpleAccent}`,
+                    marginBottom: 0,
+                  }}>
+                    {/* Sub-panel header */}
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: subColGrid,
+                      padding: "8px 20px",
+                      background: "#F6F6F6",
+                      border: `1px solid ${dividerColor}`,
+                      borderRadius: "4px 4px 0 0",
+                      alignItems: "center",
+                      gap: 8,
+                    }}>
+                      <div />
+                      <div style={{ ...headerFont, fontSize: 12 }}>Sub-Task</div>
+                      <div style={{ ...headerFont, fontSize: 12 }}>Due Date</div>
+                      <div style={{ ...headerFont, fontSize: 12 }}>Priority</div>
+                      <div style={{ ...headerFont, fontSize: 12 }}>Status</div>
+                    </div>
+
+                    {/* Sub-rows */}
+                    {subTasks[task.id].map((sub) => (
+                      <div key={sub.id} style={{
+                        display: "grid",
+                        gridTemplateColumns: subColGrid,
+                        padding: "10px 20px",
+                        background: "#fff",
+                        border: `1px solid ${dividerColor}`,
+                        borderTop: "none",
+                        alignItems: "center",
+                        gap: 8,
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <div style={{
+                            width: 20, height: 20, borderRadius: "50%",
+                            background: "#D9D9D9",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            flexShrink: 0,
+                          }}>
+                            <div style={{ width: 8, height: 8, background: "#555555", borderRadius: 1.5 }} />
+                          </div>
+                        </div>
+                        <div style={{ ...cellFont, fontSize: 13, color: "#0A0A0A" }}>{sub.title}</div>
+                        <div style={{ ...cellFont, fontSize: 13, color: "#555555" }}>{sub.dueDate}</div>
+                        <div>{getPriorityBadge(sub.priority)}</div>
+                        <div>{getStatusBadge(sub.status)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Divider after expanded block (or regular rows) */}
+                {isExpanded && !isLast && (
+                  <div style={{ borderBottom: `1px solid ${dividerColor}` }} />
+                )}
+              </Fragment>
+            );
+          })}
         </div>
       );
     }
