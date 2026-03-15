@@ -81,10 +81,6 @@ export default function Login() {
 
         {/* Form */}
         <div className="flex-1 flex flex-col justify-center px-8 mx-auto w-full max-w-[460px] mt-[-200px]">
-          <div className="w-[345px]">
-          <h1 className="font-medium text-[20px] leading-[1.6] text-foreground tracking-[0.15px] mb-[48px] text-center">
-            Sign in
-          </h1>
 
           {/* Server error banner */}
           {authError && (
@@ -208,7 +204,6 @@ export default function Login() {
               </div>
             </div>
           </form>
-          </div>
         </div>
 
         {/* Footer */}

@@ -139,10 +139,7 @@ export default function Signup() {
         </div>
 
         {/* Form */}
-        <div className="flex-1 flex flex-col justify-center pl-[99px] pr-[40px]">
-          <h1 className="font-medium text-[20px] leading-[1.6] text-foreground tracking-[0.15px] mb-[40px]">
-            Sign up to TaskFlow Pro
-          </h1>
+        <div className="flex-1 flex flex-col justify-center px-8 mx-auto w-full max-w-[462px] mt-[-100px]">
 
           {/* Server error banner */}
           {authError && (
@@ -488,7 +485,7 @@ export default function Signup() {
         </div>
 
         {/* Footer */}
-        <div className="pb-[20px] pl-[99px]">
+        <div className="pb-[20px] px-8 mx-auto">
           <AuthFooter />
         </div>
       </div>
