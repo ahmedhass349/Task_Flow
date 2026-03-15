@@ -80,8 +80,9 @@ export default function Login() {
         </div>
 
         {/* Form */}
-        <div className="flex-1 flex flex-col justify-center pl-[55px] pr-[40px] max-w-[460px]">
-          <h1 className="font-medium text-[20px] leading-[1.6] text-foreground tracking-[0.15px] mb-[48px]">
+        <div className="flex-1 flex flex-col justify-center px-8 mx-auto w-full max-w-[460px] mt-[-200px]">
+          <div className="w-[345px]">
+          <h1 className="font-medium text-[20px] leading-[1.6] text-foreground tracking-[0.15px] mb-[48px] text-center">
             Sign in
           </h1>
 
@@ -207,6 +208,7 @@ export default function Login() {
               </div>
             </div>
           </form>
+          </div>
         </div>
 
         {/* Footer */}
