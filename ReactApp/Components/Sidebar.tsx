@@ -1,7 +1,8 @@
-import { LayoutDashboard, FolderKanban, MessageSquare, ClipboardList, Bell, User, Settings, Bot, LogOut } from "lucide-react";
-import { Link, useLocation } from "react-router";
+import { LayoutDashboard, FolderKanban, MessageSquare, ClipboardList, Bell, User, Settings, Bot, LogOut, Filter, CalendarDays } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router";
 import { useState } from "react";
 import { TaskFlowLogo } from "./TaskFlowLogo";
+import { useAuth } from "../context/AuthContext";
 
 interface NavItem {
   icon: React.ReactNode;
@@ -11,12 +12,16 @@ interface NavItem {
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   const navItems: NavItem[] = [
     { icon: <LayoutDashboard className="size-5 shrink-0" />, label: "Dashboard",     path: "/" },
     { icon: <FolderKanban  className="size-5 shrink-0" />, label: "Projects",      path: "/projects" },
     { icon: <ClipboardList  className="size-5 shrink-0" />, label: "My Tasks",      path: "/my-work" },
+    { icon: <CalendarDays  className="size-5 shrink-0" />, label: "Calendar",      path: "/calendar" },
+    { icon: <Filter        className="size-5 shrink-0" />, label: "Filters",       path: "/filters" },
     { icon: <MessageSquare className="size-5 shrink-0" />, label: "Messages",      path: "/message" },
     { icon: <Bell          className="size-5 shrink-0" />, label: "Notifications", path: "/notifications" },
     { icon: <User          className="size-5 shrink-0" />, label: "Users",         path: "/teams" },
@@ -83,10 +88,13 @@ export default function Sidebar() {
 
       {/* Log Out */}
       <div className="py-2 border-t border-gray-200">
-        <Link
-          to="/login"
+        <button
+          onClick={() => {
+            logout();
+            navigate("/login");
+          }}
           title={isCollapsed ? "Log Out" : undefined}
-          className="flex items-center gap-4 px-4 py-3 mx-2 rounded-[8px] text-[#878787] hover:bg-gray-100 transition-colors"
+          className="flex items-center gap-4 px-4 py-3 mx-2 rounded-[8px] text-[#878787] hover:bg-gray-100 transition-colors w-[calc(100%-16px)] cursor-pointer"
         >
           <LogOut className="size-5 shrink-0" />
           {!isCollapsed && (
@@ -94,7 +102,7 @@ export default function Sidebar() {
               Log Out
             </span>
           )}
-        </Link>
+        </button>
       </div>
     </div>
   );

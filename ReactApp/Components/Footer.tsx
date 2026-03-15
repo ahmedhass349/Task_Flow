@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Fragment } from "react";
 import { Github, Twitter, Linkedin } from "lucide-react";
 
 const COLUMNS = [
@@ -66,21 +66,25 @@ export default function Footer() {
               </span>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {col.links.map((text) => (
-                  <Link
+                  <button
                     key={text}
-                    to="#"
+                    type="button"
                     style={{
                       color: "#222222",
                       fontSize: 14,
                       fontWeight: 400,
                       lineHeight: "18px",
-                      textDecoration: "none",
+                      cursor: "pointer",
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      textAlign: "left",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                    onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.textDecoration = "underline")}
+                    onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.textDecoration = "none")}
                   >
                     {text}
-                  </Link>
+                  </button>
                 ))}
               </div>
             </div>
@@ -105,39 +109,41 @@ export default function Footer() {
         {/* Left: copyright + legal links */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <span style={{ color: "#222222", fontSize: 14, fontWeight: 400, lineHeight: "18px" }}>
-            © {new Date().getFullYear()} TaskFlow, Inc.
+            &copy; {new Date().getFullYear()} TaskFlow, Inc.
           </span>
           {BOTTOM_LINKS.map((text) => (
-            <>
-              <span key={`dot-${text}`} style={{ color: "#222222", fontSize: 14 }}>·</span>
-              <Link
-                key={text}
-                to="#"
+            <Fragment key={text}>
+              <span style={{ color: "#222222", fontSize: 14 }} aria-hidden="true">&middot;</span>
+              <button
+                type="button"
                 style={{
                   color: "#222222",
                   fontSize: 14,
                   fontWeight: 400,
                   lineHeight: "18px",
-                  textDecoration: "none",
+                  cursor: "pointer",
+                  background: "none",
+                  border: "none",
+                  padding: 0,
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.textDecoration = "underline")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.textDecoration = "none")}
               >
                 {text}
-              </Link>
-            </>
+              </button>
+            </Fragment>
           ))}
         </div>
 
         {/* Right: social icons */}
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <a href="https://github.com" target="_blank" rel="noreferrer" style={{ color: "#222222", display: "flex" }}>
+          <a href="https://github.com" target="_blank" rel="noreferrer" aria-label="GitHub" style={{ color: "#222222", display: "flex" }}>
             <Github size={18} />
           </a>
-          <a href="https://twitter.com" target="_blank" rel="noreferrer" style={{ color: "#222222", display: "flex" }}>
+          <a href="https://twitter.com" target="_blank" rel="noreferrer" aria-label="Twitter" style={{ color: "#222222", display: "flex" }}>
             <Twitter size={18} />
           </a>
-          <a href="https://linkedin.com" target="_blank" rel="noreferrer" style={{ color: "#222222", display: "flex" }}>
+          <a href="https://linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn" style={{ color: "#222222", display: "flex" }}>
             <Linkedin size={18} />
           </a>
         </div>

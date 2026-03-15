@@ -1,16 +1,47 @@
-import React, { useState, useMemo } from "react";
-import { Search, ChevronDown, Lightbulb } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Search, ChevronDown, Lightbulb, Bell } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
 import { SEED_NOTIFICATIONS, NotificationItem } from "../data/notifications";
+import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
 
 export default function Notifications() {
-  const [notifs, setNotifs] = useState<NotificationItem[]>(SEED_NOTIFICATIONS);
+  const [notifs, setNotifs] = useState<NotificationItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"all" | "unread">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const groupBy = "Date";
+
+  useEffect(() => {
+    // TODO: Replace with actual API call: api.get<NotificationItem[]>("/notifications")
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    const timer = setTimeout(() => {
+      if (!cancelled) {
+        setNotifs(SEED_NOTIFICATIONS);
+        setIsLoading(false);
+      }
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    setTimeout(() => {
+      setNotifs(SEED_NOTIFICATIONS);
+      setIsLoading(false);
+    }, 0);
+  };
 
   const visible = useMemo(() => {
     let list = tab === "unread" ? notifs.filter((n) => n.unread) : notifs;
@@ -77,7 +108,20 @@ export default function Notifications() {
               </span>
             </div>
 
-            {/* Toolbar */}
+            {/* Loading / Error / Empty */}
+            {isLoading && <PageLoading message="Loading notifications..." />}
+            {error && <PageError message={error} onRetry={handleRetry} />}
+            {!isLoading && !error && notifs.length === 0 && (
+              <PageEmpty
+                icon={Bell}
+                title="No notifications"
+                description="You're all caught up! New notifications will appear here."
+              />
+            )}
+
+            {!isLoading && !error && notifs.length > 0 && (
+              <>
+                {/* Toolbar */}
             <div className="flex items-center gap-2">
               {/* All / Unread tabs */}
               <div className="flex rounded-md overflow-hidden border border-[rgba(27,31,36,0.15)] shrink-0">
@@ -131,6 +175,7 @@ export default function Notifications() {
                   type="checkbox"
                   checked={allSelected}
                   onChange={toggleSelectAll}
+                  aria-label="Select all notifications"
                   className="w-3.5 h-3.5 rounded accent-[#0969DA] cursor-pointer"
                 />
                 <span className="text-xs font-semibold text-[#24292F]">Select all</span>
@@ -166,6 +211,7 @@ export default function Notifications() {
                           type="checkbox"
                           checked={selected.has(n.id)}
                           onChange={() => toggleSelect(n.id)}
+                          aria-label={`Select notification: ${n.title}`}
                           className="w-3.5 h-3.5 rounded accent-[#0969DA] cursor-pointer"
                         />
                       </div>
@@ -197,6 +243,7 @@ export default function Notifications() {
                         <button
                           onClick={() => (n.unread ? markRead(n.id) : markUnread(n.id))}
                           title={n.unread ? "Mark as read" : "Mark as unread"}
+                          aria-label={n.unread ? "Mark as read" : "Mark as unread"}
                           className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded-full border border-[rgba(27,31,36,0.15)] bg-[#F6F8FA] hover:bg-[#EEEFF2] flex items-center justify-center transition-opacity"
                         >
                           <span
@@ -247,6 +294,9 @@ export default function Notifications() {
                 </div>
               </div>
             </div>
+
+              </>
+            )}
 
           </div>
           <Footer />

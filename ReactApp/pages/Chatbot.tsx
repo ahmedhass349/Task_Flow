@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { FormEvent, useMemo, useRef, useState, useEffect } from "react";
 import {
   Bot,
   Send,
@@ -9,10 +9,12 @@ import {
   FileText,
   ListChecks,
   FolderKanban,
+  MessageSquare,
 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
+import { PageLoading, PageError } from "../Components/PageState";
 
 type MessageRole = "assistant" | "user";
 
@@ -77,10 +79,28 @@ const seedConversations: Conversation[] = [
 ];
 
 export default function Chatbot() {
-  const [conversations, setConversations] = useState<Conversation[]>(seedConversations);
-  const [activeConversationId, setActiveConversationId] = useState<number>(1);
+  /* ── Loading / error simulation ── */
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<number>(0);
   const [input, setInput] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        setConversations(seedConversations);
+        setActiveConversationId(1);
+        setLoading(false);
+      } catch {
+        setError("Failed to load chatbot data. Please try again.");
+        setLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const activeConversation = useMemo(
     () => conversations.find((conversation) => conversation.id === activeConversationId) ?? conversations[0],
@@ -167,9 +187,9 @@ export default function Chatbot() {
     requestAnimationFrame(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }));
   };
 
-  const submitMessage = (event?: FormEvent) => {
+  const submitMessage = (event?: FormEvent, overrideText?: string) => {
     event?.preventDefault();
-    const text = input.trim();
+    const text = (overrideText ?? input).trim();
     if (!text || !activeConversation) {
       return;
     }
@@ -206,8 +226,33 @@ export default function Chatbot() {
   };
 
   const submitPrompt = (prompt: string) => {
-    setInput(prompt);
+    submitMessage(undefined, prompt);
   };
+
+  /* ── Page states ── */
+  if (loading) {
+    return (
+      <div className="flex h-screen overflow-hidden bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header />
+          <PageLoading message="Loading chatbot..." />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen overflow-hidden bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header />
+          <PageError message={error} onRetry={() => window.location.reload()} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -226,6 +271,7 @@ export default function Chatbot() {
               <button
                 onClick={createConversation}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+                aria-label="Create new chat"
               >
                 <Plus className="size-4" />
                 New Chat
@@ -242,38 +288,45 @@ export default function Chatbot() {
                 </div>
 
                 <div className="max-h-[560px] overflow-y-auto">
-                  {conversations.map((conversation) => {
-                    const isActive = activeConversationId === conversation.id;
-                    return (
-                      <button
-                        key={conversation.id}
-                        onClick={() => setActiveConversationId(conversation.id)}
-                        className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-0 transition-colors ${
-                          isActive ? "bg-blue-50" : "hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className={`text-sm font-medium truncate ${isActive ? "text-blue-700" : "text-gray-900"}`}>
-                              {conversation.title}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">{conversation.updatedAt}</p>
-                          </div>
+                  {conversations.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-gray-400">
+                      <MessageSquare className="size-8 text-gray-300 mx-auto mb-2" />
+                      No conversations yet.
+                    </div>
+                  ) : (
+                    conversations.map((conversation) => {
+                      const isActive = activeConversationId === conversation.id;
+                      return (
+                        <button
+                          key={conversation.id}
+                          onClick={() => setActiveConversationId(conversation.id)}
+                          className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-0 transition-colors ${
+                            isActive ? "bg-blue-50" : "hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className={`text-sm font-medium truncate ${isActive ? "text-blue-700" : "text-gray-900"}`}>
+                                {conversation.title}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">{conversation.updatedAt}</p>
+                            </div>
 
-                          <span
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              removeConversation(conversation.id);
-                            }}
-                            className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                            aria-label="Delete chat"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                removeConversation(conversation.id);
+                              }}
+                              className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                              aria-label={`Delete chat: ${conversation.title}`}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </aside>
 
@@ -339,10 +392,12 @@ export default function Chatbot() {
                       onChange={(event) => setInput(event.target.value)}
                       placeholder="Ask the assistant anything about your tasks, projects, or workflow..."
                       className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-blue-200"
+                      aria-label="Chat input"
                     />
                     <button
                       type="submit"
                       className="size-10 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center justify-center"
+                      aria-label="Send message"
                     >
                       <Send className="size-4" />
                     </button>

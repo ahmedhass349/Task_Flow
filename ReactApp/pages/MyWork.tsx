@@ -1,1616 +1,301 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
-import { CheckSquare, Clock, AlertCircle, Search, SlidersHorizontal, Star, CircleEllipsis } from "lucide-react";
+// ── MyWork page: orchestrator ────────────────────────────────────────────
+//
+// Main "My Tasks" page. Manages state, tabs, filters, and delegates
+// rendering to extracted view components:
+//   - DefaultView  — grouped task list
+//   - KanbanView   — status-column board
+//   - TableView    — spreadsheet with sub-tasks
+//   - GanttView    — timeline chart
+//   - CalendarView — weekly time-grid
+//
+// Reduced from ~1823 lines to ~350 by extracting views into
+// ReactApp/Components/MyWork/*.tsx
+
+import { useEffect, useMemo, useState } from "react";
+import { Search, SlidersHorizontal, ClipboardList } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Footer from "../Components/Footer";
 import Header from "../Components/Header";
-import TaskItem from "../Components/TaskItem";
-import NewTaskCard from "../Components/NewTaskCard";
+import NewTaskCard, { type NewTaskData } from "../Components/NewTaskCard";
+import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
 
-type Priority = "high" | "medium" | "low";
-type Status = "todo" | "inProgress" | "review" | "completed";
+import type { MyWorkTask, Priority, Status } from "../Components/MyWork/types";
+import DefaultView from "../Components/MyWork/DefaultView";
+import KanbanView from "../Components/MyWork/KanbanView";
+import TableView from "../Components/MyWork/TableView";
+import GanttView from "../Components/MyWork/GanttView";
+import CalendarView from "../Components/MyWork/CalendarView";
+
 type Tab = "assigned" | "today" | "upcoming" | "completed";
 type ViewMode = "default" | "kanban" | "table" | "gantt" | "calendar";
 
-interface Task {
-  id: string;
-  title: string;
-  project: string;
-  assignee: string;
-  dueDateLabel: string;
-  dueOrder: number;
-  dueDay?: number;
-  priority: Priority;
-  status: Status;
-  starred?: boolean;
-}
+// ── Seed data (will be replaced by API call) ─────────────────────────────
+
+const SEED_TASKS: MyWorkTask[] = [
+  {
+    id: "t-001",
+    title: "Finalize onboarding empty states",
+    project: "Marketing Site",
+    assignee: "You",
+    dueDateLabel: "Overdue \u00B7 Mar 10",
+    dueOrder: 0,
+    dueDay: 10,
+    priority: "high",
+    status: "inProgress",
+    starred: true,
+  },
+  {
+    id: "t-002",
+    title: "Fix webhook retry edge-case",
+    project: "API Service",
+    assignee: "You",
+    dueDateLabel: "Overdue \u00B7 Mar 11",
+    dueOrder: 0,
+    dueDay: 11,
+    priority: "high",
+    status: "review",
+  },
+  {
+    id: "t-003",
+    title: "Prepare sprint retro notes",
+    project: "Team Ops",
+    assignee: "You",
+    dueDateLabel: "Today",
+    dueOrder: 1,
+    dueDay: 14,
+    priority: "medium",
+    status: "todo",
+  },
+  {
+    id: "t-004",
+    title: "Review auth PR #184",
+    project: "User Service",
+    assignee: "You",
+    dueDateLabel: "Today",
+    dueOrder: 1,
+    dueDay: 14,
+    priority: "high",
+    status: "review",
+    starred: true,
+  },
+  {
+    id: "t-005",
+    title: "Define task timeline animation",
+    project: "Mobile App",
+    assignee: "You",
+    dueDateLabel: "Mar 16",
+    dueOrder: 2,
+    dueDay: 16,
+    priority: "low",
+    status: "inProgress",
+  },
+  {
+    id: "t-006",
+    title: "Clean up stale feature flags",
+    project: "Admin Panel",
+    assignee: "You",
+    dueDateLabel: "Mar 17",
+    dueOrder: 2,
+    dueDay: 17,
+    priority: "medium",
+    status: "todo",
+  },
+  {
+    id: "t-007",
+    title: "Write release changelog",
+    project: "Developer Portal",
+    assignee: "You",
+    dueDateLabel: "Mar 19",
+    dueOrder: 3,
+    dueDay: 19,
+    priority: "low",
+    status: "todo",
+  },
+  {
+    id: "t-008",
+    title: "QA pass for notifications drawer",
+    project: "TaskFlow Web",
+    assignee: "You",
+    dueDateLabel: "Mar 20",
+    dueOrder: 3,
+    dueDay: 20,
+    priority: "medium",
+    status: "inProgress",
+  },
+  {
+    id: "t-009",
+    title: "Refactor dashboard card styles",
+    project: "Design System",
+    assignee: "You",
+    dueDateLabel: "Completed \u00B7 Mar 13",
+    dueOrder: 4,
+    dueDay: 13,
+    priority: "medium",
+    status: "completed",
+  },
+  {
+    id: "t-010",
+    title: "Patch timezone parsing bug",
+    project: "Calendar",
+    assignee: "You",
+    dueDateLabel: "Completed \u00B7 Mar 12",
+    dueOrder: 4,
+    dueDay: 12,
+    priority: "high",
+    status: "completed",
+  },
+];
+
+// ── Component ────────────────────────────────────────────────────────────
 
 export default function MyWork() {
+  const [tasks, setTasks] = useState<MyWorkTask[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("assigned");
   const [viewMode, setViewMode] = useState<ViewMode>("default");
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
   const [showNewTaskCard, setShowNewTaskCard] = useState(false);
-  const [expandedRowId, setExpandedRowId] = useState<string | null>("t-001");
 
+  // Simulate data fetch
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    const timer = setTimeout(() => {
+      if (!cancelled) {
+        setTasks(SEED_TASKS);
+        setIsLoading(false);
+      }
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    setTimeout(() => {
+      setTasks(SEED_TASKS);
+      setIsLoading(false);
+    }, 0);
+  };
+
+  // Lock body scroll when new-task modal is open
   useEffect(() => {
     if (!showNewTaskCard) {
       document.body.style.overflow = "";
       return;
     }
-
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
     };
   }, [showNewTaskCard]);
 
-  const tasks: Task[] = [
-    {
-      id: "t-001",
-      title: "Finalize onboarding empty states",
-      project: "Marketing Site",
-      assignee: "You",
-      dueDateLabel: "Overdue · Mar 10",
-      dueOrder: 0,
-      dueDay: 10,
-      priority: "high",
-      status: "inProgress",
-      starred: true,
-    },
-    {
-      id: "t-002",
-      title: "Fix webhook retry edge-case",
-      project: "API Service",
-      assignee: "You",
-      dueDateLabel: "Overdue · Mar 11",
-      dueOrder: 0,
-      dueDay: 11,
-      priority: "high",
-      status: "review",
-    },
-    {
-      id: "t-003",
-      title: "Prepare sprint retro notes",
-      project: "Team Ops",
-      assignee: "You",
-      dueDateLabel: "Today",
-      dueOrder: 1,
-      dueDay: 14,
-      priority: "medium",
-      status: "todo",
-    },
-    {
-      id: "t-004",
-      title: "Review auth PR #184",
-      project: "User Service",
-      assignee: "You",
-      dueDateLabel: "Today",
-      dueOrder: 1,
-      dueDay: 14,
-      priority: "high",
-      status: "review",
-      starred: true,
-    },
-    {
-      id: "t-005",
-      title: "Define task timeline animation",
-      project: "Mobile App",
-      assignee: "You",
-      dueDateLabel: "Mar 16",
-      dueOrder: 2,
-      dueDay: 16,
-      priority: "low",
-      status: "inProgress",
-    },
-    {
-      id: "t-006",
-      title: "Clean up stale feature flags",
-      project: "Admin Panel",
-      assignee: "You",
-      dueDateLabel: "Mar 17",
-      dueOrder: 2,
-      dueDay: 17,
-      priority: "medium",
-      status: "todo",
-    },
-    {
-      id: "t-007",
-      title: "Write release changelog",
-      project: "Developer Portal",
-      assignee: "You",
-      dueDateLabel: "Mar 19",
-      dueOrder: 3,
-      dueDay: 19,
-      priority: "low",
-      status: "todo",
-    },
-    {
-      id: "t-008",
-      title: "QA pass for notifications drawer",
-      project: "TaskFlow Web",
-      assignee: "You",
-      dueDateLabel: "Mar 20",
-      dueOrder: 3,
-      dueDay: 20,
-      priority: "medium",
-      status: "inProgress",
-    },
-    {
-      id: "t-009",
-      title: "Refactor dashboard card styles",
-      project: "Design System",
-      assignee: "You",
-      dueDateLabel: "Completed · Mar 13",
-      dueOrder: 4,
-      dueDay: 13,
-      priority: "medium",
-      status: "completed",
-    },
-    {
-      id: "t-010",
-      title: "Patch timezone parsing bug",
-      project: "Calendar",
-      assignee: "You",
-      dueDateLabel: "Completed · Mar 12",
-      dueOrder: 4,
-      dueDay: 12,
-      priority: "high",
-      status: "completed",
-    },
-  ];
+  // ── Derived data ────────────────────────────────────────────────────────
 
   const tabFilteredTasks = useMemo(() => {
     switch (activeTab) {
       case "today":
-        return tasks.filter((task) => task.dueOrder <= 1 && task.status !== "completed");
+        return tasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed");
       case "upcoming":
-        return tasks.filter((task) => task.dueOrder >= 2 && task.status !== "completed");
+        return tasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed");
       case "completed":
-        return tasks.filter((task) => task.status === "completed");
+        return tasks.filter((t) => t.status === "completed");
       default:
         return tasks;
     }
   }, [activeTab, tasks]);
 
   const visibleTasks = useMemo(() => {
-    return tabFilteredTasks.filter((task) => {
+    return tabFilteredTasks.filter((t) => {
       const matchesSearch =
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.project.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.project.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesPriority = priorityFilter === "all" || t.priority === priorityFilter;
       return matchesSearch && matchesPriority;
     });
   }, [tabFilteredTasks, searchQuery, priorityFilter]);
 
   const grouped = useMemo(() => {
     const base = {
-      overdue: [] as Task[],
-      today: [] as Task[],
-      thisWeek: [] as Task[],
-      later: [] as Task[],
-      completed: [] as Task[],
+      overdue: [] as MyWorkTask[],
+      today: [] as MyWorkTask[],
+      thisWeek: [] as MyWorkTask[],
+      later: [] as MyWorkTask[],
+      completed: [] as MyWorkTask[],
     };
 
-    visibleTasks.forEach((task) => {
-      if (task.status === "completed") {
-        base.completed.push(task);
-        return;
-      }
-
-      if (task.dueOrder === 0) {
-        base.overdue.push(task);
-      } else if (task.dueOrder === 1) {
-        base.today.push(task);
-      } else if (task.dueOrder === 2) {
-        base.thisWeek.push(task);
-      } else {
-        base.later.push(task);
-      }
+    visibleTasks.forEach((t) => {
+      if (t.status === "completed") { base.completed.push(t); return; }
+      if (t.dueOrder === 0)      base.overdue.push(t);
+      else if (t.dueOrder === 1) base.today.push(t);
+      else if (t.dueOrder === 2) base.thisWeek.push(t);
+      else                       base.later.push(t);
     });
 
     return base;
   }, [visibleTasks]);
 
-  const allOpen = visibleTasks.filter((task) => task.status !== "completed").length;
-  const highPriority = visibleTasks.filter((task) => task.priority === "high" && task.status !== "completed").length;
-  const inReview = visibleTasks.filter((task) => task.status === "review").length;
+  const allOpen = visibleTasks.filter((t) => t.status !== "completed").length;
+  const highPriority = visibleTasks.filter((t) => t.priority === "high" && t.status !== "completed").length;
+  const inReview = visibleTasks.filter((t) => t.status === "review").length;
 
   const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: "assigned", label: "Assigned to me", count: tasks.length },
-    { key: "today", label: "Today", count: tasks.filter((task) => task.dueOrder <= 1 && task.status !== "completed").length },
-    { key: "upcoming", label: "Upcoming", count: tasks.filter((task) => task.dueOrder >= 2 && task.status !== "completed").length },
-    { key: "completed", label: "Completed", count: tasks.filter((task) => task.status === "completed").length },
+    { key: "assigned",  label: "Assigned to me", count: tasks.length },
+    { key: "today",     label: "Today",          count: tasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed").length },
+    { key: "upcoming",  label: "Upcoming",       count: tasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed").length },
+    { key: "completed", label: "Completed",      count: tasks.filter((t) => t.status === "completed").length },
   ];
 
   const views: { key: ViewMode; label: string }[] = [
-    { key: "default", label: "Default" },
-    { key: "kanban", label: "Kanban" },
-    { key: "table", label: "Table" },
-    { key: "gantt", label: "Gantt" },
+    { key: "default",  label: "Default" },
+    { key: "kanban",   label: "Kanban" },
+    { key: "table",    label: "Table" },
+    { key: "gantt",    label: "Gantt" },
     { key: "calendar", label: "Calendar" },
   ];
 
-  const priorityTone = (priority: Priority) => {
-    if (priority === "high") return "bg-red-100 text-red-700 border-red-200";
-    if (priority === "medium") return "bg-amber-100 text-amber-700 border-amber-200";
-    return "bg-sky-100 text-sky-700 border-sky-200";
-  };
-
-  const statusTone = (status: Status) => {
-    if (status === "todo") return "bg-slate-100 text-slate-700";
-    if (status === "inProgress") return "bg-blue-100 text-blue-700";
-    if (status === "review") return "bg-violet-100 text-violet-700";
-    return "bg-green-100 text-green-700";
-  };
-
-  const renderTaskGroup = (title: string, icon: React.ReactNode, groupTasks: Task[], tone: "neutral" | "warning" | "danger" = "neutral") => {
-    if (!groupTasks.length) {
-      return null;
-    }
-
-    const headerTone =
-      tone === "danger"
-        ? "bg-red-50 border-red-200 text-red-900"
-        : tone === "warning"
-          ? "bg-amber-50 border-amber-200 text-amber-900"
-          : "bg-white border-gray-200 text-gray-900";
-
-    return (
-      <section className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className={`border-b px-6 py-4 flex items-center justify-between ${headerTone}`}>
-          <div className="flex items-center gap-2">
-            {icon}
-            <h2 className="font-semibold">{title}</h2>
-          </div>
-          <span className="text-xs px-2 py-1 rounded-full bg-white/80 border border-gray-200">
-            {groupTasks.length} task{groupTasks.length > 1 ? "s" : ""}
-          </span>
-        </div>
-
-        <div className="p-4 space-y-1">
-          {groupTasks.map((task) => (
-            <div key={task.id} className="flex items-center gap-3 rounded-lg border border-transparent hover:border-gray-100">
-              <div className="flex-1 min-w-0">
-                <TaskItem
-                  title={task.title}
-                  project={task.project}
-                  dueDate={task.dueDateLabel}
-                  assignee={task.assignee}
-                  priority={task.status === "completed" ? undefined : task.priority}
-                  completed={task.status === "completed"}
-                />
-              </div>
-
-              <button
-                aria-label={task.starred ? "Unstar task" : "Star task"}
-                className="mr-4 p-1.5 text-gray-400 hover:text-yellow-500 transition-colors"
-              >
-                <Star className={`size-4 ${task.starred ? "fill-yellow-400 text-yellow-500" : ""}`} />
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
-    );
-  };
+  // ── View dispatcher ─────────────────────────────────────────────────────
 
   const renderView = () => {
-    if (visibleTasks.length === 0) {
-      return (
-        <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-          <CircleEllipsis className="size-7 text-gray-400 mx-auto" />
-          <h3 className="text-lg font-semibold text-gray-900 mt-3">No tasks match your filters</h3>
-          <p className="text-sm text-gray-500 mt-1">Try changing the search text or priority filter.</p>
-        </div>
-      );
+    switch (viewMode) {
+      case "kanban":
+        return <KanbanView visibleTasks={visibleTasks} />;
+      case "table":
+        return <TableView visibleTasks={visibleTasks} />;
+      case "gantt":
+        return <GanttView />;
+      case "calendar":
+        return <CalendarView visibleTasks={visibleTasks} />;
+      default:
+        return <DefaultView visibleTasks={visibleTasks} grouped={grouped} activeTab={activeTab} />;
     }
-
-    if (viewMode === "default") {
-      return (
-        <div className="space-y-5">
-          {activeTab !== "completed" && (
-            <>
-              {renderTaskGroup("Overdue", <AlertCircle className="size-5 text-red-600" />, grouped.overdue, "danger")}
-              {renderTaskGroup("Today", <Clock className="size-5 text-amber-600" />, grouped.today, "warning")}
-              {renderTaskGroup("This Week", <CheckSquare className="size-5 text-blue-600" />, grouped.thisWeek)}
-              {renderTaskGroup("Later", <Clock className="size-5 text-gray-500" />, grouped.later)}
-            </>
-          )}
-
-          {renderTaskGroup("Completed", <CheckSquare className="size-5 text-green-600" />, grouped.completed)}
-        </div>
-      );
-    }
-
-    if (viewMode === "kanban") {
-      type KanbanCol = { key: Status; title: string; borderColor: string };
-
-      const kanbanColumns: KanbanCol[] = [
-        { key: "todo",       title: "To Do",       borderColor: "rgba(255, 167, 38, 0.70)"  },
-        { key: "inProgress", title: "In Progress", borderColor: "rgba(0, 102, 204, 0.70)"   },
-        { key: "review",     title: "In Review",   borderColor: "rgba(108, 75, 153, 0.70)"  },
-        { key: "completed",  title: "Completed",   borderColor: "rgba(0, 184, 148, 0.70)"   },
-      ];
-
-      const priorityDot: Record<Priority, string> = {
-        high:   "#EB5757",
-        medium: "#F2994A",
-        low:    "#219653",
-      };
-
-      const statusChip: Record<Status, { bg: string; color: string; label: string }> = {
-        todo:       { bg: "rgba(99, 110, 114, 0.10)", color: "#636E72", label: "To Do"     },
-        inProgress: { bg: "rgba(47, 128, 237, 0.10)", color: "#2F80ED", label: "Ongoing"   },
-        review:     { bg: "rgba(108, 75, 153, 0.10)", color: "#6C4B99", label: "In Review" },
-        completed:  { bg: "rgba(33, 150, 83, 0.10)",  color: "#219653", label: "Done"      },
-      };
-
-      return (
-        <div style={{ overflowX: "auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(280px, 1fr))", gap: 16, minWidth: 960 }}>
-            {kanbanColumns.map((col) => {
-              const colTasks = visibleTasks.filter((t) => t.status === col.key);
-              return (
-                <div key={col.key} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-
-                  {/* Column header */}
-                  <div style={{
-                    padding: "14px 16px 12px 16px",
-                    background: "#F9F9F9",
-                    borderTopLeftRadius: 16,
-                    borderTopRightRadius: 16,
-                    borderTop: `4px solid ${col.borderColor}`,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: 17, fontFamily: "Roboto, sans-serif", fontWeight: 700, color: "#131313" }}>
-                        {col.title}
-                      </span>
-                      <div style={{
-                        background: "rgba(19, 19, 19, 0.10)",
-                        borderRadius: 22,
-                        padding: "4px 10px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}>
-                        <span style={{ fontSize: 13, fontFamily: "Roboto, sans-serif", fontWeight: 800, color: "#131313" }}>
-                          {colTasks.length}
-                        </span>
-                      </div>
-                    </div>
-                    {/* Add button */}
-                    <div style={{
-                      width: 28, height: 28,
-                      background: "#00B894",
-                      borderRadius: 6,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      cursor: "pointer",
-                    }}>
-                      <span style={{ color: "#fff", fontSize: 18, lineHeight: 1, fontWeight: 300, marginTop: -1 }}>+</span>
-                    </div>
-                  </div>
-
-                  {/* Task cards */}
-                  {colTasks.map((task) => {
-                    const chip = statusChip[task.status];
-                    const dot  = priorityDot[task.priority];
-                    return (
-                      <div key={task.id} style={{
-                        padding: 16,
-                        background: "#fff",
-                        borderRadius: 16,
-                        border: "1px solid #E0E0E0",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 10,
-                      }}>
-
-                        {/* Top row: priority icon + title + status chip */}
-                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-                          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flex: 1, minWidth: 0 }}>
-                            {/* Priority flag icon */}
-                            <div style={{ width: 24, height: 24, borderRadius: 40, overflow: "hidden", flexShrink: 0, position: "relative" }}>
-                              <div style={{ width: 15.82, height: 13.99, left: 4.94, top: 5, position: "absolute", background: dot }} />
-                            </div>
-                            <span style={{ fontSize: 14, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#131313", lineHeight: "20px" }}>
-                              {task.title}
-                            </span>
-                          </div>
-                          {/* Status chip */}
-                          <div style={{ padding: "3px 8px", background: chip.bg, borderRadius: 16, flexShrink: 0 }}>
-                            <span style={{ fontSize: 11, fontFamily: "Inter, sans-serif", fontWeight: 500, color: chip.color, whiteSpace: "nowrap" }}>
-                              {chip.label}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Description */}
-                        <p style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 300, color: "#636E72", margin: 0, lineHeight: "18px" }}>
-                          {task.project} — work tracked for sprint delivery and review.
-                        </p>
-
-                        {/* Deadline row */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          {/* Calendar icon (orange rect) */}
-                          <div style={{ width: 16, height: 16, position: "relative", flexShrink: 0 }}>
-                            <div style={{ width: 12, height: 14, left: 2, top: 1, position: "absolute", background: "#FFA726", borderRadius: 2 }} />
-                          </div>
-                          <span style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#FFA726" }}>Deadline</span>
-                          <span style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#636E72" }}>:</span>
-                          <span style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 500, color: "#636E72" }}>{task.dueDateLabel}</span>
-                        </div>
-
-                        {/* Footer: avatars + action counts */}
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          {/* Avatars */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ display: "flex" }}>
-                              <img
-                                style={{ width: 28, height: 28, borderRadius: 28, border: "1.5px solid white", marginRight: -8, display: "block" }}
-                                src="https://placehold.co/28x28"
-                                alt=""
-                              />
-                              <img
-                                style={{ width: 28, height: 28, borderRadius: 28, border: "1.5px solid white", marginRight: -8, display: "block" }}
-                                src="https://placehold.co/28x28"
-                                alt=""
-                              />
-                              <div style={{
-                                width: 28, height: 28, borderRadius: 28,
-                                background: "#F2F2F2", border: "1.5px solid white",
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                              }}>
-                                <span style={{ fontSize: 9, fontFamily: "Inter, sans-serif", fontWeight: 800, color: "#636E72" }}>+1</span>
-                              </div>
-                            </div>
-                            {/* Add member */}
-                            <div style={{
-                              width: 28, height: 28, borderRadius: 28,
-                              border: "1px solid #BDBDBD",
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              marginLeft: 8,
-                            }}>
-                              <span style={{ fontSize: 15, color: "#BDBDBD", lineHeight: 1, fontWeight: 300 }}>+</span>
-                            </div>
-                          </div>
-
-                          {/* Attachment + comment counts */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            {/* Attachment */}
-                            <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                              <div style={{ width: 14, height: 16, position: "relative" }}>
-                                <div style={{ width: 10, height: 14, left: 2, top: 1, position: "absolute", background: "#BDBDBD", borderRadius: 2 }} />
-                              </div>
-                              <span style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 700, color: "#BDBDBD" }}>2</span>
-                            </div>
-                            {/* Message */}
-                            <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                              <div style={{ width: 14, height: 14, position: "relative" }}>
-                                <div style={{ width: 12, height: 11, left: 1, top: 1.5, position: "absolute", background: "#BDBDBD", borderRadius: 2 }} />
-                              </div>
-                              <span style={{ fontSize: 12, fontFamily: "Inter, sans-serif", fontWeight: 700, color: "#BDBDBD" }}>3</span>
-                            </div>
-                          </div>
-                        </div>
-
-                      </div>
-                    );
-                  })}
-
-                  {/* Empty column placeholder */}
-                  {colTasks.length === 0 && (
-                    <div style={{
-                      padding: "32px 16px",
-                      background: "#fff",
-                      borderRadius: 16,
-                      border: "1px dashed #E0E0E0",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}>
-                      <span style={{ fontSize: 13, fontFamily: "Inter, sans-serif", color: "#BDBDBD" }}>No tasks</span>
-                    </div>
-                  )}
-
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-
-    if (viewMode === "table") {
-      const subTasks: Record<string, { id: string; title: string; dueDate: string; priority: Priority; status: Status }[]> = {
-        "t-001": [
-          { id: "st-1a", title: "Create empty state illustrations", dueDate: "Mar 11", priority: "low",    status: "completed"  },
-          { id: "st-1b", title: "Write empty state copy",           dueDate: "Mar 12", priority: "medium", status: "completed"  },
-          { id: "st-1c", title: "Implement UI component",           dueDate: "Mar 14", priority: "high",   status: "inProgress" },
-          { id: "st-1d", title: "QA review",                        dueDate: "Mar 16", priority: "medium", status: "todo"       },
-        ],
-      };
-
-      function getStatusBadge(s: Status) {
-        const map: Record<Status, { bg: string; border: string; color: string; label: string }> = {
-          inProgress: { bg: "#FFFBEB", border: "#C69F10", color: "#C9A41C", label: "In Progress" },
-          review:     { bg: "#EEF2FF", border: "#6366F1", color: "#4F46E5", label: "In Review"   },
-          todo:       { bg: "#F8FAFC", border: "#94A3B8", color: "#64748B", label: "To Do"       },
-          completed:  { bg: "#F3FFEB", border: "#47AD08", color: "#47AD08", label: "Completed"   },
-        };
-        const t = map[s];
-        return (
-          <span style={{
-            background: t.bg, border: `1px solid ${t.border}`, color: t.color,
-            borderRadius: 100, fontSize: 12, fontWeight: 500,
-            padding: "2px 10px", whiteSpace: "nowrap",
-            fontFamily: "Open Sans, sans-serif",
-          }}>{t.label}</span>
-        );
-      }
-
-      function getPriorityBadge(p: Priority) {
-        const map: Record<Priority, { bg: string; border: string; color: string }> = {
-          high:   { bg: "#FFF2F3", border: "#C61F30", color: "#C61F30" },
-          medium: { bg: "#FFFBEB", border: "#C69F10", color: "#C9A41C" },
-          low:    { bg: "#F3FFEB", border: "#47AD08", color: "#47AD08" },
-        };
-        const t = map[p];
-        const label = p.charAt(0).toUpperCase() + p.slice(1);
-        return (
-          <span style={{
-            background: t.bg, border: `1px solid ${t.border}`, color: t.color,
-            borderRadius: 100, fontSize: 12, fontWeight: 500,
-            padding: "2px 10px", whiteSpace: "nowrap",
-            fontFamily: "Open Sans, sans-serif",
-          }}>{label}</span>
-        );
-      }
-
-      const colGrid = "52px minmax(180px,2fr) 1fr 1fr 110px 100px 120px";
-      const subColGrid = "40px 1fr 120px 110px 130px";
-      const headerColor = "#949494";
-      const headerFont: React.CSSProperties = { fontSize: 14, fontWeight: 600, fontFamily: "Open Sans, sans-serif", color: headerColor };
-      const cellFont: React.CSSProperties = { fontSize: 14, fontFamily: "Open Sans, sans-serif" };
-      const dividerColor = "#DCDCDC";
-      const purpleAccent = "#6C4B99";
-
-      return (
-        <div style={{
-          background: "#fff",
-          borderRadius: 12,
-          boxShadow: "0px 4px 4px rgba(212,212,212,0.25)",
-          overflow: "hidden",
-        }}>
-          {/* Card header */}
-          <div style={{ padding: "20px 24px 12px 24px" }}>
-            <span style={{ fontSize: 18, fontWeight: 600, fontFamily: "Open Sans, sans-serif", color: "#0A0A0A" }}>
-              My Tasks
-            </span>
-          </div>
-
-          {/* Column header row */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: colGrid,
-            padding: "0 24px",
-            borderBottom: `1px solid ${dividerColor}`,
-            paddingBottom: 10,
-            alignItems: "center",
-            gap: 8,
-          }}>
-            <div />
-            <div style={headerFont}>Task</div>
-            <div style={headerFont}>Project</div>
-            <div style={headerFont}>Assignee</div>
-            <div style={headerFont}>Due Date</div>
-            <div style={headerFont}>Priority</div>
-            <div style={headerFont}>Status</div>
-          </div>
-
-          {/* Rows */}
-          {visibleTasks.map((task, idx) => {
-            const isExpanded = expandedRowId === task.id;
-            const hasChildren = !!subTasks[task.id];
-            const isLast = idx === visibleTasks.length - 1;
-
-            return (
-              <Fragment key={task.id}>
-                {/* Main row */}
-                <div
-                  onClick={() => hasChildren && setExpandedRowId(isExpanded ? null : task.id)}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: colGrid,
-                    padding: "12px 24px",
-                    alignItems: "center",
-                    gap: 8,
-                    cursor: hasChildren ? "pointer" : "default",
-                    borderTop: isExpanded ? `1px solid ${purpleAccent}` : "none",
-                    borderBottom: isExpanded
-                      ? "none"
-                      : !isLast
-                        ? `1px solid ${dividerColor}`
-                        : "none",
-                    background: "#fff",
-                  }}
-                >
-                  {/* Bullet indicator */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{
-                      width: 24, height: 24, borderRadius: "50%",
-                      background: isExpanded ? purpleAccent : "#D9D9D9",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0,
-                    }}>
-                      <div style={{
-                        width: 10.67, height: 10.67,
-                        background: isExpanded ? "#fff" : "#555555",
-                        borderRadius: 2,
-                      }} />
-                    </div>
-                  </div>
-
-                  <div style={{ ...cellFont, fontWeight: 600, color: "#0A0A0A" }}>{task.title}</div>
-                  <div style={{ ...cellFont, color: "#555555" }}>{task.project}</div>
-                  <div style={{ ...cellFont, color: "#555555" }}>{task.assignee}</div>
-                  <div style={{ ...cellFont, color: "#555555" }}>{task.dueDateLabel}</div>
-                  <div>{getPriorityBadge(task.priority)}</div>
-                  <div>{getStatusBadge(task.status)}</div>
-                </div>
-
-                {/* Expanded sub-task panel */}
-                {isExpanded && hasChildren && (
-                  <div style={{
-                    borderBottom: `1px solid ${purpleAccent}`,
-                    background: "#FAF6FF",
-                    borderLeft: `4px solid ${purpleAccent}`,
-                    marginBottom: 0,
-                  }}>
-                    {/* Sub-panel header */}
-                    <div style={{
-                      display: "grid",
-                      gridTemplateColumns: subColGrid,
-                      padding: "8px 20px",
-                      background: "#F6F6F6",
-                      border: `1px solid ${dividerColor}`,
-                      borderRadius: "4px 4px 0 0",
-                      alignItems: "center",
-                      gap: 8,
-                    }}>
-                      <div />
-                      <div style={{ ...headerFont, fontSize: 12 }}>Sub-Task</div>
-                      <div style={{ ...headerFont, fontSize: 12 }}>Due Date</div>
-                      <div style={{ ...headerFont, fontSize: 12 }}>Priority</div>
-                      <div style={{ ...headerFont, fontSize: 12 }}>Status</div>
-                    </div>
-
-                    {/* Sub-rows */}
-                    {subTasks[task.id].map((sub) => (
-                      <div key={sub.id} style={{
-                        display: "grid",
-                        gridTemplateColumns: subColGrid,
-                        padding: "10px 20px",
-                        background: "#fff",
-                        border: `1px solid ${dividerColor}`,
-                        borderTop: "none",
-                        alignItems: "center",
-                        gap: 8,
-                      }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <div style={{
-                            width: 20, height: 20, borderRadius: "50%",
-                            background: "#D9D9D9",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            flexShrink: 0,
-                          }}>
-                            <div style={{ width: 8, height: 8, background: "#555555", borderRadius: 1.5 }} />
-                          </div>
-                        </div>
-                        <div style={{ ...cellFont, fontSize: 13, color: "#0A0A0A" }}>{sub.title}</div>
-                        <div style={{ ...cellFont, fontSize: 13, color: "#555555" }}>{sub.dueDate}</div>
-                        <div>{getPriorityBadge(sub.priority)}</div>
-                        <div>{getStatusBadge(sub.status)}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Divider after expanded block (or regular rows) */}
-                {isExpanded && !isLast && (
-                  <div style={{ borderBottom: `1px solid ${dividerColor}` }} />
-                )}
-              </Fragment>
-            );
-          })}
-        </div>
-      );
-    }
-
-    if (viewMode === "gantt") {
-      type GanttCat = "Data Collection" | "Data Analysis" | "Strategy Development" | "Final Delivery" | "Milestone";
-
-      interface GanttRow {
-        id: string;
-        title: string;
-        category: GanttCat;
-        durationLabel: string;
-        barLeft: number;
-        barWidth: number;
-        isMilestone?: boolean;
-      }
-
-      const catColor: Record<GanttCat, string> = {
-        "Data Collection":      "#2B7FFF",
-        "Data Analysis":        "#AD46FF",
-        "Strategy Development": "#00BC7D",
-        "Final Delivery":       "#FE9A00",
-        "Milestone":            "#0A0A0A",
-      };
-
-      const catTextColor: Record<GanttCat, string> = {
-        "Data Collection":      "#1447E6",
-        "Data Analysis":        "#8200DB",
-        "Strategy Development": "#007A55",
-        "Final Delivery":       "#BB4D00",
-        "Milestone":            "#C70036",
-      };
-
-      const weekLabels = ["Jan 19", "Jan 26", "Feb 2", "Feb 9", "Feb 16", "Feb 23", "Mar 2", "Mar 9", "Mar 16", "Mar 23"];
-
-      const ganttRows: GanttRow[] = [
-        { id: "g-01", title: "Extended Survey Distribution",             category: "Data Collection",      durationLabel: "3 weeks", barLeft: 0,      barWidth: 240    },
-        { id: "g-02", title: "Stakeholder Interviews",                   category: "Data Collection",      durationLabel: "1 day",   barLeft: 34.28,  barWidth: 11.43  },
-        { id: "g-03", title: "Competitor & Market Research",             category: "Data Collection",      durationLabel: "1 week",  barLeft: 0,      barWidth: 91.43  },
-        { id: "g-04", title: "Prepare Data for Analysis",                category: "Data Analysis",        durationLabel: "1 week",  barLeft: 240,    barWidth: 80     },
-        { id: "g-05", title: "Thematic & Statistical Analysis",          category: "Data Analysis",        durationLabel: "4 weeks", barLeft: 240,    barWidth: 320    },
-        { id: "g-06", title: "Midterm Presentation",                     category: "Milestone",            durationLabel: "1 day",   barLeft: 308.56, barWidth: 11.43, isMilestone: true },
-        { id: "g-07", title: "Draft AI-Driven L&D Adoption Strategies",  category: "Strategy Development", durationLabel: "4 days",  barLeft: 548.56, barWidth: 45.71  },
-        { id: "g-08", title: "Stakeholder Feedback Session",             category: "Strategy Development", durationLabel: "1 day",   barLeft: 571.43, barWidth: 11.43  },
-        { id: "g-09", title: "Review & Final Editing",                   category: "Final Delivery",       durationLabel: "1 week",  barLeft: 628.56, barWidth: 91.43  },
-        { id: "g-10", title: "Final Report Submission",                  category: "Milestone",            durationLabel: "1 day",   barLeft: 720,    barWidth: 11.43, isMilestone: true },
-      ];
-
-      const legendItems: Array<{ label: string; cat: GanttCat }> = [
-        { label: "Data Collection",      cat: "Data Collection"      },
-        { label: "Data Analysis",        cat: "Data Analysis"        },
-        { label: "Strategy Development", cat: "Strategy Development" },
-        { label: "Final Delivery",       cat: "Final Delivery"       },
-        { label: "Milestone",            cat: "Milestone"            },
-      ];
-
-      return (
-        <div style={{
-          alignSelf: "stretch",
-          paddingTop: 32, paddingBottom: 32, paddingLeft: 32, paddingRight: 32,
-          background: "white",
-          boxShadow: "0px 4px 6px -4px rgba(0,0,0,0.10), 0px 10px 15px -3px rgba(0,0,0,0.10)",
-          borderRadius: 14,
-          display: "flex", flexDirection: "column", gap: 32,
-        }}>
-          {/* ── Header ─────────────────────────────────────────────────────── */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <h2 style={{ margin: 0, color: "#0A0A0A", fontSize: 24, fontWeight: 500, lineHeight: "36px" }}>
-              Capstone Project Gantt Chart
-            </h2>
-            <p style={{ margin: 0, color: "#45556C", fontSize: 16, fontWeight: 400, lineHeight: "24px" }}>
-              Summary View - January to March 2026
-            </p>
-          </div>
-
-          {/* ── Body ───────────────────────────────────────────────────────── */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-
-            {/* Legend */}
-            <div style={{ borderBottom: "0.8px solid #E2E8F0", paddingBottom: 12, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-              {legendItems.map(({ label, cat }) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {cat === "Milestone" ? (
-                    <div style={{ width: 16, height: 16, position: "relative", overflow: "hidden", flexShrink: 0 }}>
-                      <div style={{
-                        width: 11.43, height: 11.43,
-                        position: "absolute", left: 2.28, top: 2.28,
-                        background: "#0A0A0A",
-                        outline: "1.14px #0A0A0A solid", outlineOffset: "-0.57px",
-                      }} />
-                    </div>
-                  ) : (
-                    <div style={{ width: 16, height: 16, background: catColor[cat], borderRadius: 4, flexShrink: 0 }} />
-                  )}
-                  <span style={{ color: "#314158", fontSize: 14, whiteSpace: "nowrap" }}>{label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Timeline */}
-            <div style={{ overflowX: "auto" }}>
-              <div style={{ minWidth: 976, display: "flex", flexDirection: "column", gap: 16 }}>
-
-                {/* Week header */}
-                <div style={{ paddingLeft: 256, display: "flex" }}>
-                  <div style={{ width: 720, display: "flex", borderBottom: "1.6px solid #CAD5E2" }}>
-                    {weekLabels.map((wl) => (
-                      <div key={wl} style={{ flex: "1 1 0", borderLeft: "0.8px solid #E2E8F0", paddingBottom: 8 }}>
-                        <span style={{ display: "block", textAlign: "center", color: "#314158", fontSize: 14, fontWeight: 500, lineHeight: "20px" }}>
-                          {wl}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Task rows */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {ganttRows.map((row) => {
-                    const color = catColor[row.category];
-                    return (
-                      <div key={row.id} style={{ position: "relative", height: 48 }}>
-
-                        {/* Label */}
-                        <div style={{ position: "absolute", left: 0, top: 6, width: 256, paddingRight: 16, display: "flex", flexDirection: "column" }}>
-                          <span style={{ color: "#0F172B", fontSize: 14, fontWeight: 500, lineHeight: "20px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-                            {row.title}
-                          </span>
-                          <span style={{ color: catTextColor[row.category], fontSize: 12, lineHeight: "16px" }}>
-                            {row.category} • {row.durationLabel}
-                          </span>
-                        </div>
-
-                        {/* Timeline track */}
-                        <div style={{ position: "absolute", left: 256, top: 0, width: 720, height: 48, overflow: "hidden" }}>
-                          {/* Grid lines */}
-                          <div style={{ position: "absolute", inset: 0, display: "flex" }}>
-                            {weekLabels.map((_, i) => (
-                              <div key={i} style={{ flex: "1 1 0", height: "100%", borderLeft: "0.8px solid #F1F5F9" }} />
-                            ))}
-                          </div>
-
-                          {/* Milestone marker */}
-                          {row.isMilestone && (
-                            <div style={{
-                              position: "absolute", left: row.barLeft, top: 8,
-                              width: 11.43, height: 24,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              boxShadow: "0px 3px 6px rgba(0,0,0,0.12)", overflow: "hidden",
-                            }}>
-                              <div style={{
-                                width: 9.52, height: 9.52,
-                                background: "#0A0A0A",
-                                outline: "0.95px #0A0A0A solid", outlineOffset: "-0.48px",
-                              }} />
-                            </div>
-                          )}
-
-                          {/* Duration bar */}
-                          {!row.isMilestone && (
-                            <div style={{
-                              position: "absolute", left: row.barLeft, top: 8,
-                              width: row.barWidth, height: 32,
-                              background: color, borderRadius: 10,
-                              boxShadow: "0px 2px 4px -2px rgba(0,0,0,0.10), 0px 4px 6px -1px rgba(0,0,0,0.10)",
-                              outline: `1.6px ${color} solid`, outlineOffset: "-1.6px",
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              overflow: "hidden",
-                            }}>
-                              {row.barWidth >= 40 && (
-                                <span style={{ color: "white", fontSize: 12, fontWeight: 500, lineHeight: "16px", whiteSpace: "nowrap" }}>
-                                  {row.durationLabel}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                      </div>
-                    );
-                  })}
-                </div>
-
-              </div>
-            </div>
-
-            {/* Footer */}
-            <p style={{ margin: 0, textAlign: "center", color: "#62748E", fontSize: 14, lineHeight: "20px" }}>
-              Current Date: March 14, 2026
-            </p>
-
-          </div>
-        </div>
-      );
-    }
-
-    // ─── Calendar view data ───────────────────────────────────────────────────
-    const today = 14; // "today" in our demo = March 14
-
-    // Mini-calendar: task dots per day (March 2026)
-    const taskDotsByDay = visibleTasks.reduce<Record<number, string[]>>((acc, task) => {
-      if (!task.dueDay) return acc;
-      if (!acc[task.dueDay]) acc[task.dueDay] = [];
-      const color =
-        task.priority === "high"
-          ? "#EF4444"
-          : task.priority === "medium"
-            ? "#A855F7"
-            : "#2DD4BF";
-      acc[task.dueDay].push(color);
-      return acc;
-    }, {});
-
-    // Week: Sun Mar 9 → Sat Mar 15 (week containing "today" = 14)
-    const weekDays = [
-      { label: "SUN", day: 9 },
-      { label: "MON", day: 10 },
-      { label: "TUE", day: 11 },
-      { label: "WED", day: 12 },
-      { label: "THU", day: 13 },
-      { label: "FRI", day: 14 }, // today
-      { label: "SAT", day: 15 },
-    ];
-
-    // Events mapped to the week grid (column index 0-6, startHour 7-17)
-    interface CalEvent {
-      col: number;
-      startHour: number;
-      durationHours: number;
-      title: string;
-      color: "blue" | "violet" | "amber";
-      hasLink?: boolean;
-    }
-
-    const calEvents: CalEvent[] = [
-      { col: 1, startHour: 8, durationHours: 1, title: "Monthly catch-up", color: "blue", hasLink: true },
-      { col: 1, startHour: 9, durationHours: 1, title: "Quarterly review", color: "blue", hasLink: true },
-      { col: 1, startHour: 10, durationHours: 1.5, title: "🍔 New Employee Welcome Lunch!", color: "violet" },
-      { col: 2, startHour: 9, durationHours: 1, title: "City Sales Pitch", color: "blue" },
-      { col: 3, startHour: 10, durationHours: 1, title: "Design Review", color: "blue", hasLink: true },
-      { col: 4, startHour: 8, durationHours: 1, title: "Follow up proposal", color: "amber", hasLink: true },
-      { col: 4, startHour: 11, durationHours: 1, title: "Visit to discuss improvements", color: "blue" },
-      { col: 5, startHour: 9, durationHours: 1, title: "Presentation of new products", color: "blue" },
-      { col: 5, startHour: 13, durationHours: 1, title: "Design Review", color: "blue", hasLink: true },
-      { col: 6, startHour: 10, durationHours: 1, title: "1:1 with Jon", color: "amber", hasLink: true },
-    ];
-
-    const colorClasses = {
-      blue: {
-        bg: "bg-sky-50",
-        bar: "bg-sky-400",
-        text: "text-sky-700",
-        time: "text-sky-600",
-      },
-      violet: {
-        bg: "bg-violet-50",
-        bar: "bg-violet-500",
-        text: "text-violet-700",
-        time: "text-violet-600",
-      },
-      amber: {
-        bg: "bg-amber-50",
-        bar: "bg-amber-400",
-        text: "text-amber-700",
-        time: "text-amber-600",
-      },
-    };
-
-    // Hour rows 7 AM → 5 PM (inclusive = 11 rows)
-    const hourRows = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
-    const ROW_HEIGHT = 64; // px per hour
-    const START_HOUR = 7;
-
-    // Mini-calendar helpers (March 2026 starts on Sunday)
-    const miniCalDays: (number | null)[] = [
-      ...Array(0).fill(null), // March starts on Sunday (offset = 0)
-      ...Array.from({ length: 31 }, (_, i) => i + 1),
-    ];
-    // Pad to complete last week
-    while (miniCalDays.length % 7 !== 0) miniCalDays.push(null);
-
-    return (
-      <div
-        className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
-        style={{ display: "flex", minHeight: 700, fontFamily: "'Inter', sans-serif" }}
-      >
-        {/* ── Dark left sidebar ─────────────────────────────────────────────── */}
-        <aside
-          style={{
-            width: 280,
-            flexShrink: 0,
-            background: "#18181B",
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-            padding: 16,
-            overflowY: "auto",
-          }}
-        >
-          {/* Traffic-light dots */}
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            {[
-              { bg: "#ED6B60", border: "#D05147" },
-              { bg: "#F5C250", border: "#D6A343" },
-              { bg: "#62C656", border: "#52A842" },
-            ].map((c, i) => (
-              <span
-                key={i}
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: "50%",
-                  background: c.bg,
-                  border: `1px solid ${c.border}`,
-                  display: "inline-block",
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Month + year */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ display: "flex", gap: 4, alignItems: "baseline" }}>
-              <span style={{ color: "white", fontSize: 22, fontWeight: 400 }}>March</span>
-              <span style={{ color: "#EF4444", fontSize: 22, fontWeight: 400 }}>2026</span>
-            </div>
-            <div style={{ display: "flex", gap: 0 }}>
-              {["‹", "›"].map((ch, i) => (
-                <button
-                  key={i}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "white",
-                    fontSize: 18,
-                    cursor: "pointer",
-                    padding: "0 4px",
-                    lineHeight: 1,
-                    opacity: 0.7,
-                  }}
-                >
-                  {ch}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Mini calendar */}
-          <div>
-            {/* Day-of-week headers */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(7, 1fr)",
-                marginBottom: 2,
-              }}
-            >
-              {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((d) => (
-                <div
-                  key={d}
-                  style={{
-                    textAlign: "center",
-                    fontSize: 9,
-                    fontWeight: 700,
-                    color: "#71717A",
-                    padding: "2px 0",
-                  }}
-                >
-                  {d}
-                </div>
-              ))}
-            </div>
-
-            {/* Day cells */}
-            {Array.from({ length: miniCalDays.length / 7 }, (_, week) => (
-              <div
-                key={week}
-                style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}
-              >
-                {miniCalDays.slice(week * 7, week * 7 + 7).map((day, cellIdx) => {
-                  const dots = day ? (taskDotsByDay[day] ?? []) : [];
-                  const isToday = day === today;
-                  const isOtherMonth = day === null;
-                  return (
-                    <div
-                      key={cellIdx}
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        padding: "2px 0",
-                      }}
-                    >
-                      {isToday ? (
-                        <div
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: "50%",
-                            background: "#3B82F6",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "white", lineHeight: 1 }}>
-                            {day}
-                          </span>
-                          {dots.length > 0 && (
-                            <span
-                              style={{
-                                width: 4,
-                                height: 4,
-                                borderRadius: "50%",
-                                background: "white",
-                                marginTop: 1,
-                              }}
-                            />
-                          )}
-                        </div>
-                      ) : (
-                        <>
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 600,
-                              color: isOtherMonth ? "#3F3F46" : day ? "white" : "transparent",
-                              lineHeight: "16px",
-                            }}
-                          >
-                            {day ?? ""}
-                          </span>
-                          {dots.length > 0 && (
-                            <div style={{ display: "flex", gap: 2, marginTop: 1 }}>
-                              {dots.slice(0, 3).map((dotColor, di) => (
-                                <span
-                                  key={di}
-                                  style={{
-                                    width: 4,
-                                    height: 4,
-                                    borderRadius: "50%",
-                                    background: dotColor,
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          )}
-                          {dots.length === 0 && (
-                            <div style={{ height: 6 }} /> // spacing placeholder
-                          )}
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-
-          {/* Divider */}
-          <div style={{ height: 1, background: "#27272A" }} />
-
-          {/* Upcoming events list */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, overflow: "hidden" }}>
-            {/* TODAY */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", gap: 4 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6" }}>TODAY</span>
-                <span style={{ fontSize: 12, color: "#3B82F6" }}>3/14/2026</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>
-                  ☀️ 55°<span style={{ fontWeight: 400 }}>/40°</span>
-                </span>
-              </div>
-            </div>
-
-            {[
-              { time: "8:30 AM", title: "Monthly catch-up", color: "#3B82F6", link: true },
-              { time: "9:00 AM", title: "Quarterly review", color: "#3B82F6", link: true },
-            ].map((ev, i) => (
-              <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: "50%",
-                      background: ev.color,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span style={{ fontSize: 10, color: "#A1A1AA", fontWeight: 600 }}>{ev.time}</span>
-                  {ev.link && (
-                    <span
-                      style={{
-                        fontSize: 9,
-                        background: "#A1A1AA",
-                        borderRadius: "50%",
-                        width: 12,
-                        height: 12,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#18181B",
-                        fontWeight: 700,
-                      }}
-                    >
-                      ⤴
-                    </span>
-                  )}
-                </div>
-                <div style={{ paddingLeft: 16, fontSize: 11, color: "white" }}>{ev.title}</div>
-              </div>
-            ))}
-
-            {/* Upcoming day headers */}
-            {[
-              {
-                label: "TOMORROW",
-                date: "3/15/2026",
-                events: [{ time: "9:00 AM", title: "City Sales Pitch", color: "#EC4899", link: true }],
-              },
-              {
-                label: "MONDAY",
-                date: "3/16/2026",
-                events: [
-                  { time: "10:00 AM", title: "Design Review", color: "#3B82F6", link: true },
-                  { time: "2:00 PM", title: "1:1 with Jon", color: "#FBBF24", link: true },
-                ],
-              },
-            ].map((section, si) => (
-              <div key={si} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>
-                      {section.label}
-                    </span>
-                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{section.date}</span>
-                  </div>
-                </div>
-                {section.events.map((ev, ei) => (
-                  <div key={ei} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          background: ev.color,
-                          flexShrink: 0,
-                        }}
-                      />
-                      <span style={{ fontSize: 10, color: "#A1A1AA", fontWeight: 600 }}>{ev.time}</span>
-                    </div>
-                    <div style={{ paddingLeft: 16, fontSize: 11, color: "white" }}>{ev.title}</div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </aside>
-
-        {/* ── Main week grid ────────────────────────────────────────────────── */}
-        <div
-          style={{
-            flex: 1,
-            background: "white",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
-        >
-          {/* Top toolbar */}
-          <div
-            style={{
-              padding: "10px 16px",
-              borderBottom: "1px solid #E5E7EB",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 8,
-              background: "white",
-            }}
-          >
-            {/* Prev / Today / Next */}
-            <div style={{ display: "flex", gap: 1 }}>
-              {["‹", "Today", "›"].map((label, li) => (
-                <button
-                  key={li}
-                  style={{
-                    padding: label === "Today" ? "4px 12px" : "4px 8px",
-                    background: "#F4F4F5",
-                    border: "none",
-                    borderRadius: li === 0 ? "6px 0 0 6px" : li === 2 ? "0 6px 6px 0" : 0,
-                    cursor: "pointer",
-                    fontSize: 12,
-                    color: "#18181B",
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Day / Week / Month / Year */}
-            <div style={{ display: "flex", gap: 4 }}>
-              {["Day", "Week", "Month", "Year"].map((label) => (
-                <button
-                  key={label}
-                  style={{
-                    padding: "4px 14px",
-                    borderRadius: 8,
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    background: label === "Week" ? "#DC2626" : "transparent",
-                    color: label === "Week" ? "white" : "#71717A",
-                    fontWeight: label === "Week" ? 600 : 400,
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Search */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                background: "#F4F4F5",
-                borderRadius: 6,
-                padding: "4px 8px",
-                minWidth: 160,
-              }}
-            >
-              <Search className="size-3.5 text-gray-400" />
-              <span style={{ fontSize: 12, color: "#A1A1AA" }}>Search</span>
-            </div>
-          </div>
-
-          {/* Grid area */}
-          <div style={{ flex: 1, overflowY: "auto", position: "relative" }}>
-            {/* Day column headers */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: `48px repeat(7, 1fr)`,
-                borderBottom: "1px solid #E5E7EB",
-                position: "sticky",
-                top: 0,
-                background: "white",
-                zIndex: 10,
-              }}
-            >
-              {/* timezone offset cell */}
-              <div
-                style={{
-                  padding: "6px 4px 4px",
-                  textAlign: "right",
-                  fontSize: 10,
-                  color: "#71717A",
-                  borderRight: "1px solid #E5E7EB",
-                }}
-              >
-                <div>EST</div>
-                <div>GMT-5</div>
-              </div>
-
-              {weekDays.map((wd) => {
-                const isWeekToday = wd.day === today;
-                return (
-                  <div
-                    key={wd.day}
-                    style={{
-                      padding: "6px 8px 4px",
-                      borderLeft: "1px solid #E5E7EB",
-                      background: isWeekToday ? "#EFF6FF" : wd.label === "SUN" || wd.label === "SAT" ? "#FAFAFA" : "white",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: "#71717A",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {wd.label}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 22,
-                        fontWeight: 400,
-                        color: isWeekToday ? "#1D4ED8" : "#111827",
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {wd.day}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Time + column grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: `48px repeat(7, 1fr)`,
-                position: "relative",
-              }}
-            >
-              {/* Time labels column */}
-              <div style={{ borderRight: "1px solid #E5E7EB" }}>
-                {hourRows.map((hour) => (
-                  <div
-                    key={hour}
-                    style={{
-                      height: ROW_HEIGHT,
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "flex-end",
-                      paddingRight: 6,
-                      paddingTop: 4,
-                      fontSize: 11,
-                      color: "#71717A",
-                      borderTop: "1px solid #E5E7EB",
-                      boxSizing: "border-box",
-                    }}
-                  >
-                    {hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
-                  </div>
-                ))}
-              </div>
-
-              {/* Day columns */}
-              {weekDays.map((wd, colIdx) => {
-                const isWeekend = wd.label === "SUN" || wd.label === "SAT";
-                const isWeekToday = wd.day === today;
-                const columnEvents = calEvents.filter((e) => e.col === colIdx);
-
-                return (
-                  <div
-                    key={wd.day}
-                    style={{
-                      position: "relative",
-                      borderLeft: "1px solid #E5E7EB",
-                      background: isWeekToday ? "#EFF6FF" : isWeekend ? "#FAFAFA" : "white",
-                    }}
-                  >
-                    {/* Hour-slot rows (just horizontal lines) */}
-                    {hourRows.map((hour) => (
-                      <div
-                        key={hour}
-                        style={{
-                          height: ROW_HEIGHT,
-                          borderTop: "1px solid #E5E7EB",
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        {/* half-hour divider */}
-                        <div
-                          style={{
-                            marginTop: ROW_HEIGHT / 2 - 1,
-                            borderTop: "1px dashed #F3F4F6",
-                          }}
-                        />
-                      </div>
-                    ))}
-
-                    {/* Event blocks absolutely positioned */}
-                    {columnEvents.map((ev, ei) => {
-                      const topPx = (ev.startHour - START_HOUR) * ROW_HEIGHT + 1;
-                      const heightPx = ev.durationHours * ROW_HEIGHT - 4;
-                      const cc = colorClasses[ev.color];
-                      const startLabel =
-                        ev.startHour < 12
-                          ? `${ev.startHour}:00 AM`
-                          : ev.startHour === 12
-                            ? "12:00 PM"
-                            : `${ev.startHour - 12}:00 PM`;
-                      return (
-                        <div
-                          key={ei}
-                          style={{
-                            position: "absolute",
-                            top: topPx,
-                            left: 2,
-                            right: 2,
-                            height: heightPx,
-                            borderRadius: 6,
-                            overflow: "hidden",
-                            display: "flex",
-                            cursor: "pointer",
-                          }}
-                          className={cc.bg}
-                        >
-                          {/* Colored left bar */}
-                          <div
-                            style={{ width: 3, flexShrink: 0 }}
-                            className={cc.bar}
-                          />
-                          <div
-                            style={{
-                              flex: 1,
-                              padding: "4px 5px",
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 2,
-                              overflow: "hidden",
-                            }}
-                          >
-                            <div
-                              style={{ display: "flex", alignItems: "center", gap: 3 }}
-                            >
-                              <span
-                                style={{ fontSize: 10, fontWeight: 600 }}
-                                className={cc.time}
-                              >
-                                {startLabel}
-                              </span>
-                              {ev.hasLink && (
-                                <span
-                                  style={{
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: "50%",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    fontSize: 8,
-                                    flexShrink: 0,
-                                  }}
-                                  className={`${cc.bar} text-white`}
-                                >
-                                  ⤴
-                                </span>
-                              )}
-                            </div>
-                            <span
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 600,
-                                lineHeight: 1.3,
-                                overflow: "hidden",
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                              }}
-                              className={cc.text}
-                            >
-                              {ev.title}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
   };
+
+  // ── Render ──────────────────────────────────────────────────────────────
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
-        
+
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto p-6 space-y-6">
+            {/* Page header */}
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">My Tasks</h1>
                 <p className="text-gray-600 mt-1">Prioritize and track everything currently on your plate</p>
               </div>
-
               <div className="flex items-center gap-2">
                 <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   Export
@@ -1624,143 +309,153 @@ export default function MyWork() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Open Tasks</p>
-                <p className="text-2xl font-bold text-gray-900 mt-2">{allOpen}</p>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">High Priority</p>
-                <p className="text-2xl font-bold text-red-600 mt-2">{highPriority}</p>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">In Review</p>
-                <p className="text-2xl font-bold text-amber-600 mt-2">{inReview}</p>
-              </div>
-            </div>
+            {/* Loading / Error / Empty */}
+            {isLoading && <PageLoading message="Loading your tasks..." />}
+            {error && <PageError message={error} onRetry={handleRetry} />}
+            {!isLoading && !error && tasks.length === 0 && (
+              <PageEmpty
+                icon={ClipboardList}
+                title="No tasks assigned"
+                description="You have no tasks right now. Create a new task or ask your team lead to assign work."
+                action={{ label: "New Task", onClick: () => setShowNewTaskCard(true) }}
+              />
+            )}
 
-            <div className="border-b border-gray-200">
-              <nav className="flex flex-wrap gap-5">
-                {tabs.map((tab) => {
-                  const active = activeTab === tab.key;
-                  return (
-                    <button
-                      key={tab.key}
-                      onClick={() => setActiveTab(tab.key)}
-                      className={`pb-3 border-b-2 font-medium text-sm transition-colors ${
-                        active
-                          ? "border-blue-600 text-blue-600"
-                          : "border-transparent text-gray-600 hover:text-gray-900"
-                      }`}
-                    >
-                      {tab.label}
-                      <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700">
-                        {tab.count}
-                      </span>
+            {!isLoading && !error && tasks.length > 0 && (
+              <>
+                {/* Summary cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <p className="text-xs uppercase tracking-wide text-gray-500">Open Tasks</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-2">{allOpen}</p>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <p className="text-xs uppercase tracking-wide text-gray-500">High Priority</p>
+                    <p className="text-2xl font-bold text-red-600 mt-2">{highPriority}</p>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <p className="text-xs uppercase tracking-wide text-gray-500">In Review</p>
+                    <p className="text-2xl font-bold text-amber-600 mt-2">{inReview}</p>
+                  </div>
+                </div>
+
+                {/* Tabs */}
+                <div className="border-b border-gray-200">
+                  <nav className="flex flex-wrap gap-5">
+                    {tabs.map((tab) => {
+                      const active = activeTab === tab.key;
+                      return (
+                        <button
+                          key={tab.key}
+                          onClick={() => setActiveTab(tab.key)}
+                          className={`pb-3 border-b-2 font-medium text-sm transition-colors ${
+                            active
+                              ? "border-blue-600 text-blue-600"
+                              : "border-transparent text-gray-600 hover:text-gray-900"
+                          }`}
+                        >
+                          {tab.label}
+                          <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700">
+                            {tab.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                {/* View switcher */}
+                <div className="bg-white border border-gray-200 rounded-xl p-3">
+                  <div className="flex flex-wrap gap-2">
+                    {views.map((view) => {
+                      const active = viewMode === view.key;
+                      return (
+                        <button
+                          key={view.key}
+                          onClick={() => setViewMode(view.key)}
+                          className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                            active
+                              ? "bg-slate-900 text-white border-slate-900"
+                              : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          {view.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Search + priority filter */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+                  <div className="relative w-full md:max-w-md">
+                    <Search className="size-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search tasks or projects"
+                      className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {(["all", "high", "medium", "low"] as const).map((p) => {
+                      const active = priorityFilter === p;
+                      const colorMap: Record<string, string> = {
+                        all:    active ? "bg-blue-600 text-white border-blue-600"   : "",
+                        high:   active ? "bg-red-600 text-white border-red-600"     : "",
+                        medium: active ? "bg-amber-600 text-white border-amber-600" : "",
+                        low:    active ? "bg-sky-600 text-white border-sky-600"     : "",
+                      };
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setPriorityFilter(p)}
+                          className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                            active
+                              ? colorMap[p]
+                              : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          {p.charAt(0).toUpperCase() + p.slice(1)}
+                        </button>
+                      );
+                    })}
+
+                    <button className="p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50" aria-label="More filters">
+                      <SlidersHorizontal className="size-4" />
                     </button>
-                  );
-                })}
-              </nav>
-            </div>
+                  </div>
+                </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
-              <div className="flex flex-wrap gap-2">
-                {views.map((view) => {
-                  const active = viewMode === view.key;
-                  return (
-                    <button
-                      key={view.key}
-                      onClick={() => setViewMode(view.key)}
-                      className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-                        active
-                          ? "bg-slate-900 text-white border-slate-900"
-                          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      {view.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-              <div className="relative w-full md:max-w-md">
-                <Search className="size-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search tasks or projects"
-                  className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPriorityFilter("all")}
-                  className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-                    priorityFilter === "all"
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setPriorityFilter("high")}
-                  className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-                    priorityFilter === "high"
-                      ? "bg-red-600 text-white border-red-600"
-                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  High
-                </button>
-                <button
-                  onClick={() => setPriorityFilter("medium")}
-                  className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-                    priorityFilter === "medium"
-                      ? "bg-amber-600 text-white border-amber-600"
-                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  Medium
-                </button>
-                <button
-                  onClick={() => setPriorityFilter("low")}
-                  className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-                    priorityFilter === "low"
-                      ? "bg-sky-600 text-white border-sky-600"
-                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  Low
-                </button>
-
-                <button className="p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50" aria-label="More filters">
-                  <SlidersHorizontal className="size-4" />
-                </button>
-              </div>
-            </div>
-
-            {renderView()}
+                {/* Active view */}
+                {renderView()}
+              </>
+            )}
           </div>
           <Footer />
         </main>
       </div>
 
+      {/* New Task Modal */}
       {showNewTaskCard && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Create new task"
           className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-900/30 backdrop-blur-sm px-4"
           onClick={() => setShowNewTaskCard(false)}
         >
           <div
             className="w-full max-w-3xl"
-            onClick={(event) => event.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <NewTaskCard
               onCancel={() => setShowNewTaskCard(false)}
-              onCreate={() => setShowNewTaskCard(false)}
+              onCreate={(_data: NewTaskData) => {
+                // TODO: Send _data to API when backend endpoint is ready
+                setShowNewTaskCard(false);
+              }}
             />
           </div>
         </div>

@@ -41,78 +41,94 @@ export default function CalendarWidget({ year, month, selectedDay, onYearChange,
   while (cells.length < 42) cells.push({ day: nd++, type: 'next' });
 
   return (
-    <div style={{ width: 372, paddingTop: 24, paddingBottom: 24, paddingLeft: 24, paddingRight: 24, background: '#171717', boxShadow: '0px 0px 6px rgba(0,0,0,0.25)', borderRadius: 30, display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div className="w-[372px] p-6 bg-[#171717] shadow-[0_0_6px_rgba(0,0,0,0.25)] rounded-[30px] flex flex-col gap-3.5">
 
       {/* Month navigation */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div onClick={goToPrevMonth} style={{ cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center' }}>
+      <div className="flex justify-between items-center">
+        <button
+          onClick={goToPrevMonth}
+          className="text-white flex items-center cursor-pointer"
+          aria-label="Previous month"
+        >
           <ChevronLeft size={20} />
-        </div>
-        <div style={{ color: 'white', fontSize: 20, fontFamily: 'Poppins', fontWeight: '500', letterSpacing: 0.60, wordWrap: 'break-word' }}>
+        </button>
+        <span className="text-white text-xl font-['Poppins'] font-medium tracking-[0.6px]">
           {MONTH_NAMES[month]} {selectedDay}, {year}
-        </div>
-        <div onClick={goToNextMonth} style={{ cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center' }}>
+        </span>
+        <button
+          onClick={goToNextMonth}
+          className="text-white flex items-center cursor-pointer"
+          aria-label="Next month"
+        >
           <ChevronRight size={20} />
-        </div>
+        </button>
       </div>
 
       {/* Year navigation */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
-        <div onClick={() => onYearChange(year - 1)} style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.60)', display: 'flex', alignItems: 'center' }}>
+      <div className="flex justify-center items-center gap-4">
+        <button
+          onClick={() => onYearChange(year - 1)}
+          className="text-white/60 flex items-center cursor-pointer"
+          aria-label="Previous year"
+        >
           <ChevronLeft size={16} />
-        </div>
-        <div style={{ color: 'rgba(255,255,255,0.60)', fontSize: 13, fontFamily: 'Poppins', fontWeight: '400', letterSpacing: 0.39 }}>
+        </button>
+        <span className="text-white/60 text-[13px] font-['Poppins'] font-normal tracking-[0.39px]">
           {year}
-        </div>
-        <div onClick={() => onYearChange(year + 1)} style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.60)', display: 'flex', alignItems: 'center' }}>
+        </span>
+        <button
+          onClick={() => onYearChange(year + 1)}
+          className="text-white/60 flex items-center cursor-pointer"
+          aria-label="Next year"
+        >
           <ChevronRight size={16} />
-        </div>
+        </button>
       </div>
 
       {/* Day-of-week headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+      <div className="grid grid-cols-7">
         {DAY_LABELS.map(d => (
-          <div key={d} style={{ height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 13, fontFamily: 'Poppins', fontWeight: '400', letterSpacing: 0.39 }}>
+          <div
+            key={d}
+            className="h-9 flex items-center justify-center text-white text-[13px] font-['Poppins'] font-normal tracking-[0.39px]"
+          >
             {d}
           </div>
         ))}
       </div>
 
       {/* Date cells */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', rowGap: 4 }}>
+      <div className="grid grid-cols-7 gap-y-1" role="grid" aria-label="Calendar dates">
         {cells.map((cell, i) => {
           const isSelected = cell.type === 'current' && cell.day === selectedDay;
           const isOther = cell.type !== 'current';
-          return (
-            <div
-              key={i}
-              onClick={() => { if (!isOther) onDaySelect(cell.day); }}
-              style={{
-                height: 36,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: isOther ? 'default' : 'pointer',
-              }}
-            >
-              <div style={{
-                width: 36,
-                height: 36,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '50%',
-                background: isSelected ? '#60B8FF' : 'transparent',
-                color: isSelected ? 'white' : isOther ? 'rgba(255,255,255,0.30)' : 'white',
-                fontSize: 14,
-                fontFamily: 'Poppins',
-                fontWeight: '400',
-                letterSpacing: 0.42,
-                transition: 'background 0.15s',
-              }}>
-                {cell.day}
+
+          const innerClasses = [
+            'w-9 h-9 flex items-center justify-center rounded-full text-sm font-[\'Poppins\'] font-normal tracking-[0.42px] transition-colors duration-150',
+            isSelected ? 'bg-[#60B8FF] text-white' : '',
+            !isSelected && isOther ? 'text-white/30' : '',
+            !isSelected && !isOther ? 'text-white hover:bg-white/10' : '',
+          ].join(' ');
+
+          if (isOther) {
+            return (
+              <div key={i} className="h-9 flex items-center justify-center" aria-hidden="true">
+                <div className={innerClasses}>{cell.day}</div>
               </div>
-            </div>
+            );
+          }
+
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onDaySelect(cell.day)}
+              className="h-9 flex items-center justify-center cursor-pointer bg-transparent border-0 p-0"
+              aria-label={`${MONTH_NAMES[month]} ${cell.day}`}
+              aria-pressed={isSelected}
+            >
+              <div className={innerClasses}>{cell.day}</div>
+            </button>
           );
         })}
       </div>

@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { Users, Mail, MoreVertical } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Footer from "../Components/Footer";
 import Header from "../Components/Header";
+import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
 
 interface TeamMember {
   id: string;
@@ -14,69 +16,103 @@ interface TeamMember {
   tasksInProgress: number;
 }
 
+// ── Seed data (will be replaced by API call) ─────────────────────────────
+
+const SEED_MEMBERS: TeamMember[] = [
+  {
+    id: "1",
+    name: "Sarah Chen",
+    role: "Product Designer",
+    avatar: "SC",
+    email: "sarah.chen@company.com",
+    status: "online",
+    tasksCompleted: 24,
+    tasksInProgress: 3,
+  },
+  {
+    id: "2",
+    name: "Mike Johnson",
+    role: "Frontend Developer",
+    avatar: "MJ",
+    email: "mike.johnson@company.com",
+    status: "online",
+    tasksCompleted: 18,
+    tasksInProgress: 5,
+  },
+  {
+    id: "3",
+    name: "Alex Kim",
+    role: "Backend Developer",
+    avatar: "AK",
+    email: "alex.kim@company.com",
+    status: "away",
+    tasksCompleted: 32,
+    tasksInProgress: 2,
+  },
+  {
+    id: "4",
+    name: "Emily Rodriguez",
+    role: "UX Researcher",
+    avatar: "ER",
+    email: "emily.rodriguez@company.com",
+    status: "online",
+    tasksCompleted: 15,
+    tasksInProgress: 4,
+  },
+  {
+    id: "5",
+    name: "David Lee",
+    role: "DevOps Engineer",
+    avatar: "DL",
+    email: "david.lee@company.com",
+    status: "offline",
+    tasksCompleted: 28,
+    tasksInProgress: 1,
+  },
+  {
+    id: "6",
+    name: "Jessica Taylor",
+    role: "Product Manager",
+    avatar: "JT",
+    email: "jessica.taylor@company.com",
+    status: "online",
+    tasksCompleted: 20,
+    tasksInProgress: 6,
+  },
+];
+
 export default function Teams() {
-  const teamMembers: TeamMember[] = [
-    {
-      id: "1",
-      name: "Sarah Chen",
-      role: "Product Designer",
-      avatar: "SC",
-      email: "sarah.chen@company.com",
-      status: "online",
-      tasksCompleted: 24,
-      tasksInProgress: 3,
-    },
-    {
-      id: "2",
-      name: "Mike Johnson",
-      role: "Frontend Developer",
-      avatar: "MJ",
-      email: "mike.johnson@company.com",
-      status: "online",
-      tasksCompleted: 18,
-      tasksInProgress: 5,
-    },
-    {
-      id: "3",
-      name: "Alex Kim",
-      role: "Backend Developer",
-      avatar: "AK",
-      email: "alex.kim@company.com",
-      status: "away",
-      tasksCompleted: 32,
-      tasksInProgress: 2,
-    },
-    {
-      id: "4",
-      name: "Emily Rodriguez",
-      role: "UX Researcher",
-      avatar: "ER",
-      email: "emily.rodriguez@company.com",
-      status: "online",
-      tasksCompleted: 15,
-      tasksInProgress: 4,
-    },
-    {
-      id: "5",
-      name: "David Lee",
-      role: "DevOps Engineer",
-      avatar: "DL",
-      email: "david.lee@company.com",
-      status: "offline",
-      tasksCompleted: 28,
-      tasksInProgress: 1,
-    },
-    {
-      id: "6",
-      name: "Jessica Taylor",
-      role: "Product Manager",
-      avatar: "JT",
-      email: "jessica.taylor@company.com",
-      status: "online",
-      tasksCompleted: 20,
-      tasksInProgress: 6,
-    },
-  ];
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // TODO: Replace with actual API call: api.get<TeamMember[]>("/teams/members")
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    const timer = setTimeout(() => {
+      if (!cancelled) {
+        setTeamMembers(SEED_MEMBERS);
+        setIsLoading(false);
+      }
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    setTimeout(() => {
+      setTeamMembers(SEED_MEMBERS);
+      setIsLoading(false);
+    }, 0);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -123,105 +159,121 @@ export default function Teams() {
               </button>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <Users className="size-6 text-blue-600" />
+            {/* Loading / Error / Empty */}
+            {isLoading && <PageLoading message="Loading team members..." />}
+            {error && <PageError message={error} onRetry={handleRetry} />}
+            {!isLoading && !error && teamMembers.length === 0 && (
+              <PageEmpty
+                icon={Users}
+                title="No team members yet"
+                description="Invite your first team member to start collaborating."
+                action={{ label: "Invite Members", onClick: () => {} }}
+              />
+            )}
+
+            {!isLoading && !error && teamMembers.length > 0 && (
+              <>
+                {/* Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white border border-gray-200 rounded-xl p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-100 p-3 rounded-lg">
+                        <Users className="size-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Total Members</p>
+                        <p className="text-2xl font-bold text-gray-900">{teamMembers.length}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Total Members</p>
-                    <p className="text-2xl font-bold text-gray-900">{teamMembers.length}</p>
+
+                  <div className="bg-white border border-gray-200 rounded-xl p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-green-100 p-3 rounded-lg">
+                        <div className="size-3 bg-green-500 rounded-full" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Online Now</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {teamMembers.filter((m) => m.status === "online").length}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-xl p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-purple-100 p-3 rounded-lg">
+                        <span className="text-xl font-bold text-purple-600">
+                          {teamMembers.reduce((acc, m) => acc + m.tasksInProgress, 0)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Active Tasks</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {teamMembers.reduce((acc, m) => acc + m.tasksCompleted, 0)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-green-100 p-3 rounded-lg">
-                    <div className="size-3 bg-green-500 rounded-full" />
+                {/* Team Members Grid */}
+                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="border-b border-gray-200 px-6 py-4">
+                    <h2 className="font-semibold text-gray-900">Team Members</h2>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Online Now</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {teamMembers.filter((m) => m.status === "online").length}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-purple-100 p-3 rounded-lg">
-                    <span className="text-xl font-bold text-purple-600">
-                      {teamMembers.reduce((acc, m) => acc + m.tasksInProgress, 0)}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Active Tasks</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {teamMembers.reduce((acc, m) => acc + m.tasksCompleted, 0)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Team Members Grid */}
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div className="border-b border-gray-200 px-6 py-4">
-                <h2 className="font-semibold text-gray-900">Team Members</h2>
-              </div>
-              
-              <div className="divide-y divide-gray-200">
-                {teamMembers.map((member, index) => (
-                  <div
-                    key={member.id}
-                    className="p-6 flex items-center gap-6 hover:bg-gray-50 transition-colors"
-                  >
-                    {/* Avatar */}
-                    <div className="relative">
+                  
+                  <div className="divide-y divide-gray-200">
+                    {teamMembers.map((member, index) => (
                       <div
-                        className={`${getAvatarColor(index)} size-12 rounded-full flex items-center justify-center`}
+                        key={member.id}
+                        className="p-6 flex items-center gap-6 hover:bg-gray-50 transition-colors"
                       >
-                        <span className="text-white font-semibold">{member.avatar}</span>
-                      </div>
-                      <div
-                        className={`absolute bottom-0 right-0 ${getStatusColor(member.status)} size-3 border-2 border-white rounded-full`}
-                      />
-                    </div>
+                        {/* Avatar */}
+                        <div className="relative">
+                          <div
+                            className={`${getAvatarColor(index)} size-12 rounded-full flex items-center justify-center`}
+                          >
+                            <span className="text-white font-semibold">{member.avatar}</span>
+                          </div>
+                          <div
+                            className={`absolute bottom-0 right-0 ${getStatusColor(member.status)} size-3 border-2 border-white rounded-full`}
+                          />
+                        </div>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900">{member.name}</h3>
-                      <p className="text-sm text-gray-600">{member.role}</p>
-                      <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
-                        <Mail className="size-3" />
-                        <span className="truncate">{member.email}</span>
-                      </div>
-                    </div>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900">{member.name}</h3>
+                          <p className="text-sm text-gray-600">{member.role}</p>
+                          <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
+                            <Mail className="size-3" />
+                            <span className="truncate">{member.email}</span>
+                          </div>
+                        </div>
 
-                    {/* Stats */}
-                    <div className="flex gap-8">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-gray-900">{member.tasksCompleted}</p>
-                        <p className="text-xs text-gray-600">Completed</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-blue-600">{member.tasksInProgress}</p>
-                        <p className="text-xs text-gray-600">In Progress</p>
-                      </div>
-                    </div>
+                        {/* Stats */}
+                        <div className="flex gap-8">
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-gray-900">{member.tasksCompleted}</p>
+                            <p className="text-xs text-gray-600">Completed</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-blue-600">{member.tasksInProgress}</p>
+                            <p className="text-xs text-gray-600">In Progress</p>
+                          </div>
+                        </div>
 
-                    {/* Actions */}
-                    <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                      <MoreVertical className="size-5" />
-                    </button>
+                        {/* Actions */}
+                        <button aria-label="Member options" className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                          <MoreVertical className="size-5" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              </>
+            )}
           </div>
           <Footer />
         </main>

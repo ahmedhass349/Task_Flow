@@ -18,11 +18,11 @@ export default function TaskItem({ title, project, dueDate, assignee, priority, 
 
   return (
     <div className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group">
-      <button className="mt-0.5">
+      <button className="mt-0.5" aria-label={completed ? "Mark task as incomplete" : "Mark task as complete"}>
         {completed ? (
-          <CheckCircle2 className="size-5 text-green-600" />
+          <CheckCircle2 className="size-5 text-green-600" aria-hidden="true" />
         ) : (
-          <Circle className="size-5 text-gray-400 group-hover:text-blue-500" />
+          <Circle className="size-5 text-gray-400 group-hover:text-blue-500" aria-hidden="true" />
         )}
       </button>
 
@@ -34,13 +34,13 @@ export default function TaskItem({ title, project, dueDate, assignee, priority, 
           {project && <span className="text-blue-600">{project}</span>}
           {dueDate && (
             <span className="flex items-center gap-1">
-              <Clock className="size-3" />
+              <Clock className="size-3" aria-hidden="true" />
               {dueDate}
             </span>
           )}
           {assignee && (
             <span className="flex items-center gap-1">
-              <User className="size-3" />
+              <User className="size-3" aria-hidden="true" />
               {assignee}
             </span>
           )}

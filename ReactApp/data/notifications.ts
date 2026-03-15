@@ -1,3 +1,4 @@
+import type React from "react";
 import { CheckSquare, AtSign, FolderKanban, Clock } from "lucide-react";
 
 export interface NotificationItem {

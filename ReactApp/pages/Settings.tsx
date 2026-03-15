@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId } from "react";
 import {
   User, Bell, Shield, Palette, Globe, Key, Trash2, Camera,
   Moon, Sun, Monitor, Mail, MessageSquare, CheckSquare, Save,
@@ -17,7 +17,7 @@ interface Toggle {
 }
 
 /* ─────── helpers ─────── */
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionCard({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       <div className="border-b border-gray-200 px-6 py-4">
@@ -39,6 +39,8 @@ function ToggleRow({
       </div>
       <button
         onClick={() => onChange(!value)}
+        aria-label={label}
+        aria-pressed={value}
         className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
           value ? "bg-blue-600" : "bg-gray-200"
         }`}
@@ -56,10 +58,12 @@ function ToggleRow({
 function InputField({
   label, value, onChange, type = "text", placeholder,
 }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
+  const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label htmlFor={id} className="text-sm font-medium text-gray-700">{label}</label>
       <input
+        id={id}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -187,7 +191,7 @@ export default function Settings() {
                           <div className="size-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold select-none">
                             AA
                           </div>
-                          <button className="absolute bottom-0 right-0 size-7 bg-blue-600 rounded-full flex items-center justify-center shadow hover:bg-blue-700 transition-colors">
+                          <button aria-label="Change profile picture" className="absolute bottom-0 right-0 size-7 bg-blue-600 rounded-full flex items-center justify-center shadow hover:bg-blue-700 transition-colors">
                             <Camera className="size-3.5 text-white" />
                           </button>
                         </div>
@@ -210,8 +214,9 @@ export default function Settings() {
                         <InputField label="Phone number" value={profile.phone} onChange={(v) => setProfile({ ...profile, phone: v })} type="tel" placeholder="+20 1xx xxx xxxx" />
                         <InputField label="Job title / Role" value={profile.role} onChange={(v) => setProfile({ ...profile, role: v })} />
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-sm font-medium text-gray-700">Timezone</label>
+                          <label htmlFor="settings-timezone" className="text-sm font-medium text-gray-700">Timezone</label>
                           <select
+                            id="settings-timezone"
                             value={profile.timezone}
                             onChange={(e) => setProfile({ ...profile, timezone: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -222,8 +227,9 @@ export default function Settings() {
                           </select>
                         </div>
                         <div className="col-span-2 flex flex-col gap-1.5">
-                          <label className="text-sm font-medium text-gray-700">Bio</label>
+                          <label htmlFor="settings-bio" className="text-sm font-medium text-gray-700">Bio</label>
                           <textarea
+                            id="settings-bio"
                             value={profile.bio}
                             onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
                             rows={3}
@@ -282,8 +288,9 @@ export default function Settings() {
                     <SectionCard title="Language & Region">
                       <div className="grid grid-cols-2 gap-4 max-w-md">
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-sm font-medium text-gray-700">Language</label>
+                          <label htmlFor="settings-language" className="text-sm font-medium text-gray-700">Language</label>
                           <select
+                            id="settings-language"
                             value={profile.language}
                             onChange={(e) => setProfile({ ...profile, language: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -294,8 +301,8 @@ export default function Settings() {
                           </select>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-sm font-medium text-gray-700">Date format</label>
-                          <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                          <label htmlFor="settings-dateformat" className="text-sm font-medium text-gray-700">Date format</label>
+                          <select id="settings-dateformat" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                             <option>MM/DD/YYYY</option>
                             <option>DD/MM/YYYY</option>
                             <option>YYYY-MM-DD</option>
@@ -321,7 +328,7 @@ export default function Settings() {
                 {/* ══════════ NOTIFICATIONS ══════════ */}
                 {activeSection === "notifications" && (
                   <>
-                    <SectionCard title={<span className="flex items-center gap-2"><Mail className="size-4 text-gray-500"/>Email Notifications</span> as any}>
+                    <SectionCard title={<span className="flex items-center gap-2"><Mail className="size-4 text-gray-500"/>Email Notifications</span>}>
                       {[
                         { key: "emailTaskAssigned",   label: "Task assigned to you",    description: "Receive an email when a task is assigned to you"            },
                         { key: "emailTaskCompleted",  label: "Task completed",           description: "Receive an email when a task you own is completed"          },
@@ -332,7 +339,7 @@ export default function Settings() {
                       ))}
                     </SectionCard>
 
-                    <SectionCard title={<span className="flex items-center gap-2"><Bell className="size-4 text-gray-500"/>Push Notifications</span> as any}>
+                    <SectionCard title={<span className="flex items-center gap-2"><Bell className="size-4 text-gray-500"/>Push Notifications</span>}>
                       {[
                         { key: "pushTaskAssigned", label: "Task assigned",    description: "In-browser push when a task is assigned to you"                  },
                         { key: "pushMentions",     label: "Mentions",         description: "When someone @mentions you in a comment"                         },
@@ -343,7 +350,7 @@ export default function Settings() {
                       ))}
                     </SectionCard>
 
-                    <SectionCard title={<span className="flex items-center gap-2"><MessageSquare className="size-4 text-gray-500"/>In-App Notifications</span> as any}>
+                    <SectionCard title={<span className="flex items-center gap-2"><MessageSquare className="size-4 text-gray-500"/>In-App Notifications</span>}>
                       {[
                         { key: "inAppAll",    label: "All in-app notifications", description: "Show notification badge and panel entries"         },
                         { key: "inAppSounds", label: "Notification sounds",      description: "Play a sound when a new notification arrives"      },
@@ -384,6 +391,8 @@ export default function Settings() {
                           <button
                             key={c}
                             onClick={() => setAccentColor(c)}
+                            aria-label={`Accent color ${c}`}
+                            aria-pressed={accentColor === c}
                             style={{ background: c }}
                             className={`size-8 rounded-full transition-transform ${accentColor === c ? "ring-2 ring-offset-2 ring-gray-400 scale-110" : "hover:scale-105"}`}
                           />
@@ -428,6 +437,8 @@ export default function Settings() {
                           </span>
                           <button
                             onClick={() => setTwoFA(!twoFA)}
+                            aria-label="Two-factor authentication"
+                            aria-pressed={twoFA}
                             className={`relative w-11 h-6 rounded-full transition-colors ${twoFA ? "bg-blue-600" : "bg-gray-200"}`}
                           >
                             <span className={`absolute top-0.5 left-0.5 size-5 bg-white rounded-full shadow transition-transform ${twoFA ? "translate-x-5" : "translate-x-0"}`} />
@@ -505,7 +516,7 @@ export default function Settings() {
                       ))}
                       <div className="mt-4 p-4 bg-gray-50 rounded-lg text-xs text-gray-500 leading-relaxed">
                         We never sell your personal data. See our{" "}
-                        <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>{" "}
+                        <button type="button" onClick={() => {}} className="text-blue-600 hover:underline">Privacy Policy</button>{" "}
                         for full details on how your information is used.
                       </div>
                     </SectionCard>

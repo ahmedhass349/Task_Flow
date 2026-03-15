@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Search, Bell, Mail, User, Settings, LogOut, UserCircle } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { SEED_NOTIFICATIONS, NotificationItem } from "../data/notifications";
+import { useAuth } from "../context/AuthContext";
 
 /* ─── Messages data ─── */
 interface Message {
@@ -34,6 +35,13 @@ const AVATAR_COLORS: Record<string, string> = {
 export default function Header() {
   const [notifs, setNotifs] = useState<NotificationItem[]>(SEED_NOTIFICATIONS);
   const [msgs, setMsgs]     = useState(INITIAL_MSGS);
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const displayName = user ? `${user.firstName} ${user.lastName}` : "Demo User";
+  const initials = user
+    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
+    : "DU";
 
   const unreadNotifCount = notifs.filter(n => n.unread).length;
   const unreadMsgCount   = msgs.filter(m => m.unread).length;
@@ -55,6 +63,7 @@ export default function Header() {
           <input
             type="text"
             placeholder="Search for report..."
+            aria-label="Search for report"
             style={{ background: '#F5F5F5', borderRadius: 6, fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#787486' }}
             className="w-full pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -67,7 +76,7 @@ export default function Header() {
         {/* ── Notifications dropdown ── */}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <button className="relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10">
+            <button className="relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10" aria-label="Notifications">
               <Bell className="size-6 text-white" />
               {unreadNotifCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF1267] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5">
@@ -115,7 +124,7 @@ export default function Header() {
 
               {/* Footer */}
               <div className="border-t border-gray-100 px-4 py-2.5 text-center">
-                <Link to="#" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                <Link to="/notifications" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
                   View all notifications
                 </Link>
               </div>
@@ -126,7 +135,7 @@ export default function Header() {
         {/* ── Messages dropdown ── */}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <button className="relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10">
+            <button className="relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10" aria-label="Messages">
               <Mail className="size-6 text-white" />
               {unreadMsgCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF1267] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5">
@@ -176,7 +185,7 @@ export default function Header() {
 
               {/* Footer */}
               <div className="border-t border-gray-100 px-4 py-2.5 text-center">
-                <Link to="#" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                <Link to="/message" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
                   Open messages
                 </Link>
               </div>
@@ -191,9 +200,11 @@ export default function Header() {
             style={{ background: '#242424' }}
           >
             <span className="text-white" style={{ fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: 500, letterSpacing: '0.48px' }}>
-              Demo User
+              {displayName}
             </span>
-            <img src="https://placehold.co/32x32" alt="avatar" className="size-8 rounded-full border border-white object-cover" />
+            <div className="size-8 rounded-full border border-white bg-brand flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xs font-bold">{initials}</span>
+            </div>
           </DropdownMenu.Trigger>
 
           <DropdownMenu.Portal>
@@ -202,17 +213,19 @@ export default function Header() {
               sideOffset={8} align="end"
             >
               <div className="flex items-center gap-3 px-3 py-3 border-b border-gray-200 mb-2">
-                <div className="size-9 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-gray-700 font-semibold text-sm">DU</span>
+                <div className="size-9 bg-brand rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-semibold text-sm">{initials}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm truncate">Demo User</p>
+                  <p className="font-semibold text-gray-900 text-sm truncate">{displayName}</p>
                 </div>
               </div>
 
-              <DropdownMenu.Item className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none">
-                <User className="size-4" />
-                <span className="text-sm">Profile</span>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings" className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none">
+                  <User className="size-4" />
+                  <span className="text-sm">Profile</span>
+                </Link>
               </DropdownMenu.Item>
 
               <DropdownMenu.Item asChild>
@@ -229,7 +242,13 @@ export default function Header() {
 
               <DropdownMenu.Separator className="h-px bg-gray-200 my-2" />
 
-              <DropdownMenu.Item className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none">
+              <DropdownMenu.Item
+                onSelect={() => {
+                  logout();
+                  navigate("/login");
+                }}
+                className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none"
+              >
                 <LogOut className="size-4" />
                 <span className="text-sm">Log out</span>
               </DropdownMenu.Item>

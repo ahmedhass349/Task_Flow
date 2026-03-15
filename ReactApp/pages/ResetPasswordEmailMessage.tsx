@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation, Navigate } from "react-router";
 import { TaskFlowLogo } from "../Components/TaskFlowLogo";
 import { AuthFooter } from "../Components/AuthFooter";
 
@@ -22,8 +22,7 @@ export default function ResetPasswordEmailMessage() {
 
   // Redirect if arrived here without going through forgot-password
   if (!email) {
-    navigate("/forgot-password", { replace: true });
-    return null;
+    return <Navigate to="/forgot-password" replace />;
   }
 
   const handlePart1Change = (val: string) => {
@@ -57,7 +56,7 @@ export default function ResetPasswordEmailMessage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-['Roboto',sans-serif]">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Logo */}
       <div className="pt-[54px] pl-[55px]">
         <TaskFlowLogo />
@@ -66,10 +65,10 @@ export default function ResetPasswordEmailMessage() {
       {/* Centered Content */}
       <div className="flex-1 flex flex-col items-center justify-center">
         <div className="w-[345px]">
-          <h1 className="font-['Roboto',sans-serif] font-medium text-[20px] leading-[1.6] text-[rgba(0,0,0,0.87)] tracking-[0.15px] mb-[8px]">
+          <h1 className="font-medium text-[20px] leading-[1.6] text-foreground tracking-[0.15px] mb-2">
             Enter recovery code
           </h1>
-          <p className="font-['Roboto',sans-serif] font-normal text-[14px] leading-[1.43] text-[rgba(0,0,0,0.87)] tracking-[0.15px] mb-[32px]">
+          <p className="font-normal text-sm leading-[1.43] text-foreground tracking-[0.15px] mb-8">
             Enter the 8-character code sent to{" "}
             <span className="font-medium">{email}</span>
           </p>
@@ -77,12 +76,12 @@ export default function ResetPasswordEmailMessage() {
           {/* Code hint — visible in dev/demo since no real SMS/email is wired */}
           {receivedCode && (
             <div className="flex items-center gap-[8px] bg-[#F5F5F5] border border-[rgba(0,0,0,0.12)] rounded-[4px] px-[14px] py-[10px] mb-[32px]">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="rgba(0,0,0,0.38)" />
               </svg>
-              <span className="font-['Roboto',sans-serif] text-[13px] text-[rgba(0,0,0,0.6)]">
+              <span className="text-[13px] text-muted-foreground">
                 Your code:&nbsp;
-                <span className="font-['Roboto',monospace] font-bold tracking-[2px] text-[rgba(0,0,0,0.87)]">
+                <span className="font-mono font-bold tracking-[2px] text-foreground">
                   {receivedCode}
                 </span>
               </span>
@@ -109,13 +108,14 @@ export default function ResetPasswordEmailMessage() {
                     onChange={(e) => handlePart1Change(e.target.value)}
                     maxLength={4}
                     placeholder="XXXX"
-                    className="w-full py-[16px] bg-transparent font-['Roboto',monospace] font-bold text-[20px] text-center text-[rgba(0,0,0,0.87)] tracking-[4px] leading-[24px] outline-none placeholder:text-[rgba(0,0,0,0.25)] placeholder:tracking-[4px] placeholder:font-normal"
+                    aria-label="Recovery code first half"
+                    className="w-full py-4 bg-transparent font-mono font-bold text-xl text-center text-foreground tracking-[4px] leading-6 outline-none placeholder:text-black/25 placeholder:tracking-[4px] placeholder:font-normal"
                   />
                 </div>
               </div>
 
               {/* Dash separator */}
-              <span className="font-['Roboto',sans-serif] font-bold text-[24px] text-[rgba(0,0,0,0.38)] select-none">
+              <span className="font-bold text-2xl text-black/40 select-none">
                 —
               </span>
 
@@ -136,7 +136,8 @@ export default function ResetPasswordEmailMessage() {
                     onKeyDown={handlePart2KeyDown}
                     maxLength={4}
                     placeholder="XXXX"
-                    className="w-full py-[16px] bg-transparent font-['Roboto',monospace] font-bold text-[20px] text-center text-[rgba(0,0,0,0.87)] tracking-[4px] leading-[24px] outline-none placeholder:text-[rgba(0,0,0,0.25)] placeholder:tracking-[4px] placeholder:font-normal"
+                    aria-label="Recovery code second half"
+                    className="w-full py-4 bg-transparent font-mono font-bold text-xl text-center text-foreground tracking-[4px] leading-6 outline-none placeholder:text-black/25 placeholder:tracking-[4px] placeholder:font-normal"
                   />
                 </div>
               </div>
@@ -144,7 +145,7 @@ export default function ResetPasswordEmailMessage() {
 
             {/* Error message */}
             {error && (
-              <p className="font-['Roboto',sans-serif] text-[13px] text-red-600 mb-[16px]">
+              <p className="text-[13px] text-red-600 mb-4">
                 {error}
               </p>
             )}
@@ -154,10 +155,10 @@ export default function ResetPasswordEmailMessage() {
               type="submit"
               className="bg-brand text-white rounded-[4px] px-[22px] py-[8px] shadow-[0px_3px_1px_-2px_rgba(0,0,0,0.2),0px_2px_2px_0px_rgba(0,0,0,0.14),0px_1px_5px_0px_rgba(0,0,0,0.12)] flex items-center gap-[8px] cursor-pointer hover:bg-brand-hover transition-colors mb-[80px]"
             >
-              <span className="font-['Roboto',sans-serif] font-medium text-[15px] leading-[26px] tracking-[0.46px] uppercase text-white">
+              <span className="font-medium text-[15px] leading-[26px] tracking-[0.46px] uppercase text-white">
                 Verify
               </span>
-              <svg width="18" height="22" viewBox="0 0 16 16" fill="none">
+              <svg aria-hidden="true" width="18" height="22" viewBox="0 0 16 16" fill="none">
                 <path
                   d="M8 0L6.59 1.41L12.17 7H0V9H12.17L6.59 14.59L8 16L16 8L8 0Z"
                   fill="white"
@@ -171,7 +172,7 @@ export default function ResetPasswordEmailMessage() {
               onClick={() => navigate("/login")}
               className="w-[344px] bg-black text-white rounded-[4px] px-[22px] py-[8px] shadow-[0px_3px_1px_-2px_rgba(0,0,0,0.2),0px_2px_2px_0px_rgba(0,0,0,0.14),0px_1px_5px_0px_rgba(0,0,0,0.12)] cursor-pointer hover:bg-[#333] transition-colors"
             >
-              <span className="font-['Roboto',sans-serif] font-medium text-[15px] leading-[26px] tracking-[0.46px] uppercase text-white">
+              <span className="font-medium text-[15px] leading-[26px] tracking-[0.46px] uppercase text-white">
                 BACK to login
               </span>
             </button>

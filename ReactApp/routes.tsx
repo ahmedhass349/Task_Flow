@@ -1,22 +1,31 @@
 import { createBrowserRouter } from "react-router";
+import ProtectedRoute from "./Components/ProtectedRoute";
+import ErrorBoundary from "./Components/ErrorBoundary";
+
+// ── Public (auth) pages ──────────────────────────────────────────────────
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPasswordEmailMessage from "./pages/ResetPasswordEmailMessage";
+import ResetPassword from "./pages/ResetPassword";
+
+// ── Protected (app) pages ────────────────────────────────────────────────
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import MyWork from "./pages/MyWork";
 import Teams from "./pages/Teams";
 import Filters from "./pages/Filters";
 import Calendar from "./pages/Calendar";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPasswordEmailMessage from "./pages/ResetPasswordEmailMessage";
-import ResetPassword from "./pages/ResetPassword";
 import Settings from "./pages/Settings";
 import Message from "./pages/Message";
 import Notifications from "./pages/Notifications";
 import Chatbot from "./pages/Chatbot";
-import ErrorBoundary from "./Components/ErrorBoundary";
+
+// ── 404 ──────────────────────────────────────────────────────────────────
+import NotFound from "./pages/NotFound";
 
 export const router = createBrowserRouter([
+  // ── Public routes (no auth required) ───────────────────────────────────
   {
     path: "/login",
     element: <Login />,
@@ -42,54 +51,28 @@ export const router = createBrowserRouter([
     element: <ResetPassword />,
     errorElement: <ErrorBoundary />,
   },
+
+  // ── Protected routes (auth required) ───────────────────────────────────
   {
-    path: "/",
-    element: <Dashboard />,
+    element: <ProtectedRoute />,
     errorElement: <ErrorBoundary />,
+    children: [
+      { path: "/", element: <Dashboard /> },
+      { path: "/projects", element: <Projects /> },
+      { path: "/my-work", element: <MyWork /> },
+      { path: "/teams", element: <Teams /> },
+      { path: "/filters", element: <Filters /> },
+      { path: "/calendar", element: <Calendar /> },
+      { path: "/settings", element: <Settings /> },
+      { path: "/message", element: <Message /> },
+      { path: "/notifications", element: <Notifications /> },
+      { path: "/plans", element: <Chatbot /> },
+    ],
   },
+
+  // ── Catch-all 404 ─────────────────────────────────────────────────────
   {
-    path: "/projects",
-    element: <Projects />,
-    errorElement: <ErrorBoundary />,
-  },
-  {
-    path: "/my-work",
-    element: <MyWork />,
-    errorElement: <ErrorBoundary />,
-  },
-  {
-    path: "/teams",
-    element: <Teams />,
-    errorElement: <ErrorBoundary />,
-  },
-  {
-    path: "/filters",
-    element: <Filters />,
-    errorElement: <ErrorBoundary />,
-  },
-  {
-    path: "/calendar",
-    element: <Calendar />,
-    errorElement: <ErrorBoundary />,
-  },
-  {
-    path: "/settings",
-    element: <Settings />,
-    errorElement: <ErrorBoundary />,
-  },
-  {
-    path: "/message",
-    element: <Message />,
-    errorElement: <ErrorBoundary />,
-  },
-  {
-    path: "/notifications",
-    element: <Notifications />,
-    errorElement: <ErrorBoundary />,
-  },
-  {
-    path: "/plans",
-    element: <Chatbot />,
-    errorElement: <ErrorBoundary />,
+    path: "*",
+    element: <NotFound />,
   },
 ]);

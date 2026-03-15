@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { FolderKanban, Grid3x3, List, MoreVertical, Star, Users } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Footer from "../Components/Footer";
 import Header from "../Components/Header";
+import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
 
 interface Project {
   id: string;
@@ -13,63 +15,97 @@ interface Project {
   starred: boolean;
 }
 
+// ── Seed data (will be replaced by API call) ─────────────────────────────
+
+const SEED_PROJECTS: Project[] = [
+  {
+    id: "1",
+    name: "Marketing Site",
+    description: "Company website redesign and development",
+    color: "bg-blue-500",
+    tasks: { total: 24, completed: 18 },
+    members: 5,
+    starred: true,
+  },
+  {
+    id: "2",
+    name: "API Service",
+    description: "Backend API development and documentation",
+    color: "bg-green-500",
+    tasks: { total: 36, completed: 22 },
+    members: 8,
+    starred: false,
+  },
+  {
+    id: "3",
+    name: "Mobile App",
+    description: "iOS and Android mobile application",
+    color: "bg-purple-500",
+    tasks: { total: 48, completed: 12 },
+    members: 6,
+    starred: true,
+  },
+  {
+    id: "4",
+    name: "Admin Panel",
+    description: "Internal admin dashboard for operations",
+    color: "bg-orange-500",
+    tasks: { total: 28, completed: 20 },
+    members: 4,
+    starred: false,
+  },
+  {
+    id: "5",
+    name: "E-commerce",
+    description: "Online store platform development",
+    color: "bg-pink-500",
+    tasks: { total: 42, completed: 30 },
+    members: 7,
+    starred: true,
+  },
+  {
+    id: "6",
+    name: "Developer Portal",
+    description: "Documentation and API reference portal",
+    color: "bg-blue-400",
+    tasks: { total: 16, completed: 14 },
+    members: 3,
+    starred: false,
+  },
+];
+
 export default function Projects() {
-  const projects: Project[] = [
-    {
-      id: "1",
-      name: "Marketing Site",
-      description: "Company website redesign and development",
-      color: "bg-blue-500",
-      tasks: { total: 24, completed: 18 },
-      members: 5,
-      starred: true,
-    },
-    {
-      id: "2",
-      name: "API Service",
-      description: "Backend API development and documentation",
-      color: "bg-green-500",
-      tasks: { total: 36, completed: 22 },
-      members: 8,
-      starred: false,
-    },
-    {
-      id: "3",
-      name: "Mobile App",
-      description: "iOS and Android mobile application",
-      color: "bg-purple-500",
-      tasks: { total: 48, completed: 12 },
-      members: 6,
-      starred: true,
-    },
-    {
-      id: "4",
-      name: "Admin Panel",
-      description: "Internal admin dashboard for operations",
-      color: "bg-orange-500",
-      tasks: { total: 28, completed: 20 },
-      members: 4,
-      starred: false,
-    },
-    {
-      id: "5",
-      name: "E-commerce",
-      description: "Online store platform development",
-      color: "bg-pink-500",
-      tasks: { total: 42, completed: 30 },
-      members: 7,
-      starred: true,
-    },
-    {
-      id: "6",
-      name: "Developer Portal",
-      description: "Documentation and API reference portal",
-      color: "bg-blue-400",
-      tasks: { total: 16, completed: 14 },
-      members: 3,
-      starred: false,
-    },
-  ];
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // TODO: Replace with actual API call: api.get<Project[]>("/projects")
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    const timer = setTimeout(() => {
+      if (!cancelled) {
+        setProjects(SEED_PROJECTS);
+        setIsLoading(false);
+      }
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    setTimeout(() => {
+      setProjects(SEED_PROJECTS);
+      setIsLoading(false);
+    }, 0);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -87,10 +123,10 @@ export default function Projects() {
                 <p className="text-gray-600 mt-1">Manage and track all your projects</p>
               </div>
               <div className="flex items-center gap-2">
-                <button className="p-2 text-gray-600 hover:bg-white border border-gray-200 rounded-lg transition-colors">
+                <button aria-label="Grid view" className="p-2 text-gray-600 hover:bg-white border border-gray-200 rounded-lg transition-colors">
                   <Grid3x3 className="size-5" />
                 </button>
-                <button className="p-2 text-gray-600 hover:bg-white border border-gray-200 rounded-lg transition-colors">
+                <button aria-label="List view" className="p-2 text-gray-600 hover:bg-white border border-gray-200 rounded-lg transition-colors">
                   <List className="size-5" />
                 </button>
               </div>
@@ -112,7 +148,18 @@ export default function Projects() {
               </button>
             </div>
 
-            {/* Projects Grid */}
+            {/* Loading / Error / Empty / Content */}
+            {isLoading && <PageLoading message="Loading projects..." />}
+            {error && <PageError message={error} onRetry={handleRetry} />}
+            {!isLoading && !error && projects.length === 0 && (
+              <PageEmpty
+                icon={FolderKanban}
+                title="No projects yet"
+                description="Create your first project to start organizing your work."
+                action={{ label: "Create Project", onClick: () => {} }}
+              />
+            )}
+            {!isLoading && !error && projects.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map((project) => (
                 <div
@@ -126,10 +173,10 @@ export default function Projects() {
                         <FolderKanban className="size-6 text-white" />
                       </div>
                       <div className="flex items-center gap-1">
-                        <button className="p-1 text-gray-400 hover:text-yellow-500 transition-colors">
+                        <button aria-label={project.starred ? "Unstar project" : "Star project"} className="p-1 text-gray-400 hover:text-yellow-500 transition-colors">
                           <Star className={`size-5 ${project.starred ? "fill-yellow-400 text-yellow-400" : ""}`} />
                         </button>
-                        <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                        <button aria-label="Project options" className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
                           <MoreVertical className="size-5" />
                         </button>
                       </div>
@@ -168,6 +215,7 @@ export default function Projects() {
                 </div>
               ))}
             </div>
+            )}
           </div>
           <Footer />
         </main>

@@ -45,61 +45,70 @@ export default function TaskLineWidget({ year, month, selectedDay }: TaskLineWid
   const nowY = isToday ? timeToY(now.getHours(), now.getMinutes()) : null;
 
   return (
-    <div style={{ width: 372, paddingTop: 24, paddingBottom: 24, paddingLeft: 24, paddingRight: 24, background: '#171717', boxShadow: '0px 0px 6px rgba(0,0,0,0.25)', borderRadius: 30, display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div className="w-[372px] p-6 bg-[#171717] shadow-[0_0_6px_rgba(0,0,0,0.25)] rounded-[30px] flex flex-col gap-[18px]">
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ color: 'white', fontSize: 24, fontFamily: 'Poppins', fontWeight: '500', letterSpacing: 0.72 }}>Task Line</div>
-        <div style={{ height: 34, padding: '0 14px', background: 'rgba(184,184,184,0.10)', borderRadius: 36, outline: '1px #616161 solid', outlineOffset: '-1px', display: 'flex', alignItems: 'center' }}>
-          <span style={{ color: 'white', fontSize: 14, fontFamily: 'Poppins', fontWeight: '400', letterSpacing: 0.42 }}>{dateLabel}</span>
+      <div className="flex justify-between items-center">
+        <span className="text-white text-2xl font-['Poppins'] font-medium tracking-[0.72px]">
+          Task Line
+        </span>
+        <div className="h-[34px] px-3.5 bg-white/[0.10] rounded-[36px] outline outline-1 outline-offset-[-1px] outline-[#616161] flex items-center">
+          <span className="text-white text-sm font-['Poppins'] font-normal tracking-[0.42px]">
+            {dateLabel}
+          </span>
         </div>
       </div>
 
       {/* Scrollable 24-hour timeline */}
       <div
         ref={scrollRef}
-        style={{ maxHeight: 360, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
+        className="max-h-[360px] overflow-y-auto"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
       >
-        <div style={{ width: '100%', height: TOTAL_HEIGHT, position: 'relative' }}>
+        <div className="w-full relative" style={{ height: TOTAL_HEIGHT }}>
 
           {/* Slot rows – label + dashed divider every 30 min */}
           {SLOTS.map((slot, i) => (
             <div
               key={i}
-              style={{ position: 'absolute', top: i * SLOT_HEIGHT, left: 0, right: 0, height: SLOT_HEIGHT }}
+              className="absolute left-0 right-0"
+              style={{ top: i * SLOT_HEIGHT, height: SLOT_HEIGHT }}
             >
               {/* Time label (full hours only), vertically centred */}
-              <div style={{ position: 'absolute', left: 0, top: 0, width: LABEL_WIDTH, height: SLOT_HEIGHT, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 8 }}>
+              <div
+                className="absolute left-0 top-0 flex items-center justify-end pr-2"
+                style={{ width: LABEL_WIDTH, height: SLOT_HEIGHT }}
+              >
                 {slot.isFullHour && (
-                  <span style={{ color: 'rgba(255,255,255,0.50)', fontSize: 12, fontFamily: 'Poppins', fontWeight: '400', letterSpacing: 0.36 }}>
+                  <span className="text-white/50 text-xs font-['Poppins'] font-normal tracking-[0.36px]">
                     {String(slot.hour).padStart(2, '0')}:00
                   </span>
                 )}
               </div>
               {/* Dashed line at vertical centre of slot */}
-              <div style={{
-                position: 'absolute',
-                left: LABEL_WIDTH,
-                top: '50%',
-                right: 0,
-                height: 0,
-                borderTop: slot.isFullHour
-                  ? '1px dashed rgba(255,255,255,0.22)'
-                  : '1px dashed rgba(255,255,255,0.09)',
-              }} />
+              <div
+                className={`absolute top-1/2 right-0 h-0 ${
+                  slot.isFullHour
+                    ? 'border-t border-dashed border-white/[0.22]'
+                    : 'border-t border-dashed border-white/[0.09]'
+                }`}
+                style={{ left: LABEL_WIDTH }}
+              />
             </div>
           ))}
 
           {/* Current-time indicator (today only) */}
           {nowY !== null && (
-            <div style={{ position: 'absolute', top: nowY, left: 0, right: 0, display: 'flex', alignItems: 'center', zIndex: 10, pointerEvents: 'none' }}>
-              <div style={{ width: LABEL_WIDTH, display: 'flex', justifyContent: 'flex-end', paddingRight: 4 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#60B8FF', flexShrink: 0 }} />
+            <div
+              className="absolute left-0 right-0 flex items-center z-10 pointer-events-none"
+              style={{ top: nowY }}
+            >
+              <div className="flex justify-end pr-1" style={{ width: LABEL_WIDTH }}>
+                <div className="w-2 h-2 rounded-full bg-[#60B8FF] shrink-0" />
               </div>
-              <div style={{ flex: 1, borderTop: '1.5px solid #60B8FF' }} />
+              <div className="flex-1 border-t-[1.5px] border-solid border-[#60B8FF]" />
             </div>
           )}
-
 
         </div>
       </div>

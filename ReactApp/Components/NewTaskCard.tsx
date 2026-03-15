@@ -1,10 +1,58 @@
 import { useMemo, useState } from "react";
 import { CalendarDays, ChevronDown } from "lucide-react";
 
+// ── Exported data type for the created task ──────────────────────────────
+
+export interface NewTaskData {
+  client: string;
+  service: string;
+  taskPeriod: "month" | "year";
+  selectedMonth: string;
+  selectedYear: number;
+  dueDate: string;
+  targetDate: string;
+  assignedUser: string;
+  description: string;
+  tags: string[];
+  useClientSettings: boolean;
+  isBillable: boolean;
+  createDocumentRequest: boolean;
+}
+
+// ── Props ────────────────────────────────────────────────────────────────
+
 interface NewTaskCardProps {
   onCancel: () => void;
-  onCreate?: () => void;
+  onCreate: (data: NewTaskData) => void;
 }
+
+// ── Validation ───────────────────────────────────────────────────────────
+
+interface FormErrors {
+  client?: string;
+  service?: string;
+  dueDate?: string;
+}
+
+function validateForm(client: string, service: string, dueDate: string): FormErrors {
+  const errors: FormErrors = {};
+
+  if (!client) {
+    errors.client = "Client is required";
+  }
+
+  if (!service) {
+    errors.service = "Service is required";
+  }
+
+  if (!dueDate) {
+    errors.dueDate = "Due date is required";
+  }
+
+  return errors;
+}
+
+// ── Static data ──────────────────────────────────────────────────────────
 
 const clients = ["Acme Corp", "Northwind", "Fabrikam", "Globex"];
 const services = ["Bookkeeping", "Tax Filing", "Payroll", "Advisory"];
@@ -24,8 +72,15 @@ const months = [
   "December",
 ];
 
+// ── Shared styles ────────────────────────────────────────────────────────
+
 const inputBase =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+  "w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+
+const inputNormal = `${inputBase} border-slate-300`;
+const inputError = `${inputBase} border-red-500 ring-1 ring-red-500 focus:border-red-500 focus:ring-red-100`;
+
+// ── Sub-components ───────────────────────────────────────────────────────
 
 function FieldLabel({ label, required = false }: { label: string; required?: boolean }) {
   return (
@@ -36,15 +91,22 @@ function FieldLabel({ label, required = false }: { label: string; required?: boo
   );
 }
 
-function Toggle({ checked, onToggle }: { checked: boolean; onToggle: () => void }) {
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-xs text-red-600 mt-1">{message}</p>;
+}
+
+function Toggle({ checked, onToggle, disabled, label }: { checked: boolean; onToggle: () => void; disabled?: boolean; label?: string }) {
   return (
     <button
       type="button"
       onClick={onToggle}
-      className={`relative inline-flex h-[18px] w-8 items-center rounded-full border transition-colors ${
+      disabled={disabled}
+      className={`relative inline-flex h-[18px] w-8 items-center rounded-full border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
         checked ? "bg-blue-600 border-blue-600" : "bg-slate-300 border-slate-300"
       }`}
       aria-pressed={checked}
+      aria-label={label}
     >
       <span
         className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
@@ -54,6 +116,8 @@ function Toggle({ checked, onToggle }: { checked: boolean; onToggle: () => void 
     </button>
   );
 }
+
+// ── Main component ───────────────────────────────────────────────────────
 
 export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
   const [taskPeriod, setTaskPeriod] = useState<"month" | "year">("month");
@@ -72,7 +136,11 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
 
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const thisYear = useMemo(() => new Date().getFullYear(), []);
+  const [selectedYear, setSelectedYear] = useState(thisYear);
 
   const addTag = () => {
     const nextTag = tagInput.trim();
@@ -83,6 +151,44 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
     setTagInput("");
   };
 
+  const removeTag = (tagToRemove: string) => {
+    setTags((prev) => prev.filter((t) => t !== tagToRemove));
+  };
+
+  const handleCreate = () => {
+    // Validate required fields
+    const errors = validateForm(selectedClient, selectedService, dueDate);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    setIsSubmitting(true);
+
+    const taskData: NewTaskData = {
+      client: selectedClient,
+      service: selectedService,
+      taskPeriod,
+      selectedMonth,
+      selectedYear,
+      dueDate,
+      targetDate,
+      assignedUser,
+      description: description.trim(),
+      tags,
+      useClientSettings,
+      isBillable,
+      createDocumentRequest,
+    };
+
+    onCreate(taskData);
+  };
+
+  // Helper to clear a specific field error when the user interacts
+  const clearFieldError = (field: keyof FormErrors) => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
   return (
     <div className="w-full max-w-3xl max-h-[92vh] rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col overflow-hidden">
       <div className="px-8 pt-8 pb-5 border-b border-slate-200">
@@ -91,13 +197,18 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
       </div>
 
       <div className="px-8 py-5 space-y-5 overflow-y-auto overscroll-contain">
+        {/* Client (required) */}
         <div className="space-y-2">
           <FieldLabel label="Client" required />
           <div className="relative">
             <select
               value={selectedClient}
-              onChange={(event) => setSelectedClient(event.target.value)}
-              className={`${inputBase} appearance-none pr-10 text-[15px]`}
+              onChange={(event) => {
+                setSelectedClient(event.target.value);
+                clearFieldError("client");
+              }}
+              className={`${fieldErrors.client ? inputError : inputNormal} appearance-none pr-10 text-[15px]`}
+              disabled={isSubmitting}
             >
               <option value="">Select clients...</option>
               {clients.map((client) => (
@@ -108,15 +219,21 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
             </select>
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           </div>
+          <FieldError message={fieldErrors.client} />
         </div>
 
+        {/* Service (required) */}
         <div className="space-y-2">
           <FieldLabel label="Service" required />
           <div className="relative">
             <select
               value={selectedService}
-              onChange={(event) => setSelectedService(event.target.value)}
-              className={`${inputBase} appearance-none pr-10 text-[15px]`}
+              onChange={(event) => {
+                setSelectedService(event.target.value);
+                clearFieldError("service");
+              }}
+              className={`${fieldErrors.service ? inputError : inputNormal} appearance-none pr-10 text-[15px]`}
+              disabled={isSubmitting}
             >
               <option value="">Select service...</option>
               {services.map((service) => (
@@ -127,14 +244,17 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
             </select>
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           </div>
+          <FieldError message={fieldErrors.service} />
         </div>
 
+        {/* Task Period */}
         <div className="space-y-2">
           <FieldLabel label="Task Period" required />
           <div className="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1">
             <button
               type="button"
               onClick={() => setTaskPeriod("month")}
+              disabled={isSubmitting}
               className={`min-w-24 rounded-md px-5 py-1.5 text-sm font-medium transition-colors ${
                 taskPeriod === "month" ? "bg-slate-200 text-slate-950" : "text-slate-700"
               }`}
@@ -144,6 +264,7 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
             <button
               type="button"
               onClick={() => setTaskPeriod("year")}
+              disabled={isSubmitting}
               className={`min-w-24 rounded-md px-5 py-1.5 text-sm font-medium transition-colors ${
                 taskPeriod === "year" ? "bg-slate-200 text-slate-950" : "text-slate-700"
               }`}
@@ -153,6 +274,7 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
           </div>
         </div>
 
+        {/* Month / Year selection */}
         {taskPeriod === "month" ? (
           <div className="space-y-2">
             <FieldLabel label="Select Month" />
@@ -160,7 +282,8 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
               <select
                 value={selectedMonth}
                 onChange={(event) => setSelectedMonth(event.target.value)}
-                className={`${inputBase} appearance-none pr-10 text-[15px]`}
+                className={`${inputNormal} appearance-none pr-10 text-[15px]`}
+                disabled={isSubmitting}
               >
                 <option value="">Pick a month...</option>
                 {months.map((month) => (
@@ -178,51 +301,64 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
             <input
               type="number"
               min={thisYear}
-              defaultValue={thisYear}
-              className={inputBase}
+              value={selectedYear}
+              onChange={(event) => setSelectedYear(Number(event.target.value))}
+              className={inputNormal}
+              disabled={isSubmitting}
             />
           </div>
         )}
 
+        {/* Due Date (required) */}
         <div className="space-y-2">
           <FieldLabel label="Due Date" required />
           <input
             type="date"
             value={dueDate}
-            onChange={(event) => setDueDate(event.target.value)}
-            className={inputBase}
+            onChange={(event) => {
+              setDueDate(event.target.value);
+              clearFieldError("dueDate");
+            }}
+            className={fieldErrors.dueDate ? inputError : inputNormal}
+            disabled={isSubmitting}
           />
+          <FieldError message={fieldErrors.dueDate} />
         </div>
 
+        {/* Target Date */}
         <div className="space-y-2">
           <FieldLabel label="Target Date" />
           <input
             type="date"
             value={targetDate}
             onChange={(event) => setTargetDate(event.target.value)}
-            className={inputBase}
+            className={inputNormal}
+            disabled={isSubmitting}
           />
         </div>
 
         <hr className="border-slate-200" />
 
+        {/* Use Client Settings toggle */}
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-base font-medium text-slate-950">Use Client-Specific Settings</p>
             <p className="text-sm text-slate-500">Automatically apply settings from client master</p>
           </div>
-          <Toggle checked={useClientSettings} onToggle={() => setUseClientSettings((prev) => !prev)} />
+          <Toggle checked={useClientSettings} onToggle={() => setUseClientSettings((prev) => !prev)} disabled={isSubmitting} label="Use client-specific settings" />
         </div>
 
         <hr className="border-slate-200" />
 
+        {/* Assign Users */}
         <div className="space-y-2">
           <FieldLabel label="Assign Users" />
           <div className="relative">
             <select
               value={assignedUser}
               onChange={(event) => setAssignedUser(event.target.value)}
-              className={`${inputBase} appearance-none pr-10 text-[15px]`}
+              className={`${inputNormal} appearance-none pr-10 text-[15px]`}
+              disabled={isSubmitting}
             >
               <option value="">Select users...</option>
               {users.map((user) => (
@@ -235,16 +371,18 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
           </div>
         </div>
 
+        {/* Billable toggle */}
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-base font-medium text-slate-950">Is this task billable?</p>
             <p className="text-sm text-slate-500">Enable if this task should be charged to the client</p>
           </div>
-          <Toggle checked={isBillable} onToggle={() => setIsBillable((prev) => !prev)} />
+          <Toggle checked={isBillable} onToggle={() => setIsBillable((prev) => !prev)} disabled={isSubmitting} label="Is this task billable" />
         </div>
 
         <hr className="border-slate-200" />
 
+        {/* Tags */}
         <div className="space-y-2">
           <FieldLabel label="Tags" />
           <div className="flex gap-2">
@@ -259,11 +397,13 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
               }}
               className="w-full rounded-lg border border-transparent bg-slate-100 px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-slate-300"
               placeholder="Add a tag..."
+              disabled={isSubmitting}
             />
             <button
               type="button"
               onClick={addTag}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-950 hover:bg-slate-50"
+              disabled={isSubmitting}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-950 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add
             </button>
@@ -272,8 +412,20 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
               {tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700"
+                >
                   {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    disabled={isSubmitting}
+                    className="ml-0.5 text-blue-400 hover:text-blue-700 disabled:opacity-50"
+                    aria-label={`Remove tag ${tag}`}
+                  >
+                    &times;
+                  </button>
                 </span>
               ))}
             </div>
@@ -282,16 +434,18 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
 
         <hr className="border-slate-200" />
 
+        {/* Document Request toggle */}
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-base font-medium text-slate-950">Create Document Request</p>
             <p className="text-sm text-slate-500">Request documents from the client for this task</p>
           </div>
-          <Toggle checked={createDocumentRequest} onToggle={() => setCreateDocumentRequest((prev) => !prev)} />
+          <Toggle checked={createDocumentRequest} onToggle={() => setCreateDocumentRequest((prev) => !prev)} disabled={isSubmitting} label="Create document request" />
         </div>
 
         <hr className="border-slate-200" />
 
+        {/* Description */}
         <div className="space-y-2">
           <FieldLabel label="Description" />
           <textarea
@@ -300,24 +454,31 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
             rows={3}
             className="w-full resize-none rounded-lg border border-transparent bg-slate-100 px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-slate-300"
             placeholder="Add task notes or instructions..."
+            disabled={isSubmitting}
           />
         </div>
       </div>
 
+      {/* Footer actions */}
       <div className="px-8 py-4 border-t border-slate-200 bg-white flex justify-end gap-3">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-300 bg-white px-6 py-2 text-sm font-medium text-slate-950 hover:bg-slate-50"
+          disabled={isSubmitting}
+          className="rounded-lg border border-slate-300 bg-white px-6 py-2 text-sm font-medium text-slate-950 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
         <button
           type="button"
-          onClick={onCreate}
-          className="rounded-lg bg-slate-950 px-6 py-2 text-sm font-medium text-white hover:bg-slate-800"
+          onClick={handleCreate}
+          disabled={isSubmitting}
+          className="rounded-lg bg-slate-950 px-6 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          Create Task
+          {isSubmitting ? "Creating..." : "Create Task"}
+          {isSubmitting && (
+            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          )}
         </button>
       </div>
     </div>
