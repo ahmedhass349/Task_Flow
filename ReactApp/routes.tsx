@@ -14,8 +14,6 @@ import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import MyWork from "./pages/MyWork";
 import Teams from "./pages/Teams";
-import Filters from "./pages/Filters";
-import Calendar from "./pages/Calendar";
 import Settings from "./pages/Settings";
 import Message from "./pages/Message";
 import Notifications from "./pages/Notifications";
@@ -61,8 +59,6 @@ export const router = createBrowserRouter([
       { path: "/projects", element: <Projects /> },
       { path: "/my-work", element: <MyWork /> },
       { path: "/teams", element: <Teams /> },
-      { path: "/filters", element: <Filters /> },
-      { path: "/calendar", element: <Calendar /> },
       { path: "/settings", element: <Settings /> },
       { path: "/message", element: <Message /> },
       { path: "/notifications", element: <Notifications /> },

@@ -1,0 +1,155 @@
+2026-03-16 00:06:01.573 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-16 00:06:34.984 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-16 00:06:34.984 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-16 00:06:34.984 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-16 00:06:35.120 +02:00 [INF] Sending file. Request path: '/dist/main.css'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.css'
+2026-03-16 00:06:35.128 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 200 82444 text/css 145.8458ms
+2026-03-16 00:06:35.214 +02:00 [INF] Sending file. Request path: '/dist/main.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.js'
+2026-03-16 00:06:35.215 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 200 556524 text/javascript 235.5056ms
+2026-03-16 00:06:35.450 +02:00 [INF] Sending file. Request path: '/dist/vendor.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\vendor.js'
+2026-03-16 00:06:35.451 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 200 2016746 text/javascript 471.7183ms
+2026-03-16 00:06:37.050 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/login - application/json 55
+2026-03-16 00:06:37.135 +02:00 [INF] CORS policy execution successful.
+2026-03-16 00:06:39.553 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 00:06:39.608 +02:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(taskflow.DTOs.Auth.LoginRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-16 00:06:42.456 +02:00 [INF] Executed DbCommand (81ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-16 00:06:43.079 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-16 00:06:43.141 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Login (taskflow) in 3520.3525ms
+2026-03-16 00:06:43.142 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 00:06:43.154 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/login - 200 null application/json; charset=utf-8 6103.6428ms
+2026-03-16 21:04:24.976 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-16 21:04:27.351 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-16 21:04:27.478 +02:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\index.html'
+2026-03-16 21:04:27.482 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 200 950 text/html 137.4036ms
+2026-03-16 21:04:27.493 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-16 21:04:27.493 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-16 21:04:27.493 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-16 21:04:27.497 +02:00 [INF] The file /dist/main.js was not modified
+2026-03-16 21:04:27.497 +02:00 [INF] The file /dist/main.css was not modified
+2026-03-16 21:04:27.497 +02:00 [INF] The file /dist/vendor.js was not modified
+2026-03-16 21:04:27.497 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 304 null text/css 4.2639ms
+2026-03-16 21:04:27.497 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 304 null text/javascript 4.2646ms
+2026-03-16 21:04:27.497 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 304 null text/javascript 4.2639ms
+2026-03-16 21:04:27.624 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/favicon.ico - null null
+2026-03-16 21:04:29.627 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/login - application/json 55
+2026-03-16 21:04:29.639 +02:00 [INF] CORS policy execution successful.
+2026-03-16 21:04:29.749 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/favicon.ico - 404 0 null 2125.3314ms
+2026-03-16 21:04:29.752 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:04:29.752 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/favicon.ico, Response status code: 404
+2026-03-16 21:04:29.820 +02:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(taskflow.DTOs.Auth.LoginRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-16 21:04:34.377 +02:00 [INF] Executed DbCommand (204ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-16 21:04:35.039 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-16 21:04:35.152 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Login (taskflow) in 5316.6937ms
+2026-03-16 21:04:35.153 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:04:35.186 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/login - 200 null application/json; charset=utf-8 5559.5372ms
+2026-03-16 21:36:31.003 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-16 21:36:50.552 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/settings - null null
+2026-03-16 21:36:50.696 +02:00 [INF] Executing endpoint 'Fallback {*path:nonfile}'
+2026-03-16 21:36:50.747 +02:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\index.html'
+2026-03-16 21:36:50.748 +02:00 [INF] Executed endpoint 'Fallback {*path:nonfile}'
+2026-03-16 21:36:50.758 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 200 null text/html 204.9249ms
+2026-03-16 21:36:53.238 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/login - application/json 55
+2026-03-16 21:36:53.254 +02:00 [INF] CORS policy execution successful.
+2026-03-16 21:36:53.259 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:36:53.301 +02:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(taskflow.DTOs.Auth.LoginRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-16 21:36:55.819 +02:00 [INF] Executed DbCommand (59ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-16 21:36:56.782 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-16 21:36:56.856 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Login (taskflow) in 3535.2683ms
+2026-03-16 21:36:56.857 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:36:56.887 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/login - 200 null application/json; charset=utf-8 3648.3098ms
+2026-03-16 21:37:05.954 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-16 21:37:05.972 +02:00 [INF] The file /index.html was not modified
+2026-03-16 21:37:05.973 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 304 null text/html 19.541ms
+2026-03-16 21:37:09.903 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/login - application/json 55
+2026-03-16 21:37:09.908 +02:00 [INF] CORS policy execution successful.
+2026-03-16 21:37:09.912 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:37:09.912 +02:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(taskflow.DTOs.Auth.LoginRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-16 21:37:10.034 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-16 21:37:10.525 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-16 21:37:10.526 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Login (taskflow) in 613.7025ms
+2026-03-16 21:37:10.527 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:37:10.527 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/login - 200 null application/json; charset=utf-8 624.3372ms
+2026-03-16 21:37:31.192 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-16 21:37:31.197 +02:00 [INF] The file /index.html was not modified
+2026-03-16 21:37:31.198 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 304 null text/html 5.7527ms
+2026-03-16 21:37:33.270 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/login - application/json 55
+2026-03-16 21:37:33.270 +02:00 [INF] CORS policy execution successful.
+2026-03-16 21:37:33.271 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:37:33.271 +02:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(taskflow.DTOs.Auth.LoginRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-16 21:37:33.330 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-16 21:37:33.661 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-16 21:37:33.662 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Login (taskflow) in 389.9999ms
+2026-03-16 21:37:33.662 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:37:33.662 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/login - 200 null application/json; charset=utf-8 392.5371ms
+2026-03-16 21:37:41.454 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/login - application/json 55
+2026-03-16 21:37:41.455 +02:00 [INF] CORS policy execution successful.
+2026-03-16 21:37:41.455 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:37:41.455 +02:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(taskflow.DTOs.Auth.LoginRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-16 21:37:41.469 +02:00 [INF] Executed DbCommand (3ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-16 21:37:41.736 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-16 21:37:41.738 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Login (taskflow) in 282.9851ms
+2026-03-16 21:37:41.738 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:37:41.739 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/login - 200 null application/json; charset=utf-8 284.5818ms
+2026-03-16 21:38:46.925 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-16 21:39:11.669 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/favicon.ico - null null
+2026-03-16 21:39:11.908 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/favicon.ico - 404 0 null 240.5732ms
+2026-03-16 21:39:11.929 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/favicon.ico, Response status code: 404
+2026-03-16 21:39:14.926 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/login - application/json 55
+2026-03-16 21:39:14.942 +02:00 [INF] CORS policy execution successful.
+2026-03-16 21:39:14.949 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:39:14.995 +02:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(taskflow.DTOs.Auth.LoginRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-16 21:39:17.616 +02:00 [INF] Executed DbCommand (48ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-16 21:39:18.424 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-16 21:39:18.510 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Login (taskflow) in 3498.738ms
+2026-03-16 21:39:18.512 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:39:18.533 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/login - 200 null application/json; charset=utf-8 3606.1745ms
+2026-03-16 21:40:59.657 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/filters - null null
+2026-03-16 21:40:59.663 +02:00 [INF] Executing endpoint 'Fallback {*path:nonfile}'
+2026-03-16 21:40:59.682 +02:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\index.html'
+2026-03-16 21:40:59.682 +02:00 [INF] Executed endpoint 'Fallback {*path:nonfile}'
+2026-03-16 21:40:59.684 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 200 null text/html 27.1389ms
+2026-03-16 21:40:59.703 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-16 21:40:59.704 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-16 21:40:59.704 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-16 21:40:59.716 +02:00 [INF] Sending file. Request path: '/dist/main.css'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.css'
+2026-03-16 21:40:59.717 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 200 79101 text/css 14.4243ms
+2026-03-16 21:40:59.723 +02:00 [INF] Sending file. Request path: '/dist/main.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.js'
+2026-03-16 21:40:59.724 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 200 508452 text/javascript 19.8516ms
+2026-03-16 21:40:59.730 +02:00 [INF] Sending file. Request path: '/dist/vendor.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\vendor.js'
+2026-03-16 21:40:59.731 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 200 2011304 text/javascript 26.8129ms
+2026-03-16 21:41:00.045 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/favicon.ico - null null
+2026-03-16 21:41:00.048 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/favicon.ico - 404 0 null 2.8609ms
+2026-03-16 21:41:00.049 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/favicon.ico, Response status code: 404
+2026-03-16 21:41:03.680 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/login - application/json 55
+2026-03-16 21:41:03.687 +02:00 [INF] CORS policy execution successful.
+2026-03-16 21:41:03.688 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:41:03.689 +02:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(taskflow.DTOs.Auth.LoginRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-16 21:41:04.251 +02:00 [INF] Executed DbCommand (34ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-16 21:41:04.684 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-16 21:41:04.686 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Login (taskflow) in 996.5469ms
+2026-03-16 21:41:04.686 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-16 21:41:04.688 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/login - 200 null application/json; charset=utf-8 1007.4418ms

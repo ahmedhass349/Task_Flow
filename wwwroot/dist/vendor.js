@@ -1092,44 +1092,6 @@ const FolderKanban = (0,_createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__["defau
 
 /***/ },
 
-/***/ "./node_modules/lucide-react/dist/esm/icons/funnel.js"
-/*!************************************************************!*\
-  !*** ./node_modules/lucide-react/dist/esm/icons/funnel.js ***!
-  \************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   __iconNode: () => (/* binding */ __iconNode),
-/* harmony export */   "default": () => (/* binding */ Funnel)
-/* harmony export */ });
-/* harmony import */ var _createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../createLucideIcon.js */ "./node_modules/lucide-react/dist/esm/createLucideIcon.js");
-/**
- * @license lucide-react v0.487.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-
-
-
-const __iconNode = [
-  [
-    "path",
-    {
-      d: "M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z",
-      key: "sc7q7i"
-    }
-  ]
-];
-const Funnel = (0,_createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__["default"])("funnel", __iconNode);
-
-
-//# sourceMappingURL=funnel.js.map
-
-
-/***/ },
-
 /***/ "./node_modules/lucide-react/dist/esm/icons/github.js"
 /*!************************************************************!*\
   !*** ./node_modules/lucide-react/dist/esm/icons/github.js ***!
@@ -1773,73 +1735,6 @@ const Palette = (0,_createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__["default"])
 
 /***/ },
 
-/***/ "./node_modules/lucide-react/dist/esm/icons/panel-left-close.js"
-/*!**********************************************************************!*\
-  !*** ./node_modules/lucide-react/dist/esm/icons/panel-left-close.js ***!
-  \**********************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   __iconNode: () => (/* binding */ __iconNode),
-/* harmony export */   "default": () => (/* binding */ PanelLeftClose)
-/* harmony export */ });
-/* harmony import */ var _createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../createLucideIcon.js */ "./node_modules/lucide-react/dist/esm/createLucideIcon.js");
-/**
- * @license lucide-react v0.487.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-
-
-
-const __iconNode = [
-  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
-  ["path", { d: "M9 3v18", key: "fh3hqa" }],
-  ["path", { d: "m16 15-3-3 3-3", key: "14y99z" }]
-];
-const PanelLeftClose = (0,_createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__["default"])("panel-left-close", __iconNode);
-
-
-//# sourceMappingURL=panel-left-close.js.map
-
-
-/***/ },
-
-/***/ "./node_modules/lucide-react/dist/esm/icons/panel-left.js"
-/*!****************************************************************!*\
-  !*** ./node_modules/lucide-react/dist/esm/icons/panel-left.js ***!
-  \****************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   __iconNode: () => (/* binding */ __iconNode),
-/* harmony export */   "default": () => (/* binding */ PanelLeft)
-/* harmony export */ });
-/* harmony import */ var _createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../createLucideIcon.js */ "./node_modules/lucide-react/dist/esm/createLucideIcon.js");
-/**
- * @license lucide-react v0.487.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-
-
-
-const __iconNode = [
-  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
-  ["path", { d: "M9 3v18", key: "fh3hqa" }]
-];
-const PanelLeft = (0,_createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__["default"])("panel-left", __iconNode);
-
-
-//# sourceMappingURL=panel-left.js.map
-
-
-/***/ },
-
 /***/ "./node_modules/lucide-react/dist/esm/icons/plus.js"
 /*!**********************************************************!*\
   !*** ./node_modules/lucide-react/dist/esm/icons/plus.js ***!
@@ -2244,45 +2139,6 @@ const Sun = (0,_createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__["default"])("su
 
 
 //# sourceMappingURL=sun.js.map
-
-
-/***/ },
-
-/***/ "./node_modules/lucide-react/dist/esm/icons/tag.js"
-/*!*********************************************************!*\
-  !*** ./node_modules/lucide-react/dist/esm/icons/tag.js ***!
-  \*********************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   __iconNode: () => (/* binding */ __iconNode),
-/* harmony export */   "default": () => (/* binding */ Tag)
-/* harmony export */ });
-/* harmony import */ var _createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../createLucideIcon.js */ "./node_modules/lucide-react/dist/esm/createLucideIcon.js");
-/**
- * @license lucide-react v0.487.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-
-
-
-const __iconNode = [
-  [
-    "path",
-    {
-      d: "M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z",
-      key: "vktsd0"
-    }
-  ],
-  ["circle", { cx: "7.5", cy: "7.5", r: ".5", fill: "currentColor", key: "kqv944" }]
-];
-const Tag = (0,_createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__["default"])("tag", __iconNode);
-
-
-//# sourceMappingURL=tag.js.map
 
 
 /***/ },
