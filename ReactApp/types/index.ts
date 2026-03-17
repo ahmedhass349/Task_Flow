@@ -5,8 +5,7 @@
 export interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   avatarUrl?: string;
   role: "admin" | "member" | "viewer";
   createdAt: string;
@@ -198,6 +197,13 @@ export interface UserSettings {
 export interface ApiError {
   message: string;
   status: number;
+  errors?: Record<string, string[]>;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data?: T;
   errors?: Record<string, string[]>;
 }
 

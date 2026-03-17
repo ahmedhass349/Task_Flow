@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Validate the stored token by fetching the current user
     let cancelled = false;
     api
-      .get<User>("/auth/me")
+      .get<User>("/api/auth/me")
       .then((userData) => {
         if (!cancelled) {
           setUser(userData);
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (credentials: LoginRequest) => {
     setError(null);
     try {
-      const response = await api.post<AuthResponse>("/auth/login", credentials);
+      const response = await api.post<AuthResponse>("/api/auth/login", credentials);
       setAuthToken(response.token);
       setUser(response.user);
     } catch (err) {
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = useCallback(async (data: SignupRequest) => {
     setError(null);
     try {
-      const response = await api.post<AuthResponse>("/auth/register", data);
+      const response = await api.post<AuthResponse>("/api/auth/register", data);
       setAuthToken(response.token);
       setUser(response.user);
     } catch (err) {

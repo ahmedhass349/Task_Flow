@@ -1,4 +1,4 @@
-import { useState, useId } from "react";
+import { useState, useEffect, useId } from "react";
 import {
   User, Bell, Shield, Palette, Globe, Key, Trash2, Camera,
   Moon, Sun, Monitor, Mail, MessageSquare, CheckSquare, Save,
@@ -6,6 +6,7 @@ import {
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
+import { useSettings } from "../hooks/useSettings";
 
 /* ─────── types ─────── */
 type Section = "profile" | "account" | "notifications" | "appearance" | "security" | "privacy";
@@ -89,18 +90,48 @@ const NAV_ITEMS: { id: Section; label: string; icon: React.ElementType }[] = [
 ═══════════════════════════════════════════════ */
 export default function Settings() {
   const [activeSection, setActiveSection] = useState<Section>("profile");
+  const { profile, isLoading, error, refetch, updateProfile } = useSettings();
 
-  /* ── Profile state ── */
-  const [profile, setProfile] = useState({
-    firstName: "Demo",
-    lastName: "User",
-    email: "demo@taskflow.io",
-    role: "Product Manager",
-    bio: "Building great products one task at a time.",
-    timezone: "Africa/Cairo",
-    language: "English (US)",
-    phone: "",
+  // Convert backend profile to form state
+  const [profileForm, setProfileForm] = useState({
+    firstName: profile?.fullName?.split(' ')[0] || "",
+    lastName: profile?.fullName?.split(' ')[1] || "",
+    email: profile?.email || "",
+    company: "",
+    country: "",
+    phone: profile?.phone || "",
+    timezone: profile?.timezone || "UTC",
   });
+
+  // Update form when profile changes
+  useEffect(() => {
+    if (profile) {
+      setProfileForm({
+        firstName: profile.fullName?.split(' ')[0] || "",
+        lastName: profile.fullName?.split(' ')[1] || "",
+        email: profile.email,
+        company: "",
+        country: "",
+        phone: profile.phone || "",
+        timezone: profile.timezone || "UTC",
+      });
+    }
+  }, [profile]);
+
+  const handleSaveProfile = async () => {
+    try {
+      await updateProfile({
+        fullName: `${profileForm.firstName} ${profileForm.lastName}`,
+        avatarUrl: profile?.avatarUrl,
+        company: profileForm.company,
+        country: profileForm.country,
+        phone: profileForm.phone,
+        timezone: profileForm.timezone,
+      });
+    } catch (err) {
+      // Error is handled by the hook
+    }
+  };
 
   /* ── Notifications state ── */
   const [notifs, setNotifs] = useState<Record<string, boolean>>({
@@ -208,17 +239,17 @@ export default function Settings() {
 
                     <SectionCard title="Personal Information">
                       <div className="grid grid-cols-2 gap-4">
-                        <InputField label="First name" value={profile.firstName} onChange={(v) => setProfile({ ...profile, firstName: v })} />
-                        <InputField label="Last name"  value={profile.lastName}  onChange={(v) => setProfile({ ...profile, lastName: v })} />
-                        <InputField label="Email address" value={profile.email} onChange={(v) => setProfile({ ...profile, email: v })} type="email" />
-                        <InputField label="Phone number" value={profile.phone} onChange={(v) => setProfile({ ...profile, phone: v })} type="tel" placeholder="+20 1xx xxx xxxx" />
-                        <InputField label="Job title / Role" value={profile.role} onChange={(v) => setProfile({ ...profile, role: v })} />
+                        <InputField label="First name" value={profileForm.firstName} onChange={(v) => setProfileForm({ ...profileForm, firstName: v })} />
+                        <InputField label="Last name"  value={profileForm.lastName}  onChange={(v) => setProfileForm({ ...profileForm, lastName: v })} />
+                        <InputField label="Email address" value={profileForm.email} onChange={(v) => setProfileForm({ ...profileForm, email: v })} type="email" />
+                        <InputField label="Phone number" value={profileForm.phone} onChange={(v) => setProfileForm({ ...profileForm, phone: v })} type="tel" placeholder="+20 1xx xxx xxxx" />
+                        <InputField label="Company" value={profileForm.company} onChange={(v) => setProfileForm({ ...profileForm, company: v })} />
                         <div className="flex flex-col gap-1.5">
                           <label htmlFor="settings-timezone" className="text-sm font-medium text-gray-700">Timezone</label>
                           <select
                             id="settings-timezone"
-                            value={profile.timezone}
-                            onChange={(e) => setProfile({ ...profile, timezone: e.target.value })}
+                            value={profileForm.timezone}
+                            onChange={(e) => setProfileForm({ ...profileForm, timezone: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                           >
                             {["Africa/Cairo","Europe/London","America/New_York","America/Los_Angeles","Asia/Dubai","Asia/Tokyo"].map(tz => (
@@ -226,20 +257,12 @@ export default function Settings() {
                             ))}
                           </select>
                         </div>
-                        <div className="col-span-2 flex flex-col gap-1.5">
-                          <label htmlFor="settings-bio" className="text-sm font-medium text-gray-700">Bio</label>
-                          <textarea
-                            id="settings-bio"
-                            value={profile.bio}
-                            onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                            rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                          />
-                          <p className="text-xs text-gray-400 text-right">{profile.bio.length}/160</p>
-                        </div>
                       </div>
                       <div className="mt-4 flex justify-end">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                        <button
+                          onClick={handleSaveProfile}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                        >
                           <Save className="size-4" /> Save changes
                         </button>
                       </div>
@@ -281,32 +304,6 @@ export default function Settings() {
                           <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
                             <Key className="size-4" /> Update password
                           </button>
-                        </div>
-                      </div>
-                    </SectionCard>
-
-                    <SectionCard title="Language & Region">
-                      <div className="grid grid-cols-2 gap-4 max-w-md">
-                        <div className="flex flex-col gap-1.5">
-                          <label htmlFor="settings-language" className="text-sm font-medium text-gray-700">Language</label>
-                          <select
-                            id="settings-language"
-                            value={profile.language}
-                            onChange={(e) => setProfile({ ...profile, language: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                          >
-                            {["English (US)","English (UK)","Arabic","French","Spanish","German"].map(l => (
-                              <option key={l} value={l}>{l}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <label htmlFor="settings-dateformat" className="text-sm font-medium text-gray-700">Date format</label>
-                          <select id="settings-dateformat" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                            <option>MM/DD/YYYY</option>
-                            <option>DD/MM/YYYY</option>
-                            <option>YYYY-MM-DD</option>
-                          </select>
                         </div>
                       </div>
                     </SectionCard>

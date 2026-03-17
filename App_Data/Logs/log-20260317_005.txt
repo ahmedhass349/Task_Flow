@@ -1,0 +1,2 @@
+2026-03-17 13:54:10.980 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-17 13:59:53.665 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.

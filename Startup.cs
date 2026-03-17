@@ -9,10 +9,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http.Extensions;
 using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using System;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text;
@@ -86,6 +88,36 @@ namespace taskflow
                     ValidIssuer = jwtIssuer,
                     ValidAudience = jwtAudience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+                };
+                
+                // Return JSON for auth failures instead of default plain text
+                options.Events = new JwtBearerEvents
+                {
+                    OnChallenge = async context =>
+                    {
+                        context.HandleResponse();
+                        context.Response.StatusCode = 401;
+                        context.Response.ContentType = "application/json";
+                        var errorResponse = new
+                        {
+                            success = false,
+                            message = "Unauthorized. Please log in to continue."
+                        };
+                        var json = JsonConvert.SerializeObject(errorResponse);
+                        await context.Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes(json));
+                    },
+                    OnForbidden = async context =>
+                    {
+                        context.Response.StatusCode = 403;
+                        context.Response.ContentType = "application/json";
+                        var errorResponse = new
+                        {
+                            success = false,
+                            message = "You do not have permission to perform this action."
+                        };
+                        var json = JsonConvert.SerializeObject(errorResponse);
+                        await context.Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes(json));
+                    }
                 };
             });
 

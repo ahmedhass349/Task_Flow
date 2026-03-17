@@ -1,110 +1,38 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FolderKanban, Grid3x3, List, MoreVertical, Star, Users } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Footer from "../Components/Footer";
 import Header from "../Components/Header";
 import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
+import { useProjects } from "../hooks/useProjects";
 
 interface Project {
   id: string;
   name: string;
-  description: string;
-  color: string;
-  tasks: { total: number; completed: number };
-  members: number;
-  starred: boolean;
+  description?: string;
+  color?: string;
+  ownerId: string;
+  isStarred: boolean;
+  createdAt: string;
+  tasksTotal: number;
+  tasksCompleted: number;
+  memberCount: number;
+  ownerName?: string;
 }
 
-// ── Seed data (will be replaced by API call) ─────────────────────────────
-
-const SEED_PROJECTS: Project[] = [
-  {
-    id: "1",
-    name: "Marketing Site",
-    description: "Company website redesign and development",
-    color: "bg-blue-500",
-    tasks: { total: 24, completed: 18 },
-    members: 5,
-    starred: true,
-  },
-  {
-    id: "2",
-    name: "API Service",
-    description: "Backend API development and documentation",
-    color: "bg-green-500",
-    tasks: { total: 36, completed: 22 },
-    members: 8,
-    starred: false,
-  },
-  {
-    id: "3",
-    name: "Mobile App",
-    description: "iOS and Android mobile application",
-    color: "bg-purple-500",
-    tasks: { total: 48, completed: 12 },
-    members: 6,
-    starred: true,
-  },
-  {
-    id: "4",
-    name: "Admin Panel",
-    description: "Internal admin dashboard for operations",
-    color: "bg-orange-500",
-    tasks: { total: 28, completed: 20 },
-    members: 4,
-    starred: false,
-  },
-  {
-    id: "5",
-    name: "E-commerce",
-    description: "Online store platform development",
-    color: "bg-pink-500",
-    tasks: { total: 42, completed: 30 },
-    members: 7,
-    starred: true,
-  },
-  {
-    id: "6",
-    name: "Developer Portal",
-    description: "Documentation and API reference portal",
-    color: "bg-blue-400",
-    tasks: { total: 16, completed: 14 },
-    members: 3,
-    starred: false,
-  },
-];
-
 export default function Projects() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // TODO: Replace with actual API call: api.get<Project[]>("/projects")
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-
-    const timer = setTimeout(() => {
-      if (!cancelled) {
-        setProjects(SEED_PROJECTS);
-        setIsLoading(false);
-      }
-    }, 0);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, []);
+  const { projects, isLoading, error, refetch, toggleStar } = useProjects();
 
   const handleRetry = () => {
-    setError(null);
-    setIsLoading(true);
-    setTimeout(() => {
-      setProjects(SEED_PROJECTS);
-      setIsLoading(false);
-    }, 0);
+    refetch();
+  };
+
+  const handleToggleStar = async (projectId: string) => {
+    try {
+      await toggleStar(projectId);
+    } catch (err) {
+      // Error is handled by the hook
+    }
   };
 
   return (
@@ -173,8 +101,12 @@ export default function Projects() {
                         <FolderKanban className="size-6 text-white" />
                       </div>
                       <div className="flex items-center gap-1">
-                        <button aria-label={project.starred ? "Unstar project" : "Star project"} className="p-1 text-gray-400 hover:text-yellow-500 transition-colors">
-                          <Star className={`size-5 ${project.starred ? "fill-yellow-400 text-yellow-400" : ""}`} />
+                        <button 
+                          aria-label={project.isStarred ? "Unstar project" : "Star project"} 
+                          className="p-1 text-gray-400 hover:text-yellow-500 transition-colors"
+                          onClick={() => handleToggleStar(project.id)}
+                        >
+                          <Star className={`size-5 ${project.isStarred ? "fill-yellow-400 text-yellow-400" : ""}`} />
                         </button>
                         <button aria-label="Project options" className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
                           <MoreVertical className="size-5" />
@@ -190,13 +122,13 @@ export default function Projects() {
                       <div className="flex items-center justify-between text-sm mb-2">
                         <span className="text-gray-600">Progress</span>
                         <span className="font-medium text-gray-900">
-                          {project.tasks.completed}/{project.tasks.total}
+                          {project.tasksCompleted}/{project.tasksTotal}
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className={`${project.color} h-2 rounded-full transition-all`}
-                          style={{ width: `${(project.tasks.completed / project.tasks.total) * 100}%` }}
+                          style={{ width: `${(project.tasksCompleted / project.tasksTotal) * 100}%` }}
                         />
                       </div>
                     </div>
@@ -205,10 +137,10 @@ export default function Projects() {
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                       <div className="flex items-center gap-1 text-sm text-gray-600">
                         <Users className="size-4" />
-                        <span>{project.members} members</span>
+                        <span>{project.memberCount} members</span>
                       </div>
                       <span className="text-xs text-gray-500">
-                        {Math.round((project.tasks.completed / project.tasks.total) * 100)}% complete
+                        {Math.round((project.tasksCompleted / project.tasksTotal) * 100)}% complete
                       </span>
                     </div>
                   </div>

@@ -487,9 +487,6 @@
   .z-50 {
     z-index: 50;
   }
-  .col-span-2 {
-    grid-column: span 2 / span 2;
-  }
   .mx-2 {
     margin-inline: calc(var(--spacing) * 2);
   }
@@ -1428,9 +1425,6 @@
   }
   .bg-blue-300 {
     background-color: var(--color-blue-300);
-  }
-  .bg-blue-400 {
-    background-color: var(--color-blue-400);
   }
   .bg-blue-500 {
     background-color: var(--color-blue-500);

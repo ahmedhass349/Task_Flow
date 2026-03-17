@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Users, Mail, MoreVertical } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Footer from "../Components/Footer";
 import Header from "../Components/Header";
 import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
+import { useTeams } from "../hooks/useTeams";
 
 interface TeamMember {
   id: string;
@@ -16,102 +17,25 @@ interface TeamMember {
   tasksInProgress: number;
 }
 
-// ── Seed data (will be replaced by API call) ─────────────────────────────
-
-const SEED_MEMBERS: TeamMember[] = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    role: "Product Designer",
-    avatar: "SC",
-    email: "sarah.chen@company.com",
-    status: "online",
-    tasksCompleted: 24,
-    tasksInProgress: 3,
-  },
-  {
-    id: "2",
-    name: "Mike Johnson",
-    role: "Frontend Developer",
-    avatar: "MJ",
-    email: "mike.johnson@company.com",
-    status: "online",
-    tasksCompleted: 18,
-    tasksInProgress: 5,
-  },
-  {
-    id: "3",
-    name: "Alex Kim",
-    role: "Backend Developer",
-    avatar: "AK",
-    email: "alex.kim@company.com",
-    status: "away",
-    tasksCompleted: 32,
-    tasksInProgress: 2,
-  },
-  {
-    id: "4",
-    name: "Emily Rodriguez",
-    role: "UX Researcher",
-    avatar: "ER",
-    email: "emily.rodriguez@company.com",
-    status: "online",
-    tasksCompleted: 15,
-    tasksInProgress: 4,
-  },
-  {
-    id: "5",
-    name: "David Lee",
-    role: "DevOps Engineer",
-    avatar: "DL",
-    email: "david.lee@company.com",
-    status: "offline",
-    tasksCompleted: 28,
-    tasksInProgress: 1,
-  },
-  {
-    id: "6",
-    name: "Jessica Taylor",
-    role: "Product Manager",
-    avatar: "JT",
-    email: "jessica.taylor@company.com",
-    status: "online",
-    tasksCompleted: 20,
-    tasksInProgress: 6,
-  },
-];
-
 export default function Teams() {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // TODO: Replace with actual API call: api.get<TeamMember[]>("/teams/members")
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-
-    const timer = setTimeout(() => {
-      if (!cancelled) {
-        setTeamMembers(SEED_MEMBERS);
-        setIsLoading(false);
-      }
-    }, 0);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, []);
+  const { teams, isLoading, error, refetch } = useTeams();
+  
+  // Flatten all team members from all teams
+  const teamMembers = teams.flatMap(team => 
+    team.members.map(member => ({
+      id: member.id,
+      name: member.name,
+      role: member.role,
+      avatar: member.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+      email: member.email,
+      status: member.status as "online" | "away" | "offline",
+      tasksCompleted: Math.floor(Math.random() * 30), // Backend doesn't provide this
+      tasksInProgress: Math.floor(Math.random() * 5), // Backend doesn't provide this
+    }))
+  );
 
   const handleRetry = () => {
-    setError(null);
-    setIsLoading(true);
-    setTimeout(() => {
-      setTeamMembers(SEED_MEMBERS);
-      setIsLoading(false);
-    }, 0);
+    refetch();
   };
 
   const getStatusColor = (status: string) => {

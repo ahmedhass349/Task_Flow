@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
+import { useMessages } from "../hooks/useMessages";
 import {
   Search, Star, MoreVertical, Smile, Mic, ThumbsUp,
   Send, Plus, ChevronDown, Clock, MessageCircle,
@@ -28,121 +29,88 @@ interface ChatMessage {
   time: string;
 }
 
-/* ── Static data ── */
-const SEED_CONTACTS: Contact[] = [
-  { id: 1, name: "Sarah Chen",      initials: "SC", avatarClass: "bg-pink-200 text-pink-700",     preview: "Can you review the latest mockups when you get a chance?", time: "Just now",   unread: 1, starred: false },
-  { id: 2, name: "Mike Johnson",    initials: "MJ", avatarClass: "bg-blue-200 text-blue-700",     preview: "The API docs are ready for review.",                        time: "10 min ago", unread: 1, starred: false },
-  { id: 3, name: "Alex Kim",        initials: "AK", avatarClass: "bg-green-200 text-green-700",   preview: "Pushed the backend fix. Let me know if it resolves it.",   time: "45 min ago", unread: 1, starred: false },
-  { id: 4, name: "Emily Rodriguez", initials: "ER", avatarClass: "bg-purple-200 text-purple-700", preview: "Thanks for the feedback on the wireframes!",               time: "2 hr ago",   unread: 0, starred: false },
-  { id: 5, name: "Dev Team",        initials: "DT", avatarClass: "bg-orange-200 text-orange-700", preview: "Standup is moved to 10 AM tomorrow.",                     time: "Yesterday",  unread: 0, starred: false },
-];
-
-const SEED_MSGS: Record<number, ChatMessage[]> = {
-  1: [
-    { id: 1, side: "received", type: "text", text: "Can you review the latest mockups when you get a chance?", time: "Just now" },
-    { id: 2, side: "sent",     type: "text", text: "Sure! Sending you my feedback shortly.", time: "Just now" },
-  ],
-  2: [
-    { id: 1, side: "received", type: "text",  text: "The API docs are ready for review.", time: "10 min ago" },
-    { id: 2, side: "received", type: "voice", duration: "00:42", time: "10 min ago" },
-    { id: 3, side: "sent",     type: "text",  text: "Great, I'll take a look now.", time: "8 min ago" },
-    { id: 4, side: "sent",     type: "text",  text: "Looks good so far! A few minor comments coming.", time: "5 min ago" },
-  ],
-  3: [
-    { id: 1, side: "received", type: "text", text: "Pushed the backend fix. Let me know if it resolves it.", time: "45 min ago" },
-    { id: 2, side: "sent",     type: "text", text: "Testing now...", time: "40 min ago" },
-    { id: 3, side: "sent",     type: "text", text: "Confirmed! The issue is fixed. Thanks!", time: "38 min ago" },
-  ],
-  4: [
-    { id: 1, side: "sent",     type: "text", text: "Your wireframes look great overall. A few small tweaks on the nav section.", time: "2 hr ago" },
-    { id: 2, side: "received", type: "text", text: "Thanks for the feedback on the wireframes!", time: "2 hr ago" },
-  ],
-  5: [
-    { id: 1, side: "received", type: "text", text: "Standup is moved to 10 AM tomorrow.", time: "Yesterday" },
-    { id: 2, side: "sent",     type: "text", text: "Got it, thanks for the heads up!", time: "Yesterday" },
-  ],
-};
-
-/* ── Waveform (SVG bars from Figma heights) ── */
-const WAVE_HEIGHTS = [4,4,4,4,4,4,6,6,6,6,6,9,9,9,9,12,9,9,9,9,9,18,16,16,16,16,12,12,9,9,9,9,9,12,16,9,9,9,12,12,18,16,16,16,16,12,12,9,9,9,9,4,4,9,4,12,12,4,4,12,12,12,12,4,4,18,9,9,9,4,4,4,9,9,9,9,9,9,4,4,9,9,16,9,9,9,4,4,12,4,12,9,9,9,18,16,12,12,4,9,9,9,6,6,6,6,6,6,4,4,4,4];
-
-function Waveform() {
-  return (
-    <svg width={WAVE_HEIGHTS.length * 2.5} height={22} viewBox={`0 0 ${WAVE_HEIGHTS.length * 2.5} 22`} className="block text-blue-600" aria-hidden="true">
-      {WAVE_HEIGHTS.map((h, i) => (
-        <rect key={i} x={i * 2.5} y={(22 - h) / 2} width={1.5} height={h} rx={1} fill="currentColor" />
-      ))}
-    </svg>
-  );
-}
-
-/* ═══════════════════════════════ */
+/* ── Component ── */
 export default function Message() {
-  /* ── Loading / error simulation ── */
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [contacts, setContacts]   = useState<Contact[]>([]);
-  const [allMsgs, setAllMsgs]     = useState<Record<number, ChatMessage[]>>({});
-  const [activeId, setActiveId]   = useState<number | null>(null);
-  const [search, setSearch]       = useState("");
-  const [input, setInput]         = useState("");
+  const { contacts, messages, isLoading, error, refetch, sendMessage: sendMessageHook, activeContactId, setActiveContactId } = useMessages();
+  
+  const [search, setSearch] = useState("");
+  const [input, setInput] = useState("");
   const [showContacts, setShowContacts] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        setContacts(SEED_CONTACTS);
-        setAllMsgs(SEED_MSGS);
-        setActiveId(2);
-        setLoading(false);
-      } catch {
-        setError("Failed to load messages. Please try again.");
-        setLoading(false);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, []);
+  // Convert backend contacts to UI format
+  const uiContacts = contacts.map(contact => ({
+    id: parseInt(contact.id),
+    name: contact.name,
+    initials: contact.name.split(' ').map(n => n[0]).join(''),
+    avatarClass: "bg-blue-200 text-blue-700", // Default, could be enhanced
+    preview: contact.lastMessage || "No messages yet",
+    time: contact.lastMessageTime ? formatRelativeTime(contact.lastMessageTime) : "",
+    unread: contact.unreadCount,
+    starred: false, // Backend doesn't provide this
+  }));
 
-  const activeMsgs    = activeId !== null ? (allMsgs[activeId] ?? []) : [];
-  const activeContact = contacts.find(c => c.id === activeId) ?? null;
+  // Convert backend messages to UI format
+  const uiMessages = messages.map(msg => ({
+    id: parseInt(msg.id),
+    side: msg.senderId === "current-user" ? "sent" as const : "received" as const,
+    type: "text" as const,
+    text: msg.body,
+    time: formatRelativeTime(msg.sentAt),
+  }));
+
+  // Helper to format relative time
+  function formatRelativeTime(iso: string): string {
+    const created = new Date(iso);
+    const diffMs = Date.now() - created.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "Just now";
+    if (diffMin < 60) return `${diffMin} min ago`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `${diffH} hour${diffH === 1 ? "" : "s"} ago`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD === 1) return "Yesterday";
+    return `${diffD} days ago`;
+  }
+
+  const handleSendMessage = async () => {
+    if (input.trim() && activeContactId) {
+      try {
+        await sendMessageHook(activeContactId, input.trim());
+        setInput("");
+        // Scroll to bottom
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      } catch (err) {
+        // Error is handled by the hook
+      }
+    }
+  };
+
+  const activeMsgs = uiMessages;
+  const activeContact = uiContacts.find(c => c.id === parseInt(activeContactId || "")) ?? null;
 
   const filteredContacts = search
-    ? contacts.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
-    : contacts;
+    ? uiContacts.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+    : uiContacts;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeId, activeMsgs.length]);
+  }, [activeContactId, uiMessages.length]);
 
   const selectContact = (id: number) => {
-    setActiveId(id);
-    setContacts(prev => prev.map(c => c.id === id ? { ...c, unread: 0 } : c));
+    setActiveContactId(id.toString());
     setShowContacts(false); // close mobile panel
-  };
-
-  const sendMessage = () => {
-    const text = input.trim();
-    if (!text || activeId === null) return;
-    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setAllMsgs(prev => ({
-      ...prev,
-      [activeId]: [...(prev[activeId] ?? []), { id: Date.now(), side: "sent", type: "text", text, time }],
-    }));
-    setContacts(prev => prev.map(c => c.id === activeId ? { ...c, preview: text, time } : c));
-    setInput("");
   };
 
   const toggleStar = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setContacts(prev => prev.map(c => c.id === id ? { ...c, starred: !c.starred } : c));
+    // Backend doesn't support starring contacts, this would need to be implemented
   };
 
   const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   /* ── Page states ── */
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen overflow-hidden bg-gray-50">
         <Sidebar />
@@ -160,7 +128,7 @@ export default function Message() {
         <Sidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
           <Header />
-          <PageError message={error} onRetry={() => window.location.reload()} />
+          <PageError message={error} onRetry={refetch} />
         </div>
       </div>
     );
@@ -264,7 +232,7 @@ export default function Message() {
                     key={c.id}
                     onClick={() => selectContact(c.id)}
                     className={`w-full text-left flex items-start gap-3 px-4 py-3 border-b border-gray-100 transition-colors ${
-                      c.id === activeId ? "bg-blue-50 border-l-2 border-l-blue-600" : "hover:bg-gray-50"
+                      c.id === parseInt(activeContactId || "0") ? "bg-blue-50 border-l-2 border-l-blue-600" : "hover:bg-gray-50"
                     }`}
                   >
                     <div className={`size-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${c.avatarClass}`}>
@@ -272,7 +240,7 @@ export default function Message() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className={`text-sm font-medium ${c.id === activeId ? "text-blue-700" : "text-gray-900"}`}>{c.name}</span>
+                        <span className={`text-sm font-medium ${c.id === parseInt(activeContactId || "0") ? "text-blue-700" : "text-gray-900"}`}>{c.name}</span>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           {c.unread > 0 && (
                             <span className="size-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -382,8 +350,6 @@ export default function Message() {
                                 >
                                   <Mic className="size-4 text-white" />
                                 </button>
-                                <Waveform />
-                                <span className="text-sm text-blue-600 font-medium">{msg.duration}</span>
                               </div>
                             )}
                             <span className="mt-1 text-xs text-gray-400 px-1">{msg.time}</span>
@@ -408,13 +374,13 @@ export default function Message() {
                     <input
                       value={input}
                       onChange={e => setInput(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && sendMessage()}
+                      onKeyDown={e => e.key === "Enter" && handleSendMessage()}
                       placeholder="Type your message here ..."
                       className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder:text-gray-400"
                       aria-label="Type a message"
                     />
                     <button
-                      onClick={sendMessage}
+                      onClick={handleSendMessage}
                       className="size-7 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 hover:bg-blue-700 transition-colors"
                       aria-label="Send message"
                     >

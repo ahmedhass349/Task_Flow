@@ -1,0 +1,295 @@
+2026-03-17 03:45:29.032 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-17 12:29:24.254 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-17 13:16:24.704 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-17 13:16:29.412 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - null null
+2026-03-17 13:16:29.516 +02:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+2026-03-17 13:16:29.603 +02:00 [INF] AuthenticationScheme: Bearer was challenged.
+2026-03-17 13:16:29.606 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 401 null application/json 196.5301ms
+2026-03-17 13:16:34.645 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - null null
+2026-03-17 13:16:34.666 +02:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+2026-03-17 13:16:34.669 +02:00 [INF] AuthenticationScheme: Bearer was challenged.
+2026-03-17 13:16:34.673 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 401 null application/json 27.8344ms
+2026-03-17 13:19:24.039 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - application/json null
+2026-03-17 13:19:24.401 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:19:24.476 +02:00 [INF] Route matched with {action = "GetCurrentUser", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCurrentUser() on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-17 13:19:29.331 +02:00 [INF] Executed DbCommand (141ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Id] = @__p_0
+2026-03-17 13:19:29.807 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.UserDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-17 13:19:29.932 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow) in 5420.7288ms
+2026-03-17 13:19:29.939 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:19:29.974 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 200 null application/json; charset=utf-8 5935.1298ms
+2026-03-17 13:19:35.252 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-17 13:19:35.379 +02:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\index.html'
+2026-03-17 13:19:35.386 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 200 950 text/html 132.8276ms
+2026-03-17 13:19:35.409 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-17 13:19:35.410 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-17 13:19:35.410 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-17 13:19:35.473 +02:00 [INF] Sending file. Request path: '/dist/main.css'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.css'
+2026-03-17 13:19:35.479 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 200 78981 text/css 69.1125ms
+2026-03-17 13:19:35.768 +02:00 [INF] Sending file. Request path: '/dist/main.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.js'
+2026-03-17 13:19:35.775 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 200 546868 text/javascript 364.4888ms
+2026-03-17 13:19:37.513 +02:00 [INF] Sending file. Request path: '/dist/vendor.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\vendor.js'
+2026-03-17 13:19:37.516 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 200 5688668 text/javascript 2105.1867ms
+2026-03-17 13:19:37.620 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - application/json null
+2026-03-17 13:19:37.632 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:19:37.636 +02:00 [INF] Route matched with {action = "GetCurrentUser", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCurrentUser() on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-17 13:19:37.732 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/favicon.ico - null null
+2026-03-17 13:19:37.745 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/favicon.ico - 404 0 null 12.5964ms
+2026-03-17 13:19:37.760 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/favicon.ico, Response status code: 404
+2026-03-17 13:19:37.883 +02:00 [INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Id] = @__p_0
+2026-03-17 13:19:37.899 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.UserDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-17 13:19:37.908 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow) in 264.5964ms
+2026-03-17 13:19:37.915 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:19:37.922 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 200 null application/json; charset=utf-8 301.164ms
+2026-03-17 13:19:49.067 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/teams - application/json null
+2026-03-17 13:19:49.078 +02:00 [INF] Executing endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:19:49.084 +02:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\index.html'
+2026-03-17 13:19:49.088 +02:00 [INF] Executed endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:19:49.094 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 200 null text/html 26.0773ms
+2026-03-17 13:21:32.842 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/dashboard/stats - null null
+2026-03-17 13:21:32.846 +02:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+2026-03-17 13:21:32.847 +02:00 [INF] AuthenticationScheme: Bearer was challenged.
+2026-03-17 13:21:32.849 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/dashboard/stats - 401 null application/json 7.2116ms
+2026-03-17 13:22:13.652 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/my-work - null null
+2026-03-17 13:22:13.665 +02:00 [INF] Executing endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:22:13.676 +02:00 [INF] The file /index.html was not modified
+2026-03-17 13:22:13.681 +02:00 [INF] Executed endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:22:13.686 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 304 null text/html 34.2557ms
+2026-03-17 13:22:13.729 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-17 13:22:14.121 +02:00 [INF] Sending file. Request path: '/dist/main.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.js'
+2026-03-17 13:22:14.127 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 200 547062 text/javascript 398.3914ms
+2026-03-17 13:22:14.182 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - application/json null
+2026-03-17 13:22:14.193 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:22:14.198 +02:00 [INF] Route matched with {action = "GetCurrentUser", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCurrentUser() on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-17 13:22:14.299 +02:00 [INF] Executed DbCommand (11ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Id] = @__p_0
+2026-03-17 13:22:14.311 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.UserDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-17 13:22:14.317 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow) in 112.187ms
+2026-03-17 13:22:14.320 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:22:14.327 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 200 null application/json; charset=utf-8 144.994ms
+2026-03-17 13:28:47.765 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-17 13:28:47.815 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:28:47.871 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 55.6123ms
+2026-03-17 13:28:47.871 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css.map - null null
+2026-03-17 13:28:47.886 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:28:47.923 +02:00 [INF] The file /dist/main.css.map was not modified
+2026-03-17 13:28:47.941 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css.map - 304 null text/plain 69.2507ms
+2026-03-17 13:28:48.040 +02:00 [INF] Sending file. Request path: '/dist/main.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.js'
+2026-03-17 13:28:48.046 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 200 546868 text/javascript 281.5548ms
+2026-03-17 13:28:48.116 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js.map - null null
+2026-03-17 13:28:48.148 +02:00 [INF] The file /dist/vendor.js.map was not modified
+2026-03-17 13:28:48.148 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js.map - null null
+2026-03-17 13:28:48.152 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js.map - 304 null text/plain 36.1596ms
+2026-03-17 13:28:48.261 +02:00 [INF] Sending file. Request path: '/dist/main.js.map'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.js.map'
+2026-03-17 13:28:48.266 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js.map - 200 639068 text/plain 117.0456ms
+2026-03-17 13:28:48.300 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - application/json null
+2026-03-17 13:28:48.315 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:28:48.352 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/favicon.ico - null null
+2026-03-17 13:28:48.353 +02:00 [INF] Route matched with {action = "GetCurrentUser", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCurrentUser() on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-17 13:28:48.357 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/favicon.ico - 404 0 null 5.7816ms
+2026-03-17 13:28:48.372 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/favicon.ico, Response status code: 404
+2026-03-17 13:28:48.389 +02:00 [INF] Executed DbCommand (7ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Id] = @__p_0
+2026-03-17 13:28:48.397 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.UserDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-17 13:28:48.401 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow) in 36.3698ms
+2026-03-17 13:28:48.403 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:28:48.407 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 200 null application/json; charset=utf-8 106.4571ms
+2026-03-17 13:29:07.956 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-17 13:29:07.971 +02:00 [INF] The file /index.html was not modified
+2026-03-17 13:29:07.975 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 304 null text/html 18.9677ms
+2026-03-17 13:29:08.007 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:29:08.014 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 6.7483ms
+2026-03-17 13:29:08.020 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:29:10.822 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/login - application/json 55
+2026-03-17 13:29:10.837 +02:00 [INF] CORS policy execution successful.
+2026-03-17 13:29:10.842 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-17 13:29:10.881 +02:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(taskflow.DTOs.Auth.LoginRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-17 13:29:11.175 +02:00 [INF] Executed DbCommand (7ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-17 13:29:12.234 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-17 13:29:12.249 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Login (taskflow) in 1359.7157ms
+2026-03-17 13:29:12.254 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-17 13:29:12.258 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/login - 200 null application/json; charset=utf-8 1435.93ms
+2026-03-17 13:34:32.410 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js.map - null null
+2026-03-17 13:34:32.419 +02:00 [INF] The file /dist/main.js.map was not modified
+2026-03-17 13:34:32.428 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js.map - 304 null text/plain 17.6192ms
+2026-03-17 13:34:32.440 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:34:32.448 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 8.6233ms
+2026-03-17 13:34:32.455 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:34:32.476 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:34:32.483 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 6.6538ms
+2026-03-17 13:34:32.502 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:35:29.145 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/swagger - null null
+2026-03-17 13:35:29.152 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/swagger - 301 0 null 6.4957ms
+2026-03-17 13:35:29.162 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/swagger/index.html - null null
+2026-03-17 13:35:29.368 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/swagger/index.html - 200 null text/html;charset=utf-8 205.6032ms
+2026-03-17 13:35:29.410 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/swagger/swagger-ui.css - null null
+2026-03-17 13:35:29.411 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/swagger/swagger-ui-standalone-preset.js - null null
+2026-03-17 13:35:29.412 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/swagger/swagger-ui-bundle.js - null null
+2026-03-17 13:35:29.431 +02:00 [INF] Sending file. Request path: '/swagger-ui.css'. Physical path: 'N/A'
+2026-03-17 13:35:29.437 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/swagger/swagger-ui.css - 200 144929 text/css 26.5275ms
+2026-03-17 13:35:29.440 +02:00 [INF] Sending file. Request path: '/swagger-ui-standalone-preset.js'. Physical path: 'N/A'
+2026-03-17 13:35:29.453 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/swagger/swagger-ui-standalone-preset.js - 200 312163 text/javascript 40.5009ms
+2026-03-17 13:35:29.478 +02:00 [INF] Sending file. Request path: '/swagger-ui-bundle.js'. Physical path: 'N/A'
+2026-03-17 13:35:29.480 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/swagger/swagger-ui-bundle.js - 200 1061536 text/javascript 68.6241ms
+2026-03-17 13:35:29.487 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:35:29.505 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 17.6671ms
+2026-03-17 13:35:29.516 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:35:29.784 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/swagger/v1/swagger.json - null null
+2026-03-17 13:35:29.793 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/swagger/favicon-32x32.png - null null
+2026-03-17 13:35:29.801 +02:00 [INF] Sending file. Request path: '/favicon-32x32.png'. Physical path: 'N/A'
+2026-03-17 13:35:29.804 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/swagger/favicon-32x32.png - 200 628 image/png 10.8709ms
+2026-03-17 13:35:30.184 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 400.3289ms
+2026-03-17 13:36:30.900 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-17 13:36:30.907 +02:00 [INF] The file /dist/main.js was not modified
+2026-03-17 13:36:30.911 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 304 null text/javascript 11.004ms
+2026-03-17 13:36:30.989 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - application/json null
+2026-03-17 13:36:30.999 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:36:31.003 +02:00 [INF] Route matched with {action = "GetCurrentUser", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCurrentUser() on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-17 13:36:31.334 +02:00 [INF] Executed DbCommand (308ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Id] = @__p_0
+2026-03-17 13:36:31.343 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.UserDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-17 13:36:31.350 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow) in 342.822ms
+2026-03-17 13:36:31.355 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:36:31.360 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 200 null application/json; charset=utf-8 371.6614ms
+2026-03-17 13:36:36.267 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:36:36.290 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 23.039ms
+2026-03-17 13:36:36.301 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:36:36.529 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js.map - null null
+2026-03-17 13:36:36.537 +02:00 [INF] The file /dist/main.js.map was not modified
+2026-03-17 13:36:36.542 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js.map - 304 null text/plain 12.795ms
+2026-03-17 13:38:33.420 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js.map - null null
+2026-03-17 13:38:33.426 +02:00 [INF] The file /dist/main.js.map was not modified
+2026-03-17 13:38:33.429 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js.map - 304 null text/plain 9.3237ms
+2026-03-17 13:38:33.450 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:38:33.458 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 7.5617ms
+2026-03-17 13:38:33.467 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:38:33.493 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:38:33.501 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 7.122ms
+2026-03-17 13:38:33.508 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:39:06.296 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-17 13:39:06.312 +02:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\index.html'
+2026-03-17 13:39:06.316 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 200 950 text/html 20.6248ms
+2026-03-17 13:39:06.345 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:39:06.347 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-17 13:39:06.348 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-17 13:39:06.349 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-17 13:39:06.353 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 8.3659ms
+2026-03-17 13:39:06.362 +02:00 [INF] Sending file. Request path: '/dist/main.css'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.css'
+2026-03-17 13:39:06.388 +02:00 [INF] Sending file. Request path: '/dist/main.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.js'
+2026-03-17 13:39:06.402 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:39:06.405 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 200 78981 text/css 58.6481ms
+2026-03-17 13:39:06.407 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 200 546868 text/javascript 58.1019ms
+2026-03-17 13:39:06.423 +02:00 [INF] Sending file. Request path: '/dist/vendor.js'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\vendor.js'
+2026-03-17 13:39:06.423 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css.map - null null
+2026-03-17 13:39:06.432 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 200 5688668 text/javascript 83.6155ms
+2026-03-17 13:39:06.473 +02:00 [INF] Sending file. Request path: '/dist/main.css.map'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.css.map'
+2026-03-17 13:39:06.476 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css.map - 200 80009 text/plain 52.1028ms
+2026-03-17 13:39:06.617 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js.map - null null
+2026-03-17 13:39:06.690 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js.map - null null
+2026-03-17 13:39:06.700 +02:00 [INF] Sending file. Request path: '/dist/main.js.map'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\main.js.map'
+2026-03-17 13:39:06.703 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js.map - 200 639068 text/plain 13.2445ms
+2026-03-17 13:39:06.748 +02:00 [INF] Sending file. Request path: '/dist/vendor.js.map'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\dist\vendor.js.map'
+2026-03-17 13:39:06.751 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js.map - 200 4048064 text/plain 133.942ms
+2026-03-17 13:39:08.596 +02:00 [INF] Request starting HTTP/1.1 POST http://localhost:5001/api/auth/login - application/json 55
+2026-03-17 13:39:08.604 +02:00 [INF] CORS policy execution successful.
+2026-03-17 13:39:08.607 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-17 13:39:08.612 +02:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(taskflow.DTOs.Auth.LoginRequest) on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-17 13:39:08.652 +02:00 [INF] Executed DbCommand (10ms) [Parameters=[@__email_0='?' (Size = 320)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Email] = @__email_0
+2026-03-17 13:39:09.253 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.AuthResponse, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-17 13:39:09.258 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.Login (taskflow) in 639.6618ms
+2026-03-17 13:39:09.263 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.Login (taskflow)'
+2026-03-17 13:39:09.267 +02:00 [INF] Request finished HTTP/1.1 POST http://localhost:5001/api/auth/login - 200 null application/json; charset=utf-8 671.728ms
+2026-03-17 13:39:09.371 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/notifications - application/json null
+2026-03-17 13:39:09.372 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/messages/contacts - application/json null
+2026-03-17 13:39:09.374 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dashboard/stats - application/json null
+2026-03-17 13:39:09.375 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dashboard/activity - application/json null
+2026-03-17 13:39:09.381 +02:00 [INF] Executing endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:39:09.388 +02:00 [INF] Executing endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:39:09.396 +02:00 [INF] Executing endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:39:09.403 +02:00 [INF] Executing endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:39:09.408 +02:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\index.html'
+2026-03-17 13:39:09.411 +02:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\index.html'
+2026-03-17 13:39:09.416 +02:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\index.html'
+2026-03-17 13:39:09.418 +02:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'C:\Users\Ahmed Abdelbarr\OneDrive\Documents\GitHub\Ahmed-Abdelbarr\ASP .NET Core\Task_Flow\wwwroot\index.html'
+2026-03-17 13:39:09.422 +02:00 [INF] Executed endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:39:09.427 +02:00 [INF] Executed endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:39:09.431 +02:00 [INF] Executed endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:39:09.434 +02:00 [INF] Executed endpoint 'Fallback {*path:nonfile}'
+2026-03-17 13:39:09.438 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 200 null text/html 66.5039ms
+2026-03-17 13:39:09.440 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 200 null text/html 67.9381ms
+2026-03-17 13:39:09.447 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 200 null text/html 72.9605ms
+2026-03-17 13:39:09.451 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 200 null text/html 76.439ms
+2026-03-17 13:43:22.036 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-17 13:43:22.049 +02:00 [INF] The file /index.html was not modified
+2026-03-17 13:43:22.053 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 304 null text/html 17.7137ms
+2026-03-17 13:43:22.081 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:43:22.082 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-17 13:43:22.088 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 7.5937ms
+2026-03-17 13:43:22.093 +02:00 [INF] The file /dist/main.js was not modified
+2026-03-17 13:43:22.129 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:43:22.131 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 304 null text/javascript 49.2116ms
+2026-03-17 13:43:22.698 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js.map - null null
+2026-03-17 13:43:22.699 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - application/json null
+2026-03-17 13:43:23.236 +02:00 [INF] The file /dist/main.js.map was not modified
+2026-03-17 13:43:23.245 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:43:23.246 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js.map - 304 null text/plain 547.8396ms
+2026-03-17 13:43:23.251 +02:00 [INF] Route matched with {action = "GetCurrentUser", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCurrentUser() on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-17 13:43:23.532 +02:00 [INF] Executed DbCommand (15ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Id] = @__p_0
+2026-03-17 13:43:23.772 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.UserDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-17 13:43:23.835 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow) in 427.3703ms
+2026-03-17 13:43:23.839 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:43:23.842 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 200 null application/json; charset=utf-8 1142.5526ms
+2026-03-17 13:43:40.450 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - application/json null
+2026-03-17 13:43:40.460 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:43:40.464 +02:00 [INF] Route matched with {action = "GetCurrentUser", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCurrentUser() on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-17 13:43:40.489 +02:00 [INF] Executed DbCommand (6ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Id] = @__p_0
+2026-03-17 13:43:40.496 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.UserDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-17 13:43:40.500 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow) in 29.6537ms
+2026-03-17 13:43:40.503 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:43:40.506 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 200 null application/json; charset=utf-8 55.6691ms
+2026-03-17 13:43:48.644 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:43:48.652 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 8.0614ms
+2026-03-17 13:43:48.660 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:43:54.841 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-17 13:43:54.854 +02:00 [INF] The file /index.html was not modified
+2026-03-17 13:43:54.856 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 304 null text/html 15.6974ms
+2026-03-17 13:43:54.921 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - null null
+2026-03-17 13:43:54.927 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 6.5098ms
+2026-03-17 13:43:54.934 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5001/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2026-03-17 13:43:54.963 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - application/json null
+2026-03-17 13:43:54.971 +02:00 [INF] Executing endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:43:54.973 +02:00 [INF] Route matched with {action = "GetCurrentUser", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCurrentUser() on controller taskflow.Controllers.Api.AuthController (taskflow).
+2026-03-17 13:43:55.114 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [AppUsers] AS [a]
+WHERE [a].[Id] = @__p_0
+2026-03-17 13:43:55.121 +02:00 [INF] Executing OkObjectResult, writing value of type 'taskflow.Helpers.ApiResponse`1[[taskflow.DTOs.Auth.UserDto, taskflow, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2026-03-17 13:43:55.151 +02:00 [INF] Executed action taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow) in 170.0504ms
+2026-03-17 13:43:55.153 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.AuthController.GetCurrentUser (taskflow)'
+2026-03-17 13:43:55.157 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 200 null application/json; charset=utf-8 193.4203ms

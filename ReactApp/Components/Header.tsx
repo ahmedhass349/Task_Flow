@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Search, Bell, Mail, User, Settings, LogOut, UserCircle } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Link, useNavigate } from "react-router";
-import { SEED_NOTIFICATIONS, NotificationItem } from "../data/notifications";
+import { useNotifications } from "../hooks/useNotifications";
+import { useMessages } from "../hooks/useMessages";
 import { useAuth } from "../context/AuthContext";
 
 /* ─── Messages data ─── */
@@ -15,14 +16,6 @@ interface Message {
   unread: boolean;
 }
 
-const INITIAL_MSGS: Message[] = [
-  { id: 1, avatar: "SC", name: "Sarah Chen",      preview: "Can you review the latest mockups when you get a chance?", time: "Just now",   unread: true  },
-  { id: 2, avatar: "MJ", name: "Mike Johnson",    preview: "The API docs are ready for review.",                        time: "10 min ago", unread: true  },
-  { id: 3, avatar: "AK", name: "Alex Kim",        preview: "Pushed the backend fix. Let me know if it resolves it.",   time: "45 min ago", unread: true  },
-  { id: 4, avatar: "ER", name: "Emily Rodriguez", preview: "Thanks for the feedback on the wireframes!",               time: "2 hr ago",   unread: false },
-  { id: 5, avatar: "DT", name: "Dev Team",        preview: "Standup is moved to 10 AM tomorrow.",                      time: "Yesterday",  unread: false },
-];
-
 const AVATAR_COLORS: Record<string, string> = {
   SC: "bg-pink-200 text-pink-700",
   MJ: "bg-blue-200 text-blue-700",
@@ -33,23 +26,62 @@ const AVATAR_COLORS: Record<string, string> = {
 
 /* ═══════════════════════════════ */
 export default function Header() {
-  const [notifs, setNotifs] = useState<NotificationItem[]>(SEED_NOTIFICATIONS);
-  const [msgs, setMsgs]     = useState(INITIAL_MSGS);
+  const { notifications, markAllAsRead } = useNotifications();
+  const { contacts, unreadCount } = useMessages();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const displayName = user ? `${user.firstName} ${user.lastName}` : "Demo User";
+  const displayName = user ? user.fullName : "Demo User";
   const initials = user
-    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
+    ? user.fullName
+        .split(' ')
+        .map(word => word.charAt(0))
+        .join('')
+        .toUpperCase()
     : "DU";
 
-  const unreadNotifCount = notifs.filter(n => n.unread).length;
-  const unreadMsgCount   = msgs.filter(m => m.unread).length;
+  const unreadNotifCount = notifications.filter(n => !n.isRead).length;
+  const unreadMsgCount = unreadCount;
 
-  const markAllNotifsRead = () => setNotifs(n => n.map(x => ({ ...x, unread: false })));
-  const markAllMsgsRead   = () => setMsgs(m => m.map(x => ({ ...x, unread: false })));
-  const markNotifRead     = (id: number) => setNotifs(n => n.map(x => x.id === id ? { ...x, unread: false } : x));
-  const markMsgRead       = (id: number) => setMsgs(m => m.map(x => x.id === id ? { ...x, unread: false } : x));
+  const markAllNotifsRead = () => markAllAsRead();
+  const markAllMsgsRead = () => {
+    // Backend doesn't have mark all messages as read, would need to be implemented
+  };
+  
+  // Convert backend notifications to UI format
+  const uiNotifications = notifications.slice(0, 3).map((notif, index) => ({
+    id: index,
+    icon: Bell,
+    iconBg: "bg-blue-100",
+    iconColor: "text-blue-600",
+    title: notif.title,
+    body: notif.body,
+    time: formatRelativeTime(notif.createdAt),
+    unread: !notif.isRead,
+  }));
+
+  // Convert backend contacts to UI format
+  const uiMessages = contacts.slice(0, 3).map(contact => ({
+    id: parseInt(contact.id),
+    avatar: contact.name.split(' ').map(n => n[0]).join(''),
+    name: contact.name,
+    preview: contact.lastMessage || "No messages yet",
+    time: contact.lastMessageTime ? formatRelativeTime(contact.lastMessageTime) : "",
+    unread: contact.unreadCount > 0,
+  }));
+
+  function formatRelativeTime(iso: string): string {
+    const created = new Date(iso);
+    const diffMs = Date.now() - created.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "Just now";
+    if (diffMin < 60) return `${diffMin} min ago`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `${diffH} hour${diffH === 1 ? "" : "s"} ago`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD === 1) return "Yesterday";
+    return `${diffD} days ago`;
+  }
 
   return (
     <header className="bg-black h-16 flex items-center px-8 gap-6">
@@ -103,10 +135,10 @@ export default function Header() {
 
               {/* Items */}
               <div className="max-h-[340px] overflow-y-auto">
-                {notifs.map(n => (
+                {uiNotifications.map(n => (
                   <DropdownMenu.Item
                     key={n.id}
-                    onSelect={() => markNotifRead(n.id)}
+                    onSelect={() => {/* Mark as read - would need backend support */}}
                     className={`flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${n.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`}
                   >
                     <div className={`size-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${n.iconBg}`}>
@@ -162,10 +194,10 @@ export default function Header() {
 
               {/* Items */}
               <div className="max-h-[340px] overflow-y-auto">
-                {msgs.map(m => (
+                {uiMessages.map(m => (
                   <DropdownMenu.Item
                     key={m.id}
-                    onSelect={() => markMsgRead(m.id)}
+                    onSelect={() => {/* Mark as read - would need backend support */}}
                     className={`flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${m.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`}
                   >
                     <div className={`size-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${AVATAR_COLORS[m.avatar] ?? "bg-gray-200 text-gray-600"}`}>

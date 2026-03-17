@@ -295,18 +295,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (/* binding */ Header)
 /* harmony export */ });
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/circle-user.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/bell.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/log-out.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/mail.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/search.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/settings.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/user.js");
-/* harmony import */ var _radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! @radix-ui/react-dropdown-menu */ "./node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs");
-/* harmony import */ var react_router__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! react-router */ "./node_modules/react-router/dist/development/chunk-LFPYN7LY.mjs");
-/* harmony import */ var _data_notifications__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../data/notifications */ "./ReactApp/data/notifications.ts");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/circle-user.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/bell.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/log-out.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/mail.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/search.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/settings.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/user.js");
+/* harmony import */ var _radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @radix-ui/react-dropdown-menu */ "./node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs");
+/* harmony import */ var react_router__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! react-router */ "./node_modules/react-router/dist/development/chunk-LFPYN7LY.mjs");
+/* harmony import */ var _hooks_useNotifications__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../hooks/useNotifications */ "./ReactApp/hooks/useNotifications.ts");
+/* harmony import */ var _hooks_useMessages__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../hooks/useMessages */ "./ReactApp/hooks/useMessages.ts");
 /* harmony import */ var _context_AuthContext__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../context/AuthContext */ "./ReactApp/context/AuthContext.tsx");
 
 
@@ -315,13 +314,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const INITIAL_MSGS = [
-    { id: 1, avatar: "SC", name: "Sarah Chen", preview: "Can you review the latest mockups when you get a chance?", time: "Just now", unread: true },
-    { id: 2, avatar: "MJ", name: "Mike Johnson", preview: "The API docs are ready for review.", time: "10 min ago", unread: true },
-    { id: 3, avatar: "AK", name: "Alex Kim", preview: "Pushed the backend fix. Let me know if it resolves it.", time: "45 min ago", unread: true },
-    { id: 4, avatar: "ER", name: "Emily Rodriguez", preview: "Thanks for the feedback on the wireframes!", time: "2 hr ago", unread: false },
-    { id: 5, avatar: "DT", name: "Dev Team", preview: "Standup is moved to 10 AM tomorrow.", time: "Yesterday", unread: false },
-];
 const AVATAR_COLORS = {
     SC: "bg-pink-200 text-pink-700",
     MJ: "bg-blue-200 text-blue-700",
@@ -331,27 +323,67 @@ const AVATAR_COLORS = {
 };
 /* ═══════════════════════════════ */
 function Header() {
-    const [notifs, setNotifs] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(_data_notifications__WEBPACK_IMPORTED_MODULE_11__.SEED_NOTIFICATIONS);
-    const [msgs, setMsgs] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(INITIAL_MSGS);
-    const navigate = (0,react_router__WEBPACK_IMPORTED_MODULE_10__.useNavigate)();
+    const { notifications, markAllAsRead } = (0,_hooks_useNotifications__WEBPACK_IMPORTED_MODULE_10__.useNotifications)();
+    const { contacts, unreadCount } = (0,_hooks_useMessages__WEBPACK_IMPORTED_MODULE_11__.useMessages)();
+    const navigate = (0,react_router__WEBPACK_IMPORTED_MODULE_9__.useNavigate)();
     const { user, logout } = (0,_context_AuthContext__WEBPACK_IMPORTED_MODULE_12__.useAuth)();
-    const displayName = user ? `${user.firstName} ${user.lastName}` : "Demo User";
+    const displayName = user ? user.fullName : "Demo User";
     const initials = user
-        ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
+        ? user.fullName
+            .split(' ')
+            .map(word => word.charAt(0))
+            .join('')
+            .toUpperCase()
         : "DU";
-    const unreadNotifCount = notifs.filter(n => n.unread).length;
-    const unreadMsgCount = msgs.filter(m => m.unread).length;
-    const markAllNotifsRead = () => setNotifs(n => n.map(x => (Object.assign(Object.assign({}, x), { unread: false }))));
-    const markAllMsgsRead = () => setMsgs(m => m.map(x => (Object.assign(Object.assign({}, x), { unread: false }))));
-    const markNotifRead = (id) => setNotifs(n => n.map(x => x.id === id ? Object.assign(Object.assign({}, x), { unread: false }) : x));
-    const markMsgRead = (id) => setMsgs(m => m.map(x => x.id === id ? Object.assign(Object.assign({}, x), { unread: false }) : x));
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("header", { className: "bg-black h-16 flex items-center px-8 gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 max-w-[417px]", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "absolute left-3 top-1/2 -translate-y-1/2 size-4", style: { color: '#787486' } }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "text", placeholder: "Search for report...", "aria-label": "Search for report", style: { background: '#F5F5F5', borderRadius: 6, fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#787486' }, className: "w-full pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex items-center justify-end gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Root, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Trigger, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10", "aria-label": "Notifications", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "size-6 text-white" }), unreadNotifCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF1267] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5", children: unreadNotifCount }))] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Portal, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Content, { className: "bg-white border border-gray-200 rounded-xl shadow-xl w-80 z-50 overflow-hidden", sideOffset: 10, align: "end", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-gray-100", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-semibold text-gray-900 text-sm", children: "Notifications" }), unreadNotifCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: markAllNotifsRead, className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "Mark all as read" }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "max-h-[340px] overflow-y-auto", children: notifs.map(n => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Item, { onSelect: () => markNotifRead(n.id), className: `flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${n.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${n.iconBg}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(n.icon, { className: `size-4 ${n.iconColor}` }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs font-semibold text-gray-900", children: n.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5 leading-relaxed", children: n.body }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-[11px] text-gray-400 mt-1", children: n.time })] }), n.unread && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "size-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" })] }, n.id))) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "border-t border-gray-100 px-4 py-2.5 text-center", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_router__WEBPACK_IMPORTED_MODULE_10__.Link, { to: "/notifications", className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "View all notifications" }) })] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Root, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Trigger, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10", "aria-label": "Messages", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "size-6 text-white" }), unreadMsgCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF1267] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5", children: unreadMsgCount }))] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Portal, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Content, { className: "bg-white border border-gray-200 rounded-xl shadow-xl w-80 z-50 overflow-hidden", sideOffset: 10, align: "end", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-gray-100", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-semibold text-gray-900 text-sm", children: "Messages" }), unreadMsgCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: markAllMsgsRead, className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "Mark all as read" }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "max-h-[340px] overflow-y-auto", children: msgs.map(m => {
+    const unreadNotifCount = notifications.filter(n => !n.isRead).length;
+    const unreadMsgCount = unreadCount;
+    const markAllNotifsRead = () => markAllAsRead();
+    const markAllMsgsRead = () => {
+        // Backend doesn't have mark all messages as read, would need to be implemented
+    };
+    // Convert backend notifications to UI format
+    const uiNotifications = notifications.slice(0, 3).map((notif, index) => ({
+        id: index,
+        icon: lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"],
+        iconBg: "bg-blue-100",
+        iconColor: "text-blue-600",
+        title: notif.title,
+        body: notif.body,
+        time: formatRelativeTime(notif.createdAt),
+        unread: !notif.isRead,
+    }));
+    // Convert backend contacts to UI format
+    const uiMessages = contacts.slice(0, 3).map(contact => ({
+        id: parseInt(contact.id),
+        avatar: contact.name.split(' ').map(n => n[0]).join(''),
+        name: contact.name,
+        preview: contact.lastMessage || "No messages yet",
+        time: contact.lastMessageTime ? formatRelativeTime(contact.lastMessageTime) : "",
+        unread: contact.unreadCount > 0,
+    }));
+    function formatRelativeTime(iso) {
+        const created = new Date(iso);
+        const diffMs = Date.now() - created.getTime();
+        const diffMin = Math.floor(diffMs / 60000);
+        if (diffMin < 1)
+            return "Just now";
+        if (diffMin < 60)
+            return `${diffMin} min ago`;
+        const diffH = Math.floor(diffMin / 60);
+        if (diffH < 24)
+            return `${diffH} hour${diffH === 1 ? "" : "s"} ago`;
+        const diffD = Math.floor(diffH / 24);
+        if (diffD === 1)
+            return "Yesterday";
+        return `${diffD} days ago`;
+    }
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("header", { className: "bg-black h-16 flex items-center px-8 gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 max-w-[417px]", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "absolute left-3 top-1/2 -translate-y-1/2 size-4", style: { color: '#787486' } }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "text", placeholder: "Search for report...", "aria-label": "Search for report", style: { background: '#F5F5F5', borderRadius: 6, fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#787486' }, className: "w-full pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex items-center justify-end gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Root, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Trigger, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10", "aria-label": "Notifications", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-6 text-white" }), unreadNotifCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF1267] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5", children: unreadNotifCount }))] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Portal, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Content, { className: "bg-white border border-gray-200 rounded-xl shadow-xl w-80 z-50 overflow-hidden", sideOffset: 10, align: "end", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-gray-100", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-semibold text-gray-900 text-sm", children: "Notifications" }), unreadNotifCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: markAllNotifsRead, className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "Mark all as read" }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "max-h-[340px] overflow-y-auto", children: uiNotifications.map(n => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { onSelect: () => { }, className: `flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${n.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${n.iconBg}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(n.icon, { className: `size-4 ${n.iconColor}` }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs font-semibold text-gray-900", children: n.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5 leading-relaxed", children: n.body }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-[11px] text-gray-400 mt-1", children: n.time })] }), n.unread && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "size-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" })] }, n.id))) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "border-t border-gray-100 px-4 py-2.5 text-center", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_router__WEBPACK_IMPORTED_MODULE_9__.Link, { to: "/notifications", className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "View all notifications" }) })] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Root, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Trigger, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10", "aria-label": "Messages", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-6 text-white" }), unreadMsgCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF1267] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5", children: unreadMsgCount }))] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Portal, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Content, { className: "bg-white border border-gray-200 rounded-xl shadow-xl w-80 z-50 overflow-hidden", sideOffset: 10, align: "end", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-gray-100", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-semibold text-gray-900 text-sm", children: "Messages" }), unreadMsgCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: markAllMsgsRead, className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "Mark all as read" }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "max-h-[340px] overflow-y-auto", children: uiMessages.map(m => {
                                                 var _a;
-                                                return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Item, { onSelect: () => markMsgRead(m.id), className: `flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${m.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${(_a = AVATAR_COLORS[m.avatar]) !== null && _a !== void 0 ? _a : "bg-gray-200 text-gray-600"}`, children: m.avatar }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs font-semibold text-gray-900 truncate", children: m.name }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-[11px] text-gray-400 flex-shrink-0", children: m.time })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5 truncate", children: m.preview })] }), m.unread && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "size-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" })] }, m.id));
-                                            }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "border-t border-gray-100 px-4 py-2.5 text-center", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_router__WEBPACK_IMPORTED_MODULE_10__.Link, { to: "/message", className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "Open messages" }) })] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Root, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Trigger, { className: "flex items-center gap-4 px-4 py-1.5 rounded-full cursor-pointer border-0 outline-none hover:opacity-90 transition-opacity", style: { background: '#242424' }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-white", style: { fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: 500, letterSpacing: '0.48px' }, children: displayName }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-8 rounded-full border border-white bg-brand flex items-center justify-center flex-shrink-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-white text-xs font-bold", children: initials }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Portal, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Content, { className: "bg-white border border-gray-200 rounded-lg shadow-lg p-2 w-56 z-50", sideOffset: 8, align: "end", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 px-3 py-3 border-b border-gray-200 mb-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-9 bg-brand rounded-full flex items-center justify-center flex-shrink-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-white font-semibold text-sm", children: initials }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 min-w-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "font-semibold text-gray-900 text-sm truncate", children: displayName }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Item, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_router__WEBPACK_IMPORTED_MODULE_10__.Link, { to: "/settings", className: "flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_8__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm", children: "Profile" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Item, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_router__WEBPACK_IMPORTED_MODULE_10__.Link, { to: "/settings", className: "flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm", children: "Settings" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Item, { className: "flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm", children: "Switch account" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Separator, { className: "h-px bg-gray-200 my-2" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_9__.Item, { onSelect: () => {
+                                                return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { onSelect: () => { }, className: `flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${m.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${(_a = AVATAR_COLORS[m.avatar]) !== null && _a !== void 0 ? _a : "bg-gray-200 text-gray-600"}`, children: m.avatar }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs font-semibold text-gray-900 truncate", children: m.name }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-[11px] text-gray-400 flex-shrink-0", children: m.time })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5 truncate", children: m.preview })] }), m.unread && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "size-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" })] }, m.id));
+                                            }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "border-t border-gray-100 px-4 py-2.5 text-center", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_router__WEBPACK_IMPORTED_MODULE_9__.Link, { to: "/message", className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "Open messages" }) })] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Root, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Trigger, { className: "flex items-center gap-4 px-4 py-1.5 rounded-full cursor-pointer border-0 outline-none hover:opacity-90 transition-opacity", style: { background: '#242424' }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-white", style: { fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: 500, letterSpacing: '0.48px' }, children: displayName }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-8 rounded-full border border-white bg-brand flex items-center justify-center flex-shrink-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-white text-xs font-bold", children: initials }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Portal, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Content, { className: "bg-white border border-gray-200 rounded-lg shadow-lg p-2 w-56 z-50", sideOffset: 8, align: "end", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 px-3 py-3 border-b border-gray-200 mb-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-9 bg-brand rounded-full flex items-center justify-center flex-shrink-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-white font-semibold text-sm", children: initials }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 min-w-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "font-semibold text-gray-900 text-sm truncate", children: displayName }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_router__WEBPACK_IMPORTED_MODULE_9__.Link, { to: "/settings", className: "flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm", children: "Profile" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_router__WEBPACK_IMPORTED_MODULE_9__.Link, { to: "/settings", className: "flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm", children: "Settings" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { className: "flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_1__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm", children: "Switch account" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Separator, { className: "h-px bg-gray-200 my-2" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { onSelect: () => {
                                                 logout();
                                                 navigate("/login");
-                                            }, className: "flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm", children: "Log out" })] })] }) })] })] })] }));
+                                            }, className: "flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm", children: "Log out" })] })] }) })] })] })] }));
 }
 
 
@@ -1167,7 +1199,7 @@ function AuthProvider({ children }) {
         // Validate the stored token by fetching the current user
         let cancelled = false;
         _services_api__WEBPACK_IMPORTED_MODULE_2__.api
-            .get("/auth/me")
+            .get("/api/auth/me")
             .then((userData) => {
             if (!cancelled) {
                 setUser(userData);
@@ -1191,7 +1223,7 @@ function AuthProvider({ children }) {
     const login = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)((credentials) => __awaiter(this, void 0, void 0, function* () {
         setError(null);
         try {
-            const response = yield _services_api__WEBPACK_IMPORTED_MODULE_2__.api.post("/auth/login", credentials);
+            const response = yield _services_api__WEBPACK_IMPORTED_MODULE_2__.api.post("/api/auth/login", credentials);
             (0,_services_api__WEBPACK_IMPORTED_MODULE_2__.setAuthToken)(response.token);
             setUser(response.user);
         }
@@ -1206,7 +1238,7 @@ function AuthProvider({ children }) {
     const signup = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)((data) => __awaiter(this, void 0, void 0, function* () {
         setError(null);
         try {
-            const response = yield _services_api__WEBPACK_IMPORTED_MODULE_2__.api.post("/auth/register", data);
+            const response = yield _services_api__WEBPACK_IMPORTED_MODULE_2__.api.post("/api/auth/register", data);
             (0,_services_api__WEBPACK_IMPORTED_MODULE_2__.setAuthToken)(response.token);
             setUser(response.user);
         }
@@ -1249,28 +1281,1158 @@ function useAuth() {
 
 /***/ },
 
-/***/ "./ReactApp/data/notifications.ts"
+/***/ "./ReactApp/hooks/useChatbot.ts"
+/*!**************************************!*\
+  !*** ./ReactApp/hooks/useChatbot.ts ***!
+  \**************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   useChatbot: () => (/* binding */ useChatbot)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
+// ── useChatbot Hook ───────────────────────────────────────────────────────
+//
+// Custom hook for fetching and managing chatbot conversations.
+// Provides loading, error, data, and refetch states.
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+const useChatbot = () => {
+    const [conversations, setConversations] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+    const [conversationList, setConversationList] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+    const [activeConversationId, setActiveConversationId] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
+    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const fetchConversations = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+        let cancelled = false;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/chatbot/conversations");
+            if (!cancelled) {
+                setConversations(data);
+                setConversationList(data.map(conv => ({
+                    id: conv.id,
+                    title: conv.title,
+                    updatedAt: conv.updatedAt,
+                })));
+            }
+        }
+        catch (err) {
+            if (!cancelled) {
+                const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                    ? err.message
+                    : err instanceof Error
+                        ? err.message
+                        : "Failed to load conversations";
+                setError(message);
+            }
+        }
+        finally {
+            if (!cancelled) {
+                setIsLoading(false);
+            }
+        }
+        return () => {
+            cancelled = true;
+        };
+    }), []);
+    const fetchConversation = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => __awaiter(void 0, void 0, void 0, function* () {
+        let cancelled = false;
+        setError(null);
+        try {
+            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get(`/api/chatbot/conversations/${id}`);
+            if (!cancelled) {
+                setConversations(prev => prev.map(conv => conv.id === id ? data : conv));
+            }
+        }
+        catch (err) {
+            if (!cancelled) {
+                const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                    ? err.message
+                    : err instanceof Error
+                        ? err.message
+                        : "Failed to load conversation";
+                setError(message);
+            }
+        }
+        return () => {
+            cancelled = true;
+        };
+    }), []);
+    const refetch = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
+        fetchConversations();
+    }, [fetchConversations]);
+    const refetchActiveConversation = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => {
+        fetchConversation(id);
+    }, [fetchConversation]);
+    const createConversation = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((data) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const newConversation = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.post("/chatbot/conversations", data);
+            setConversations(prev => [...prev, newConversation]);
+            setConversationList(prev => [...prev, {
+                    id: newConversation.id,
+                    title: newConversation.title,
+                    updatedAt: newConversation.updatedAt,
+                }]);
+            setActiveConversationId(newConversation.id);
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to create conversation";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const sendMessage = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((conversationId, text) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const newMessage = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.post(`/chatbot/conversations/${conversationId}/messages`, { text });
+            // Update the conversation with the new message
+            setConversations(prev => prev.map(conv => {
+                if (conv.id === conversationId) {
+                    return Object.assign(Object.assign({}, conv), { messages: [...conv.messages, newMessage], updatedAt: newMessage.createdAt });
+                }
+                return conv;
+            }));
+            // Update conversation list
+            setConversationList(prev => prev.map(item => item.id === conversationId
+                ? Object.assign(Object.assign({}, item), { updatedAt: newMessage.createdAt }) : item));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to send message";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const deleteConversation = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.delete(`/chatbot/conversations/${id}`);
+            setConversations(prev => prev.filter(conv => conv.id !== id));
+            setConversationList(prev => prev.filter(item => item.id !== id));
+            if (activeConversationId === id) {
+                setActiveConversationId(null);
+            }
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to delete conversation";
+            setError(message);
+            throw err;
+        }
+    }), [activeConversationId]);
+    const setActiveConversationIdCallback = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => {
+        setActiveConversationId(id);
+    }, []);
+    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+        fetchConversations();
+    }, [fetchConversations]);
+    const activeConversation = conversations.find(conv => conv.id === activeConversationId) || null;
+    return {
+        conversations,
+        conversationList,
+        activeConversation,
+        isLoading,
+        error,
+        refetch,
+        refetchActiveConversation,
+        createConversation,
+        sendMessage,
+        deleteConversation,
+        setActiveConversationId: setActiveConversationIdCallback,
+        activeConversationId,
+    };
+};
+
+
+/***/ },
+
+/***/ "./ReactApp/hooks/useDashboard.ts"
 /*!****************************************!*\
-  !*** ./ReactApp/data/notifications.ts ***!
+  !*** ./ReactApp/hooks/useDashboard.ts ***!
   \****************************************/
 (__unused_webpack_module, __webpack_exports__, __webpack_require__) {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   SEED_NOTIFICATIONS: () => (/* binding */ SEED_NOTIFICATIONS)
+/* harmony export */   useDashboard: () => (/* binding */ useDashboard)
 /* harmony export */ });
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/square-check-big.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/at-sign.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/clock.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/folder-kanban.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
+// ── useDashboard Hook ──────────────────────────────────────────────────────
+//
+// Custom hook for fetching dashboard statistics and recent activity.
+// Provides loading, error, data, and refetch states.
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 
-const SEED_NOTIFICATIONS = [
-    { id: 1, icon: lucide_react__WEBPACK_IMPORTED_MODULE_0__["default"], iconBg: "bg-green-100", iconColor: "text-green-600", title: "Task completed", body: 'Sarah Chen completed "Design system update"', time: "2 min ago", unread: true },
-    { id: 2, icon: lucide_react__WEBPACK_IMPORTED_MODULE_1__["default"], iconBg: "bg-blue-100", iconColor: "text-blue-600", title: "You were mentioned", body: 'Mike Johnson mentioned you in "API Service"', time: "14 min ago", unread: true },
-    { id: 3, icon: lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], iconBg: "bg-purple-100", iconColor: "text-purple-600", title: "New project created", body: 'Alex Kim created project "Mobile Redesign"', time: "1 hr ago", unread: true },
-    { id: 4, icon: lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], iconBg: "bg-orange-100", iconColor: "text-orange-600", title: "Deadline tomorrow", body: 'Task "Fix checkout flow" is due tomorrow', time: "3 hr ago", unread: false },
-    { id: 5, icon: lucide_react__WEBPACK_IMPORTED_MODULE_0__["default"], iconBg: "bg-green-100", iconColor: "text-green-600", title: "Task assigned", body: 'Emily Rodriguez assigned "Write unit tests" to you', time: "Yesterday", unread: false },
-];
+
+// Helper to format relative time
+function formatRelativeTime(iso) {
+    const created = new Date(iso);
+    const diffMs = Date.now() - created.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1)
+        return "Just now";
+    if (diffMin < 60)
+        return `${diffMin} min ago`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24)
+        return `${diffH} hour${diffH === 1 ? "" : "s"} ago`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD === 1)
+        return "Yesterday";
+    return `${diffD} days ago`;
+}
+// Helper to map stats DTO to UI format
+function mapStats(dto) {
+    return {
+        activeTasks: dto.activeTaskCount,
+        inProgress: dto.inProgressCount,
+        projects: dto.projectCount,
+        teamMembers: dto.teamMemberCount,
+        dueThisWeek: 0, // Backend doesn't provide this yet
+        activeProjects: dto.projectCount,
+        onlineNow: dto.teamMemberCount,
+        tasksTrend: 0, // Backend doesn't provide this yet
+    };
+}
+// Helper to map activity DTO to UI format
+function mapActivity(items) {
+    return items.map((item) => {
+        // Default icon mapping - can be enhanced
+        let icon = (__webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/lucide-react.js").CheckSquare);
+        let iconBg = "bg-green-100";
+        let iconColor = "text-green-600";
+        const text = item.description.toLowerCase();
+        if (text.includes("project")) {
+            icon = (__webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/lucide-react.js").FileText);
+            iconBg = "bg-blue-100";
+            iconColor = "text-blue-600";
+        }
+        else if (text.includes("joined") || text.includes("member")) {
+            icon = (__webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/lucide-react.js").Users);
+            iconBg = "bg-purple-100";
+            iconColor = "text-purple-600";
+        }
+        return {
+            id: String(item.id),
+            user: item.userName,
+            action: item.description,
+            time: formatRelativeTime(item.createdAt),
+            iconBg,
+            iconColor,
+            icon,
+        };
+    });
+}
+const useDashboard = () => {
+    const [stats, setStats] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const [recentActivity, setRecentActivity] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
+    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const fetchData = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+        let cancelled = false;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [statsDto, activityDto] = yield Promise.all([
+                _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/dashboard/stats"),
+                _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/dashboard/activity"),
+            ]);
+            if (!cancelled) {
+                setStats(mapStats(statsDto));
+                setRecentActivity(mapActivity(activityDto));
+            }
+        }
+        catch (err) {
+            if (!cancelled) {
+                const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                    ? err.message
+                    : err instanceof Error
+                        ? err.message
+                        : "Failed to load dashboard data";
+                setError(message);
+            }
+        }
+        finally {
+            if (!cancelled) {
+                setIsLoading(false);
+            }
+        }
+        return () => {
+            cancelled = true;
+        };
+    }), []);
+    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+        fetchData();
+    }, [fetchData]);
+    return {
+        stats,
+        recentActivity,
+        isLoading,
+        error,
+        refetch: fetchData,
+    };
+};
+
+
+/***/ },
+
+/***/ "./ReactApp/hooks/useMessages.ts"
+/*!***************************************!*\
+  !*** ./ReactApp/hooks/useMessages.ts ***!
+  \***************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   useMessages: () => (/* binding */ useMessages)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
+// ── useMessages Hook ───────────────────────────────────────────────────────
+//
+// Custom hook for fetching and managing messages.
+// Provides loading, error, data, and refetch states.
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+const useMessages = () => {
+    const [contacts, setContacts] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+    const [messages, setMessages] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+    const [activeContactId, setActiveContactId] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
+    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const fetchContacts = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+        let cancelled = false;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/messages/contacts");
+            if (!cancelled) {
+                setContacts(data);
+            }
+        }
+        catch (err) {
+            if (!cancelled) {
+                const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                    ? err.message
+                    : err instanceof Error
+                        ? err.message
+                        : "Failed to load contacts";
+                setError(message);
+            }
+        }
+        finally {
+            if (!cancelled) {
+                setIsLoading(false);
+            }
+        }
+        return () => {
+            cancelled = true;
+        };
+    }), []);
+    const fetchMessages = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((contactId) => __awaiter(void 0, void 0, void 0, function* () {
+        let cancelled = false;
+        setError(null);
+        try {
+            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get(`/api/messages/${contactId}`);
+            if (!cancelled) {
+                setMessages(data);
+            }
+        }
+        catch (err) {
+            if (!cancelled) {
+                const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                    ? err.message
+                    : err instanceof Error
+                        ? err.message
+                        : "Failed to load messages";
+                setError(message);
+            }
+        }
+        return () => {
+            cancelled = true;
+        };
+    }), []);
+    const refetch = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
+        fetchContacts();
+        if (activeContactId) {
+            fetchMessages(activeContactId);
+        }
+    }, [fetchContacts, fetchMessages, activeContactId]);
+    const refetchMessages = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((contactId) => {
+        fetchMessages(contactId);
+    }, [fetchMessages]);
+    const sendMessage = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((contactId, body) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const newMessage = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.post("/messages", { receiverId: contactId, body });
+            setMessages(prev => [...prev, newMessage]);
+            // Update contact's last message
+            setContacts(prev => prev.map(contact => contact.id === contactId
+                ? Object.assign(Object.assign({}, contact), { lastMessage: body, lastMessageTime: newMessage.sentAt }) : contact));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to send message";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    // Auto-fetch messages when active contact changes
+    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+        if (activeContactId) {
+            fetchMessages(activeContactId);
+        }
+        else {
+            setMessages([]);
+        }
+    }, [activeContactId, fetchMessages]);
+    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+        fetchContacts();
+    }, [fetchContacts]);
+    const unreadCount = contacts.reduce((total, contact) => total + contact.unreadCount, 0);
+    return {
+        contacts,
+        messages,
+        isLoading,
+        error,
+        refetch,
+        refetchMessages,
+        sendMessage,
+        activeContactId,
+        setActiveContactId,
+        unreadCount,
+    };
+};
+
+
+/***/ },
+
+/***/ "./ReactApp/hooks/useNotifications.ts"
+/*!********************************************!*\
+  !*** ./ReactApp/hooks/useNotifications.ts ***!
+  \********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   useNotifications: () => (/* binding */ useNotifications)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
+// ── useNotifications Hook ───────────────────────────────────────────────────
+//
+// Custom hook for fetching and managing notifications.
+// Provides loading, error, data, and refetch states.
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+const useNotifications = () => {
+    const [notifications, setNotifications] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
+    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const fetchData = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+        let cancelled = false;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/notifications");
+            if (!cancelled) {
+                setNotifications(data);
+            }
+        }
+        catch (err) {
+            if (!cancelled) {
+                const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                    ? err.message
+                    : err instanceof Error
+                        ? err.message
+                        : "Failed to load notifications";
+                setError(message);
+            }
+        }
+        finally {
+            if (!cancelled) {
+                setIsLoading(false);
+            }
+        }
+        return () => {
+            cancelled = true;
+        };
+    }), []);
+    const markAsRead = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.patch(`/api/notifications/${id}/read`);
+            // Update local state to reflect change
+            setNotifications(prev => prev.map(notification => notification.id === id ? Object.assign(Object.assign({}, notification), { isRead: true }) : notification));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to mark notification as read";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const markAllAsRead = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.patch("/api/notifications/read-all");
+            // Update local state to reflect change
+            setNotifications(prev => prev.map(notification => (Object.assign(Object.assign({}, notification), { isRead: true }))));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to mark all notifications as read";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+        fetchData();
+    }, [fetchData]);
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+    return {
+        notifications,
+        isLoading,
+        error,
+        refetch: fetchData,
+        markAsRead,
+        markAllAsRead,
+        unreadCount,
+    };
+};
+
+
+/***/ },
+
+/***/ "./ReactApp/hooks/useProjects.ts"
+/*!***************************************!*\
+  !*** ./ReactApp/hooks/useProjects.ts ***!
+  \***************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   useProjects: () => (/* binding */ useProjects)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
+// ── useProjects Hook ──────────────────────────────────────────────────────
+//
+// Custom hook for fetching and managing projects.
+// Provides loading, error, data, and refetch states.
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+const useProjects = () => {
+    const [projects, setProjects] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
+    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const fetchData = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+        let cancelled = false;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/projects");
+            if (!cancelled) {
+                setProjects(data);
+            }
+        }
+        catch (err) {
+            if (!cancelled) {
+                const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                    ? err.message
+                    : err instanceof Error
+                        ? err.message
+                        : "Failed to load projects";
+                setError(message);
+            }
+        }
+        finally {
+            if (!cancelled) {
+                setIsLoading(false);
+            }
+        }
+        return () => {
+            cancelled = true;
+        };
+    }), []);
+    const toggleStar = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.patch(`/projects/${id}/star`);
+            // Update local state to reflect change
+            setProjects(prev => prev.map(project => project.id === id ? Object.assign(Object.assign({}, project), { isStarred: !project.isStarred }) : project));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to toggle project star";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const createProject = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((data) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const newProject = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.post("/projects", data);
+            setProjects(prev => [...prev, newProject]);
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to create project";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const updateProject = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id, data) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const updatedProject = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.put(`/projects/${id}`, data);
+            setProjects(prev => prev.map(project => project.id === id ? updatedProject : project));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to update project";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const deleteProject = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.delete(`/projects/${id}`);
+            setProjects(prev => prev.filter(project => project.id !== id));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to delete project";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+        fetchData();
+    }, [fetchData]);
+    return {
+        projects,
+        isLoading,
+        error,
+        refetch: fetchData,
+        toggleStar,
+        createProject,
+        updateProject,
+        deleteProject,
+    };
+};
+
+
+/***/ },
+
+/***/ "./ReactApp/hooks/useSettings.ts"
+/*!***************************************!*\
+  !*** ./ReactApp/hooks/useSettings.ts ***!
+  \***************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   useSettings: () => (/* binding */ useSettings)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
+// ── useSettings Hook ───────────────────────────────────────────────────────
+//
+// Custom hook for fetching and managing user settings.
+// Provides loading, error, data, and refetch states.
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+const useSettings = () => {
+    const [profile, setProfile] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
+    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const fetchData = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+        let cancelled = false;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/settings/profile");
+            if (!cancelled) {
+                setProfile(data);
+            }
+        }
+        catch (err) {
+            if (!cancelled) {
+                const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                    ? err.message
+                    : err instanceof Error
+                        ? err.message
+                        : "Failed to load profile";
+                setError(message);
+            }
+        }
+        finally {
+            if (!cancelled) {
+                setIsLoading(false);
+            }
+        }
+        return () => {
+            cancelled = true;
+        };
+    }), []);
+    const updateProfile = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((data) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const updatedProfile = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.put("/settings/profile", data);
+            setProfile(updatedProfile);
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to update profile";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const changePassword = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((data) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.put("/settings/password", data);
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to change password";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const deleteAccount = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.delete("/settings/account");
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to delete account";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+        fetchData();
+    }, [fetchData]);
+    return {
+        profile,
+        isLoading,
+        error,
+        refetch: fetchData,
+        updateProfile,
+        changePassword,
+        deleteAccount,
+    };
+};
+
+
+/***/ },
+
+/***/ "./ReactApp/hooks/useTasks.ts"
+/*!************************************!*\
+  !*** ./ReactApp/hooks/useTasks.ts ***!
+  \************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   useTasks: () => (/* binding */ useTasks)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
+// ── useTasks Hook ────────────────────────────────────────────────────────
+//
+// Custom hook for fetching and managing tasks.
+// Provides loading, error, data, and refetch states.
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+const useTasks = () => {
+    const [tasks, setTasks] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
+    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const fetchData = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+        let cancelled = false;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/tasks");
+            if (!cancelled) {
+                setTasks(data);
+            }
+        }
+        catch (err) {
+            if (!cancelled) {
+                const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                    ? err.message
+                    : err instanceof Error
+                        ? err.message
+                        : "Failed to load tasks";
+                setError(message);
+            }
+        }
+        finally {
+            if (!cancelled) {
+                setIsLoading(false);
+            }
+        }
+        return () => {
+            cancelled = true;
+        };
+    }), []);
+    const toggleStar = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.patch(`/tasks/${id}/star`);
+            // Update local state to reflect change
+            setTasks(prev => prev.map(task => task.id === id ? Object.assign(Object.assign({}, task), { isStarred: !task.isStarred }) : task));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to toggle task star";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const updateStatus = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id, status) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.patch(`/tasks/${id}/status`, { status });
+            // Update local state to reflect change
+            setTasks(prev => prev.map(task => task.id === id ? Object.assign(Object.assign({}, task), { status: status }) : task));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to update task status";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const createTask = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((data) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const newTask = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.post("/tasks", data);
+            setTasks(prev => [...prev, newTask]);
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to create task";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const updateTask = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id, data) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const updatedTask = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.put(`/tasks/${id}`, data);
+            setTasks(prev => prev.map(task => task.id === id ? updatedTask : task));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to update task";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const deleteTask = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.delete(`/tasks/${id}`);
+            setTasks(prev => prev.filter(task => task.id !== id));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to delete task";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+        fetchData();
+    }, [fetchData]);
+    return {
+        tasks,
+        isLoading,
+        error,
+        refetch: fetchData,
+        toggleStar,
+        updateStatus,
+        createTask,
+        updateTask,
+        deleteTask,
+    };
+};
+
+
+/***/ },
+
+/***/ "./ReactApp/hooks/useTeams.ts"
+/*!************************************!*\
+  !*** ./ReactApp/hooks/useTeams.ts ***!
+  \************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   useTeams: () => (/* binding */ useTeams)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
+// ── useTeams Hook ────────────────────────────────────────────────────────
+//
+// Custom hook for fetching and managing teams.
+// Provides loading, error, data, and refetch states.
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+const useTeams = () => {
+    const [teams, setTeams] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
+    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    const fetchData = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+        let cancelled = false;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/teams");
+            if (!cancelled) {
+                setTeams(data);
+            }
+        }
+        catch (err) {
+            if (!cancelled) {
+                const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                    ? err.message
+                    : err instanceof Error
+                        ? err.message
+                        : "Failed to load teams";
+                setError(message);
+            }
+        }
+        finally {
+            if (!cancelled) {
+                setIsLoading(false);
+            }
+        }
+        return () => {
+            cancelled = true;
+        };
+    }), []);
+    const createTeam = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((data) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const newTeam = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.post("/teams", data);
+            setTeams(prev => [...prev, newTeam]);
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to create team";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const updateTeam = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id, data) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const updatedTeam = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.put(`/teams/${id}`, data);
+            setTeams(prev => prev.map(team => team.id === id ? updatedTeam : team));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to update team";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const deleteTeam = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.delete(`/teams/${id}`);
+            setTeams(prev => prev.filter(team => team.id !== id));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to delete team";
+            setError(message);
+            throw err;
+        }
+    }), []);
+    const addMember = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((teamId, data) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.post(`/teams/${teamId}/members`, data);
+            // Refetch to get updated member list
+            fetchData();
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to add team member";
+            setError(message);
+            throw err;
+        }
+    }), [fetchData]);
+    const removeMember = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((teamId, memberUserId) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.delete(`/teams/${teamId}/members/${memberUserId}`);
+            // Refetch to get updated member list
+            fetchData();
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to remove team member";
+            setError(message);
+            throw err;
+        }
+    }), [fetchData]);
+    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+        fetchData();
+    }, [fetchData]);
+    return {
+        teams,
+        isLoading,
+        error,
+        refetch: fetchData,
+        createTeam,
+        updateTeam,
+        deleteTeam,
+        addMember,
+        removeMember,
+    };
+};
 
 
 /***/ },
@@ -1545,6 +2707,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
 /* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
 /* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
+/* harmony import */ var _hooks_useChatbot__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../hooks/useChatbot */ "./ReactApp/hooks/useChatbot.ts");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
 
 
 
@@ -1561,168 +2734,90 @@ const starterPrompts = [
     "Draft a message to the team about overdue items.",
     "Suggest a sprint goal using the active projects list.",
 ];
-const seedConversations = [
-    {
-        id: 1,
-        title: "Sprint Planning Assistant",
-        updatedAt: "Just now",
-        messages: [
-            {
-                id: 11,
-                role: "assistant",
-                text: "Hello Demo User. I can help you plan tasks, draft updates, and summarize project progress. What should we work on first?",
-                time: nowLabel(),
-            },
-        ],
-    },
-    {
-        id: 2,
-        title: "Weekly Status Draft",
-        updatedAt: "2h ago",
-        messages: [
-            {
-                id: 21,
-                role: "assistant",
-                text: "You can ask me to generate a status report grouped by project and priority.",
-                time: "10:11 AM",
-            },
-            {
-                id: 22,
-                role: "user",
-                text: "Give me a clean summary for leadership in 5 bullet points.",
-                time: "10:12 AM",
-            },
-        ],
-    },
-];
 function Chatbot() {
-    var _a;
-    /* ── Loading / error simulation ── */
-    const [loading, setLoading] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(true);
-    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
-    const [conversations, setConversations] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
-    const [activeConversationId, setActiveConversationId] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(0);
+    const { conversationList, activeConversation, isLoading, error, refetch, createConversation, sendMessage, deleteConversation, setActiveConversationId, activeConversationId } = (0,_hooks_useChatbot__WEBPACK_IMPORTED_MODULE_16__.useChatbot)();
     const [input, setInput] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
     const chatEndRef = (0,react__WEBPACK_IMPORTED_MODULE_1__.useRef)(null);
-    (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
-        const timer = setTimeout(() => {
+    // Convert backend conversations to UI format
+    const uiConversations = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
+        return conversationList.map(conv => ({
+            id: parseInt(conv.id),
+            title: conv.title,
+            updatedAt: conv.updatedAt,
+            messages: [], // Will be loaded when conversation is selected
+        }));
+    }, [conversationList]);
+    const uiMessages = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
+        if (!activeConversation)
+            return [];
+        return activeConversation.messages.map(msg => ({
+            id: parseInt(msg.id),
+            role: msg.role,
+            text: msg.text,
+            time: formatTime(msg.createdAt),
+        }));
+    }, [activeConversation]);
+    function formatTime(iso) {
+        return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+    const handleSendMessage = (e) => __awaiter(this, void 0, void 0, function* () {
+        var _a;
+        e.preventDefault();
+        if (input.trim() && activeConversationId) {
             try {
-                setConversations(seedConversations);
-                setActiveConversationId(1);
-                setLoading(false);
+                yield sendMessage(activeConversationId, input.trim());
+                setInput("");
+                // Scroll to bottom
+                (_a = chatEndRef.current) === null || _a === void 0 ? void 0 : _a.scrollIntoView({ behavior: "smooth" });
             }
-            catch (_a) {
-                setError("Failed to load chatbot data. Please try again.");
-                setLoading(false);
+            catch (err) {
+                // Error is handled by the hook
             }
-        }, 300);
-        return () => clearTimeout(timer);
-    }, []);
-    const activeConversation = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => { var _a; return (_a = conversations.find((conversation) => conversation.id === activeConversationId)) !== null && _a !== void 0 ? _a : conversations[0]; }, [conversations, activeConversationId]);
-    const activeMessages = (_a = activeConversation === null || activeConversation === void 0 ? void 0 : activeConversation.messages) !== null && _a !== void 0 ? _a : [];
-    const createConversation = () => {
-        const newConversation = {
-            id: Date.now(),
-            title: "New Chat",
-            updatedAt: "Just now",
-            messages: [
-                {
-                    id: Date.now() + 1,
-                    role: "assistant",
-                    text: "Ready when you are. Tell me your goal and I will help break it into actionable tasks.",
-                    time: nowLabel(),
-                },
-            ],
-        };
-        setConversations((prev) => [newConversation, ...prev]);
-        setActiveConversationId(newConversation.id);
-        setInput("");
-    };
-    const removeConversation = (conversationId) => {
-        setConversations((prev) => {
-            const next = prev.filter((conversation) => conversation.id !== conversationId);
-            if (!next.length) {
-                const fallback = {
-                    id: Date.now(),
-                    title: "New Chat",
-                    updatedAt: "Just now",
-                    messages: [
-                        {
-                            id: Date.now() + 1,
-                            role: "assistant",
-                            text: "I am here to help with your planning and workflow questions.",
-                            time: nowLabel(),
-                        },
-                    ],
-                };
-                setActiveConversationId(fallback.id);
-                return [fallback];
-            }
-            if (activeConversationId === conversationId) {
-                setActiveConversationId(next[0].id);
-            }
-            return next;
-        });
-    };
-    const pushAssistantReply = (conversationId, sourceText) => {
-        const response = "Here is a suggested next step: prioritize the highest-impact task first, define a clear owner, and set a concrete due date. If you want, I can convert this into a full task checklist.";
-        setConversations((prev) => prev.map((conversation) => conversation.id === conversationId
-            ? Object.assign(Object.assign({}, conversation), { updatedAt: "Just now", messages: [
-                    ...conversation.messages,
-                    {
-                        id: Date.now() + 2,
-                        role: "assistant",
-                        text: sourceText.toLowerCase().includes("summary")
-                            ? "Summary ready. I grouped updates by status: completed, in progress, and blocked items. Want a short leadership version as well?"
-                            : response,
-                        time: nowLabel(),
-                    },
-                ] }) : conversation));
-        requestAnimationFrame(() => { var _a; return (_a = chatEndRef.current) === null || _a === void 0 ? void 0 : _a.scrollIntoView({ behavior: "smooth" }); });
-    };
-    const submitMessage = (event, overrideText) => {
-        event === null || event === void 0 ? void 0 : event.preventDefault();
-        const text = (overrideText !== null && overrideText !== void 0 ? overrideText : input).trim();
-        if (!text || !activeConversation) {
-            return;
         }
-        const conversationId = activeConversation.id;
-        setConversations((prev) => prev.map((conversation) => conversation.id === conversationId
-            ? Object.assign(Object.assign({}, conversation), { title: conversation.title === "New Chat" ? text.slice(0, 32) : conversation.title, updatedAt: "Just now", messages: [
-                    ...conversation.messages,
-                    {
-                        id: Date.now(),
-                        role: "user",
-                        text,
-                        time: nowLabel(),
-                    },
-                ] }) : conversation));
-        setInput("");
-        requestAnimationFrame(() => {
-            var _a;
-            (_a = chatEndRef.current) === null || _a === void 0 ? void 0 : _a.scrollIntoView({ behavior: "smooth" });
-            setTimeout(() => pushAssistantReply(conversationId, text), 320);
-        });
-    };
-    const submitPrompt = (prompt) => {
-        submitMessage(undefined, prompt);
-    };
+    });
+    const handleCreateConversation = (title) => __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield createConversation({ title });
+        }
+        catch (err) {
+            // Error is handled by the hook
+        }
+    });
+    const handleDeleteConversation = (id) => __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield deleteConversation(id);
+        }
+        catch (err) {
+            // Error is handled by the hook
+        }
+    });
+    // Auto-scroll to bottom when messages change
+    (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
+        var _a;
+        (_a = chatEndRef.current) === null || _a === void 0 ? void 0 : _a.scrollIntoView({ behavior: "smooth" });
+    }, [uiMessages]);
     /* ── Page states ── */
-    if (loading) {
+    if (isLoading) {
         return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_12__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_13__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_15__.PageLoading, { message: "Loading chatbot..." })] })] }));
     }
     if (error) {
-        return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_12__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_13__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_15__.PageError, { message: error, onRetry: () => window.location.reload() })] })] }));
+        return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_12__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_13__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_15__.PageError, { message: error, onRetry: refetch })] })] }));
     }
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_12__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_13__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "max-w-7xl mx-auto p-6 space-y-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between gap-4 flex-wrap", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-3xl font-bold text-gray-900", children: "Chatbot" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-gray-600 mt-1", children: "AI workspace assistant for planning, summaries, and fast execution support" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { onClick: createConversation, className: "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors", "aria-label": "Create new chat", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_9__["default"], { className: "size-4" }), "New Chat"] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("aside", { className: "bg-white border border-gray-200 rounded-xl overflow-hidden h-fit", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "px-4 py-3 border-b border-gray-200 flex items-center justify-between", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-gray-900", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "size-4 text-blue-600" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h2", { className: "text-sm font-semibold", children: "Recent Chats" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "max-h-[560px] overflow-y-auto", children: conversations.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-4 py-8 text-center text-sm text-gray-400", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_8__["default"], { className: "size-8 text-gray-300 mx-auto mb-2" }), "No conversations yet."] })) : (conversations.map((conversation) => {
-                                                            const isActive = activeConversationId === conversation.id;
-                                                            return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => setActiveConversationId(conversation.id), className: `w-full text-left px-4 py-3 border-b border-gray-100 last:border-0 transition-colors ${isActive ? "bg-blue-50" : "hover:bg-gray-50"}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-start justify-between gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: `text-sm font-medium truncate ${isActive ? "text-blue-700" : "text-gray-900"}`, children: conversation.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-1", children: conversation.updatedAt })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: (event) => {
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_12__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_13__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "max-w-7xl mx-auto p-6 space-y-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between gap-4 flex-wrap", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-3xl font-bold text-gray-900", children: "Chatbot" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-gray-600 mt-1", children: "AI workspace assistant for planning, summaries, and fast execution support" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { onClick: () => handleCreateConversation("New Chat"), className: "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors", "aria-label": "Create new chat", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_9__["default"], { className: "size-4" }), "New Chat"] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("aside", { className: "bg-white border border-gray-200 rounded-xl overflow-hidden h-fit", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "px-4 py-3 border-b border-gray-200 flex items-center justify-between", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-gray-900", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "size-4 text-blue-600" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h2", { className: "text-sm font-semibold", children: "Recent Chats" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "max-h-[560px] overflow-y-auto", children: uiConversations.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-4 py-8 text-center text-sm text-gray-400", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_8__["default"], { className: "size-8 text-gray-300 mx-auto mb-2" }), "No conversations yet."] })) : (uiConversations.map((conversation) => {
+                                                            const isActive = parseInt(activeConversationId || "0") === conversation.id;
+                                                            return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => setActiveConversationId(conversation.id.toString()), className: `w-full text-left px-4 py-3 border-b border-gray-100 last:border-0 transition-colors ${isActive ? "bg-blue-50" : "hover:bg-gray-50"}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-start justify-between gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: `text-sm font-medium truncate ${isActive ? "text-blue-700" : "text-gray-900"}`, children: conversation.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-1", children: conversation.updatedAt })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: (event) => {
                                                                                 event.stopPropagation();
-                                                                                removeConversation(conversation.id);
+                                                                                handleDeleteConversation(conversation.id.toString());
                                                                             }, className: "p-1 text-gray-400 hover:text-red-500 transition-colors", "aria-label": `Delete chat: ${conversation.title}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_11__["default"], { className: "size-3.5" }) })] }) }, conversation.id));
-                                                        })) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("section", { className: "bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col min-h-[640px]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-5 py-4 border-b border-gray-200 flex items-center justify-between gap-3 flex-wrap", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-4" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm font-semibold text-gray-900 truncate", children: "TaskFlow AI Assistant" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 truncate", children: "Context-aware support for your workspace" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-600", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100", children: "Productivity" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "px-2 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-100", children: "Planning" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 overflow-y-auto p-5 bg-gray-50", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-4", children: [activeMessages.map((message) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `flex ${message.role === "user" ? "justify-end" : "justify-start"}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: `max-w-[78%] rounded-2xl px-4 py-3 shadow-sm ${message.role === "user"
+                                                        })) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("section", { className: "bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col min-h-[640px]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-5 py-4 border-b border-gray-200 flex items-center justify-between gap-3 flex-wrap", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-4" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm font-semibold text-gray-900 truncate", children: "TaskFlow AI Assistant" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 truncate", children: "Context-aware support for your workspace" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-600", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100", children: "Productivity" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "px-2 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-100", children: "Planning" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 overflow-y-auto p-5 bg-gray-50", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-4", children: [uiMessages.map((message) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `flex ${message.role === "user" ? "justify-end" : "justify-start"}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: `max-w-[78%] rounded-2xl px-4 py-3 shadow-sm ${message.role === "user"
                                                                             ? "bg-blue-600 text-white rounded-br-md"
-                                                                            : "bg-white border border-gray-200 text-gray-800 rounded-bl-md"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm leading-relaxed whitespace-pre-wrap", children: message.text }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: `mt-2 text-[11px] ${message.role === "user" ? "text-blue-100" : "text-gray-400"}`, children: message.time })] }) }, message.id))), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { ref: chatEndRef })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-5 py-4 border-t border-gray-200 bg-white space-y-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex flex-wrap gap-2", children: starterPrompts.map((prompt) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => submitPrompt(prompt), className: "text-xs px-2.5 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors", children: prompt }, prompt))) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("form", { onSubmit: submitMessage, className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { value: input, onChange: (event) => setInput(event.target.value), placeholder: "Ask the assistant anything about your tasks, projects, or workflow...", className: "flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-blue-200", "aria-label": "Chat input" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "submit", className: "size-10 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center justify-center", "aria-label": "Send message", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_10__["default"], { className: "size-4" }) })] })] })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-blue-700", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "text-sm font-semibold", children: "Smart Suggestions" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600 mt-2", children: "Get recommended next actions based on deadlines and workload trends." })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-violet-700", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "text-sm font-semibold", children: "Status Summaries" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600 mt-2", children: "Generate concise project updates you can send to leadership or team channels." })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-emerald-700", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "text-sm font-semibold", children: "Action Plans" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600 mt-2", children: "Convert high-level goals into a practical checklist with due dates and owners." })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-gray-900", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "size-4 text-orange-600" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "text-sm font-semibold", children: "Best Results Tips" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("ul", { className: "mt-3 text-sm text-gray-600 space-y-1 list-disc pl-5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("li", { children: "Include project names and deadlines in your prompt for better prioritization." }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("li", { children: "Ask for outputs in a specific format, like checklist, summary, or message draft." }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("li", { children: "Use follow-up prompts to refine scope, tone, and action ownership." })] })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_14__["default"], {})] })] })] }));
+                                                                            : "bg-white border border-gray-200 text-gray-800 rounded-bl-md"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm leading-relaxed whitespace-pre-wrap", children: message.text }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: `mt-2 text-[11px] ${message.role === "user" ? "text-blue-100" : "text-gray-400"}`, children: message.time })] }) }, message.id))), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { ref: chatEndRef })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-5 py-4 border-t border-gray-200 bg-white space-y-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex flex-wrap gap-2", children: starterPrompts.map((prompt) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => {
+                                                                        setInput(prompt);
+                                                                        setTimeout(() => {
+                                                                            const formEvent = new Event('submit', { cancelable: true });
+                                                                            handleSendMessage(formEvent);
+                                                                        }, 0);
+                                                                    }, className: "text-xs px-2.5 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors", children: prompt }, prompt))) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("form", { onSubmit: handleSendMessage, className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { value: input, onChange: (event) => setInput(event.target.value), placeholder: "Ask the assistant anything about your tasks, projects, or workflow...", className: "flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-blue-200", "aria-label": "Chat input" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "submit", className: "size-10 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center justify-center", "aria-label": "Send message", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_10__["default"], { className: "size-4" }) })] })] })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-blue-700", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "text-sm font-semibold", children: "Smart Suggestions" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600 mt-2", children: "Get recommended next actions based on deadlines and workload trends." })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-violet-700", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "text-sm font-semibold", children: "Status Summaries" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600 mt-2", children: "Generate concise project updates you can send to leadership or team channels." })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-emerald-700", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "text-sm font-semibold", children: "Action Plans" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600 mt-2", children: "Convert high-level goals into a practical checklist with due dates and owners." })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-gray-900", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "size-4 text-orange-600" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "text-sm font-semibold", children: "Best Results Tips" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("ul", { className: "mt-3 text-sm text-gray-600 space-y-1 list-disc pl-5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("li", { children: "Include project names and deadlines in your prompt for better prioritization." }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("li", { children: "Ask for outputs in a specific format, like checklist, summary, or message draft." }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("li", { children: "Use follow-up prompts to refine scope, tone, and action ownership." })] })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_14__["default"], {})] })] })] }));
 }
 
 
@@ -1750,12 +2845,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Components_Sidebar__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../Components/Sidebar */ "./ReactApp/Components/Sidebar.tsx");
 /* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
 /* harmony import */ var _Components_DashboardCard__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../Components/DashboardCard */ "./ReactApp/Components/DashboardCard.tsx");
-/* harmony import */ var _Components_TaskItem__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../Components/TaskItem */ "./ReactApp/Components/TaskItem.tsx");
-/* harmony import */ var _Components_CalendarWidget__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../Components/CalendarWidget */ "./ReactApp/Components/CalendarWidget.tsx");
-/* harmony import */ var _Components_TaskLineWidget__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../Components/TaskLineWidget */ "./ReactApp/Components/TaskLineWidget.tsx");
-/* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
-/* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
-/* harmony import */ var _context_AuthContext__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../context/AuthContext */ "./ReactApp/context/AuthContext.tsx");
+/* harmony import */ var _Components_CalendarWidget__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../Components/CalendarWidget */ "./ReactApp/Components/CalendarWidget.tsx");
+/* harmony import */ var _Components_TaskLineWidget__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../Components/TaskLineWidget */ "./ReactApp/Components/TaskLineWidget.tsx");
+/* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
+/* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
+/* harmony import */ var _context_AuthContext__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../context/AuthContext */ "./ReactApp/context/AuthContext.tsx");
+/* harmony import */ var _hooks_useDashboard__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../hooks/useDashboard */ "./ReactApp/hooks/useDashboard.ts");
 
 
 
@@ -1768,78 +2863,23 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-// ── Seed data (will be replaced by API call) ─────────────────────────────
-const SEED_DASHBOARD = {
-    stats: {
-        activeTasks: 24,
-        inProgress: 8,
-        projects: 12,
-        teamMembers: 16,
-        dueThisWeek: 3,
-        activeProjects: 4,
-        onlineNow: 12,
-        tasksTrend: 12,
-    },
-    myWork: [
-        { title: "Design new landing page", project: "Marketing Site", dueDate: "Today", priority: "high" },
-        { title: "Review pull requests", project: "API Service", dueDate: "Tomorrow", priority: "medium" },
-        { title: "Update documentation", project: "Developer Portal", dueDate: "Mar 12", priority: "low" },
-        { title: "Fix bug in checkout flow", project: "E-commerce", dueDate: "Mar 15", priority: "high" },
-    ],
-    assignedToMe: [
-        { title: "Implement authentication flow", project: "User Service", assignee: "Sarah Chen", dueDate: "Mar 11", priority: "high" },
-        { title: "Create wireframes for dashboard", project: "Admin Panel", assignee: "Mike Johnson", dueDate: "Mar 13", priority: "medium" },
-        { title: "Write unit tests", project: "API Service", assignee: "You", dueDate: "Mar 14", priority: "low" },
-    ],
-    recentActivity: [
-        { id: "1", user: "Sarah Chen", action: 'completed "Design system update"', time: "2 hours ago", iconBg: "bg-green-100", iconColor: "text-green-600", icon: lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"] },
-        { id: "2", user: "Mike Johnson", action: 'created new project "Mobile App"', time: "5 hours ago", iconBg: "bg-blue-100", iconColor: "text-blue-600", icon: lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"] },
-        { id: "3", user: "Alex Kim", action: "joined the team", time: "Yesterday", iconBg: "bg-purple-100", iconColor: "text-purple-600", icon: lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"] },
-    ],
-};
 function Dashboard() {
-    const { user } = (0,_context_AuthContext__WEBPACK_IMPORTED_MODULE_16__.useAuth)();
+    const { user } = (0,_context_AuthContext__WEBPACK_IMPORTED_MODULE_15__.useAuth)();
+    const { stats, recentActivity, isLoading, error, refetch } = (0,_hooks_useDashboard__WEBPACK_IMPORTED_MODULE_16__.useDashboard)();
     const [calYear, setCalYear] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(2022);
     const [calMonth, setCalMonth] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(5); // 0-indexed, 5 = Jun
     const [calDay, setCalDay] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(10);
-    // Data fetching state (ready for API integration)
-    const [data, setData] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
-    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(true);
-    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
-    (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
-        // TODO: Replace with actual API call: api.get<DashboardData>("/dashboard")
-        let cancelled = false;
-        setIsLoading(true);
-        setError(null);
-        // Simulate async data fetch
-        const timer = setTimeout(() => {
-            if (!cancelled) {
-                setData(SEED_DASHBOARD);
-                setIsLoading(false);
-            }
-        }, 0);
-        return () => {
-            cancelled = true;
-            clearTimeout(timer);
-        };
-    }, []);
     const currentTime = new Date().getHours();
     const greeting = currentTime < 12 ? "Good morning" : currentTime < 18 ? "Good afternoon" : "Good evening";
-    const displayName = user ? user.firstName : "Demo User";
+    const displayName = user ? user.fullName : "Demo User";
     const handleRetry = () => {
-        setError(null);
-        setIsLoading(true);
-        // Re-trigger fetch
-        setTimeout(() => {
-            setData(SEED_DASHBOARD);
-            setIsLoading(false);
-        }, 0);
+        refetch();
     };
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_8__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_9__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [isLoading && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_15__.PageLoading, { message: "Loading dashboard..." }), error && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_15__.PageError, { message: error, onRetry: handleRetry }), !isLoading && !error && data && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex gap-6 p-6 items-start", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0 space-y-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("h1", { className: "text-3xl font-bold text-gray-900", children: [greeting, ", ", displayName] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-gray-600 mt-1", children: "Here's what's happening with your projects today" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Active Tasks" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900 mt-1", children: data.stats.activeTasks })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-blue-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-6 text-blue-600" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1 mt-4 text-sm text-green-600", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [data.stats.tasksTrend, "% from last week"] })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "In Progress" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900 mt-1", children: data.stats.inProgress })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-orange-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-6 text-orange-600" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex items-center gap-1 mt-4 text-sm text-gray-600", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [data.stats.dueThisWeek, " due this week"] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Projects" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900 mt-1", children: data.stats.projects })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-purple-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "size-6 text-purple-600" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex items-center gap-1 mt-4 text-sm text-gray-600", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [data.stats.activeProjects, " active projects"] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Team Members" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900 mt-1", children: data.stats.teamMembers })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-green-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-6 text-green-600" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex items-center gap-1 mt-4 text-sm text-gray-600", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [data.stats.onlineNow, " online now"] }) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_DashboardCard__WEBPACK_IMPORTED_MODULE_10__["default"], { title: "My Work", icon: lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], action: { label: "View all", onClick: () => { } }, children: data.myWork.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-500 py-4 text-center", children: "No tasks assigned yet" })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "space-y-1", children: data.myWork.map((task) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_TaskItem__WEBPACK_IMPORTED_MODULE_11__["default"], { title: task.title, project: task.project, dueDate: task.dueDate, priority: task.priority }, task.title))) })) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_DashboardCard__WEBPACK_IMPORTED_MODULE_10__["default"], { title: "Assigned to Me", icon: lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], action: { label: "View all", onClick: () => { } }, children: data.assignedToMe.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-500 py-4 text-center", children: "Nothing assigned to you" })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "space-y-1", children: data.assignedToMe.map((task) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_TaskItem__WEBPACK_IMPORTED_MODULE_11__["default"], { title: task.title, project: task.project, assignee: task.assignee, dueDate: task.dueDate, priority: task.priority }, task.title))) })) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_DashboardCard__WEBPACK_IMPORTED_MODULE_10__["default"], { title: "Agenda", icon: lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], emptyState: {
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_8__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_9__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [isLoading && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_14__.PageLoading, { message: "Loading dashboard..." }), error && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_14__.PageError, { message: error, onRetry: handleRetry }), !isLoading && !error && stats && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex gap-6 p-6 items-start", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0 space-y-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("h1", { className: "text-3xl font-bold text-gray-900", children: [greeting, ", ", displayName] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-gray-600 mt-1", children: "Here's what's happening with your projects today" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Active Tasks" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900 mt-1", children: stats.activeTasks })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-blue-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-6 text-blue-600" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1 mt-4 text-sm text-green-600", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [stats.tasksTrend, "% from last week"] })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "In Progress" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900 mt-1", children: stats.inProgress })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-orange-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-6 text-orange-600" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex items-center gap-1 mt-4 text-sm text-gray-600", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [stats.dueThisWeek, " due this week"] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Projects" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900 mt-1", children: stats.projects })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-purple-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "size-6 text-purple-600" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex items-center gap-1 mt-4 text-sm text-gray-600", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [stats.activeProjects, " active projects"] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Team Members" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900 mt-1", children: stats.teamMembers })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-green-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-6 text-green-600" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex items-center gap-1 mt-4 text-sm text-gray-600", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [stats.onlineNow, " online now"] }) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_DashboardCard__WEBPACK_IMPORTED_MODULE_10__["default"], { title: "My Work", icon: lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], action: { label: "View all", onClick: () => { } }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-500 py-4 text-center", children: "No tasks assigned yet" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_DashboardCard__WEBPACK_IMPORTED_MODULE_10__["default"], { title: "Assigned to Me", icon: lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], action: { label: "View all", onClick: () => { } }, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-500 py-4 text-center", children: "Nothing assigned to you" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_DashboardCard__WEBPACK_IMPORTED_MODULE_10__["default"], { title: "Agenda", icon: lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], emptyState: {
                                                             icon: lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"],
                                                             message: "Your calendar events will appear here",
                                                             action: { label: "Add Event", onClick: () => { } },
-                                                        } }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_DashboardCard__WEBPACK_IMPORTED_MODULE_10__["default"], { title: "Recent Activity", icon: lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], children: data.recentActivity.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-500 py-4 text-center", children: "No recent activity" })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "space-y-4", children: data.recentActivity.map((activity) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-8 ${activity.iconBg} rounded-full flex items-center justify-center flex-shrink-0`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(activity.icon, { className: `size-4 ${activity.iconColor}` }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("p", { className: "text-sm text-gray-900", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-medium", children: activity.user }), " ", activity.action] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5", children: activity.time })] })] }, activity.id))) })) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col gap-4 flex-shrink-0 pt-16", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_CalendarWidget__WEBPACK_IMPORTED_MODULE_12__["default"], { year: calYear, month: calMonth, selectedDay: calDay, onYearChange: setCalYear, onMonthChange: setCalMonth, onDaySelect: setCalDay }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_TaskLineWidget__WEBPACK_IMPORTED_MODULE_13__["default"], { year: calYear, month: calMonth, selectedDay: calDay })] })] })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_14__["default"], {})] })] })] }));
+                                                        } }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_DashboardCard__WEBPACK_IMPORTED_MODULE_10__["default"], { title: "Recent Activity", icon: lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], children: recentActivity.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-500 py-4 text-center", children: "No recent activity" })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "space-y-4", children: recentActivity.map((activity) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-8 ${activity.iconBg} rounded-full flex items-center justify-center flex-shrink-0`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(activity.icon, { className: `size-4 ${activity.iconColor}` }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("p", { className: "text-sm text-gray-900", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-medium", children: activity.user }), " ", activity.action] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5", children: activity.time })] })] }, activity.id))) })) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col gap-4 flex-shrink-0 pt-16", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_CalendarWidget__WEBPACK_IMPORTED_MODULE_11__["default"], { year: calYear, month: calMonth, selectedDay: calDay, onYearChange: setCalYear, onMonthChange: setCalMonth, onDaySelect: setCalDay }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_TaskLineWidget__WEBPACK_IMPORTED_MODULE_12__["default"], { year: calYear, month: calMonth, selectedDay: calDay })] })] })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_13__["default"], {})] })] })] }));
 }
 
 
@@ -1861,6 +2901,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react_router__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react-router */ "./node_modules/react-router/dist/development/chunk-LFPYN7LY.mjs");
 /* harmony import */ var _Components_TaskFlowLogo__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../Components/TaskFlowLogo */ "./ReactApp/Components/TaskFlowLogo.tsx");
 /* harmony import */ var _Components_AuthFooter__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../Components/AuthFooter */ "./ReactApp/Components/AuthFooter.tsx");
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -1870,6 +2911,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+
 
 
 
@@ -1885,19 +2927,16 @@ function ForgotPassword() {
         setLoading(true);
         setError("");
         try {
-            const res = yield fetch("/api/auth/forgot-password", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
-            });
-            const data = yield res.json();
-            if (!res.ok) {
-                throw new Error(data.message || "Request failed. Please try again.");
-            }
-            navigate("/reset-password-sent", { state: { email, code: data.data } });
+            const code = yield _services_api__WEBPACK_IMPORTED_MODULE_5__.api.post("/auth/forgot-password", { email });
+            navigate("/reset-password-sent", { state: { email, code } });
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_5__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Something went wrong. Please try again.";
+            setError(message);
         }
         finally {
             setLoading(false);
@@ -2028,139 +3067,129 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Components_Sidebar__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../Components/Sidebar */ "./ReactApp/Components/Sidebar.tsx");
 /* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
 /* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/ellipsis-vertical.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/chevron-down.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/clock.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/message-circle.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/mic.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/plus.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/search.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/send.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/smile.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/star.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/thumbs-up.js");
-
-
-
-
-
-
-/* ── Static data ── */
-const SEED_CONTACTS = [
-    { id: 1, name: "Sarah Chen", initials: "SC", avatarClass: "bg-pink-200 text-pink-700", preview: "Can you review the latest mockups when you get a chance?", time: "Just now", unread: 1, starred: false },
-    { id: 2, name: "Mike Johnson", initials: "MJ", avatarClass: "bg-blue-200 text-blue-700", preview: "The API docs are ready for review.", time: "10 min ago", unread: 1, starred: false },
-    { id: 3, name: "Alex Kim", initials: "AK", avatarClass: "bg-green-200 text-green-700", preview: "Pushed the backend fix. Let me know if it resolves it.", time: "45 min ago", unread: 1, starred: false },
-    { id: 4, name: "Emily Rodriguez", initials: "ER", avatarClass: "bg-purple-200 text-purple-700", preview: "Thanks for the feedback on the wireframes!", time: "2 hr ago", unread: 0, starred: false },
-    { id: 5, name: "Dev Team", initials: "DT", avatarClass: "bg-orange-200 text-orange-700", preview: "Standup is moved to 10 AM tomorrow.", time: "Yesterday", unread: 0, starred: false },
-];
-const SEED_MSGS = {
-    1: [
-        { id: 1, side: "received", type: "text", text: "Can you review the latest mockups when you get a chance?", time: "Just now" },
-        { id: 2, side: "sent", type: "text", text: "Sure! Sending you my feedback shortly.", time: "Just now" },
-    ],
-    2: [
-        { id: 1, side: "received", type: "text", text: "The API docs are ready for review.", time: "10 min ago" },
-        { id: 2, side: "received", type: "voice", duration: "00:42", time: "10 min ago" },
-        { id: 3, side: "sent", type: "text", text: "Great, I'll take a look now.", time: "8 min ago" },
-        { id: 4, side: "sent", type: "text", text: "Looks good so far! A few minor comments coming.", time: "5 min ago" },
-    ],
-    3: [
-        { id: 1, side: "received", type: "text", text: "Pushed the backend fix. Let me know if it resolves it.", time: "45 min ago" },
-        { id: 2, side: "sent", type: "text", text: "Testing now...", time: "40 min ago" },
-        { id: 3, side: "sent", type: "text", text: "Confirmed! The issue is fixed. Thanks!", time: "38 min ago" },
-    ],
-    4: [
-        { id: 1, side: "sent", type: "text", text: "Your wireframes look great overall. A few small tweaks on the nav section.", time: "2 hr ago" },
-        { id: 2, side: "received", type: "text", text: "Thanks for the feedback on the wireframes!", time: "2 hr ago" },
-    ],
-    5: [
-        { id: 1, side: "received", type: "text", text: "Standup is moved to 10 AM tomorrow.", time: "Yesterday" },
-        { id: 2, side: "sent", type: "text", text: "Got it, thanks for the heads up!", time: "Yesterday" },
-    ],
+/* harmony import */ var _hooks_useMessages__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../hooks/useMessages */ "./ReactApp/hooks/useMessages.ts");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/ellipsis-vertical.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/chevron-down.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/clock.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/message-circle.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/mic.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/plus.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/search.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/send.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/smile.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/star.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/thumbs-up.js");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
 };
-/* ── Waveform (SVG bars from Figma heights) ── */
-const WAVE_HEIGHTS = [4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 6, 9, 9, 9, 9, 12, 9, 9, 9, 9, 9, 18, 16, 16, 16, 16, 12, 12, 9, 9, 9, 9, 9, 12, 16, 9, 9, 9, 12, 12, 18, 16, 16, 16, 16, 12, 12, 9, 9, 9, 9, 4, 4, 9, 4, 12, 12, 4, 4, 12, 12, 12, 12, 4, 4, 18, 9, 9, 9, 4, 4, 4, 9, 9, 9, 9, 9, 9, 4, 4, 9, 9, 16, 9, 9, 9, 4, 4, 12, 4, 12, 9, 9, 9, 18, 16, 12, 12, 4, 9, 9, 9, 6, 6, 6, 6, 6, 6, 4, 4, 4, 4];
-function Waveform() {
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("svg", { width: WAVE_HEIGHTS.length * 2.5, height: 22, viewBox: `0 0 ${WAVE_HEIGHTS.length * 2.5} 22`, className: "block text-blue-600", "aria-hidden": "true", children: WAVE_HEIGHTS.map((h, i) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("rect", { x: i * 2.5, y: (22 - h) / 2, width: 1.5, height: h, rx: 1, fill: "currentColor" }, i))) }));
-}
-/* ═══════════════════════════════ */
+
+
+
+
+
+
+
+/* ── Component ── */
 function Message() {
-    var _a, _b;
-    /* ── Loading / error simulation ── */
-    const [loading, setLoading] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(true);
-    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
-    const [contacts, setContacts] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
-    const [allMsgs, setAllMsgs] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)({});
-    const [activeId, setActiveId] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
+    var _a;
+    const { contacts, messages, isLoading, error, refetch, sendMessage: sendMessageHook, activeContactId, setActiveContactId } = (0,_hooks_useMessages__WEBPACK_IMPORTED_MODULE_5__.useMessages)();
     const [search, setSearch] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
     const [input, setInput] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
     const [showContacts, setShowContacts] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
     const bottomRef = (0,react__WEBPACK_IMPORTED_MODULE_1__.useRef)(null);
-    (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
-        const timer = setTimeout(() => {
+    // Convert backend contacts to UI format
+    const uiContacts = contacts.map(contact => ({
+        id: parseInt(contact.id),
+        name: contact.name,
+        initials: contact.name.split(' ').map(n => n[0]).join(''),
+        avatarClass: "bg-blue-200 text-blue-700", // Default, could be enhanced
+        preview: contact.lastMessage || "No messages yet",
+        time: contact.lastMessageTime ? formatRelativeTime(contact.lastMessageTime) : "",
+        unread: contact.unreadCount,
+        starred: false, // Backend doesn't provide this
+    }));
+    // Convert backend messages to UI format
+    const uiMessages = messages.map(msg => ({
+        id: parseInt(msg.id),
+        side: msg.senderId === "current-user" ? "sent" : "received",
+        type: "text",
+        text: msg.body,
+        time: formatRelativeTime(msg.sentAt),
+    }));
+    // Helper to format relative time
+    function formatRelativeTime(iso) {
+        const created = new Date(iso);
+        const diffMs = Date.now() - created.getTime();
+        const diffMin = Math.floor(diffMs / 60000);
+        if (diffMin < 1)
+            return "Just now";
+        if (diffMin < 60)
+            return `${diffMin} min ago`;
+        const diffH = Math.floor(diffMin / 60);
+        if (diffH < 24)
+            return `${diffH} hour${diffH === 1 ? "" : "s"} ago`;
+        const diffD = Math.floor(diffH / 24);
+        if (diffD === 1)
+            return "Yesterday";
+        return `${diffD} days ago`;
+    }
+    const handleSendMessage = () => __awaiter(this, void 0, void 0, function* () {
+        var _a;
+        if (input.trim() && activeContactId) {
             try {
-                setContacts(SEED_CONTACTS);
-                setAllMsgs(SEED_MSGS);
-                setActiveId(2);
-                setLoading(false);
+                yield sendMessageHook(activeContactId, input.trim());
+                setInput("");
+                // Scroll to bottom
+                (_a = bottomRef.current) === null || _a === void 0 ? void 0 : _a.scrollIntoView({ behavior: "smooth" });
             }
-            catch (_a) {
-                setError("Failed to load messages. Please try again.");
-                setLoading(false);
+            catch (err) {
+                // Error is handled by the hook
             }
-        }, 300);
-        return () => clearTimeout(timer);
-    }, []);
-    const activeMsgs = activeId !== null ? ((_a = allMsgs[activeId]) !== null && _a !== void 0 ? _a : []) : [];
-    const activeContact = (_b = contacts.find(c => c.id === activeId)) !== null && _b !== void 0 ? _b : null;
+        }
+    });
+    const activeMsgs = uiMessages;
+    const activeContact = (_a = uiContacts.find(c => c.id === parseInt(activeContactId || ""))) !== null && _a !== void 0 ? _a : null;
     const filteredContacts = search
-        ? contacts.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
-        : contacts;
+        ? uiContacts.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+        : uiContacts;
     (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
         var _a;
         (_a = bottomRef.current) === null || _a === void 0 ? void 0 : _a.scrollIntoView({ behavior: "smooth" });
-    }, [activeId, activeMsgs.length]);
+    }, [activeContactId, uiMessages.length]);
     const selectContact = (id) => {
-        setActiveId(id);
-        setContacts(prev => prev.map(c => c.id === id ? Object.assign(Object.assign({}, c), { unread: 0 }) : c));
+        setActiveContactId(id.toString());
         setShowContacts(false); // close mobile panel
-    };
-    const sendMessage = () => {
-        const text = input.trim();
-        if (!text || activeId === null)
-            return;
-        const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        setAllMsgs(prev => {
-            var _a;
-            return (Object.assign(Object.assign({}, prev), { [activeId]: [...((_a = prev[activeId]) !== null && _a !== void 0 ? _a : []), { id: Date.now(), side: "sent", type: "text", text, time }] }));
-        });
-        setContacts(prev => prev.map(c => c.id === activeId ? Object.assign(Object.assign({}, c), { preview: text, time }) : c));
-        setInput("");
     };
     const toggleStar = (id, e) => {
         e.stopPropagation();
-        setContacts(prev => prev.map(c => c.id === id ? Object.assign(Object.assign({}, c), { starred: !c.starred }) : c));
+        // Backend doesn't support starring contacts, this would need to be implemented
     };
     const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     /* ── Page states ── */
-    if (loading) {
+    if (isLoading) {
         return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_2__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col flex-1 overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_3__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_4__.PageLoading, { message: "Loading messages..." })] })] }));
     }
     if (error) {
-        return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_2__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col flex-1 overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_3__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_4__.PageError, { message: error, onRetry: () => window.location.reload() })] })] }));
+        return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_2__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col flex-1 overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_3__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_4__.PageError, { message: error, onRetry: refetch })] })] }));
     }
     if (contacts.length === 0) {
-        return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_2__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col flex-1 overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_3__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_4__.PageEmpty, { title: "No conversations yet", description: "Start a new conversation to get going.", icon: lucide_react__WEBPACK_IMPORTED_MODULE_8__["default"] })] })] }));
+        return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_2__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col flex-1 overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_3__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_4__.PageEmpty, { title: "No conversations yet", description: "Start a new conversation to get going.", icon: lucide_react__WEBPACK_IMPORTED_MODULE_9__["default"] })] })] }));
     }
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_2__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col flex-1 overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_3__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-shrink-0 bg-white border-b border-gray-200 px-6 py-2.5 flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "Messages" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "w-px h-4 bg-gray-300 hidden sm:block" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("p", { className: "text-sm text-gray-500 hidden sm:block", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-blue-600 font-semibold", children: contacts.length }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "ml-1", children: "Conversations" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { onClick: () => setShowContacts(!showContacts), className: "lg:hidden flex items-center gap-2 px-3 py-1.5 text-gray-700 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors", "aria-label": "Toggle contacts", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_8__["default"], { className: "size-4" }), "Contacts"] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { "aria-label": "New message", className: "flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_10__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "hidden sm:inline", children: "Messages" })] })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-1 overflow-hidden relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: `
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_2__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col flex-1 overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_3__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-shrink-0 bg-white border-b border-gray-200 px-6 py-2.5 flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "Messages" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "w-px h-4 bg-gray-300 hidden sm:block" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("p", { className: "text-sm text-gray-500 hidden sm:block", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-blue-600 font-semibold", children: contacts.length }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "ml-1", children: "Conversations" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { onClick: () => setShowContacts(!showContacts), className: "lg:hidden flex items-center gap-2 px-3 py-1.5 text-gray-700 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors", "aria-label": "Toggle contacts", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_9__["default"], { className: "size-4" }), "Contacts"] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { "aria-label": "New message", className: "flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_11__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "hidden sm:inline", children: "Messages" })] })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-1 overflow-hidden relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: `
             absolute inset-y-0 left-0 z-20 w-[300px] sm:w-[360px] bg-white border-r border-gray-200 flex flex-col overflow-hidden transition-transform duration-200
             lg:relative lg:translate-x-0 lg:z-auto
             ${showContacts ? "translate-x-0" : "-translate-x-full"}
-          `, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-gray-200", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm font-semibold text-gray-900", children: "All Messages" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-1.5 rounded-lg hover:bg-gray-100 transition-colors", "aria-label": "Filter messages", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4 text-gray-500" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-1.5 rounded-lg hover:bg-gray-100 transition-colors", "aria-label": "More options", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "size-4 text-gray-500" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "px-4 py-3 border-b border-gray-100", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_11__["default"], { className: "size-4 text-gray-400 flex-shrink-0" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { value: search, onChange: e => setSearch(e.target.value), placeholder: "Search or start a new chat", className: "flex-1 bg-transparent outline-none text-sm text-gray-600 placeholder:text-gray-400", "aria-label": "Search contacts" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 overflow-y-auto", children: filteredContacts.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "px-4 py-8 text-center text-sm text-gray-400", children: "No contacts match your search." })) : (filteredContacts.map(c => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { onClick: () => selectContact(c.id), className: `w-full text-left flex items-start gap-3 px-4 py-3 border-b border-gray-100 transition-colors ${c.id === activeId ? "bg-blue-50 border-l-2 border-l-blue-600" : "hover:bg-gray-50"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${c.avatarClass}`, children: c.initials }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between mb-0.5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `text-sm font-medium ${c.id === activeId ? "text-blue-700" : "text-gray-900"}`, children: c.name }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1 flex-shrink-0", children: [c.unread > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "size-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center", children: c.unread })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: e => toggleStar(c.id, e), className: "p-1 rounded-lg hover:bg-gray-200 transition-colors", "aria-label": c.starred ? "Unstar conversation" : "Star conversation", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_14__["default"], { className: `size-3.5 ${c.starred ? "fill-blue-600 text-blue-600" : "text-gray-400"}` }) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 truncate mb-1", children: c.preview }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-3 text-gray-400" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-xs text-gray-400", children: c.time })] })] })] }, c.id)))) })] }), showContacts && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "absolute inset-0 z-10 bg-black/20 lg:hidden", onClick: () => setShowContacts(false), "aria-hidden": "true" })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 flex flex-col overflow-hidden", children: activeContact === null ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 flex items-center justify-center bg-gray-50", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "text-center", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_8__["default"], { className: "size-12 text-gray-300 mx-auto mb-3" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-gray-500 text-sm", children: "Select a conversation to start chatting." })] }) })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-shrink-0 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${activeContact.avatarClass}`, children: activeContact.initials }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm font-semibold text-gray-900", children: activeContact.name }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-green-500", children: "Online" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors", "aria-label": "Star conversation", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_14__["default"], { className: "size-4 text-blue-600 fill-blue-600" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors", "aria-label": "Search in conversation", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_11__["default"], { className: "size-4" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors", "aria-label": "More options", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "size-4" }) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 overflow-y-auto px-6 py-6 bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 mb-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 h-px bg-gray-200" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "text-xs text-gray-400 font-medium px-2", children: ["Today \u00B7 ", timeStr] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 h-px bg-gray-200" })] }), activeMsgs.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "text-center py-12", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_8__["default"], { className: "size-10 text-gray-300 mx-auto mb-2" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-400", children: "No messages yet. Say hello!" })] })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex flex-col gap-4", children: activeMsgs.map(msg => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `flex ${msg.side === "sent" ? "justify-end" : "justify-start"}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: `flex flex-col ${msg.side === "sent" ? "items-end" : "items-start"}`, children: [msg.type === "text" ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `px-5 py-3 text-sm leading-relaxed whitespace-pre-line max-w-xs shadow-sm rounded-[20px] ${msg.side === "sent"
+          `, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-gray-200", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm font-semibold text-gray-900", children: "All Messages" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-1.5 rounded-lg hover:bg-gray-100 transition-colors", "aria-label": "Filter messages", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-4 text-gray-500" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-1.5 rounded-lg hover:bg-gray-100 transition-colors", "aria-label": "More options", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4 text-gray-500" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "px-4 py-3 border-b border-gray-100", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_12__["default"], { className: "size-4 text-gray-400 flex-shrink-0" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { value: search, onChange: e => setSearch(e.target.value), placeholder: "Search or start a new chat", className: "flex-1 bg-transparent outline-none text-sm text-gray-600 placeholder:text-gray-400", "aria-label": "Search contacts" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 overflow-y-auto", children: filteredContacts.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "px-4 py-8 text-center text-sm text-gray-400", children: "No contacts match your search." })) : (filteredContacts.map(c => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { onClick: () => selectContact(c.id), className: `w-full text-left flex items-start gap-3 px-4 py-3 border-b border-gray-100 transition-colors ${c.id === parseInt(activeContactId || "0") ? "bg-blue-50 border-l-2 border-l-blue-600" : "hover:bg-gray-50"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${c.avatarClass}`, children: c.initials }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between mb-0.5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `text-sm font-medium ${c.id === parseInt(activeContactId || "0") ? "text-blue-700" : "text-gray-900"}`, children: c.name }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1 flex-shrink-0", children: [c.unread > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "size-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center", children: c.unread })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: e => toggleStar(c.id, e), className: "p-1 rounded-lg hover:bg-gray-200 transition-colors", "aria-label": c.starred ? "Unstar conversation" : "Star conversation", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_15__["default"], { className: `size-3.5 ${c.starred ? "fill-blue-600 text-blue-600" : "text-gray-400"}` }) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 truncate mb-1", children: c.preview }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_8__["default"], { className: "size-3 text-gray-400" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-xs text-gray-400", children: c.time })] })] })] }, c.id)))) })] }), showContacts && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "absolute inset-0 z-10 bg-black/20 lg:hidden", onClick: () => setShowContacts(false), "aria-hidden": "true" })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 flex flex-col overflow-hidden", children: activeContact === null ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 flex items-center justify-center bg-gray-50", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "text-center", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_9__["default"], { className: "size-12 text-gray-300 mx-auto mb-3" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-gray-500 text-sm", children: "Select a conversation to start chatting." })] }) })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-shrink-0 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${activeContact.avatarClass}`, children: activeContact.initials }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm font-semibold text-gray-900", children: activeContact.name }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-green-500", children: "Online" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors", "aria-label": "Star conversation", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_15__["default"], { className: "size-4 text-blue-600 fill-blue-600" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors", "aria-label": "Search in conversation", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_12__["default"], { className: "size-4" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors", "aria-label": "More options", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4" }) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 overflow-y-auto px-6 py-6 bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 mb-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 h-px bg-gray-200" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "text-xs text-gray-400 font-medium px-2", children: ["Today \u00B7 ", timeStr] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 h-px bg-gray-200" })] }), activeMsgs.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "text-center py-12", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_9__["default"], { className: "size-10 text-gray-300 mx-auto mb-2" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-400", children: "No messages yet. Say hello!" })] })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex flex-col gap-4", children: activeMsgs.map(msg => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `flex ${msg.side === "sent" ? "justify-end" : "justify-start"}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: `flex flex-col ${msg.side === "sent" ? "items-end" : "items-start"}`, children: [msg.type === "text" ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `px-5 py-3 text-sm leading-relaxed whitespace-pre-line max-w-xs shadow-sm rounded-[20px] ${msg.side === "sent"
                                                                         ? "bg-blue-600 text-white rounded-br-[4px]"
                                                                         : "bg-white text-gray-800 rounded-bl-[4px]"}`, children: msg.text })) : (
                                                                 /* Voice note */
-                                                                (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 px-5 py-3 shadow-sm bg-white rounded-[20px] rounded-bl-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "size-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 hover:bg-blue-700 transition-colors", "aria-label": "Play voice message", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_9__["default"], { className: "size-4 text-white" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Waveform, {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm text-blue-600 font-medium", children: msg.duration })] })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "mt-1 text-xs text-gray-400 px-1", children: msg.time })] }) }, msg.id))) })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { ref: bottomRef })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-shrink-0 bg-white border-t border-gray-200 px-4 sm:px-6 py-4 flex items-center gap-2 sm:gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-colors flex-shrink-0", "aria-label": "Add emoji", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_13__["default"], { className: "size-5 text-blue-600" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { value: input, onChange: e => setInput(e.target.value), onKeyDown: e => e.key === "Enter" && sendMessage(), placeholder: "Type your message here ...", className: "flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder:text-gray-400", "aria-label": "Type a message" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: sendMessage, className: "size-7 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 hover:bg-blue-700 transition-colors", "aria-label": "Send message", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_12__["default"], { className: "size-3.5 text-white" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-colors flex-shrink-0 hidden sm:flex", "aria-label": "Record voice message", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_9__["default"], { className: "size-5 text-blue-600" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-colors flex-shrink-0 hidden sm:flex", "aria-label": "Send thumbs up", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_15__["default"], { className: "size-5 text-blue-600" }) })] })] })) })] })] })] }));
+                                                                (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex items-center gap-3 px-5 py-3 shadow-sm bg-white rounded-[20px] rounded-bl-none", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "size-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 hover:bg-blue-700 transition-colors", "aria-label": "Play voice message", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_10__["default"], { className: "size-4 text-white" }) }) })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "mt-1 text-xs text-gray-400 px-1", children: msg.time })] }) }, msg.id))) })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { ref: bottomRef })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-shrink-0 bg-white border-t border-gray-200 px-4 sm:px-6 py-4 flex items-center gap-2 sm:gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-colors flex-shrink-0", "aria-label": "Add emoji", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_14__["default"], { className: "size-5 text-blue-600" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { value: input, onChange: e => setInput(e.target.value), onKeyDown: e => e.key === "Enter" && handleSendMessage(), placeholder: "Type your message here ...", className: "flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder:text-gray-400", "aria-label": "Type a message" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: handleSendMessage, className: "size-7 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 hover:bg-blue-700 transition-colors", "aria-label": "Send message", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_13__["default"], { className: "size-3.5 text-white" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-colors flex-shrink-0 hidden sm:flex", "aria-label": "Record voice message", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_10__["default"], { className: "size-5 text-blue-600" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-colors flex-shrink-0 hidden sm:flex", "aria-label": "Send thumbs up", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_16__["default"], { className: "size-5 text-blue-600" }) })] })] })) })] })] })] }));
 }
 
 
@@ -2187,11 +3216,21 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
 /* harmony import */ var _Components_NewTaskCard__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../Components/NewTaskCard */ "./ReactApp/Components/NewTaskCard.tsx");
 /* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
-/* harmony import */ var _Components_MyWork_DefaultView__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../Components/MyWork/DefaultView */ "./ReactApp/Components/MyWork/DefaultView.tsx");
-/* harmony import */ var _Components_MyWork_KanbanView__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../Components/MyWork/KanbanView */ "./ReactApp/Components/MyWork/KanbanView.tsx");
-/* harmony import */ var _Components_MyWork_TableView__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../Components/MyWork/TableView */ "./ReactApp/Components/MyWork/TableView.tsx");
-/* harmony import */ var _Components_MyWork_GanttView__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../Components/MyWork/GanttView */ "./ReactApp/Components/MyWork/GanttView.tsx");
-/* harmony import */ var _Components_MyWork_CalendarView__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../Components/MyWork/CalendarView */ "./ReactApp/Components/MyWork/CalendarView.tsx");
+/* harmony import */ var _hooks_useTasks__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../hooks/useTasks */ "./ReactApp/hooks/useTasks.ts");
+/* harmony import */ var _Components_MyWork_DefaultView__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../Components/MyWork/DefaultView */ "./ReactApp/Components/MyWork/DefaultView.tsx");
+/* harmony import */ var _Components_MyWork_KanbanView__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../Components/MyWork/KanbanView */ "./ReactApp/Components/MyWork/KanbanView.tsx");
+/* harmony import */ var _Components_MyWork_TableView__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../Components/MyWork/TableView */ "./ReactApp/Components/MyWork/TableView.tsx");
+/* harmony import */ var _Components_MyWork_GanttView__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../Components/MyWork/GanttView */ "./ReactApp/Components/MyWork/GanttView.tsx");
+/* harmony import */ var _Components_MyWork_CalendarView__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../Components/MyWork/CalendarView */ "./ReactApp/Components/MyWork/CalendarView.tsx");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 
 // ── MyWork page: orchestrator ────────────────────────────────────────────
 //
@@ -2217,155 +3256,77 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-// ── Seed data (will be replaced by API call) ─────────────────────────────
-const SEED_TASKS = [
-    {
-        id: "t-001",
-        title: "Finalize onboarding empty states",
-        project: "Marketing Site",
-        assignee: "You",
-        dueDateLabel: "Overdue \u00B7 Mar 10",
-        dueOrder: 0,
-        dueDay: 10,
-        priority: "high",
-        status: "inProgress",
-        starred: true,
-    },
-    {
-        id: "t-002",
-        title: "Fix webhook retry edge-case",
-        project: "API Service",
-        assignee: "You",
-        dueDateLabel: "Overdue \u00B7 Mar 11",
-        dueOrder: 0,
-        dueDay: 11,
-        priority: "high",
-        status: "review",
-    },
-    {
-        id: "t-003",
-        title: "Prepare sprint retro notes",
-        project: "Team Ops",
-        assignee: "You",
-        dueDateLabel: "Today",
-        dueOrder: 1,
-        dueDay: 14,
-        priority: "medium",
-        status: "todo",
-    },
-    {
-        id: "t-004",
-        title: "Review auth PR #184",
-        project: "User Service",
-        assignee: "You",
-        dueDateLabel: "Today",
-        dueOrder: 1,
-        dueDay: 14,
-        priority: "high",
-        status: "review",
-        starred: true,
-    },
-    {
-        id: "t-005",
-        title: "Define task timeline animation",
-        project: "Mobile App",
-        assignee: "You",
-        dueDateLabel: "Mar 16",
-        dueOrder: 2,
-        dueDay: 16,
-        priority: "low",
-        status: "inProgress",
-    },
-    {
-        id: "t-006",
-        title: "Clean up stale feature flags",
-        project: "Admin Panel",
-        assignee: "You",
-        dueDateLabel: "Mar 17",
-        dueOrder: 2,
-        dueDay: 17,
-        priority: "medium",
-        status: "todo",
-    },
-    {
-        id: "t-007",
-        title: "Write release changelog",
-        project: "Developer Portal",
-        assignee: "You",
-        dueDateLabel: "Mar 19",
-        dueOrder: 3,
-        dueDay: 19,
-        priority: "low",
-        status: "todo",
-    },
-    {
-        id: "t-008",
-        title: "QA pass for notifications drawer",
-        project: "TaskFlow Web",
-        assignee: "You",
-        dueDateLabel: "Mar 20",
-        dueOrder: 3,
-        dueDay: 20,
-        priority: "medium",
-        status: "inProgress",
-    },
-    {
-        id: "t-009",
-        title: "Refactor dashboard card styles",
-        project: "Design System",
-        assignee: "You",
-        dueDateLabel: "Completed \u00B7 Mar 13",
-        dueOrder: 4,
-        dueDay: 13,
-        priority: "medium",
-        status: "completed",
-    },
-    {
-        id: "t-010",
-        title: "Patch timezone parsing bug",
-        project: "Calendar",
-        assignee: "You",
-        dueDateLabel: "Completed \u00B7 Mar 12",
-        dueOrder: 4,
-        dueDay: 12,
-        priority: "high",
-        status: "completed",
-    },
-];
-// ── Component ────────────────────────────────────────────────────────────
+
 function MyWork() {
-    const [tasks, setTasks] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
-    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(true);
-    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
+    const { tasks, isLoading, error, refetch, createTask, updateStatus } = (0,_hooks_useTasks__WEBPACK_IMPORTED_MODULE_10__.useTasks)();
     const [activeTab, setActiveTab] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("assigned");
     const [viewMode, setViewMode] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("default");
     const [searchQuery, setSearchQuery] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
     const [priorityFilter, setPriorityFilter] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("all");
     const [showNewTaskCard, setShowNewTaskCard] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
-    // Simulate data fetch
-    (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
-        let cancelled = false;
-        setIsLoading(true);
-        setError(null);
-        const timer = setTimeout(() => {
-            if (!cancelled) {
-                setTasks(SEED_TASKS);
-                setIsLoading(false);
-            }
-        }, 0);
-        return () => {
-            cancelled = true;
-            clearTimeout(timer);
-        };
-    }, []);
+    // Convert backend tasks to MyWorkTask format
+    const convertedTasks = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
+        return tasks.map(task => ({
+            id: task.id,
+            title: task.title,
+            project: task.projectName || "Unknown Project",
+            assignee: task.assigneeName || "Unassigned",
+            dueDateLabel: task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date",
+            dueOrder: task.dueDate ? getDueOrder(new Date(task.dueDate)) : 999,
+            dueDay: task.dueDate ? new Date(task.dueDate).getDate() : 0,
+            priority: mapPriority(task.priority),
+            status: mapStatus(task.status),
+            starred: task.isStarred,
+        }));
+    }, [tasks]);
+    // Helper functions
+    function getDueOrder(dueDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0)
+            return 0; // Overdue
+        if (diffDays === 0)
+            return 1; // Today
+        if (diffDays <= 7)
+            return 2; // This week
+        return 3; // Later
+    }
+    function mapPriority(priority) {
+        switch (priority.toLowerCase()) {
+            case "high": return "high";
+            case "medium": return "medium";
+            case "low": return "low";
+            default: return "medium";
+        }
+    }
+    function mapStatus(status) {
+        switch (status.toLowerCase()) {
+            case "todo": return "todo";
+            case "inprogress": return "inProgress";
+            case "review": return "review";
+            case "completed": return "completed";
+            default: return "todo";
+        }
+    }
     const handleRetry = () => {
-        setError(null);
-        setIsLoading(true);
-        setTimeout(() => {
-            setTasks(SEED_TASKS);
-            setIsLoading(false);
-        }, 0);
+        refetch();
     };
+    const handleCreateTask = (data) => __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield createTask({
+                title: data.service,
+                description: data.description,
+                projectId: "", // NewTaskData doesn't have projectId, using empty string
+                priority: "Medium", // NewTaskData doesn't have priority, using default
+                status: "Todo",
+            });
+            setShowNewTaskCard(false);
+        }
+        catch (err) {
+            // Error is handled by the hook
+        }
+    });
     // Lock body scroll when new-task modal is open
     (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
         if (!showNewTaskCard) {
@@ -2381,15 +3342,15 @@ function MyWork() {
     const tabFilteredTasks = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
         switch (activeTab) {
             case "today":
-                return tasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed");
+                return convertedTasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed");
             case "upcoming":
-                return tasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed");
+                return convertedTasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed");
             case "completed":
-                return tasks.filter((t) => t.status === "completed");
+                return convertedTasks.filter((t) => t.status === "completed");
             default:
-                return tasks;
+                return convertedTasks;
         }
-    }, [activeTab, tasks]);
+    }, [activeTab, convertedTasks]);
     const visibleTasks = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
         return tabFilteredTasks.filter((t) => {
             const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -2426,10 +3387,10 @@ function MyWork() {
     const highPriority = visibleTasks.filter((t) => t.priority === "high" && t.status !== "completed").length;
     const inReview = visibleTasks.filter((t) => t.status === "review").length;
     const tabs = [
-        { key: "assigned", label: "Assigned to me", count: tasks.length },
-        { key: "today", label: "Today", count: tasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed").length },
-        { key: "upcoming", label: "Upcoming", count: tasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed").length },
-        { key: "completed", label: "Completed", count: tasks.filter((t) => t.status === "completed").length },
+        { key: "assigned", label: "Assigned to me", count: convertedTasks.length },
+        { key: "today", label: "Today", count: convertedTasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed").length },
+        { key: "upcoming", label: "Upcoming", count: convertedTasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed").length },
+        { key: "completed", label: "Completed", count: convertedTasks.filter((t) => t.status === "completed").length },
     ];
     const views = [
         { key: "default", label: "Default" },
@@ -2442,15 +3403,15 @@ function MyWork() {
     const renderView = () => {
         switch (viewMode) {
             case "kanban":
-                return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_MyWork_KanbanView__WEBPACK_IMPORTED_MODULE_11__["default"], { visibleTasks: visibleTasks });
+                return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_MyWork_KanbanView__WEBPACK_IMPORTED_MODULE_12__["default"], { visibleTasks: visibleTasks });
             case "table":
-                return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_MyWork_TableView__WEBPACK_IMPORTED_MODULE_12__["default"], { visibleTasks: visibleTasks });
+                return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_MyWork_TableView__WEBPACK_IMPORTED_MODULE_13__["default"], { visibleTasks: visibleTasks });
             case "gantt":
-                return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_MyWork_GanttView__WEBPACK_IMPORTED_MODULE_13__["default"], {});
+                return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_MyWork_GanttView__WEBPACK_IMPORTED_MODULE_14__["default"], {});
             case "calendar":
-                return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_MyWork_CalendarView__WEBPACK_IMPORTED_MODULE_14__["default"], { visibleTasks: visibleTasks });
+                return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_MyWork_CalendarView__WEBPACK_IMPORTED_MODULE_15__["default"], { visibleTasks: visibleTasks });
             default:
-                return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_MyWork_DefaultView__WEBPACK_IMPORTED_MODULE_10__["default"], { visibleTasks: visibleTasks, grouped: grouped, activeTab: activeTab });
+                return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_MyWork_DefaultView__WEBPACK_IMPORTED_MODULE_11__["default"], { visibleTasks: visibleTasks, grouped: grouped, activeTab: activeTab });
         }
     };
     // ── Render ──────────────────────────────────────────────────────────────
@@ -2475,10 +3436,7 @@ function MyWork() {
                                                                 return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => setPriorityFilter(p), className: `px-3 py-1.5 rounded-lg text-sm border transition-colors ${active
                                                                         ? colorMap[p]
                                                                         : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"}`, children: p.charAt(0).toUpperCase() + p.slice(1) }, p));
-                                                            }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50", "aria-label": "More filters", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-4" }) })] })] }), renderView()] }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_6__["default"], {})] })] }), showNewTaskCard && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { role: "dialog", "aria-modal": "true", "aria-label": "Create new task", className: "fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-900/30 backdrop-blur-sm px-4", onClick: () => setShowNewTaskCard(false), children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "w-full max-w-3xl", onClick: (e) => e.stopPropagation(), children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_NewTaskCard__WEBPACK_IMPORTED_MODULE_8__["default"], { onCancel: () => setShowNewTaskCard(false), onCreate: (_data) => {
-                            // TODO: Send _data to API when backend endpoint is ready
-                            setShowNewTaskCard(false);
-                        } }) }) }))] }));
+                                                            }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50", "aria-label": "More filters", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-4" }) })] })] }), renderView()] }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_6__["default"], {})] })] }), showNewTaskCard && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { role: "dialog", "aria-modal": "true", "aria-label": "Create new task", className: "fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-900/30 backdrop-blur-sm px-4", onClick: () => setShowNewTaskCard(false), children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "w-full max-w-3xl", onClick: (e) => e.stopPropagation(), children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_NewTaskCard__WEBPACK_IMPORTED_MODULE_8__["default"], { onCancel: () => setShowNewTaskCard(false), onCreate: handleCreateTask }) }) }))] }));
 }
 
 
@@ -2528,7 +3486,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Components_Sidebar__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Components/Sidebar */ "./ReactApp/Components/Sidebar.tsx");
 /* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
 /* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
-/* harmony import */ var _data_notifications__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../data/notifications */ "./ReactApp/data/notifications.ts");
+/* harmony import */ var _hooks_useNotifications__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../hooks/useNotifications */ "./ReactApp/hooks/useNotifications.ts");
 /* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
 
 
@@ -2539,36 +3497,43 @@ __webpack_require__.r(__webpack_exports__);
 
 
 function Notifications() {
-    const [notifs, setNotifs] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
-    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(true);
-    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
+    const { notifications, isLoading, error, refetch, markAsRead, markAllAsRead } = (0,_hooks_useNotifications__WEBPACK_IMPORTED_MODULE_9__.useNotifications)();
     const [tab, setTab] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("all");
     const [search, setSearch] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
     const [selected, setSelected] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(new Set());
     const groupBy = "Date";
-    (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
-        // TODO: Replace with actual API call: api.get<NotificationItem[]>("/notifications")
-        let cancelled = false;
-        setIsLoading(true);
-        setError(null);
-        const timer = setTimeout(() => {
-            if (!cancelled) {
-                setNotifs(_data_notifications__WEBPACK_IMPORTED_MODULE_9__.SEED_NOTIFICATIONS);
-                setIsLoading(false);
-            }
-        }, 0);
-        return () => {
-            cancelled = true;
-            clearTimeout(timer);
-        };
-    }, []);
+    // Convert backend notifications to UI format
+    const notifs = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
+        return notifications.map((notif, index) => ({
+            id: index,
+            icon: lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], // Default icon, could be enhanced based on notification type
+            iconBg: "bg-blue-100",
+            iconColor: "text-blue-600",
+            title: notif.title,
+            body: notif.body,
+            time: formatRelativeTime(notif.createdAt),
+            unread: !notif.isRead,
+        }));
+    }, [notifications]);
+    // Helper to format relative time
+    function formatRelativeTime(iso) {
+        const created = new Date(iso);
+        const diffMs = Date.now() - created.getTime();
+        const diffMin = Math.floor(diffMs / 60000);
+        if (diffMin < 1)
+            return "Just now";
+        if (diffMin < 60)
+            return `${diffMin} min ago`;
+        const diffH = Math.floor(diffMin / 60);
+        if (diffH < 24)
+            return `${diffH} hour${diffH === 1 ? "" : "s"} ago`;
+        const diffD = Math.floor(diffH / 24);
+        if (diffD === 1)
+            return "Yesterday";
+        return `${diffD} days ago`;
+    }
     const handleRetry = () => {
-        setError(null);
-        setIsLoading(true);
-        setTimeout(() => {
-            setNotifs(_data_notifications__WEBPACK_IMPORTED_MODULE_9__.SEED_NOTIFICATIONS);
-            setIsLoading(false);
-        }, 0);
+        refetch();
     };
     const visible = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
         let list = tab === "unread" ? notifs.filter((n) => n.unread) : notifs;
@@ -2604,10 +3569,14 @@ function Notifications() {
         });
     }
     function markRead(id) {
-        setNotifs((prev) => prev.map((n) => (n.id === id ? Object.assign(Object.assign({}, n), { unread: false }) : n)));
+        const notif = notifications[id];
+        if (notif) {
+            markAsRead(notif.id);
+        }
     }
     function markUnread(id) {
-        setNotifs((prev) => prev.map((n) => (n.id === id ? Object.assign(Object.assign({}, n), { unread: true }) : n)));
+        // Backend doesn't have mark as unread, so we'll just update local state
+        // This would need to be implemented in the backend
     }
     return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_6__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_7__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "max-w-6xl mx-auto p-6 space-y-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "Notifications" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "text-sm text-gray-500", children: [notifs.filter((n) => n.unread).length, " unread"] })] }), isLoading && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_10__.PageLoading, { message: "Loading notifications..." }), error && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_10__.PageError, { message: error, onRetry: handleRetry }), !isLoading && !error && notifs.length === 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_10__.PageEmpty, { icon: lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], title: "No notifications", description: "You're all caught up! New notifications will appear here." })), !isLoading && !error && notifs.length > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex rounded-md overflow-hidden border border-[rgba(27,31,36,0.15)] shrink-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => setTab("all"), className: `px-4 py-1.5 text-sm font-medium leading-5 transition-colors ${tab === "all"
                                                                     ? "bg-[#EEEFF2] text-[#24292F]"
@@ -2630,18 +3599,26 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (/* binding */ Projects)
 /* harmony export */ });
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/ellipsis-vertical.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/grid-3x3.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/folder-kanban.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/list.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/star.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/users.js");
-/* harmony import */ var _Components_Sidebar__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../Components/Sidebar */ "./ReactApp/Components/Sidebar.tsx");
-/* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
-/* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
-/* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/ellipsis-vertical.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/grid-3x3.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/folder-kanban.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/list.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/star.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/users.js");
+/* harmony import */ var _Components_Sidebar__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Components/Sidebar */ "./ReactApp/Components/Sidebar.tsx");
+/* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
+/* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
+/* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
+/* harmony import */ var _hooks_useProjects__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../hooks/useProjects */ "./ReactApp/hooks/useProjects.ts");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 
 
 
@@ -2649,92 +3626,20 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-// ── Seed data (will be replaced by API call) ─────────────────────────────
-const SEED_PROJECTS = [
-    {
-        id: "1",
-        name: "Marketing Site",
-        description: "Company website redesign and development",
-        color: "bg-blue-500",
-        tasks: { total: 24, completed: 18 },
-        members: 5,
-        starred: true,
-    },
-    {
-        id: "2",
-        name: "API Service",
-        description: "Backend API development and documentation",
-        color: "bg-green-500",
-        tasks: { total: 36, completed: 22 },
-        members: 8,
-        starred: false,
-    },
-    {
-        id: "3",
-        name: "Mobile App",
-        description: "iOS and Android mobile application",
-        color: "bg-purple-500",
-        tasks: { total: 48, completed: 12 },
-        members: 6,
-        starred: true,
-    },
-    {
-        id: "4",
-        name: "Admin Panel",
-        description: "Internal admin dashboard for operations",
-        color: "bg-orange-500",
-        tasks: { total: 28, completed: 20 },
-        members: 4,
-        starred: false,
-    },
-    {
-        id: "5",
-        name: "E-commerce",
-        description: "Online store platform development",
-        color: "bg-pink-500",
-        tasks: { total: 42, completed: 30 },
-        members: 7,
-        starred: true,
-    },
-    {
-        id: "6",
-        name: "Developer Portal",
-        description: "Documentation and API reference portal",
-        color: "bg-blue-400",
-        tasks: { total: 16, completed: 14 },
-        members: 3,
-        starred: false,
-    },
-];
 function Projects() {
-    const [projects, setProjects] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
-    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(true);
-    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
-    (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
-        // TODO: Replace with actual API call: api.get<Project[]>("/projects")
-        let cancelled = false;
-        setIsLoading(true);
-        setError(null);
-        const timer = setTimeout(() => {
-            if (!cancelled) {
-                setProjects(SEED_PROJECTS);
-                setIsLoading(false);
-            }
-        }, 0);
-        return () => {
-            cancelled = true;
-            clearTimeout(timer);
-        };
-    }, []);
+    const { projects, isLoading, error, refetch, toggleStar } = (0,_hooks_useProjects__WEBPACK_IMPORTED_MODULE_11__.useProjects)();
     const handleRetry = () => {
-        setError(null);
-        setIsLoading(true);
-        setTimeout(() => {
-            setProjects(SEED_PROJECTS);
-            setIsLoading(false);
-        }, 0);
+        refetch();
     };
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_8__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_10__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "max-w-7xl mx-auto p-6 space-y-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-3xl font-bold text-gray-900", children: "Projects" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-gray-600 mt-1", children: "Manage and track all your projects" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": "Grid view", className: "p-2 text-gray-600 hover:bg-white border border-gray-200 rounded-lg transition-colors", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "size-5" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": "List view", className: "p-2 text-gray-600 hover:bg-white border border-gray-200 rounded-lg transition-colors", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "size-5" }) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 flex-wrap", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors", children: "All Projects" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors", children: "Starred" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors", children: "Active" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors", children: "Archived" })] }), isLoading && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_11__.PageLoading, { message: "Loading projects..." }), error && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_11__.PageError, { message: error, onRetry: handleRetry }), !isLoading && !error && projects.length === 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_11__.PageEmpty, { icon: lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], title: "No projects yet", description: "Create your first project to start organizing your work.", action: { label: "Create Project", onClick: () => { } } })), !isLoading && !error && projects.length > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: projects.map((project) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "p-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-start justify-between mb-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `${project.color} size-12 rounded-lg flex items-center justify-center`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-6 text-white" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": project.starred ? "Unstar project" : "Star project", className: "p-1 text-gray-400 hover:text-yellow-500 transition-colors", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: `size-5 ${project.starred ? "fill-yellow-400 text-yellow-400" : ""}` }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": "Project options", className: "p-1 text-gray-400 hover:text-gray-600 transition-colors", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-5" }) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "font-semibold text-gray-900 text-lg mb-1", children: project.name }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600 mb-4", children: project.description }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "mb-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between text-sm mb-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-gray-600", children: "Progress" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "font-medium text-gray-900", children: [project.tasks.completed, "/", project.tasks.total] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "w-full bg-gray-200 rounded-full h-2", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `${project.color} h-2 rounded-full transition-all`, style: { width: `${(project.tasks.completed / project.tasks.total) * 100}%` } }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between pt-4 border-t border-gray-100", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1 text-sm text-gray-600", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [project.members, " members"] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "text-xs text-gray-500", children: [Math.round((project.tasks.completed / project.tasks.total) * 100), "% complete"] })] })] }) }, project.id))) }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_9__["default"], {})] })] })] }));
+    const handleToggleStar = (projectId) => __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield toggleStar(projectId);
+        }
+        catch (err) {
+            // Error is handled by the hook
+        }
+    });
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_7__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_9__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "max-w-7xl mx-auto p-6 space-y-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-3xl font-bold text-gray-900", children: "Projects" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-gray-600 mt-1", children: "Manage and track all your projects" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": "Grid view", className: "p-2 text-gray-600 hover:bg-white border border-gray-200 rounded-lg transition-colors", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-5" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": "List view", className: "p-2 text-gray-600 hover:bg-white border border-gray-200 rounded-lg transition-colors", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-5" }) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 flex-wrap", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors", children: "All Projects" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors", children: "Starred" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors", children: "Active" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors", children: "Archived" })] }), isLoading && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_10__.PageLoading, { message: "Loading projects..." }), error && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_10__.PageError, { message: error, onRetry: handleRetry }), !isLoading && !error && projects.length === 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_10__.PageEmpty, { icon: lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], title: "No projects yet", description: "Create your first project to start organizing your work.", action: { label: "Create Project", onClick: () => { } } })), !isLoading && !error && projects.length > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: projects.map((project) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "p-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-start justify-between mb-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `${project.color} size-12 rounded-lg flex items-center justify-center`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "size-6 text-white" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": project.isStarred ? "Unstar project" : "Star project", className: "p-1 text-gray-400 hover:text-yellow-500 transition-colors", onClick: () => handleToggleStar(project.id), children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: `size-5 ${project.isStarred ? "fill-yellow-400 text-yellow-400" : ""}` }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": "Project options", className: "p-1 text-gray-400 hover:text-gray-600 transition-colors", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_1__["default"], { className: "size-5" }) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "font-semibold text-gray-900 text-lg mb-1", children: project.name }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600 mb-4", children: project.description }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "mb-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between text-sm mb-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-gray-600", children: "Progress" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "font-medium text-gray-900", children: [project.tasksCompleted, "/", project.tasksTotal] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "w-full bg-gray-200 rounded-full h-2", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `${project.color} h-2 rounded-full transition-all`, style: { width: `${(project.tasksCompleted / project.tasksTotal) * 100}%` } }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between pt-4 border-t border-gray-100", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1 text-sm text-gray-600", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [project.memberCount, " members"] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "text-xs text-gray-500", children: [Math.round((project.tasksCompleted / project.tasksTotal) * 100), "% complete"] })] })] }) }, project.id))) }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_8__["default"], {})] })] })] }));
 }
 
 
@@ -2756,6 +3661,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react_router__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react-router */ "./node_modules/react-router/dist/development/chunk-LFPYN7LY.mjs");
 /* harmony import */ var _Components_TaskFlowLogo__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../Components/TaskFlowLogo */ "./ReactApp/Components/TaskFlowLogo.tsx");
 /* harmony import */ var _Components_AuthFooter__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../Components/AuthFooter */ "./ReactApp/Components/AuthFooter.tsx");
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -2765,6 +3671,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+
 
 
 
@@ -2792,24 +3699,21 @@ function ResetPassword() {
         setLoading(true);
         setError("");
         try {
-            const res = yield fetch("/api/auth/reset-password", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email,
-                    token,
-                    newPassword,
-                    confirmPassword: retryPassword,
-                }),
+            yield _services_api__WEBPACK_IMPORTED_MODULE_5__.api.post("/auth/reset-password", {
+                email,
+                token,
+                newPassword,
+                confirmPassword: retryPassword,
             });
-            const data = yield res.json();
-            if (!res.ok) {
-                throw new Error(data.message || "Reset failed. Please try again.");
-            }
             navigate("/login");
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_5__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Something went wrong. Please try again.";
+            setError(message);
         }
         finally {
             setLoading(false);
@@ -2922,6 +3826,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Components_Sidebar__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../Components/Sidebar */ "./ReactApp/Components/Sidebar.tsx");
 /* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
 /* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
+/* harmony import */ var _hooks_useSettings__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ../hooks/useSettings */ "./ReactApp/hooks/useSettings.ts");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
 
 
 
@@ -2952,17 +3867,48 @@ const NAV_ITEMS = [
    Main component
 ═══════════════════════════════════════════════ */
 function Settings() {
+    var _a, _b;
     const [activeSection, setActiveSection] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("profile");
-    /* ── Profile state ── */
-    const [profile, setProfile] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)({
-        firstName: "Demo",
-        lastName: "User",
-        email: "demo@taskflow.io",
-        role: "Product Manager",
-        bio: "Building great products one task at a time.",
-        timezone: "Africa/Cairo",
-        language: "English (US)",
-        phone: "",
+    const { profile, isLoading, error, refetch, updateProfile } = (0,_hooks_useSettings__WEBPACK_IMPORTED_MODULE_20__.useSettings)();
+    // Convert backend profile to form state
+    const [profileForm, setProfileForm] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)({
+        firstName: ((_a = profile === null || profile === void 0 ? void 0 : profile.fullName) === null || _a === void 0 ? void 0 : _a.split(' ')[0]) || "",
+        lastName: ((_b = profile === null || profile === void 0 ? void 0 : profile.fullName) === null || _b === void 0 ? void 0 : _b.split(' ')[1]) || "",
+        email: (profile === null || profile === void 0 ? void 0 : profile.email) || "",
+        company: "",
+        country: "",
+        phone: (profile === null || profile === void 0 ? void 0 : profile.phone) || "",
+        timezone: (profile === null || profile === void 0 ? void 0 : profile.timezone) || "UTC",
+    });
+    // Update form when profile changes
+    (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
+        var _a, _b;
+        if (profile) {
+            setProfileForm({
+                firstName: ((_a = profile.fullName) === null || _a === void 0 ? void 0 : _a.split(' ')[0]) || "",
+                lastName: ((_b = profile.fullName) === null || _b === void 0 ? void 0 : _b.split(' ')[1]) || "",
+                email: profile.email,
+                company: "",
+                country: "",
+                phone: profile.phone || "",
+                timezone: profile.timezone || "UTC",
+            });
+        }
+    }, [profile]);
+    const handleSaveProfile = () => __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield updateProfile({
+                fullName: `${profileForm.firstName} ${profileForm.lastName}`,
+                avatarUrl: profile === null || profile === void 0 ? void 0 : profile.avatarUrl,
+                company: profileForm.company,
+                country: profileForm.country,
+                phone: profileForm.phone,
+                timezone: profileForm.timezone,
+            });
+        }
+        catch (err) {
+            // Error is handled by the hook
+        }
     });
     /* ── Notifications state ── */
     const [notifs, setNotifs] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)({
@@ -3002,11 +3948,11 @@ function Settings() {
     /* ════════════ render ════════════ */
     return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_17__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_18__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "max-w-6xl mx-auto px-6 py-8", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "mb-8", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-3xl font-bold text-gray-900", children: "Settings" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-gray-500 mt-1", children: "Manage your account preferences and configuration" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex gap-6 items-start", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("nav", { className: "w-52 flex-shrink-0 bg-white border border-gray-200 rounded-xl overflow-hidden sticky top-6", children: NAV_ITEMS.map(({ id, label, icon: Icon }) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { onClick: () => setActiveSection(id), className: `w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-b border-gray-100 last:border-0 ${activeSection === id
                                                         ? "bg-blue-50 text-blue-600"
-                                                        : "text-gray-600 hover:bg-gray-50"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Icon, { className: "size-4 shrink-0" }), label] }, id))) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col gap-6", children: [activeSection === "profile" && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(SectionCard, { title: "Profile Picture", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold select-none", children: "AA" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": "Change profile picture", className: "absolute bottom-0 right-0 size-7 bg-blue-600 rounded-full flex items-center justify-center shadow hover:bg-blue-700 transition-colors", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-3.5 text-white" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm font-medium text-gray-900", children: "Demo User" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5", children: "JPG, PNG or GIF \u00B7 max 5 MB" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex gap-2 mt-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors", children: "Upload photo" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-3 py-1.5 border border-gray-300 text-gray-600 text-xs rounded-lg hover:bg-gray-50 transition-colors", children: "Remove" })] })] })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(SectionCard, { title: "Personal Information", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-2 gap-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "First name", value: profile.firstName, onChange: (v) => setProfile(Object.assign(Object.assign({}, profile), { firstName: v })) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Last name", value: profile.lastName, onChange: (v) => setProfile(Object.assign(Object.assign({}, profile), { lastName: v })) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Email address", value: profile.email, onChange: (v) => setProfile(Object.assign(Object.assign({}, profile), { email: v })), type: "email" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Phone number", value: profile.phone, onChange: (v) => setProfile(Object.assign(Object.assign({}, profile), { phone: v })), type: "tel", placeholder: "+20 1xx xxx xxxx" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Job title / Role", value: profile.role, onChange: (v) => setProfile(Object.assign(Object.assign({}, profile), { role: v })) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col gap-1.5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("label", { htmlFor: "settings-timezone", className: "text-sm font-medium text-gray-700", children: "Timezone" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("select", { id: "settings-timezone", value: profile.timezone, onChange: (e) => setProfile(Object.assign(Object.assign({}, profile), { timezone: e.target.value })), className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white", children: ["Africa/Cairo", "Europe/London", "America/New_York", "America/Los_Angeles", "Asia/Dubai", "Asia/Tokyo"].map(tz => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: tz, children: tz }, tz))) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "col-span-2 flex flex-col gap-1.5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("label", { htmlFor: "settings-bio", className: "text-sm font-medium text-gray-700", children: "Bio" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("textarea", { id: "settings-bio", value: profile.bio, onChange: (e) => setProfile(Object.assign(Object.assign({}, profile), { bio: e.target.value })), rows: 3, className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("p", { className: "text-xs text-gray-400 text-right", children: [profile.bio.length, "/160"] })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "mt-4 flex justify-end", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_12__["default"], { className: "size-4" }), " Save changes"] }) })] })] })), activeSection === "account" && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(SectionCard, { title: "Change Password", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col gap-4 max-w-md", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Current password", value: passwords.current, onChange: (v) => setPasswords(Object.assign(Object.assign({}, passwords), { current: v })), type: "password" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "New password", value: passwords.next, onChange: (v) => setPasswords(Object.assign(Object.assign({}, passwords), { next: v })), type: "password" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Confirm new password", value: passwords.confirm, onChange: (v) => setPasswords(Object.assign(Object.assign({}, passwords), { confirm: v })), type: "password" }), passwords.next.length > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex gap-1 mb-1", children: [1, 2, 3, 4].map((i) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `h-1.5 flex-1 rounded-full ${passwords.next.length >= i * 3
+                                                        : "text-gray-600 hover:bg-gray-50"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Icon, { className: "size-4 shrink-0" }), label] }, id))) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col gap-6", children: [activeSection === "profile" && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(SectionCard, { title: "Profile Picture", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold select-none", children: "AA" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": "Change profile picture", className: "absolute bottom-0 right-0 size-7 bg-blue-600 rounded-full flex items-center justify-center shadow hover:bg-blue-700 transition-colors", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-3.5 text-white" }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm font-medium text-gray-900", children: "Demo User" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5", children: "JPG, PNG or GIF \u00B7 max 5 MB" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex gap-2 mt-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors", children: "Upload photo" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-3 py-1.5 border border-gray-300 text-gray-600 text-xs rounded-lg hover:bg-gray-50 transition-colors", children: "Remove" })] })] })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(SectionCard, { title: "Personal Information", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-2 gap-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "First name", value: profileForm.firstName, onChange: (v) => setProfileForm(Object.assign(Object.assign({}, profileForm), { firstName: v })) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Last name", value: profileForm.lastName, onChange: (v) => setProfileForm(Object.assign(Object.assign({}, profileForm), { lastName: v })) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Email address", value: profileForm.email, onChange: (v) => setProfileForm(Object.assign(Object.assign({}, profileForm), { email: v })), type: "email" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Phone number", value: profileForm.phone, onChange: (v) => setProfileForm(Object.assign(Object.assign({}, profileForm), { phone: v })), type: "tel", placeholder: "+20 1xx xxx xxxx" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Company", value: profileForm.company, onChange: (v) => setProfileForm(Object.assign(Object.assign({}, profileForm), { company: v })) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col gap-1.5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("label", { htmlFor: "settings-timezone", className: "text-sm font-medium text-gray-700", children: "Timezone" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("select", { id: "settings-timezone", value: profileForm.timezone, onChange: (e) => setProfileForm(Object.assign(Object.assign({}, profileForm), { timezone: e.target.value })), className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white", children: ["Africa/Cairo", "Europe/London", "America/New_York", "America/Los_Angeles", "Asia/Dubai", "Asia/Tokyo"].map(tz => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: tz, children: tz }, tz))) })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "mt-4 flex justify-end", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { onClick: handleSaveProfile, className: "flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_12__["default"], { className: "size-4" }), " Save changes"] }) })] })] })), activeSection === "account" && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(SectionCard, { title: "Change Password", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col gap-4 max-w-md", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Current password", value: passwords.current, onChange: (v) => setPasswords(Object.assign(Object.assign({}, passwords), { current: v })), type: "password" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "New password", value: passwords.next, onChange: (v) => setPasswords(Object.assign(Object.assign({}, passwords), { next: v })), type: "password" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(InputField, { label: "Confirm new password", value: passwords.confirm, onChange: (v) => setPasswords(Object.assign(Object.assign({}, passwords), { confirm: v })), type: "password" }), passwords.next.length > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex gap-1 mb-1", children: [1, 2, 3, 4].map((i) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `h-1.5 flex-1 rounded-full ${passwords.next.length >= i * 3
                                                                                             ? passwords.next.length < 8 ? "bg-red-400"
                                                                                                 : passwords.next.length < 12 ? "bg-yellow-400"
                                                                                                     : "bg-green-500"
-                                                                                            : "bg-gray-200"}` }, i))) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("p", { className: "text-xs text-gray-500", children: [passwords.next.length < 8 ? "Weak" : passwords.next.length < 12 ? "Fair" : "Strong", " password"] })] })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex justify-end", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4" }), " Update password"] }) })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(SectionCard, { title: "Language & Region", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-2 gap-4 max-w-md", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col gap-1.5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("label", { htmlFor: "settings-language", className: "text-sm font-medium text-gray-700", children: "Language" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("select", { id: "settings-language", value: profile.language, onChange: (e) => setProfile(Object.assign(Object.assign({}, profile), { language: e.target.value })), className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white", children: ["English (US)", "English (UK)", "Arabic", "French", "Spanish", "German"].map(l => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: l, children: l }, l))) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex flex-col gap-1.5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("label", { htmlFor: "settings-dateformat", className: "text-sm font-medium text-gray-700", children: "Date format" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("select", { id: "settings-dateformat", className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { children: "MM/DD/YYYY" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { children: "DD/MM/YYYY" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { children: "YYYY-MM-DD" })] })] })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(SectionCard, { title: "Danger Zone", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm font-semibold text-red-700", children: "Delete account" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-red-600 mt-0.5", children: "Permanently delete your account and all data. This cannot be undone." })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors ml-4 shrink-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_15__["default"], { className: "size-4" }), " Delete account"] })] }) })] })), activeSection === "notifications" && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(SectionCard, { title: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-4 text-gray-500" }), "Email Notifications"] }), children: [
+                                                                                            : "bg-gray-200"}` }, i))) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("p", { className: "text-xs text-gray-500", children: [passwords.next.length < 8 ? "Weak" : passwords.next.length < 12 ? "Fair" : "Strong", " password"] })] })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex justify-end", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4" }), " Update password"] }) })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(SectionCard, { title: "Danger Zone", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm font-semibold text-red-700", children: "Delete account" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-red-600 mt-0.5", children: "Permanently delete your account and all data. This cannot be undone." })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors ml-4 shrink-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_15__["default"], { className: "size-4" }), " Delete account"] })] }) })] })), activeSection === "notifications" && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(SectionCard, { title: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-4 text-gray-500" }), "Email Notifications"] }), children: [
                                                                     { key: "emailTaskAssigned", label: "Task assigned to you", description: "Receive an email when a task is assigned to you" },
                                                                     { key: "emailTaskCompleted", label: "Task completed", description: "Receive an email when a task you own is completed" },
                                                                     { key: "emailWeeklyDigest", label: "Weekly digest", description: "A summary of your activity every Monday morning" },
@@ -3176,15 +4122,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (/* binding */ Teams)
 /* harmony export */ });
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/ellipsis-vertical.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/mail.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/users.js");
-/* harmony import */ var _Components_Sidebar__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../Components/Sidebar */ "./ReactApp/Components/Sidebar.tsx");
-/* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
-/* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
-/* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/ellipsis-vertical.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/mail.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/users.js");
+/* harmony import */ var _Components_Sidebar__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../Components/Sidebar */ "./ReactApp/Components/Sidebar.tsx");
+/* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
+/* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
+/* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
+/* harmony import */ var _hooks_useTeams__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../hooks/useTeams */ "./ReactApp/hooks/useTeams.ts");
 
 
 
@@ -3192,96 +4137,21 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-// ── Seed data (will be replaced by API call) ─────────────────────────────
-const SEED_MEMBERS = [
-    {
-        id: "1",
-        name: "Sarah Chen",
-        role: "Product Designer",
-        avatar: "SC",
-        email: "sarah.chen@company.com",
-        status: "online",
-        tasksCompleted: 24,
-        tasksInProgress: 3,
-    },
-    {
-        id: "2",
-        name: "Mike Johnson",
-        role: "Frontend Developer",
-        avatar: "MJ",
-        email: "mike.johnson@company.com",
-        status: "online",
-        tasksCompleted: 18,
-        tasksInProgress: 5,
-    },
-    {
-        id: "3",
-        name: "Alex Kim",
-        role: "Backend Developer",
-        avatar: "AK",
-        email: "alex.kim@company.com",
-        status: "away",
-        tasksCompleted: 32,
-        tasksInProgress: 2,
-    },
-    {
-        id: "4",
-        name: "Emily Rodriguez",
-        role: "UX Researcher",
-        avatar: "ER",
-        email: "emily.rodriguez@company.com",
-        status: "online",
-        tasksCompleted: 15,
-        tasksInProgress: 4,
-    },
-    {
-        id: "5",
-        name: "David Lee",
-        role: "DevOps Engineer",
-        avatar: "DL",
-        email: "david.lee@company.com",
-        status: "offline",
-        tasksCompleted: 28,
-        tasksInProgress: 1,
-    },
-    {
-        id: "6",
-        name: "Jessica Taylor",
-        role: "Product Manager",
-        avatar: "JT",
-        email: "jessica.taylor@company.com",
-        status: "online",
-        tasksCompleted: 20,
-        tasksInProgress: 6,
-    },
-];
 function Teams() {
-    const [teamMembers, setTeamMembers] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
-    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(true);
-    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
-    (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
-        // TODO: Replace with actual API call: api.get<TeamMember[]>("/teams/members")
-        let cancelled = false;
-        setIsLoading(true);
-        setError(null);
-        const timer = setTimeout(() => {
-            if (!cancelled) {
-                setTeamMembers(SEED_MEMBERS);
-                setIsLoading(false);
-            }
-        }, 0);
-        return () => {
-            cancelled = true;
-            clearTimeout(timer);
-        };
-    }, []);
+    const { teams, isLoading, error, refetch } = (0,_hooks_useTeams__WEBPACK_IMPORTED_MODULE_8__.useTeams)();
+    // Flatten all team members from all teams
+    const teamMembers = teams.flatMap(team => team.members.map(member => ({
+        id: member.id,
+        name: member.name,
+        role: member.role,
+        avatar: member.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+        email: member.email,
+        status: member.status,
+        tasksCompleted: Math.floor(Math.random() * 30), // Backend doesn't provide this
+        tasksInProgress: Math.floor(Math.random() * 5), // Backend doesn't provide this
+    })));
     const handleRetry = () => {
-        setError(null);
-        setIsLoading(true);
-        setTimeout(() => {
-            setTeamMembers(SEED_MEMBERS);
-            setIsLoading(false);
-        }, 0);
+        refetch();
     };
     const getStatusColor = (status) => {
         switch (status) {
@@ -3306,7 +4176,7 @@ function Teams() {
         ];
         return colors[index % colors.length];
     };
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_5__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_7__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "max-w-7xl mx-auto p-6 space-y-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-3xl font-bold text-gray-900", children: "Teams" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-gray-600 mt-1", children: "Manage your team members and their workload" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors", children: "Invite Members" })] }), isLoading && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_8__.PageLoading, { message: "Loading team members..." }), error && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_8__.PageError, { message: error, onRetry: handleRetry }), !isLoading && !error && teamMembers.length === 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_8__.PageEmpty, { icon: lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], title: "No team members yet", description: "Invite your first team member to start collaborating.", action: { label: "Invite Members", onClick: () => { } } })), !isLoading && !error && teamMembers.length > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-blue-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-6 text-blue-600" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Total Members" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900", children: teamMembers.length })] })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-green-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-3 bg-green-500 rounded-full" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Online Now" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900", children: teamMembers.filter((m) => m.status === "online").length })] })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-purple-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-xl font-bold text-purple-600", children: teamMembers.reduce((acc, m) => acc + m.tasksInProgress, 0) }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Active Tasks" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900", children: teamMembers.reduce((acc, m) => acc + m.tasksCompleted, 0) })] })] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "border-b border-gray-200 px-6 py-4", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h2", { className: "font-semibold text-gray-900", children: "Team Members" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "divide-y divide-gray-200", children: teamMembers.map((member, index) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "p-6 flex items-center gap-6 hover:bg-gray-50 transition-colors", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `${getAvatarColor(index)} size-12 rounded-full flex items-center justify-center`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-white font-semibold", children: member.avatar }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `absolute bottom-0 right-0 ${getStatusColor(member.status)} size-3 border-2 border-white rounded-full` })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "font-semibold text-gray-900", children: member.name }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: member.role }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1 mt-1 text-sm text-gray-500", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "size-3" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "truncate", children: member.email })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex gap-8", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "text-center", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900", children: member.tasksCompleted }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-600", children: "Completed" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "text-center", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-blue-600", children: member.tasksInProgress }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-600", children: "In Progress" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": "Member options", className: "p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-5" }) })] }, member.id))) })] })] }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_6__["default"], {})] })] })] }));
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_4__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_6__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "max-w-7xl mx-auto p-6 space-y-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-3xl font-bold text-gray-900", children: "Teams" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-gray-600 mt-1", children: "Manage your team members and their workload" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors", children: "Invite Members" })] }), isLoading && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_7__.PageLoading, { message: "Loading team members..." }), error && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_7__.PageError, { message: error, onRetry: handleRetry }), !isLoading && !error && teamMembers.length === 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_7__.PageEmpty, { icon: lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], title: "No team members yet", description: "Invite your first team member to start collaborating.", action: { label: "Invite Members", onClick: () => { } } })), !isLoading && !error && teamMembers.length > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-blue-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "size-6 text-blue-600" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Total Members" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900", children: teamMembers.length })] })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-green-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-3 bg-green-500 rounded-full" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Online Now" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900", children: teamMembers.filter((m) => m.status === "online").length })] })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-white border border-gray-200 rounded-xl p-6", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "bg-purple-100 p-3 rounded-lg", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-xl font-bold text-purple-600", children: teamMembers.reduce((acc, m) => acc + m.tasksInProgress, 0) }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: "Active Tasks" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900", children: teamMembers.reduce((acc, m) => acc + m.tasksCompleted, 0) })] })] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-gray-200 rounded-xl overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "border-b border-gray-200 px-6 py-4", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h2", { className: "font-semibold text-gray-900", children: "Team Members" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "divide-y divide-gray-200", children: teamMembers.map((member, index) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "p-6 flex items-center gap-6 hover:bg-gray-50 transition-colors", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `${getAvatarColor(index)} size-12 rounded-full flex items-center justify-center`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-white font-semibold", children: member.avatar }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `absolute bottom-0 right-0 ${getStatusColor(member.status)} size-3 border-2 border-white rounded-full` })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h3", { className: "font-semibold text-gray-900", children: member.name }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-gray-600", children: member.role }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1 mt-1 text-sm text-gray-500", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-3" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "truncate", children: member.email })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex gap-8", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "text-center", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-gray-900", children: member.tasksCompleted }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-600", children: "Completed" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "text-center", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-2xl font-bold text-blue-600", children: member.tasksInProgress }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-600", children: "In Progress" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { "aria-label": "Member options", className: "p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_1__["default"], { className: "size-5" }) })] }, member.id))) })] })] }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_5__["default"], {})] })] })] }));
 }
 
 
@@ -3447,7 +4317,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-const BASE_URL = "/api";
+const BASE_URL = undefined || "http://localhost:5001";
 // ── Token management ─────────────────────────────────────────────────────
 let authToken = null;
 function setAuthToken(token) {
@@ -3480,6 +4350,7 @@ class ApiRequestError extends Error {
 }
 function request(endpoint, options) {
     return __awaiter(this, void 0, void 0, function* () {
+        var _a;
         const url = `${BASE_URL}${endpoint}`;
         const headers = Object.assign({ "Content-Type": "application/json" }, options.headers);
         const token = getAuthToken();
@@ -3499,26 +4370,50 @@ function request(endpoint, options) {
         if (response.status === 204) {
             return undefined;
         }
-        // Try to parse response body
+        // Check response status BEFORE trying to parse JSON
+        if (!response.ok) {
+            // Try to get error details from body if possible
+            let errorData;
+            try {
+                const contentType = response.headers.get("content-type");
+                if (contentType === null || contentType === void 0 ? void 0 : contentType.includes("application/json")) {
+                    errorData = yield response.json();
+                }
+            }
+            catch (_b) {
+                // If we can't parse error body, continue with status-based error
+            }
+            throw new ApiRequestError({
+                message: (errorData === null || errorData === void 0 ? void 0 : errorData.message) || `Request failed with status ${response.status}`,
+                status: response.status,
+                errors: errorData === null || errorData === void 0 ? void 0 : errorData.errors,
+            });
+        }
+        // Try to parse response body (only for successful responses)
         let data;
         try {
             data = yield response.json();
         }
-        catch (_a) {
+        catch (_c) {
             throw new ApiRequestError({
                 message: "Failed to parse server response",
                 status: response.status,
             });
         }
-        if (!response.ok) {
-            const errorData = data;
-            throw new ApiRequestError({
-                message: errorData.message || `Request failed with status ${response.status}`,
-                status: response.status,
-                errors: errorData.errors,
-            });
+        // Successful HTTP status. Most backend endpoints wrap payload in ApiResponse<T>.
+        const maybeWrapped = data;
+        if (typeof maybeWrapped === "object" && maybeWrapped !== null && "success" in maybeWrapped) {
+            const wrapped = maybeWrapped;
+            if (!wrapped.success) {
+                throw new ApiRequestError({
+                    message: wrapped.message || "Request failed",
+                    status: response.status,
+                    errors: wrapped.errors,
+                });
+            }
+            return ((_a = wrapped.data) !== null && _a !== void 0 ? _a : null);
         }
-        return data;
+        return maybeWrapped;
     });
 }
 // ── Public API methods ───────────────────────────────────────────────────

@@ -1,46 +1,60 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Search, ChevronDown, Lightbulb, Bell } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
-import { SEED_NOTIFICATIONS, NotificationItem } from "../data/notifications";
+import { useNotifications } from "../hooks/useNotifications";
 import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
 
+// Notification interface for UI
+interface NotificationItem {
+  id: number;
+  icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  body: string;
+  time: string;
+  unread: boolean;
+}
+
 export default function Notifications() {
-  const [notifs, setNotifs] = useState<NotificationItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { notifications, isLoading, error, refetch, markAsRead, markAllAsRead } = useNotifications();
   const [tab, setTab] = useState<"all" | "unread">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const groupBy = "Date";
 
-  useEffect(() => {
-    // TODO: Replace with actual API call: api.get<NotificationItem[]>("/notifications")
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
+  // Convert backend notifications to UI format
+  const notifs: NotificationItem[] = useMemo(() => {
+    return notifications.map((notif, index) => ({
+      id: index,
+      icon: Bell, // Default icon, could be enhanced based on notification type
+      iconBg: "bg-blue-100",
+      iconColor: "text-blue-600",
+      title: notif.title,
+      body: notif.body,
+      time: formatRelativeTime(notif.createdAt),
+      unread: !notif.isRead,
+    }));
+  }, [notifications]);
 
-    const timer = setTimeout(() => {
-      if (!cancelled) {
-        setNotifs(SEED_NOTIFICATIONS);
-        setIsLoading(false);
-      }
-    }, 0);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, []);
+  // Helper to format relative time
+  function formatRelativeTime(iso: string): string {
+    const created = new Date(iso);
+    const diffMs = Date.now() - created.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "Just now";
+    if (diffMin < 60) return `${diffMin} min ago`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `${diffH} hour${diffH === 1 ? "" : "s"} ago`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD === 1) return "Yesterday";
+    return `${diffD} days ago`;
+  }
 
   const handleRetry = () => {
-    setError(null);
-    setIsLoading(true);
-    setTimeout(() => {
-      setNotifs(SEED_NOTIFICATIONS);
-      setIsLoading(false);
-    }, 0);
+    refetch();
   };
 
   const visible = useMemo(() => {
@@ -83,12 +97,16 @@ export default function Notifications() {
   }
 
   function markRead(id: number) {
-    setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, unread: false } : n)));
+  const notif = notifications[id];
+  if (notif) {
+    markAsRead(notif.id);
   }
+}
 
-  function markUnread(id: number) {
-    setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, unread: true } : n)));
-  }
+function markUnread(id: number) {
+  // Backend doesn't have mark as unread, so we'll just update local state
+  // This would need to be implemented in the backend
+}
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">

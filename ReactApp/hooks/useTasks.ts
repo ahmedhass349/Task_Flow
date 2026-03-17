@@ -1,0 +1,203 @@
+// ── useTasks Hook ────────────────────────────────────────────────────────
+//
+// Custom hook for fetching and managing tasks.
+// Provides loading, error, data, and refetch states.
+
+import { useState, useEffect, useCallback } from "react";
+import { api, ApiRequestError } from "../services/api";
+
+// Task interface matching backend DTO
+interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  projectId: string;
+  projectName?: string;
+  assigneeId?: string;
+  assigneeName?: string;
+  priority: "Low" | "Medium" | "High";
+  status: "Todo" | "InProgress" | "Review" | "Completed";
+  dueDate?: string;
+  isStarred: boolean;
+  createdAt: string;
+}
+
+// Hook return type
+interface UseTasksReturn {
+  tasks: Task[];
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => void;
+  toggleStar: (id: string) => Promise<void>;
+  updateStatus: (id: string, status: string) => Promise<void>;
+  createTask: (data: CreateTaskRequest) => Promise<void>;
+  updateTask: (id: string, data: UpdateTaskRequest) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+}
+
+// Request types for CRUD operations
+interface CreateTaskRequest {
+  title: string;
+  description?: string;
+  projectId: string;
+  assigneeId?: string;
+  priority: "Low" | "Medium" | "High";
+  status: "Todo" | "InProgress" | "Review" | "Completed";
+  dueDate?: string;
+}
+
+interface UpdateTaskRequest {
+  title?: string;
+  description?: string;
+  assigneeId?: string;
+  priority?: "Low" | "Medium" | "High";
+  status?: "Todo" | "InProgress" | "Review" | "Completed";
+  dueDate?: string;
+}
+
+export const useTasks = (): UseTasksReturn => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await api.get<Task[]>("/api/tasks");
+      if (!cancelled) {
+        setTasks(data);
+      }
+    } catch (err) {
+      if (!cancelled) {
+        const message =
+          err instanceof ApiRequestError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : "Failed to load tasks";
+        setError(message);
+      }
+    } finally {
+      if (!cancelled) {
+        setIsLoading(false);
+      }
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const toggleStar = useCallback(async (id: string) => {
+    try {
+      await api.patch(`/tasks/${id}/star`);
+      // Update local state to reflect change
+      setTasks(prev =>
+        prev.map(task =>
+          task.id === id ? { ...task, isStarred: !task.isStarred } : task
+        )
+      );
+    } catch (err) {
+      const message =
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to toggle task star";
+      setError(message);
+      throw err;
+    }
+  }, []);
+
+  const updateStatus = useCallback(async (id: string, status: string) => {
+    try {
+      await api.patch(`/tasks/${id}/status`, { status });
+      // Update local state to reflect change
+      setTasks(prev =>
+        prev.map(task =>
+          task.id === id ? { ...task, status: status as any } : task
+        )
+      );
+    } catch (err) {
+      const message =
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to update task status";
+      setError(message);
+      throw err;
+    }
+  }, []);
+
+  const createTask = useCallback(async (data: CreateTaskRequest) => {
+    try {
+      const newTask = await api.post<Task>("/tasks", data);
+      setTasks(prev => [...prev, newTask]);
+    } catch (err) {
+      const message =
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to create task";
+      setError(message);
+      throw err;
+    }
+  }, []);
+
+  const updateTask = useCallback(async (id: string, data: UpdateTaskRequest) => {
+    try {
+      const updatedTask = await api.put<Task>(`/tasks/${id}`, data);
+      setTasks(prev =>
+        prev.map(task =>
+          task.id === id ? updatedTask : task
+        )
+      );
+    } catch (err) {
+      const message =
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to update task";
+      setError(message);
+      throw err;
+    }
+  }, []);
+
+  const deleteTask = useCallback(async (id: string) => {
+    try {
+      await api.delete(`/tasks/${id}`);
+      setTasks(prev => prev.filter(task => task.id !== id));
+    } catch (err) {
+      const message =
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to delete task";
+      setError(message);
+      throw err;
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return {
+    tasks,
+    isLoading,
+    error,
+    refetch: fetchData,
+    toggleStar,
+    updateStatus,
+    createTask,
+    updateTask,
+    deleteTask,
+  };
+};

@@ -10,9 +10,9 @@
 //   import { api } from "../services/api";
 //   const user = await api.post<AuthResponse>("/auth/login", { email, password });
 
-import type { ApiError } from "../types";
+import type { ApiError, ApiResponse } from "../types";
 
-const BASE_URL = "/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 // ── Token management ─────────────────────────────────────────────────────
 
@@ -92,8 +92,28 @@ async function request<T>(endpoint: string, options: RequestOptions): Promise<T>
     return undefined as T;
   }
 
-  // Try to parse response body
-  let data: T | ApiError;
+  // Check response status BEFORE trying to parse JSON
+  if (!response.ok) {
+    // Try to get error details from body if possible
+    let errorData: unknown;
+    try {
+      const contentType = response.headers.get("content-type");
+      if (contentType?.includes("application/json")) {
+        errorData = await response.json();
+      }
+    } catch {
+      // If we can't parse error body, continue with status-based error
+    }
+    
+    throw new ApiRequestError({
+      message: (errorData as any)?.message || `Request failed with status ${response.status}`,
+      status: response.status,
+      errors: (errorData as any)?.errors,
+    });
+  }
+
+  // Try to parse response body (only for successful responses)
+  let data: unknown;
   try {
     data = await response.json();
   } catch {
@@ -103,16 +123,22 @@ async function request<T>(endpoint: string, options: RequestOptions): Promise<T>
     });
   }
 
-  if (!response.ok) {
-    const errorData = data as ApiError;
-    throw new ApiRequestError({
-      message: errorData.message || `Request failed with status ${response.status}`,
-      status: response.status,
-      errors: errorData.errors,
-    });
+  // Successful HTTP status. Most backend endpoints wrap payload in ApiResponse<T>.
+  const maybeWrapped = data as ApiResponse<T> | T;
+
+  if (typeof maybeWrapped === "object" && maybeWrapped !== null && "success" in maybeWrapped) {
+    const wrapped = maybeWrapped as ApiResponse<T>;
+    if (!wrapped.success) {
+      throw new ApiRequestError({
+        message: wrapped.message || "Request failed",
+        status: response.status,
+        errors: wrapped.errors,
+      });
+    }
+    return (wrapped.data ?? (null as T));
   }
 
-  return data as T;
+  return maybeWrapped as T;
 }
 
 // ── Public API methods ───────────────────────────────────────────────────

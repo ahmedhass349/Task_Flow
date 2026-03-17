@@ -15,6 +15,7 @@ import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
 import { PageLoading, PageError } from "../Components/PageState";
+import { useChatbot } from "../hooks/useChatbot";
 
 type MessageRole = "assistant" | "user";
 
@@ -43,194 +44,84 @@ const starterPrompts = [
   "Suggest a sprint goal using the active projects list.",
 ];
 
-const seedConversations: Conversation[] = [
-  {
-    id: 1,
-    title: "Sprint Planning Assistant",
-    updatedAt: "Just now",
-    messages: [
-      {
-        id: 11,
-        role: "assistant",
-        text: "Hello Demo User. I can help you plan tasks, draft updates, and summarize project progress. What should we work on first?",
-        time: nowLabel(),
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: "Weekly Status Draft",
-    updatedAt: "2h ago",
-    messages: [
-      {
-        id: 21,
-        role: "assistant",
-        text: "You can ask me to generate a status report grouped by project and priority.",
-        time: "10:11 AM",
-      },
-      {
-        id: 22,
-        role: "user",
-        text: "Give me a clean summary for leadership in 5 bullet points.",
-        time: "10:12 AM",
-      },
-    ],
-  },
-];
-
 export default function Chatbot() {
-  /* ── Loading / error simulation ── */
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<number>(0);
+  const { 
+    conversationList, 
+    activeConversation, 
+    isLoading, 
+    error, 
+    refetch, 
+    createConversation, 
+    sendMessage, 
+    deleteConversation, 
+    setActiveConversationId, 
+    activeConversationId 
+  } = useChatbot();
+  
   const [input, setInput] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
+  // Convert backend conversations to UI format
+  const uiConversations = useMemo(() => {
+    return conversationList.map(conv => ({
+      id: parseInt(conv.id),
+      title: conv.title,
+      updatedAt: conv.updatedAt,
+      messages: [], // Will be loaded when conversation is selected
+    }));
+  }, [conversationList]);
+
+  const uiMessages = useMemo(() => {
+    if (!activeConversation) return [];
+    return activeConversation.messages.map(msg => ({
+      id: parseInt(msg.id),
+      role: msg.role as MessageRole,
+      text: msg.text,
+      time: formatTime(msg.createdAt),
+    }));
+  }, [activeConversation]);
+
+  function formatTime(iso: string): string {
+    return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  const handleSendMessage = async (e: FormEvent) => {
+    e.preventDefault();
+    if (input.trim() && activeConversationId) {
       try {
-        setConversations(seedConversations);
-        setActiveConversationId(1);
-        setLoading(false);
-      } catch {
-        setError("Failed to load chatbot data. Please try again.");
-        setLoading(false);
+        await sendMessage(activeConversationId, input.trim());
+        setInput("");
+        // Scroll to bottom
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      } catch (err) {
+        // Error is handled by the hook
       }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const activeConversation = useMemo(
-    () => conversations.find((conversation) => conversation.id === activeConversationId) ?? conversations[0],
-    [conversations, activeConversationId],
-  );
-
-  const activeMessages = activeConversation?.messages ?? [];
-
-  const createConversation = () => {
-    const newConversation: Conversation = {
-      id: Date.now(),
-      title: "New Chat",
-      updatedAt: "Just now",
-      messages: [
-        {
-          id: Date.now() + 1,
-          role: "assistant",
-          text: "Ready when you are. Tell me your goal and I will help break it into actionable tasks.",
-          time: nowLabel(),
-        },
-      ],
-    };
-
-    setConversations((prev) => [newConversation, ...prev]);
-    setActiveConversationId(newConversation.id);
-    setInput("");
-  };
-
-  const removeConversation = (conversationId: number) => {
-    setConversations((prev) => {
-      const next = prev.filter((conversation) => conversation.id !== conversationId);
-      if (!next.length) {
-        const fallback: Conversation = {
-          id: Date.now(),
-          title: "New Chat",
-          updatedAt: "Just now",
-          messages: [
-            {
-              id: Date.now() + 1,
-              role: "assistant",
-              text: "I am here to help with your planning and workflow questions.",
-              time: nowLabel(),
-            },
-          ],
-        };
-        setActiveConversationId(fallback.id);
-        return [fallback];
-      }
-
-      if (activeConversationId === conversationId) {
-        setActiveConversationId(next[0].id);
-      }
-
-      return next;
-    });
-  };
-
-  const pushAssistantReply = (conversationId: number, sourceText: string) => {
-    const response =
-      "Here is a suggested next step: prioritize the highest-impact task first, define a clear owner, and set a concrete due date. If you want, I can convert this into a full task checklist.";
-
-    setConversations((prev) =>
-      prev.map((conversation) =>
-        conversation.id === conversationId
-          ? {
-              ...conversation,
-              updatedAt: "Just now",
-              messages: [
-                ...conversation.messages,
-                {
-                  id: Date.now() + 2,
-                  role: "assistant",
-                  text: sourceText.toLowerCase().includes("summary")
-                    ? "Summary ready. I grouped updates by status: completed, in progress, and blocked items. Want a short leadership version as well?"
-                    : response,
-                  time: nowLabel(),
-                },
-              ],
-            }
-          : conversation,
-      ),
-    );
-
-    requestAnimationFrame(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }));
-  };
-
-  const submitMessage = (event?: FormEvent, overrideText?: string) => {
-    event?.preventDefault();
-    const text = (overrideText ?? input).trim();
-    if (!text || !activeConversation) {
-      return;
     }
-
-    const conversationId = activeConversation.id;
-
-    setConversations((prev) =>
-      prev.map((conversation) =>
-        conversation.id === conversationId
-          ? {
-              ...conversation,
-              title: conversation.title === "New Chat" ? text.slice(0, 32) : conversation.title,
-              updatedAt: "Just now",
-              messages: [
-                ...conversation.messages,
-                {
-                  id: Date.now(),
-                  role: "user",
-                  text,
-                  time: nowLabel(),
-                },
-              ],
-            }
-          : conversation,
-      ),
-    );
-
-    setInput("");
-
-    requestAnimationFrame(() => {
-      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      setTimeout(() => pushAssistantReply(conversationId, text), 320);
-    });
   };
 
-  const submitPrompt = (prompt: string) => {
-    submitMessage(undefined, prompt);
+  const handleCreateConversation = async (title: string) => {
+    try {
+      await createConversation({ title });
+    } catch (err) {
+      // Error is handled by the hook
+    }
   };
+
+  const handleDeleteConversation = async (id: string) => {
+    try {
+      await deleteConversation(id);
+    } catch (err) {
+      // Error is handled by the hook
+    }
+  };
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [uiMessages]);
 
   /* ── Page states ── */
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen overflow-hidden bg-gray-50">
         <Sidebar />
@@ -248,7 +139,7 @@ export default function Chatbot() {
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header />
-          <PageError message={error} onRetry={() => window.location.reload()} />
+          <PageError message={error} onRetry={refetch} />
         </div>
       </div>
     );
@@ -269,7 +160,7 @@ export default function Chatbot() {
                 <p className="text-gray-600 mt-1">AI workspace assistant for planning, summaries, and fast execution support</p>
               </div>
               <button
-                onClick={createConversation}
+                onClick={() => handleCreateConversation("New Chat")}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
                 aria-label="Create new chat"
               >
@@ -288,18 +179,18 @@ export default function Chatbot() {
                 </div>
 
                 <div className="max-h-[560px] overflow-y-auto">
-                  {conversations.length === 0 ? (
+                  {uiConversations.length === 0 ? (
                     <div className="px-4 py-8 text-center text-sm text-gray-400">
                       <MessageSquare className="size-8 text-gray-300 mx-auto mb-2" />
                       No conversations yet.
                     </div>
                   ) : (
-                    conversations.map((conversation) => {
-                      const isActive = activeConversationId === conversation.id;
+                    uiConversations.map((conversation) => {
+                      const isActive = parseInt(activeConversationId || "0") === conversation.id;
                       return (
                         <button
                           key={conversation.id}
-                          onClick={() => setActiveConversationId(conversation.id)}
+                          onClick={() => setActiveConversationId(conversation.id.toString())}
                           className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-0 transition-colors ${
                             isActive ? "bg-blue-50" : "hover:bg-gray-50"
                           }`}
@@ -315,7 +206,7 @@ export default function Chatbot() {
                             <button
                               onClick={(event) => {
                                 event.stopPropagation();
-                                removeConversation(conversation.id);
+                                handleDeleteConversation(conversation.id.toString());
                               }}
                               className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                               aria-label={`Delete chat: ${conversation.title}`}
@@ -350,7 +241,7 @@ export default function Chatbot() {
 
                 <div className="flex-1 overflow-y-auto p-5 bg-gray-50">
                   <div className="space-y-4">
-                    {activeMessages.map((message) => (
+                    {uiMessages.map((message) => (
                       <div
                         key={message.id}
                         className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
@@ -378,7 +269,13 @@ export default function Chatbot() {
                     {starterPrompts.map((prompt) => (
                       <button
                         key={prompt}
-                        onClick={() => submitPrompt(prompt)}
+                        onClick={() => {
+                      setInput(prompt);
+                      setTimeout(() => {
+                        const formEvent = new Event('submit', { cancelable: true }) as any;
+                        handleSendMessage(formEvent);
+                      }, 0);
+                    }}
                         className="text-xs px-2.5 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
                       >
                         {prompt}
@@ -386,7 +283,7 @@ export default function Chatbot() {
                     ))}
                   </div>
 
-                  <form onSubmit={submitMessage} className="flex items-center gap-2">
+                  <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <input
                       value={input}
                       onChange={(event) => setInput(event.target.value)}

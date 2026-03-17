@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation, Navigate } from "react-router";
 import { TaskFlowLogo } from "../Components/TaskFlowLogo";
 import { AuthFooter } from "../Components/AuthFooter";
+import { api, ApiRequestError } from "../services/api";
 
 interface LocationState {
   email?: string;
@@ -33,23 +34,21 @@ export default function ResetPassword() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          token,
-          newPassword,
-          confirmPassword: retryPassword,
-        }),
+      await api.post<string>("/auth/reset-password", {
+        email,
+        token,
+        newPassword,
+        confirmPassword: retryPassword,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Reset failed. Please try again.");
-      }
       navigate("/login");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      const message =
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Something went wrong. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }

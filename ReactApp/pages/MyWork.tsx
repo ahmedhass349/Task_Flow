@@ -18,6 +18,7 @@ import Footer from "../Components/Footer";
 import Header from "../Components/Header";
 import NewTaskCard, { type NewTaskData } from "../Components/NewTaskCard";
 import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
+import { useTasks } from "../hooks/useTasks";
 
 import type { MyWorkTask, Priority, Status } from "../Components/MyWork/types";
 import DefaultView from "../Components/MyWork/DefaultView";
@@ -29,161 +30,78 @@ import CalendarView from "../Components/MyWork/CalendarView";
 type Tab = "assigned" | "today" | "upcoming" | "completed";
 type ViewMode = "default" | "kanban" | "table" | "gantt" | "calendar";
 
-// ── Seed data (will be replaced by API call) ─────────────────────────────
-
-const SEED_TASKS: MyWorkTask[] = [
-  {
-    id: "t-001",
-    title: "Finalize onboarding empty states",
-    project: "Marketing Site",
-    assignee: "You",
-    dueDateLabel: "Overdue \u00B7 Mar 10",
-    dueOrder: 0,
-    dueDay: 10,
-    priority: "high",
-    status: "inProgress",
-    starred: true,
-  },
-  {
-    id: "t-002",
-    title: "Fix webhook retry edge-case",
-    project: "API Service",
-    assignee: "You",
-    dueDateLabel: "Overdue \u00B7 Mar 11",
-    dueOrder: 0,
-    dueDay: 11,
-    priority: "high",
-    status: "review",
-  },
-  {
-    id: "t-003",
-    title: "Prepare sprint retro notes",
-    project: "Team Ops",
-    assignee: "You",
-    dueDateLabel: "Today",
-    dueOrder: 1,
-    dueDay: 14,
-    priority: "medium",
-    status: "todo",
-  },
-  {
-    id: "t-004",
-    title: "Review auth PR #184",
-    project: "User Service",
-    assignee: "You",
-    dueDateLabel: "Today",
-    dueOrder: 1,
-    dueDay: 14,
-    priority: "high",
-    status: "review",
-    starred: true,
-  },
-  {
-    id: "t-005",
-    title: "Define task timeline animation",
-    project: "Mobile App",
-    assignee: "You",
-    dueDateLabel: "Mar 16",
-    dueOrder: 2,
-    dueDay: 16,
-    priority: "low",
-    status: "inProgress",
-  },
-  {
-    id: "t-006",
-    title: "Clean up stale feature flags",
-    project: "Admin Panel",
-    assignee: "You",
-    dueDateLabel: "Mar 17",
-    dueOrder: 2,
-    dueDay: 17,
-    priority: "medium",
-    status: "todo",
-  },
-  {
-    id: "t-007",
-    title: "Write release changelog",
-    project: "Developer Portal",
-    assignee: "You",
-    dueDateLabel: "Mar 19",
-    dueOrder: 3,
-    dueDay: 19,
-    priority: "low",
-    status: "todo",
-  },
-  {
-    id: "t-008",
-    title: "QA pass for notifications drawer",
-    project: "TaskFlow Web",
-    assignee: "You",
-    dueDateLabel: "Mar 20",
-    dueOrder: 3,
-    dueDay: 20,
-    priority: "medium",
-    status: "inProgress",
-  },
-  {
-    id: "t-009",
-    title: "Refactor dashboard card styles",
-    project: "Design System",
-    assignee: "You",
-    dueDateLabel: "Completed \u00B7 Mar 13",
-    dueOrder: 4,
-    dueDay: 13,
-    priority: "medium",
-    status: "completed",
-  },
-  {
-    id: "t-010",
-    title: "Patch timezone parsing bug",
-    project: "Calendar",
-    assignee: "You",
-    dueDateLabel: "Completed \u00B7 Mar 12",
-    dueOrder: 4,
-    dueDay: 12,
-    priority: "high",
-    status: "completed",
-  },
-];
-
-// ── Component ────────────────────────────────────────────────────────────
-
 export default function MyWork() {
-  const [tasks, setTasks] = useState<MyWorkTask[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { tasks, isLoading, error, refetch, createTask, updateStatus } = useTasks();
+  
   const [activeTab, setActiveTab] = useState<Tab>("assigned");
   const [viewMode, setViewMode] = useState<ViewMode>("default");
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
   const [showNewTaskCard, setShowNewTaskCard] = useState(false);
 
-  // Simulate data fetch
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
+  // Convert backend tasks to MyWorkTask format
+  const convertedTasks: MyWorkTask[] = useMemo(() => {
+    return tasks.map(task => ({
+      id: task.id,
+      title: task.title,
+      project: task.projectName || "Unknown Project",
+      assignee: task.assigneeName || "Unassigned",
+      dueDateLabel: task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date",
+      dueOrder: task.dueDate ? getDueOrder(new Date(task.dueDate)) : 999,
+      dueDay: task.dueDate ? new Date(task.dueDate).getDate() : 0,
+      priority: mapPriority(task.priority),
+      status: mapStatus(task.status),
+      starred: task.isStarred,
+    }));
+  }, [tasks]);
 
-    const timer = setTimeout(() => {
-      if (!cancelled) {
-        setTasks(SEED_TASKS);
-        setIsLoading(false);
-      }
-    }, 0);
+  // Helper functions
+  function getDueOrder(dueDate: Date): number {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return 0; // Overdue
+    if (diffDays === 0) return 1; // Today
+    if (diffDays <= 7) return 2; // This week
+    return 3; // Later
+  }
 
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, []);
+  function mapPriority(priority: string): Priority {
+    switch (priority.toLowerCase()) {
+      case "high": return "high";
+      case "medium": return "medium";
+      case "low": return "low";
+      default: return "medium";
+    }
+  }
+
+  function mapStatus(status: string): Status {
+    switch (status.toLowerCase()) {
+      case "todo": return "todo";
+      case "inprogress": return "inProgress";
+      case "review": return "review";
+      case "completed": return "completed";
+      default: return "todo";
+    }
+  }
 
   const handleRetry = () => {
-    setError(null);
-    setIsLoading(true);
-    setTimeout(() => {
-      setTasks(SEED_TASKS);
-      setIsLoading(false);
-    }, 0);
+    refetch();
+  };
+
+  const handleCreateTask = async (data: NewTaskData) => {
+    try {
+      await createTask({
+        title: data.service,
+        description: data.description,
+        projectId: "", // NewTaskData doesn't have projectId, using empty string
+        priority: "Medium", // NewTaskData doesn't have priority, using default
+        status: "Todo",
+      });
+      setShowNewTaskCard(false);
+    } catch (err) {
+      // Error is handled by the hook
+    }
   };
 
   // Lock body scroll when new-task modal is open
@@ -203,15 +121,15 @@ export default function MyWork() {
   const tabFilteredTasks = useMemo(() => {
     switch (activeTab) {
       case "today":
-        return tasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed");
+        return convertedTasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed");
       case "upcoming":
-        return tasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed");
+        return convertedTasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed");
       case "completed":
-        return tasks.filter((t) => t.status === "completed");
+        return convertedTasks.filter((t) => t.status === "completed");
       default:
-        return tasks;
+        return convertedTasks;
     }
-  }, [activeTab, tasks]);
+  }, [activeTab, convertedTasks]);
 
   const visibleTasks = useMemo(() => {
     return tabFilteredTasks.filter((t) => {
@@ -248,10 +166,10 @@ export default function MyWork() {
   const inReview = visibleTasks.filter((t) => t.status === "review").length;
 
   const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: "assigned",  label: "Assigned to me", count: tasks.length },
-    { key: "today",     label: "Today",          count: tasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed").length },
-    { key: "upcoming",  label: "Upcoming",       count: tasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed").length },
-    { key: "completed", label: "Completed",      count: tasks.filter((t) => t.status === "completed").length },
+    { key: "assigned",  label: "Assigned to me", count: convertedTasks.length },
+    { key: "today",     label: "Today",          count: convertedTasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed").length },
+    { key: "upcoming",  label: "Upcoming",       count: convertedTasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed").length },
+    { key: "completed", label: "Completed",      count: convertedTasks.filter((t) => t.status === "completed").length },
   ];
 
   const views: { key: ViewMode; label: string }[] = [
@@ -452,10 +370,7 @@ export default function MyWork() {
           >
             <NewTaskCard
               onCancel={() => setShowNewTaskCard(false)}
-              onCreate={(_data: NewTaskData) => {
-                // TODO: Send _data to API when backend endpoint is ready
-                setShowNewTaskCard(false);
-              }}
+              onCreate={handleCreateTask}
             />
           </div>
         </div>
