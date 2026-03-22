@@ -16,6 +16,7 @@ interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  token: string | null;
   login: (credentials: LoginRequest) => Promise<void>;
   signup: (data: SignupRequest) => Promise<void>;
   logout: () => void;
@@ -127,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isAuthenticated: user !== null,
     isLoading,
+    token: getAuthToken(),
     login,
     signup,
     logout,

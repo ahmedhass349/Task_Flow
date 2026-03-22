@@ -38,14 +38,25 @@ namespace taskflow.Controllers.Api
         }
 
         /// <summary>
-        /// Retrieves all notifications for the authenticated user.
+        /// Retrieves notifications for the authenticated user with pagination.
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetNotifications()
+        public async Task<IActionResult> GetNotifications([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             var userId = GetUserId();
-            var notifications = await _notificationService.GetNotificationsAsync(userId);
+            var notifications = await _notificationService.GetForUserAsync(userId, page, pageSize);
             return Ok(ApiResponse<IEnumerable<NotificationDto>>.Ok(notifications));
+        }
+
+        /// <summary>
+        /// Gets the unread count for the authenticated user.
+        /// </summary>
+        [HttpGet("unread-count")]
+        public async Task<IActionResult> GetUnreadCount()
+        {
+            var userId = GetUserId();
+            var count = await _notificationService.GetUnreadCountAsync(userId);
+            return Ok(ApiResponse<int>.Ok(count));
         }
 
         /// <summary>
@@ -55,7 +66,7 @@ namespace taskflow.Controllers.Api
         public async Task<IActionResult> MarkAsRead(int id)
         {
             var userId = GetUserId();
-            await _notificationService.MarkAsReadAsync(userId, id);
+            await _notificationService.MarkAsReadAsync(id, userId);
             return Ok(ApiResponse<string>.Ok("Notification marked as read."));
         }
 

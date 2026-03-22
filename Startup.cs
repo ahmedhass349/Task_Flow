@@ -191,6 +191,7 @@ namespace taskflow
             services.AddScoped<IProjectRepository, ProjectRepository>();
             services.AddScoped<IMessageRepository, MessageRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IReminderRepository, ReminderRepository>();
             services.AddScoped<IChatbotRepository, ChatbotRepository>();
             services.AddScoped<ITaskCommentRepository, TaskCommentRepository>();
 
@@ -202,10 +203,19 @@ namespace taskflow
             services.AddScoped<ICalendarService, CalendarService>();
             services.AddScoped<IMessageService, MessageService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IReminderService, ReminderService>();
+            services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<ISettingsService, SettingsService>();
             services.AddScoped<IChatbotService, ChatbotService>();
             services.AddScoped<ITaskCommentService, TaskCommentService>();
+
+            // ── SignalR ─────────────────────────────────────────────────────
+            services.AddSignalR();
+
+            // ── Background Services ───────────────────────────────────────────
+            services.AddHostedService<BackgroundServices.ReminderProcessorService>();
+            services.AddHostedService<BackgroundServices.DueDateWarningService>();
 
             // ── Helpers (DI) ─────────────────────────────────────────────────
             services.AddScoped<JwtHelper>();
@@ -260,6 +270,7 @@ namespace taskflow
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}/{status?}");
 
+                endpoints.MapHub<taskflow.Hubs.NotificationHub>("/hubs/notifications");
                 endpoints.MapFallbackToFile("index.html");
             });
         }

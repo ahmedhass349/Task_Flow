@@ -3,8 +3,11 @@ import { Search, Bell, Mail, User, Settings, LogOut, UserCircle } from "lucide-r
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Link, useNavigate } from "react-router";
 import { useNotifications } from "../hooks/useNotifications";
+import { useNotificationHub } from "../hooks/useNotificationHub";
+import { useNotificationContext } from "../context/NotificationContext";
 import { useMessages } from "../hooks/useMessages";
 import { useAuth } from "../context/AuthContext";
+import NotificationBell from "./NotificationBell";
 
 /* ─── Messages data ─── */
 interface Message {
@@ -24,9 +27,11 @@ const AVATAR_COLORS: Record<string, string> = {
   DT: "bg-orange-200 text-orange-700",
 };
 
-/* ═══════════════════════════════ */
+/* ═════════════════════════════ */
 export default function Header() {
   const { notifications, markAllAsRead } = useNotifications();
+  const { unreadCount: signalrUnreadCount, isConnected } = useNotificationHub();
+  const { state: notificationState } = useNotificationContext();
   const { contacts, unreadCount } = useMessages();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -40,24 +45,30 @@ export default function Header() {
         .toUpperCase()
     : "DU";
 
-  const unreadNotifCount = notifications.filter(n => !n.isRead).length;
+  // Use SignalR unread count if connected, otherwise fall back to API count
+  const unreadNotifCount = isConnected ? signalrUnreadCount : notifications.filter(n => !n.isRead).length;
   const unreadMsgCount = unreadCount;
 
-  const markAllNotifsRead = () => markAllAsRead();
-  const markAllMsgsRead = () => {
-    // Backend doesn't have mark all messages as read, would need to be implemented
+  const markAllNotifsRead = () => {
+    if (isConnected) {
+      // Use SignalR method if connected
+      markAllAsRead();
+    } else {
+      // Fall back to API method
+      markAllAsRead();
+    }
   };
   
   // Convert backend notifications to UI format
-  const uiNotifications = notifications.slice(0, 3).map((notif, index) => ({
+  const uiNotifications = notifications.slice(0, 3).map((notification, index) => ({
     id: index,
     icon: Bell,
     iconBg: "bg-blue-100",
     iconColor: "text-blue-600",
-    title: notif.title,
-    body: notif.body,
-    time: formatRelativeTime(notif.createdAt),
-    unread: !notif.isRead,
+    title: notification.title,
+    body: notification.message,
+    time: formatRelativeTime(notification.createdAt),
+    unread: !notification.isRead,
   }));
 
   // Convert backend contacts to UI format
@@ -108,14 +119,7 @@ export default function Header() {
         {/* ── Notifications dropdown ── */}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <button className="relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10" aria-label="Notifications">
-              <Bell className="size-6 text-white" />
-              {unreadNotifCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF1267] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5">
-                  {unreadNotifCount}
-                </span>
-              )}
-            </button>
+            <NotificationBell />
           </DropdownMenu.Trigger>
 
           <DropdownMenu.Portal>
@@ -186,7 +190,7 @@ export default function Header() {
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <span className="font-semibold text-gray-900 text-sm">Messages</span>
                 {unreadMsgCount > 0 && (
-                  <button onClick={markAllMsgsRead} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                  <button onClick={() => {}} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
                     Mark all as read
                   </button>
                 )}

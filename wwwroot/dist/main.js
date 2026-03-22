@@ -28,12 +28,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react_router__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react-router */ "./node_modules/react-router/dist/development/chunk-LFPYN7LY.mjs");
 /* harmony import */ var _routes__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./routes */ "./ReactApp/routes.tsx");
 /* harmony import */ var _context_AuthContext__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./context/AuthContext */ "./ReactApp/context/AuthContext.tsx");
+/* harmony import */ var _context_NotificationContext__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./context/NotificationContext */ "./ReactApp/context/NotificationContext.tsx");
+
 
 
 
 
 function App() {
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_context_AuthContext__WEBPACK_IMPORTED_MODULE_3__.AuthProvider, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_router__WEBPACK_IMPORTED_MODULE_1__.RouterProvider, { router: _routes__WEBPACK_IMPORTED_MODULE_2__.router }) }));
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_context_AuthContext__WEBPACK_IMPORTED_MODULE_3__.AuthProvider, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_context_NotificationContext__WEBPACK_IMPORTED_MODULE_4__.NotificationProvider, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_router__WEBPACK_IMPORTED_MODULE_1__.RouterProvider, { router: _routes__WEBPACK_IMPORTED_MODULE_2__.router }) }) }));
 }
 
 
@@ -582,8 +584,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @radix-ui/react-dropdown-menu */ "./node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs");
 /* harmony import */ var react_router__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! react-router */ "./node_modules/react-router/dist/development/chunk-LFPYN7LY.mjs");
 /* harmony import */ var _hooks_useNotifications__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../hooks/useNotifications */ "./ReactApp/hooks/useNotifications.ts");
-/* harmony import */ var _hooks_useMessages__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../hooks/useMessages */ "./ReactApp/hooks/useMessages.ts");
-/* harmony import */ var _context_AuthContext__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../context/AuthContext */ "./ReactApp/context/AuthContext.tsx");
+/* harmony import */ var _hooks_useNotificationHub__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../hooks/useNotificationHub */ "./ReactApp/hooks/useNotificationHub.ts");
+/* harmony import */ var _context_NotificationContext__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../context/NotificationContext */ "./ReactApp/context/NotificationContext.tsx");
+/* harmony import */ var _hooks_useMessages__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../hooks/useMessages */ "./ReactApp/hooks/useMessages.ts");
+/* harmony import */ var _context_AuthContext__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../context/AuthContext */ "./ReactApp/context/AuthContext.tsx");
+/* harmony import */ var _NotificationBell__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./NotificationBell */ "./ReactApp/Components/NotificationBell.tsx");
+
+
+
 
 
 
@@ -598,12 +606,14 @@ const AVATAR_COLORS = {
     ER: "bg-purple-200 text-purple-700",
     DT: "bg-orange-200 text-orange-700",
 };
-/* ═══════════════════════════════ */
+/* ═════════════════════════════ */
 function Header() {
     const { notifications, markAllAsRead } = (0,_hooks_useNotifications__WEBPACK_IMPORTED_MODULE_10__.useNotifications)();
-    const { contacts, unreadCount } = (0,_hooks_useMessages__WEBPACK_IMPORTED_MODULE_11__.useMessages)();
+    const { unreadCount: signalrUnreadCount, isConnected } = (0,_hooks_useNotificationHub__WEBPACK_IMPORTED_MODULE_11__.useNotificationHub)();
+    const { state: notificationState } = (0,_context_NotificationContext__WEBPACK_IMPORTED_MODULE_12__.useNotificationContext)();
+    const { contacts, unreadCount } = (0,_hooks_useMessages__WEBPACK_IMPORTED_MODULE_13__.useMessages)();
     const navigate = (0,react_router__WEBPACK_IMPORTED_MODULE_9__.useNavigate)();
-    const { user, logout } = (0,_context_AuthContext__WEBPACK_IMPORTED_MODULE_12__.useAuth)();
+    const { user, logout } = (0,_context_AuthContext__WEBPACK_IMPORTED_MODULE_14__.useAuth)();
     const displayName = user ? user.fullName : "Demo User";
     const initials = user
         ? user.fullName
@@ -612,22 +622,29 @@ function Header() {
             .join('')
             .toUpperCase()
         : "DU";
-    const unreadNotifCount = notifications.filter(n => !n.isRead).length;
+    // Use SignalR unread count if connected, otherwise fall back to API count
+    const unreadNotifCount = isConnected ? signalrUnreadCount : notifications.filter(n => !n.isRead).length;
     const unreadMsgCount = unreadCount;
-    const markAllNotifsRead = () => markAllAsRead();
-    const markAllMsgsRead = () => {
-        // Backend doesn't have mark all messages as read, would need to be implemented
+    const markAllNotifsRead = () => {
+        if (isConnected) {
+            // Use SignalR method if connected
+            markAllAsRead();
+        }
+        else {
+            // Fall back to API method
+            markAllAsRead();
+        }
     };
     // Convert backend notifications to UI format
-    const uiNotifications = notifications.slice(0, 3).map((notif, index) => ({
+    const uiNotifications = notifications.slice(0, 3).map((notification, index) => ({
         id: index,
         icon: lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"],
         iconBg: "bg-blue-100",
         iconColor: "text-blue-600",
-        title: notif.title,
-        body: notif.body,
-        time: formatRelativeTime(notif.createdAt),
-        unread: !notif.isRead,
+        title: notification.title,
+        body: notification.message,
+        time: formatRelativeTime(notification.createdAt),
+        unread: !notification.isRead,
     }));
     // Convert backend contacts to UI format
     const uiMessages = contacts.slice(0, 3).map(contact => ({
@@ -654,7 +671,7 @@ function Header() {
             return "Yesterday";
         return `${diffD} days ago`;
     }
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("header", { className: "bg-black h-16 flex items-center px-8 gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 max-w-[417px]", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "absolute left-3 top-1/2 -translate-y-1/2 size-4", style: { color: '#787486' } }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "text", placeholder: "Search for report...", "aria-label": "Search for report", style: { background: '#F5F5F5', borderRadius: 6, fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#787486' }, className: "w-full pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex items-center justify-end gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Root, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Trigger, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10", "aria-label": "Notifications", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-6 text-white" }), unreadNotifCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF1267] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5", children: unreadNotifCount }))] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Portal, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Content, { className: "bg-white border border-gray-200 rounded-xl shadow-xl w-80 z-50 overflow-hidden", sideOffset: 10, align: "end", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-gray-100", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-semibold text-gray-900 text-sm", children: "Notifications" }), unreadNotifCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: markAllNotifsRead, className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "Mark all as read" }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "max-h-[340px] overflow-y-auto", children: uiNotifications.map(n => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { onSelect: () => { }, className: `flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${n.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${n.iconBg}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(n.icon, { className: `size-4 ${n.iconColor}` }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs font-semibold text-gray-900", children: n.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5 leading-relaxed", children: n.body }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-[11px] text-gray-400 mt-1", children: n.time })] }), n.unread && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "size-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" })] }, n.id))) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "border-t border-gray-100 px-4 py-2.5 text-center", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_router__WEBPACK_IMPORTED_MODULE_9__.Link, { to: "/notifications", className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "View all notifications" }) })] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Root, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Trigger, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10", "aria-label": "Messages", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-6 text-white" }), unreadMsgCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF1267] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5", children: unreadMsgCount }))] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Portal, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Content, { className: "bg-white border border-gray-200 rounded-xl shadow-xl w-80 z-50 overflow-hidden", sideOffset: 10, align: "end", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-gray-100", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-semibold text-gray-900 text-sm", children: "Messages" }), unreadMsgCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: markAllMsgsRead, className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "Mark all as read" }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "max-h-[340px] overflow-y-auto", children: uiMessages.map(m => {
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("header", { className: "bg-black h-16 flex items-center px-8 gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 max-w-[417px]", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { className: "absolute left-3 top-1/2 -translate-y-1/2 size-4", style: { color: '#787486' } }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "text", placeholder: "Search for report...", "aria-label": "Search for report", style: { background: '#F5F5F5', borderRadius: 6, fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#787486' }, className: "w-full pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex items-center justify-end gap-6", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Root, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Trigger, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_NotificationBell__WEBPACK_IMPORTED_MODULE_15__["default"], {}) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Portal, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Content, { className: "bg-white border border-gray-200 rounded-xl shadow-xl w-80 z-50 overflow-hidden", sideOffset: 10, align: "end", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-gray-100", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-semibold text-gray-900 text-sm", children: "Notifications" }), unreadNotifCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: markAllNotifsRead, className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "Mark all as read" }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "max-h-[340px] overflow-y-auto", children: uiNotifications.map(n => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { onSelect: () => { }, className: `flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${n.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${n.iconBg}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(n.icon, { className: `size-4 ${n.iconColor}` }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs font-semibold text-gray-900", children: n.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5 leading-relaxed", children: n.body }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-[11px] text-gray-400 mt-1", children: n.time })] }), n.unread && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "size-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" })] }, n.id))) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "border-t border-gray-100 px-4 py-2.5 text-center", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_router__WEBPACK_IMPORTED_MODULE_9__.Link, { to: "/notifications", className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "View all notifications" }) })] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Root, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Trigger, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10", "aria-label": "Messages", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-6 text-white" }), unreadMsgCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF1267] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5", children: unreadMsgCount }))] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Portal, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Content, { className: "bg-white border border-gray-200 rounded-xl shadow-xl w-80 z-50 overflow-hidden", sideOffset: 10, align: "end", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-gray-100", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-semibold text-gray-900 text-sm", children: "Messages" }), unreadMsgCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => { }, className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "Mark all as read" }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "max-h-[340px] overflow-y-auto", children: uiMessages.map(m => {
                                                 var _a;
                                                 return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { onSelect: () => { }, className: `flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${m.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${(_a = AVATAR_COLORS[m.avatar]) !== null && _a !== void 0 ? _a : "bg-gray-200 text-gray-600"}`, children: m.avatar }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs font-semibold text-gray-900 truncate", children: m.name }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-[11px] text-gray-400 flex-shrink-0", children: m.time })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-gray-500 mt-0.5 truncate", children: m.preview })] }), m.unread && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "size-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" })] }, m.id));
                                             }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "border-t border-gray-100 px-4 py-2.5 text-center", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_router__WEBPACK_IMPORTED_MODULE_9__.Link, { to: "/message", className: "text-xs text-blue-600 hover:text-blue-700 font-medium", children: "Open messages" }) })] }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Root, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Trigger, { className: "flex items-center gap-4 px-4 py-1.5 rounded-full cursor-pointer border-0 outline-none hover:opacity-90 transition-opacity", style: { background: '#242424' }, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-white", style: { fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: 500, letterSpacing: '0.48px' }, children: displayName }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-8 rounded-full border border-white bg-brand flex items-center justify-center flex-shrink-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-white text-xs font-bold", children: initials }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Portal, { children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Content, { className: "bg-white border border-gray-200 rounded-lg shadow-lg p-2 w-56 z-50", sideOffset: 8, align: "end", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 px-3 py-3 border-b border-gray-200 mb-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "size-9 bg-brand rounded-full flex items-center justify-center flex-shrink-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-white font-semibold text-sm", children: initials }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex-1 min-w-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "font-semibold text-gray-900 text-sm truncate", children: displayName }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_router__WEBPACK_IMPORTED_MODULE_9__.Link, { to: "/settings", className: "flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm", children: "Profile" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { asChild: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_router__WEBPACK_IMPORTED_MODULE_9__.Link, { to: "/settings", className: "flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm", children: "Settings" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { className: "flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_1__["default"], { className: "size-4" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-sm", children: "Switch account" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Separator, { className: "h-px bg-gray-200 my-2" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_dropdown_menu__WEBPACK_IMPORTED_MODULE_8__.Item, { onSelect: () => {
@@ -1053,6 +1070,38 @@ function TableView({ visibleTasks }) {
 
 /***/ },
 
+/***/ "./ReactApp/Components/NotificationBell.tsx"
+/*!**************************************************!*\
+  !*** ./ReactApp/Components/NotificationBell.tsx ***!
+  \**************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/bell.js");
+/* harmony import */ var _hooks_useNotificationHub__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../hooks/useNotificationHub */ "./ReactApp/hooks/useNotificationHub.ts");
+/* harmony import */ var _context_NotificationContext__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../context/NotificationContext */ "./ReactApp/context/NotificationContext.tsx");
+
+
+
+
+const NotificationBell = () => {
+    const { unreadCount, isConnected } = (0,_hooks_useNotificationHub__WEBPACK_IMPORTED_MODULE_2__.useNotificationHub)();
+    const { state: notificationState } = (0,_context_NotificationContext__WEBPACK_IMPORTED_MODULE_3__.useNotificationContext)();
+    // Use SignalR count if connected, otherwise fall back to context count
+    const displayCount = isConnected ? unreadCount : notificationState.unreadCount;
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "relative", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10", "aria-label": "Notifications", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_1__["default"], { className: "size-6 text-white" }), displayCount > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF1267] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5", children: displayCount > 99 ? "99+" : displayCount })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `absolute bottom-0 right-0 w-2 h-2 rounded-full ${isConnected
+                        ? "bg-green-500"
+                        : "bg-gray-400"}` })] }) }));
+};
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (NotificationBell);
+
+
+/***/ },
+
 /***/ "./ReactApp/Components/PageState.tsx"
 /*!*******************************************!*\
   !*** ./ReactApp/Components/PageState.tsx ***!
@@ -1408,6 +1457,7 @@ function AuthProvider({ children }) {
         user,
         isAuthenticated: user !== null,
         isLoading,
+        token: (0,_services_api__WEBPACK_IMPORTED_MODULE_2__.getAuthToken)(),
         login,
         signup,
         logout,
@@ -1425,6 +1475,103 @@ function useAuth() {
     }
     return context;
 }
+
+
+/***/ },
+
+/***/ "./ReactApp/context/NotificationContext.tsx"
+/*!**************************************************!*\
+  !*** ./ReactApp/context/NotificationContext.tsx ***!
+  \**************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   NotificationProvider: () => (/* binding */ NotificationProvider),
+/* harmony export */   notificationActions: () => (/* binding */ notificationActions),
+/* harmony export */   useNotificationContext: () => (/* binding */ useNotificationContext)
+/* harmony export */ });
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+
+
+// Initial state
+const initialState = {
+    notifications: [],
+    unreadCount: 0,
+    isConnected: false,
+    latestNotification: null,
+};
+// Reducer
+const notificationReducer = (state, action) => {
+    var _a;
+    switch (action.type) {
+        case "ADD_NOTIFICATION":
+            return Object.assign(Object.assign({}, state), { notifications: [action.payload, ...state.notifications], unreadCount: action.payload.isRead ? state.unreadCount : state.unreadCount + 1 });
+        case "UPDATE_NOTIFICATION":
+            return Object.assign(Object.assign({}, state), { notifications: state.notifications.map(n => n.id === action.payload.id ? Object.assign(Object.assign({}, n), action.payload.updates) : n) });
+        case "REMOVE_NOTIFICATION":
+            return Object.assign(Object.assign({}, state), { notifications: state.notifications.filter(n => n.id !== action.payload), unreadCount: ((_a = state.notifications.find(n => n.id === action.payload)) === null || _a === void 0 ? void 0 : _a.isRead)
+                    ? state.unreadCount
+                    : Math.max(0, state.unreadCount - 1) });
+        case "SET_NOTIFICATIONS":
+            return Object.assign(Object.assign({}, state), { notifications: action.payload, unreadCount: action.payload.filter(n => !n.isRead).length });
+        case "SET_UNREAD_COUNT":
+            return Object.assign(Object.assign({}, state), { unreadCount: action.payload });
+        case "SET_CONNECTION_STATUS":
+            return Object.assign(Object.assign({}, state), { isConnected: action.payload });
+        case "SET_LATEST_NOTIFICATION":
+            return Object.assign(Object.assign({}, state), { latestNotification: action.payload });
+        default:
+            return state;
+    }
+};
+// Context
+const NotificationContext = (0,react__WEBPACK_IMPORTED_MODULE_1__.createContext)(null);
+const NotificationProvider = ({ children }) => {
+    const [state, dispatch] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useReducer)(notificationReducer, initialState);
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(NotificationContext.Provider, { value: { state, dispatch }, children: children }));
+};
+// Hook to use the context
+const useNotificationContext = () => {
+    const context = (0,react__WEBPACK_IMPORTED_MODULE_1__.useContext)(NotificationContext);
+    if (!context) {
+        throw new Error("useNotificationContext must be used within a NotificationProvider");
+    }
+    return context;
+};
+// Action creators
+const notificationActions = {
+    addNotification: (notification) => ({
+        type: "ADD_NOTIFICATION",
+        payload: notification,
+    }),
+    updateNotification: (id, updates) => ({
+        type: "UPDATE_NOTIFICATION",
+        payload: { id, updates },
+    }),
+    removeNotification: (id) => ({
+        type: "REMOVE_NOTIFICATION",
+        payload: id,
+    }),
+    setNotifications: (notifications) => ({
+        type: "SET_NOTIFICATIONS",
+        payload: notifications,
+    }),
+    setUnreadCount: (count) => ({
+        type: "SET_UNREAD_COUNT",
+        payload: count,
+    }),
+    setConnectionStatus: (isConnected) => ({
+        type: "SET_CONNECTION_STATUS",
+        payload: isConnected,
+    }),
+    setLatestNotification: (notification) => ({
+        type: "SET_LATEST_NOTIFICATION",
+        payload: notification,
+    }),
+};
 
 
 /***/ },
@@ -1899,6 +2046,130 @@ const useMessages = () => {
 
 /***/ },
 
+/***/ "./ReactApp/hooks/useNotificationHub.ts"
+/*!**********************************************!*\
+  !*** ./ReactApp/hooks/useNotificationHub.ts ***!
+  \**********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   useNotificationHub: () => (/* binding */ useNotificationHub)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _microsoft_signalr__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @microsoft/signalr */ "./node_modules/@microsoft/signalr/dist/esm/HubConnectionBuilder.js");
+/* harmony import */ var _microsoft_signalr__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @microsoft/signalr */ "./node_modules/@microsoft/signalr/dist/esm/ILogger.js");
+/* harmony import */ var _context_AuthContext__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../context/AuthContext */ "./ReactApp/context/AuthContext.tsx");
+// ── useNotificationHub Hook ─────────────────────────────────────────────
+//
+// Custom hook for real-time SignalR notifications.
+// Handles connection, events, and automatic reconnection.
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+
+const useNotificationHub = () => {
+    const { token } = (0,_context_AuthContext__WEBPACK_IMPORTED_MODULE_3__.useAuth)();
+    const connectionRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+    const [isConnected, setIsConnected] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+    const [unreadCount, setUnreadCount] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(0);
+    const [latestNotification, setLatestNotification] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+    // Create connection
+    const createConnection = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
+        if (!token)
+            return null;
+        const connection = new _microsoft_signalr__WEBPACK_IMPORTED_MODULE_1__.HubConnectionBuilder()
+            .withUrl("http://localhost:5000/hubs/notifications")
+            .withAutomaticReconnect()
+            .configureLogging(_microsoft_signalr__WEBPACK_IMPORTED_MODULE_2__.LogLevel.Information)
+            .build();
+        return connection;
+    }, [token]);
+    // Start connection
+    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+        const connection = createConnection();
+        if (!connection)
+            return;
+        connectionRef.current = connection;
+        // Connection lifecycle
+        connection.onreconnecting(() => {
+            console.log("SignalR reconnecting...");
+            setIsConnected(false);
+        });
+        connection.onreconnected(() => {
+            console.log("SignalR reconnected");
+            setIsConnected(true);
+        });
+        connection.onclose(() => {
+            console.log("SignalR connection closed");
+            setIsConnected(false);
+        });
+        // Hub events
+        connection.on("ReceiveNotification", (notification) => {
+            console.log("Received notification:", notification);
+            setLatestNotification(notification);
+            // Show toast notification
+            if (Notification.permission === "granted") {
+                new Notification(notification.title, {
+                    body: notification.message,
+                    icon: "/favicon.ico",
+                    tag: notification.id,
+                });
+            }
+        });
+        connection.on("UnreadCount", (count) => {
+            console.log("Unread count updated:", count);
+            setUnreadCount(count);
+        });
+        // Start connection
+        connection.start()
+            .then(() => {
+            console.log("SignalR connected");
+            setIsConnected(true);
+        })
+            .catch(err => {
+            console.error("SignalR connection error:", err);
+            setIsConnected(false);
+        });
+        return () => {
+            if (connectionRef.current) {
+                connectionRef.current.stop();
+                connectionRef.current = null;
+            }
+        };
+    }, [createConnection]);
+    // Hub methods
+    const markAsRead = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => __awaiter(void 0, void 0, void 0, function* () {
+        if (connectionRef.current) {
+            yield connectionRef.current.invoke("MarkAsRead", id);
+        }
+    }), []);
+    const markAllRead = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+        if (connectionRef.current) {
+            yield connectionRef.current.invoke("MarkAllRead");
+        }
+    }), []);
+    return {
+        isConnected,
+        unreadCount,
+        latestNotification,
+        markAsRead,
+        markAllRead,
+    };
+};
+
+
+/***/ },
+
 /***/ "./ReactApp/hooks/useNotifications.ts"
 /*!********************************************!*\
   !*** ./ReactApp/hooks/useNotifications.ts ***!
@@ -1936,7 +2207,7 @@ const useNotifications = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/notifications");
+            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/notifications?page=1&pageSize=50");
             if (!cancelled) {
                 setNotifications(data);
             }
@@ -1992,6 +2263,22 @@ const useNotifications = () => {
             throw err;
         }
     }), []);
+    const deleteNotification = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.delete(`/api/notifications/${id}`);
+            // Update local state to reflect change
+            setNotifications(prev => prev.filter(notification => notification.id !== id));
+        }
+        catch (err) {
+            const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
+                ? err.message
+                : err instanceof Error
+                    ? err.message
+                    : "Failed to delete notification";
+            setError(message);
+            throw err;
+        }
+    }), []);
     (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
         fetchData();
     }, [fetchData]);
@@ -2003,6 +2290,7 @@ const useNotifications = () => {
         refetch: fetchData,
         markAsRead,
         markAllAsRead,
+        deleteNotification,
         unreadCount,
     };
 };
@@ -3589,15 +3877,31 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/bell.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/chevron-down.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/lightbulb.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/search.js");
-/* harmony import */ var _Components_Sidebar__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Components/Sidebar */ "./ReactApp/Components/Sidebar.tsx");
-/* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
-/* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
-/* harmony import */ var _hooks_useNotifications__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../hooks/useNotifications */ "./ReactApp/hooks/useNotifications.ts");
-/* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/circle-alert.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/bell.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/check.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/chevron-down.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/info.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/lightbulb.js");
+/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/search.js");
+/* harmony import */ var _Components_Sidebar__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../Components/Sidebar */ "./ReactApp/Components/Sidebar.tsx");
+/* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
+/* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
+/* harmony import */ var _hooks_useNotifications__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../hooks/useNotifications */ "./ReactApp/hooks/useNotifications.ts");
+/* harmony import */ var _hooks_useNotificationHub__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../hooks/useNotificationHub */ "./ReactApp/hooks/useNotificationHub.ts");
+/* harmony import */ var _context_NotificationContext__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../context/NotificationContext */ "./ReactApp/context/NotificationContext.tsx");
+/* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
 
 
 
@@ -3607,49 +3911,93 @@ __webpack_require__.r(__webpack_exports__);
 
 
 function Notifications() {
-    const { notifications, isLoading, error, refetch, markAsRead, markAllAsRead } = (0,_hooks_useNotifications__WEBPACK_IMPORTED_MODULE_9__.useNotifications)();
+    const { notifications, isLoading, error, refetch, markAsRead, markAllAsRead } = (0,_hooks_useNotifications__WEBPACK_IMPORTED_MODULE_12__.useNotifications)();
+    const { isConnected } = (0,_hooks_useNotificationHub__WEBPACK_IMPORTED_MODULE_13__.useNotificationHub)();
+    const { state: notificationState } = (0,_context_NotificationContext__WEBPACK_IMPORTED_MODULE_14__.useNotificationContext)();
     const [tab, setTab] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("all");
     const [search, setSearch] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
     const [selected, setSelected] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(new Set());
     const groupBy = "Date";
+    // Use SignalR methods if connected, otherwise fall back to API methods
+    const handleMarkAsRead = (id) => __awaiter(this, void 0, void 0, function* () {
+        if (isConnected) {
+            // Use SignalR method
+            const { markAsRead: signalRMarkAsRead } = (0,_hooks_useNotificationHub__WEBPACK_IMPORTED_MODULE_13__.useNotificationHub)();
+            yield signalRMarkAsRead(id);
+        }
+        else {
+            // Fall back to API method
+            yield markAsRead(id);
+        }
+    });
+    const handleMarkAllAsRead = () => __awaiter(this, void 0, void 0, function* () {
+        if (isConnected) {
+            // Use SignalR method
+            const { markAllRead: signalRMarkAllRead } = (0,_hooks_useNotificationHub__WEBPACK_IMPORTED_MODULE_13__.useNotificationHub)();
+            yield signalRMarkAllRead();
+        }
+        else {
+            // Fall back to API method
+            yield markAllAsRead();
+        }
+    });
     // Convert backend notifications to UI format
     const notifs = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
-        return notifications.map((notif, index) => ({
-            id: index,
-            icon: lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], // Default icon, could be enhanced based on notification type
-            iconBg: "bg-blue-100",
-            iconColor: "text-blue-600",
-            title: notif.title,
-            body: notif.body,
-            time: formatRelativeTime(notif.createdAt),
-            unread: !notif.isRead,
-        }));
-    }, [notifications]);
-    // Helper to format relative time
-    function formatRelativeTime(iso) {
-        const created = new Date(iso);
-        const diffMs = Date.now() - created.getTime();
-        const diffMin = Math.floor(diffMs / 60000);
-        if (diffMin < 1)
-            return "Just now";
-        if (diffMin < 60)
-            return `${diffMin} min ago`;
-        const diffH = Math.floor(diffMin / 60);
-        if (diffH < 24)
-            return `${diffH} hour${diffH === 1 ? "" : "s"} ago`;
-        const diffD = Math.floor(diffH / 24);
-        if (diffD === 1)
-            return "Yesterday";
-        return `${diffD} days ago`;
-    }
+        const notificationList = isConnected && notificationState.notifications.length > 0
+            ? notificationState.notifications
+            : notifications;
+        return notificationList.map((notification, index) => {
+            // Get icon based on notification type
+            const getIcon = () => {
+                switch (notification.type) {
+                    case "TaskCreated":
+                    case "TaskUpdated":
+                    case "TaskDeleted":
+                        return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "w-4 h-4" });
+                    case "TaskDueSoon":
+                    case "TaskOverdue":
+                        return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "w-4 h-4" });
+                    case "ReminderFired":
+                        return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "w-4 h-4" });
+                    default:
+                        return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_6__["default"], { className: "w-4 h-4" });
+                }
+            };
+            // Get color based on priority
+            const getIconColors = () => {
+                switch (notification.priority) {
+                    case "Critical":
+                        return { bg: "bg-red-100", color: "text-red-600" };
+                    case "High":
+                        return { bg: "bg-orange-100", color: "text-orange-600" };
+                    case "Medium":
+                        return { bg: "bg-blue-100", color: "text-blue-600" };
+                    default:
+                        return { bg: "bg-gray-100", color: "text-gray-600" };
+                }
+            };
+            const iconColors = getIconColors();
+            return {
+                id: index,
+                icon: getIcon(),
+                iconBg: iconColors.bg,
+                iconColor: iconColors.color,
+                title: notification.title,
+                body: notification.message,
+                time: notification.timeAgo,
+                unread: !notification.isRead,
+                actionUrl: notification.actionUrl,
+            };
+        });
+    }, [notifications, notificationState.notifications, isConnected]);
     const handleRetry = () => {
         refetch();
     };
     const visible = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
-        let list = tab === "unread" ? notifs.filter((n) => n.unread) : notifs;
+        let list = tab === "unread" ? notifs.filter(n => n.unread) : notifs;
         if (search.trim()) {
             const q = search.toLowerCase();
-            list = list.filter((n) => n.title.toLowerCase().includes(q) ||
+            list = list.filter(n => n.title.toLowerCase().includes(q) ||
                 n.body.toLowerCase().includes(q));
         }
         return list;
@@ -3681,18 +4029,18 @@ function Notifications() {
     function markRead(id) {
         const notif = notifications[id];
         if (notif) {
-            markAsRead(notif.id);
+            handleMarkAsRead(notif.id);
         }
     }
     function markUnread(id) {
         // Backend doesn't have mark as unread, so we'll just update local state
         // This would need to be implemented in the backend
     }
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_6__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_7__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "max-w-6xl mx-auto p-6 space-y-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "Notifications" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "text-sm text-gray-500", children: [notifs.filter((n) => n.unread).length, " unread"] })] }), isLoading && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_10__.PageLoading, { message: "Loading notifications..." }), error && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_10__.PageError, { message: error, onRetry: handleRetry }), !isLoading && !error && notifs.length === 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_10__.PageEmpty, { icon: lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], title: "No notifications", description: "You're all caught up! New notifications will appear here." })), !isLoading && !error && notifs.length > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex rounded-md overflow-hidden border border-[rgba(27,31,36,0.15)] shrink-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => setTab("all"), className: `px-4 py-1.5 text-sm font-medium leading-5 transition-colors ${tab === "all"
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex h-screen overflow-hidden bg-gray-50", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Sidebar__WEBPACK_IMPORTED_MODULE_9__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Header__WEBPACK_IMPORTED_MODULE_10__["default"], {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("main", { className: "flex-1 overflow-y-auto", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "max-w-6xl mx-auto p-6 space-y-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "Notifications" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "text-sm text-gray-500", children: [notifs.filter((n) => n.unread).length, " unread"] })] }), isLoading && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_15__.PageLoading, { message: "Loading notifications..." }), error && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_15__.PageError, { message: error, onRetry: handleRetry }), !isLoading && !error && notifs.length === 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_PageState__WEBPACK_IMPORTED_MODULE_15__.PageEmpty, { icon: lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], title: "No notifications", description: "You're all caught up! New notifications will appear here." })), !isLoading && !error && notifs.length > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex rounded-md overflow-hidden border border-[rgba(27,31,36,0.15)] shrink-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => setTab("all"), className: `px-4 py-1.5 text-sm font-medium leading-5 transition-colors ${tab === "all"
                                                                     ? "bg-[#EEEFF2] text-[#24292F]"
                                                                     : "bg-[#F6F8FA] text-[#24292F] hover:bg-[#EEEFF2]"}`, children: "All" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => setTab("unread"), className: `px-4 py-1.5 text-sm font-medium leading-5 border-l border-[rgba(27,31,36,0.15)] transition-colors ${tab === "unread"
                                                                     ? "bg-[#EEEFF2] text-[#24292F]"
-                                                                    : "bg-[#F6F8FA] text-[#24292F] hover:bg-[#EEEFF2]"}`, children: "Unread" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative flex-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { size: 14, className: "absolute left-2.5 top-1/2 -translate-y-1/2 text-[#57606A]" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "text", placeholder: "Filter notifications", value: search, onChange: (e) => setSearch(e.target.value), className: "w-full pl-8 pr-3 py-1.5 text-sm text-[#24292F] placeholder-[#6E7781] bg-[#F6F8FA] border border-[#D0D7DE] rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#F6F8FA] border border-[rgba(27,31,36,0.15)] rounded-md text-[rgba(36,41,47,0.75)] hover:bg-[#EEEFF2] shrink-0 transition-colors", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { children: "Group by:" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-[#24292F]", children: groupBy }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { size: 12, className: "text-[#4E5258]" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white rounded-md border border-[#D0D7DE] overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 px-4 py-3 bg-[#F6F8FA] border-b border-[#D0D7DE]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "checkbox", checked: allSelected, onChange: toggleSelectAll, "aria-label": "Select all notifications", className: "w-3.5 h-3.5 rounded accent-[#0969DA] cursor-pointer" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-xs font-semibold text-[#24292F]", children: "Select all" }), selected.size > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "ml-auto text-xs text-[#57606A]", children: [selected.size, " selected"] }))] }), visible.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "px-6 py-12 text-center text-sm text-[#57606A]", children: "No notifications match your filter." })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("ul", { children: visible.map((n, i) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("li", { className: `flex items-center gap-3 px-4 py-3 group transition-colors ${n.unread ? "bg-white" : "bg-[#F6F8FA]"} ${i < visible.length - 1 ? "border-b border-[#D8DEE4]" : ""}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 shrink-0 w-8", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `w-2 h-2 rounded-full shrink-0 transition-opacity ${n.unread ? "bg-[#0969DA]" : "opacity-0"}` }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "checkbox", checked: selected.has(n.id), onChange: () => toggleSelect(n.id), "aria-label": `Select notification: ${n.title}`, className: "w-3.5 h-3.5 rounded accent-[#0969DA] cursor-pointer" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-8 rounded-full flex items-center justify-center flex-shrink-0 ${n.iconBg}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(n.icon, { className: `size-4 ${n.iconColor}` }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: `text-xs font-semibold leading-[18px] ${n.unread ? "text-[#24292F]" : "text-[#57606A]"}`, children: n.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: `text-sm leading-[21px] truncate ${n.unread ? "text-[#24292F]" : "text-[#57606A]"}`, children: n.body })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 shrink-0 text-xs text-[#24292F]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-right min-w-[70px] text-[#57606A]", children: n.time }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => (n.unread ? markRead(n.id) : markUnread(n.id)), title: n.unread ? "Mark as read" : "Mark as unread", "aria-label": n.unread ? "Mark as read" : "Mark as unread", className: "opacity-0 group-hover:opacity-100 w-5 h-5 rounded-full border border-[rgba(27,31,36,0.15)] bg-[#F6F8FA] hover:bg-[#EEEFF2] flex items-center justify-center transition-opacity", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `w-2 h-2 rounded-full ${n.unread ? "bg-[#0969DA]" : "bg-transparent border border-[#57606A]"}` }) })] })] }, n.id))) }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1.5 text-xs text-[#57606A]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { size: 14, className: "text-[#57606A] shrink-0" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-semibold", children: "ProTip!" }), " When viewing a notification, press", " "] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("kbd", { className: "px-1.5 py-0.5 text-[11px] font-mono bg-[#F6F8FA] border border-[rgba(175,184,193,0.2)] rounded text-[#24292F]", children: "shift u" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { children: " to mark it as Unread." })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "text-xs text-[#24292F]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "font-semibold", children: ["1\u2013", visible.length] }), " of ", visible.length] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex rounded-md overflow-hidden border border-[rgba(27,31,36,0.15)]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { disabled: true, className: "px-3 py-1.5 text-sm font-medium bg-[#F6F8FA] text-[rgba(9,105,218,0.5)] hover:bg-[#EEEFF2] transition-colors", children: "Prev" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { disabled: true, className: "px-3 py-1.5 text-sm font-medium bg-[#F6F8FA] text-[rgba(9,105,218,0.5)] border-l border-[rgba(27,31,36,0.15)] hover:bg-[#EEEFF2] transition-colors", children: "Next" })] })] })] })] }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_8__["default"], {})] })] })] }));
+                                                                    : "bg-[#F6F8FA] text-[#24292F] hover:bg-[#EEEFF2]"}`, children: "Unread" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative flex-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_8__["default"], { size: 14, className: "absolute left-2.5 top-1/2 -translate-y-1/2 text-[#57606A]" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "text", placeholder: "Filter notifications", value: search, onChange: (e) => setSearch(e.target.value), className: "w-full pl-8 pr-3 py-1.5 text-sm text-[#24292F] placeholder-[#6E7781] bg-[#F6F8FA] border border-[#D0D7DE] rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { className: "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#F6F8FA] border border-[rgba(27,31,36,0.15)] rounded-md text-[rgba(36,41,47,0.75)] hover:bg-[#EEEFF2] shrink-0 transition-colors", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { children: "Group by:" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-[#24292F]", children: groupBy }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_5__["default"], { size: 12, className: "text-[#4E5258]" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white rounded-md border border-[#D0D7DE] overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 px-4 py-3 bg-[#F6F8FA] border-b border-[#D0D7DE]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "checkbox", checked: allSelected, onChange: toggleSelectAll, "aria-label": "Select all notifications", className: "w-3.5 h-3.5 rounded accent-[#0969DA] cursor-pointer" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-xs font-semibold text-[#24292F]", children: "Select all" }), selected.size > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "ml-auto text-xs text-[#57606A]", children: [selected.size, " selected"] }))] }), visible.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "px-6 py-12 text-center text-sm text-[#57606A]", children: "No notifications match your filter." })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("ul", { children: visible.map((n, i) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("li", { className: `flex items-center gap-3 px-4 py-3 group transition-colors ${n.unread ? "bg-white" : "bg-[#F6F8FA]"} ${i < visible.length - 1 ? "border-b border-[#D8DEE4]" : ""}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 shrink-0 w-8", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `w-2 h-2 rounded-full shrink-0 transition-opacity ${n.unread ? "bg-[#0969DA]" : "opacity-0"}` }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "checkbox", checked: selected.has(n.id), onChange: () => toggleSelect(n.id), "aria-label": `Select notification: ${n.title}`, className: "w-3.5 h-3.5 rounded accent-[#0969DA] cursor-pointer" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-8 rounded-full flex items-center justify-center flex-shrink-0 ${n.iconBg}`, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: `size-4 ${n.iconColor}`, children: n.icon }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex-1 min-w-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: `text-xs font-semibold leading-[18px] ${n.unread ? "text-[#24292F]" : "text-[#57606A]"}`, children: n.title }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: `text-sm leading-[21px] truncate ${n.unread ? "text-[#24292F]" : "text-[#57606A]"}`, children: n.body })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3 shrink-0 text-xs text-[#24292F]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-right min-w-[70px] text-[#57606A]", children: n.time }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => (n.unread ? markRead(n.id) : markUnread(n.id)), title: n.unread ? "Mark as read" : "Mark as unread", "aria-label": n.unread ? "Mark as read" : "Mark as unread", className: "opacity-0 group-hover:opacity-100 w-5 h-5 rounded-full border border-[rgba(27,31,36,0.15)] bg-[#F6F8FA] hover:bg-[#EEEFF2] flex items-center justify-center transition-opacity", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `w-2 h-2 rounded-full ${n.unread ? "bg-[#0969DA]" : "bg-transparent border border-[#57606A]"}` }) })] })] }, n.id))) }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-1.5 text-xs text-[#57606A]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { size: 14, className: "text-[#57606A] shrink-0" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-semibold", children: "ProTip!" }), " When viewing a notification, press", " "] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("kbd", { className: "px-1.5 py-0.5 text-[11px] font-mono bg-[#F6F8FA] border border-[rgba(175,184,193,0.2)] rounded text-[#24292F]", children: "shift u" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { children: " to mark it as Unread." })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "text-xs text-[#24292F]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "font-semibold", children: ["1\u2013", visible.length] }), " of ", visible.length] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex rounded-md overflow-hidden border border-[rgba(27,31,36,0.15)]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { disabled: true, className: "px-3 py-1.5 text-sm font-medium bg-[#F6F8FA] text-[rgba(9,105,218,0.5)] hover:bg-[#EEEFF2] transition-colors", children: "Prev" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { disabled: true, className: "px-3 py-1.5 text-sm font-medium bg-[#F6F8FA] text-[rgba(9,105,218,0.5)] border-l border-[rgba(27,31,36,0.15)] hover:bg-[#EEEFF2] transition-colors", children: "Next" })] })] })] })] }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_11__["default"], {})] })] })] }));
 }
 
 
@@ -4683,6 +5031,18 @@ const api = {
 /******/ 				}
 /******/ 			}
 /******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/global */
+/******/ 	(() => {
+/******/ 		__webpack_require__.g = (function() {
+/******/ 			if (typeof globalThis === 'object') return globalThis;
+/******/ 			try {
+/******/ 				return this || new Function('return this')();
+/******/ 			} catch (e) {
+/******/ 				if (typeof window === 'object') return window;
+/******/ 			}
+/******/ 		})();
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/hasOwnProperty shorthand */

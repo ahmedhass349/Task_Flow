@@ -237,8 +237,9 @@ namespace TaskFlow.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Body")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("ActionUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -246,17 +247,38 @@ namespace TaskFlow.Migrations
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("RelatedTaskId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("RelatedTaskId");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.HasIndex("UserId", "IsRead");
 
                     b.ToTable("Notifications");
                 });
@@ -315,6 +337,49 @@ namespace TaskFlow.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("ProjectMembers");
+                });
+
+            modelBuilder.Entity("taskflow.Data.Entities.Reminder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FireAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FiredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("HasFired")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifyEmail")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifyInApp")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("FireAt", "HasFired");
+
+                    b.ToTable("Reminders");
                 });
 
             modelBuilder.Entity("taskflow.Data.Entities.TaskComment", b =>
@@ -500,11 +565,18 @@ namespace TaskFlow.Migrations
 
             modelBuilder.Entity("taskflow.Data.Entities.Notification", b =>
                 {
+                    b.HasOne("taskflow.Data.Entities.TaskItem", "RelatedTask")
+                        .WithMany()
+                        .HasForeignKey("RelatedTaskId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("taskflow.Data.Entities.AppUser", "User")
                         .WithMany("Notifications")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("RelatedTask");
 
                     b.Navigation("User");
                 });
@@ -535,6 +607,25 @@ namespace TaskFlow.Migrations
                         .IsRequired();
 
                     b.Navigation("Project");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("taskflow.Data.Entities.Reminder", b =>
+                {
+                    b.HasOne("taskflow.Data.Entities.TaskItem", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("taskflow.Data.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Task");
 
                     b.Navigation("User");
                 });

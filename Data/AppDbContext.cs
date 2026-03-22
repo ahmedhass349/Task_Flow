@@ -17,6 +17,7 @@ namespace taskflow.Data
         public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
         public DbSet<Message> Messages => Set<Message>();
         public DbSet<Notification> Notifications => Set<Notification>();
+        public DbSet<Reminder> Reminders => Set<Reminder>();
         public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
         public DbSet<ChatbotConversation> ChatbotConversations => Set<ChatbotConversation>();
         public DbSet<ChatbotMessage> ChatbotMessages => Set<ChatbotMessage>();
@@ -171,10 +172,41 @@ namespace taskflow.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Title).HasMaxLength(500).IsRequired();
+                entity.Property(e => e.Message).HasMaxLength(1000);
+                entity.Property(e => e.ActionUrl).HasMaxLength(500);
+
+                // Indexes for performance
+                entity.HasIndex(e => new { e.UserId, e.IsRead });
+                entity.HasIndex(e => new { e.UserId, e.CreatedAt });
 
                 entity.HasOne(n => n.User)
                       .WithMany(u => u.Notifications)
                       .HasForeignKey(n => n.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(n => n.RelatedTask)
+                      .WithMany()
+                      .HasForeignKey(n => n.RelatedTaskId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ── Reminder ─────────────────────────────────────────────────────
+            modelBuilder.Entity<Reminder>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                // Indexes for performance
+                entity.HasIndex(e => new { e.FireAt, e.HasFired });
+                entity.HasIndex(e => e.TaskId);
+
+                entity.HasOne(r => r.Task)
+                      .WithMany()
+                      .HasForeignKey(r => r.TaskId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.User)
+                      .WithMany()
+                      .HasForeignKey(r => r.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
 

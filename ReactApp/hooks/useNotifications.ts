@@ -11,9 +11,15 @@ interface Notification {
   id: string;
   userId: string;
   title: string;
-  body: string;
+  message: string;
+  type: string;
+  priority: string;
   isRead: boolean;
+  actionUrl?: string;
+  relatedTaskId?: number;
   createdAt: string;
+  readAt?: string;
+  timeAgo: string;
 }
 
 // Hook return type
@@ -25,6 +31,7 @@ interface UseNotificationsReturn {
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   unreadCount: number;
+  deleteNotification: (id: string) => Promise<void>;
 }
 
 export const useNotifications = (): UseNotificationsReturn => {
@@ -38,7 +45,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     setError(null);
 
     try {
-      const data = await api.get<Notification[]>("/api/notifications");
+      const data = await api.get<Notification[]>("/api/notifications?page=1&pageSize=50");
       if (!cancelled) {
         setNotifications(data);
       }
@@ -103,6 +110,25 @@ export const useNotifications = (): UseNotificationsReturn => {
     }
   }, []);
 
+  const deleteNotification = useCallback(async (id: string) => {
+    try {
+      await api.delete(`/api/notifications/${id}`);
+      // Update local state to reflect change
+      setNotifications(prev =>
+        prev.filter(notification => notification.id !== id)
+      );
+    } catch (err) {
+      const message =
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to delete notification";
+      setError(message);
+      throw err;
+    }
+  }, []);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -116,6 +142,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     refetch: fetchData,
     markAsRead,
     markAllAsRead,
+    deleteNotification,
     unreadCount,
   };
 };

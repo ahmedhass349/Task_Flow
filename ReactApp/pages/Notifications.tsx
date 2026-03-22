@@ -1,68 +1,122 @@
 import React, { useState, useMemo } from "react";
-import { Search, ChevronDown, Lightbulb, Bell } from "lucide-react";
+import { Search, ChevronDown, Lightbulb, Bell, Check, AlertCircle, Info } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
 import { useNotifications } from "../hooks/useNotifications";
+import { useNotificationHub } from "../hooks/useNotificationHub";
+import { useNotificationContext } from "../context/NotificationContext";
 import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
 
 // Notification interface for UI
 interface NotificationItem {
   id: number;
-  icon: React.ElementType;
+  icon: React.ReactNode;
   iconBg: string;
   iconColor: string;
   title: string;
   body: string;
   time: string;
   unread: boolean;
+  actionUrl?: string;
 }
 
 export default function Notifications() {
   const { notifications, isLoading, error, refetch, markAsRead, markAllAsRead } = useNotifications();
+  const { isConnected } = useNotificationHub();
+  const { state: notificationState } = useNotificationContext();
   const [tab, setTab] = useState<"all" | "unread">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const groupBy = "Date";
 
+  // Use SignalR methods if connected, otherwise fall back to API methods
+  const handleMarkAsRead = async (id: string) => {
+    if (isConnected) {
+      // Use SignalR method
+      const { markAsRead: signalRMarkAsRead } = useNotificationHub();
+      await signalRMarkAsRead(id);
+    } else {
+      // Fall back to API method
+      await markAsRead(id);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    if (isConnected) {
+      // Use SignalR method
+      const { markAllRead: signalRMarkAllRead } = useNotificationHub();
+      await signalRMarkAllRead();
+    } else {
+      // Fall back to API method
+      await markAllAsRead();
+    }
+  };
+
   // Convert backend notifications to UI format
   const notifs: NotificationItem[] = useMemo(() => {
-    return notifications.map((notif, index) => ({
-      id: index,
-      icon: Bell, // Default icon, could be enhanced based on notification type
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-      title: notif.title,
-      body: notif.body,
-      time: formatRelativeTime(notif.createdAt),
-      unread: !notif.isRead,
-    }));
-  }, [notifications]);
+    const notificationList = isConnected && notificationState.notifications.length > 0 
+      ? notificationState.notifications 
+      : notifications;
 
-  // Helper to format relative time
-  function formatRelativeTime(iso: string): string {
-    const created = new Date(iso);
-    const diffMs = Date.now() - created.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return "Just now";
-    if (diffMin < 60) return `${diffMin} min ago`;
-    const diffH = Math.floor(diffMin / 60);
-    if (diffH < 24) return `${diffH} hour${diffH === 1 ? "" : "s"} ago`;
-    const diffD = Math.floor(diffH / 24);
-    if (diffD === 1) return "Yesterday";
-    return `${diffD} days ago`;
-  }
+    return notificationList.map((notification, index) => {
+      // Get icon based on notification type
+      const getIcon = () => {
+        switch (notification.type) {
+          case "TaskCreated":
+          case "TaskUpdated":
+          case "TaskDeleted":
+            return <Check className="w-4 h-4" />;
+          case "TaskDueSoon":
+          case "TaskOverdue":
+            return <AlertCircle className="w-4 h-4" />;
+          case "ReminderFired":
+            return <Bell className="w-4 h-4" />;
+          default:
+            return <Info className="w-4 h-4" />;
+        }
+      };
+
+      // Get color based on priority
+      const getIconColors = () => {
+        switch (notification.priority) {
+          case "Critical":
+            return { bg: "bg-red-100", color: "text-red-600" };
+          case "High":
+            return { bg: "bg-orange-100", color: "text-orange-600" };
+          case "Medium":
+            return { bg: "bg-blue-100", color: "text-blue-600" };
+          default:
+            return { bg: "bg-gray-100", color: "text-gray-600" };
+        }
+      };
+
+      const iconColors = getIconColors();
+
+      return {
+        id: index,
+        icon: getIcon(),
+        iconBg: iconColors.bg,
+        iconColor: iconColors.color,
+        title: notification.title,
+        body: notification.message,
+        time: notification.timeAgo,
+        unread: !notification.isRead,
+        actionUrl: notification.actionUrl,
+      };
+    });
+  }, [notifications, notificationState.notifications, isConnected]);
 
   const handleRetry = () => {
     refetch();
   };
 
   const visible = useMemo(() => {
-    let list = tab === "unread" ? notifs.filter((n) => n.unread) : notifs;
+    let list = tab === "unread" ? notifs.filter(n => n.unread) : notifs;
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
-        (n) =>
+        n =>
           n.title.toLowerCase().includes(q) ||
           n.body.toLowerCase().includes(q)
       );
@@ -99,7 +153,7 @@ export default function Notifications() {
   function markRead(id: number) {
   const notif = notifications[id];
   if (notif) {
-    markAsRead(notif.id);
+    handleMarkAsRead(notif.id);
   }
 }
 
@@ -236,7 +290,9 @@ function markUnread(id: number) {
 
                       {/* Icon */}
                       <div className={`size-8 rounded-full flex items-center justify-center flex-shrink-0 ${n.iconBg}`}>
-                        <n.icon className={`size-4 ${n.iconColor}`} />
+                        <div className={`size-4 ${n.iconColor}`}>
+                          {n.icon}
+                        </div>
                       </div>
 
                       {/* Content */}
