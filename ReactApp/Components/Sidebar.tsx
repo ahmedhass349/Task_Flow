@@ -22,7 +22,7 @@ export default function Sidebar() {
     { icon: <ClipboardList  className="size-5 shrink-0" />, label: "My Tasks",      path: "/my-work" },
     { icon: <MessageSquare className="size-5 shrink-0" />, label: "Messages",      path: "/message" },
     { icon: <Bell          className="size-5 shrink-0" />, label: "Notifications", path: "/notifications" },
-    { icon: <User          className="size-5 shrink-0" />, label: "Users",         path: "/teams" },
+    { icon: <User          className="size-5 shrink-0" />, label: "Teams",         path: "/teams" },
     { icon: <Settings      className="size-5 shrink-0" />, label: "Settings",      path: "/settings" },
     { icon: <Bot            className="size-5 shrink-0" />, label: "Chatbot",       path: "/plans" },
   ];

@@ -3,12 +3,18 @@
 // ── Auth ─────────────────────────────────────────────────────────────────
 
 export interface User {
-  id: string;
-  email: string;
+  id: number;
+  firstName: string;
+  lastName: string;
   fullName: string;
+  email: string;
   avatarUrl?: string;
-  role: "admin" | "member" | "viewer";
+  company?: string;
+  country?: string;
+  phone?: string;
+  timezone?: string;
   createdAt: string;
+  lastLoginAt?: string;
 }
 
 export interface LoginRequest {
@@ -21,6 +27,11 @@ export interface SignupRequest {
   lastName: string;
   email: string;
   password: string;
+  confirmPassword: string;
+  company?: string;
+  country?: string;
+  phone?: string;
+  timezone?: string;
 }
 
 export interface AuthResponse {
@@ -36,6 +47,23 @@ export interface ResetPasswordRequest {
   token: string;
   password: string;
   confirmPassword: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface UpdateProfileRequest {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  avatarUrl?: string;
+  company?: string;
+  country?: string;
+  phone?: string;
+  timezone?: string;
 }
 
 // ── Tasks ────────────────────────────────────────────────────────────────

@@ -8,8 +8,10 @@ using System.Threading.Tasks;
 using AutoMapper;
 using taskflow.Data.Entities;
 using taskflow.DTOs.Settings;
+using taskflow.DTOs.Auth;
 using taskflow.Repositories.Interfaces;
 using taskflow.Services.Interfaces;
+using taskflow.Helpers;
 
 namespace taskflow.Services
 {
@@ -17,11 +19,13 @@ namespace taskflow.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
+        private readonly JwtHelper _jwtHelper;
 
-        public SettingsService(IUserRepository userRepository, IMapper mapper)
+        public SettingsService(IUserRepository userRepository, IMapper mapper, JwtHelper jwtHelper)
         {
             _userRepository = userRepository;
             _mapper = mapper;
+            _jwtHelper = jwtHelper;
         }
 
         public async Task<ProfileDto> GetProfileAsync(int userId)
@@ -33,7 +37,7 @@ namespace taskflow.Services
             return _mapper.Map<ProfileDto>(user);
         }
 
-        public async Task<ProfileDto> UpdateProfileAsync(int userId, UpdateProfileRequest request)
+        public async Task<AuthResponse> UpdateProfileAsync(int userId, UpdateProfileRequest request)
         {
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
@@ -62,7 +66,15 @@ namespace taskflow.Services
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
 
-            return _mapper.Map<ProfileDto>(user);
+            // Generate new token with updated claims
+            var newToken = _jwtHelper.GenerateToken(user);
+            var userDto = _mapper.Map<UserDto>(user);
+
+            return new AuthResponse
+            {
+                Token = newToken,
+                User = userDto
+            };
         }
 
         public async Task ChangePasswordAsync(int userId, ChangePasswordRequest request)

@@ -1,93 +1,19 @@
 // ── useSettings Hook ───────────────────────────────────────────────────────
 //
-// Custom hook for fetching and managing user settings.
-// Provides loading, error, data, and refetch states.
+// Custom hook that wraps AuthContext for settings operations.
+// Uses AuthContext as single source of truth for user data.
 
-import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "../context/AuthContext";
 import { api, ApiRequestError } from "../services/api";
+import type { User, UpdateProfileRequest, ChangePasswordRequest } from "../types";
 
-// Profile interface matching backend DTO
-interface Profile {
-  id: string;
-  fullName: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  avatarUrl?: string;
-  company?: string;
-  country?: string;
-  phone?: string;
-  timezone?: string;
-  createdAt: string;
-}
+export const useSettings = () => {
+  const { user, updateUser, refreshUser } = useAuth();
 
-// Hook return type
-interface UseSettingsReturn {
-  profile: Profile | null;
-  isLoading: boolean;
-  error: string | null;
-  refetch: () => void;
-  updateProfile: (data: UpdateProfileRequest) => Promise<void>;
-  changePassword: (data: ChangePasswordRequest) => Promise<void>;
-  deleteAccount: () => Promise<void>;
-}
-
-// Request types for settings operations
-interface UpdateProfileRequest {
-  fullName?: string;
-  avatarUrl?: string;
-  company?: string;
-  country?: string;
-  phone?: string;
-  timezone?: string;
-}
-
-interface ChangePasswordRequest {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
-
-export const useSettings = (): UseSettingsReturn => {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-
+  const updateProfile = async (data: UpdateProfileRequest) => {
     try {
-      const data = await api.get<Profile>("/api/settings/profile");
-      if (!cancelled) {
-        setProfile(data);
-      }
-    } catch (err) {
-      if (!cancelled) {
-        const message =
-          err instanceof ApiRequestError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : "Failed to load profile";
-        setError(message);
-      }
-    } finally {
-      if (!cancelled) {
-        setIsLoading(false);
-      }
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const updateProfile = useCallback(async (data: UpdateProfileRequest) => {
-    try {
-      const updatedProfile = await api.put<Profile>("/settings/profile", data);
-      setProfile(updatedProfile);
+      const response = await api.put<{ token: string; user: User }>("/api/settings/profile", data);
+      updateUser(response.user, response.token);
     } catch (err) {
       const message =
         err instanceof ApiRequestError
@@ -95,14 +21,13 @@ export const useSettings = (): UseSettingsReturn => {
           : err instanceof Error
             ? err.message
             : "Failed to update profile";
-      setError(message);
-      throw err;
+      throw new Error(message);
     }
-  }, []);
+  };
 
-  const changePassword = useCallback(async (data: ChangePasswordRequest) => {
+  const changePassword = async (data: ChangePasswordRequest) => {
     try {
-      await api.put("/settings/password", data);
+      await api.put("/api/settings/password", data);
     } catch (err) {
       const message =
         err instanceof ApiRequestError
@@ -110,14 +35,13 @@ export const useSettings = (): UseSettingsReturn => {
           : err instanceof Error
             ? err.message
             : "Failed to change password";
-      setError(message);
-      throw err;
+      throw new Error(message);
     }
-  }, []);
+  };
 
-  const deleteAccount = useCallback(async () => {
+  const deleteAccount = async () => {
     try {
-      await api.delete("/settings/account");
+      await api.delete("/api/settings/account");
     } catch (err) {
       const message =
         err instanceof ApiRequestError
@@ -125,20 +49,15 @@ export const useSettings = (): UseSettingsReturn => {
           : err instanceof Error
             ? err.message
             : "Failed to delete account";
-      setError(message);
-      throw err;
+      throw new Error(message);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  };
 
   return {
-    profile,
-    isLoading,
-    error,
-    refetch: fetchData,
+    profile: user,
+    isLoading: false,
+    error: null,
+    refetch: refreshUser,
     updateProfile,
     changePassword,
     deleteAccount,

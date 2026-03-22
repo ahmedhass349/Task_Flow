@@ -21,6 +21,8 @@ interface AuthContextValue {
   logout: () => void;
   error: string | null;
   clearError: () => void;
+  refreshUser: () => Promise<void>;
+  updateUser: (user: User, newToken: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -106,6 +108,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const userData = await api.get<User>("/api/auth/me");
+      setUser(userData);
+    } catch (err) {
+      console.error("Failed to refresh user data:", err);
+      // Don't clear token on refresh failure, just log the error
+    }
+  }, []);
+
+  const updateUser = useCallback((updatedUser: User, newToken: string) => {
+    setAuthToken(newToken);
+    setUser(updatedUser);
+  }, []);
+
   const value: AuthContextValue = {
     user,
     isAuthenticated: user !== null,
@@ -115,6 +132,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     error,
     clearError,
+    refreshUser,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

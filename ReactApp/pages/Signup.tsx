@@ -111,6 +111,11 @@ export default function Signup() {
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
         password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        company: formData.company.trim() || undefined,
+        country: formData.country.trim() || undefined,
+        phone: formData.phone.trim() || undefined,
+        timezone: formData.timezone.trim() || undefined,
       });
       navigate("/", { replace: true });
     } catch {

@@ -7,6 +7,7 @@ import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
 import { useSettings } from "../hooks/useSettings";
+import { useAuth } from "../context/AuthContext";
 
 /* ─────── types ─────── */
 type Section = "profile" | "account" | "notifications" | "appearance" | "security" | "privacy";
@@ -89,16 +90,23 @@ const NAV_ITEMS: { id: Section; label: string; icon: React.ElementType }[] = [
    Main component
 ═══════════════════════════════════════════════ */
 export default function Settings() {
+  const { refreshUser } = useAuth();
+  const { profile, isLoading, error, updateProfile } = useSettings();
+
+  // Refresh user data on mount
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+
   const [activeSection, setActiveSection] = useState<Section>("profile");
-  const { profile, isLoading, error, refetch, updateProfile } = useSettings();
 
   // Convert backend profile to form state
   const [profileForm, setProfileForm] = useState({
-    firstName: profile?.fullName?.split(' ')[0] || "",
-    lastName: profile?.fullName?.split(' ')[1] || "",
+    firstName: profile?.firstName || "",
+    lastName: profile?.lastName || "",
     email: profile?.email || "",
-    company: "",
-    country: "",
+    company: profile?.company || "",
+    country: profile?.country || "",
     phone: profile?.phone || "",
     timezone: profile?.timezone || "UTC",
   });
@@ -107,11 +115,11 @@ export default function Settings() {
   useEffect(() => {
     if (profile) {
       setProfileForm({
-        firstName: profile.fullName?.split(' ')[0] || "",
-        lastName: profile.fullName?.split(' ')[1] || "",
+        firstName: profile.firstName || "",
+        lastName: profile.lastName || "",
         email: profile.email,
-        company: "",
-        country: "",
+        company: profile.company || "",
+        country: profile.country || "",
         phone: profile.phone || "",
         timezone: profile.timezone || "UTC",
       });
@@ -121,7 +129,9 @@ export default function Settings() {
   const handleSaveProfile = async () => {
     try {
       await updateProfile({
-        fullName: `${profileForm.firstName} ${profileForm.lastName}`,
+        firstName: profileForm.firstName,
+        lastName: profileForm.lastName,
+        email: profileForm.email,
         avatarUrl: profile?.avatarUrl,
         company: profileForm.company,
         country: profileForm.country,

@@ -23,6 +23,7 @@ namespace taskflow.Data.Entities
         public string? ResetToken { get; set; }
         public DateTime? ResetTokenExpiry { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? LastLoginAt { get; set; }
 
         // Navigation
         public ICollection<Project> OwnedProjects { get; set; } = new List<Project>();

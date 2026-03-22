@@ -1,20 +1,17 @@
 // FILE: DTOs/Settings/ProfileDto.cs
 // STATUS: UPDATED
-// CHANGES: Added FirstName, LastName fields for frontend compatibility (#24)
+// CHANGES: Now uses canonical UserDto structure for consistency
+
+using taskflow.DTOs.Auth;
 
 namespace taskflow.DTOs.Settings
 {
-    public class ProfileDto
+    /// <summary>
+    /// Profile DTO - uses canonical UserDto for consistency
+    /// </summary>
+    public class ProfileDto : UserDto
     {
-        public int Id { get; set; }
-        public string FullName { get; set; } = string.Empty;
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string? AvatarUrl { get; set; }
-        public string? Company { get; set; }
-        public string? Country { get; set; }
-        public string? Phone { get; set; }
-        public string? Timezone { get; set; }
+        // Inherits all properties from UserDto
+        // No additional properties needed - use canonical shape
     }
 }

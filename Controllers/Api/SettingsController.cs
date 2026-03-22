@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using taskflow.DTOs.Settings;
+using taskflow.DTOs.Auth;
 using taskflow.Helpers;
 using taskflow.Services.Interfaces;
 
@@ -48,14 +49,14 @@ namespace taskflow.Controllers.Api
         }
 
         /// <summary>
-        /// Updates the profile information for the authenticated user.
+        /// Updates profile information for authenticated user and returns new token.
         /// </summary>
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
             var userId = GetUserId();
-            var profile = await _settingsService.UpdateProfileAsync(userId, request);
-            return Ok(ApiResponse<ProfileDto>.Ok(profile, "Profile updated successfully."));
+            var authResponse = await _settingsService.UpdateProfileAsync(userId, request);
+            return Ok(ApiResponse<AuthResponse>.Ok(authResponse, "Profile updated successfully."));
         }
 
         /// <summary>

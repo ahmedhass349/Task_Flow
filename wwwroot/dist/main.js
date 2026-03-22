@@ -39,6 +39,283 @@ function App() {
 
 /***/ },
 
+/***/ "./ReactApp/Components/AcademicTaskCard.tsx"
+/*!**************************************************!*\
+  !*** ./ReactApp/Components/AcademicTaskCard.tsx ***!
+  \**************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ AcademicTaskCard)
+/* harmony export */ });
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const TASK_TYPES = [
+    "Grading",
+    "Office hours",
+    "Lecture prep",
+    "Committee",
+    "Research",
+    "Admin",
+    "Others",
+];
+const COURSES = [
+    "No course / general",
+    "CS301 — Data Structures",
+    "CS401 — Algorithms",
+    "MATH201 — Linear Algebra",
+    "ENG101 — Academic Writing",
+    "BIO210 — Cell Biology",
+];
+const SEMESTERS = ["Spring 2025", "Summer 2025", "Fall 2025", "Spring 2026"];
+const TIME_SLOTS = [
+    "6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM",
+    "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM",
+    "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM",
+    "6:00 PM", "7:00 PM", "8:00 PM", "9:00 PM",
+];
+const DAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+];
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function toDateKey(year, month, day) {
+    return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+function toMinutes(timeStr) {
+    const [time, mer] = timeStr.split(" ");
+    let [h, min] = time.split(":").map(Number);
+    if (mer === "PM" && h !== 12)
+        h += 12;
+    if (mer === "AM" && h === 12)
+        h = 0;
+    return h * 60 + min;
+}
+// ─── Sub-components ───────────────────────────────────────────────────────────
+function ToggleSwitch({ on, onClick }) {
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: onClick, className: `w-8 h-[18px] rounded-full border-0 relative cursor-pointer flex-shrink-0 transition-colors duration-200 ${on ? "bg-blue-600" : "bg-slate-300"}`, "aria-label": "Toggle reminder" }));
+}
+function BellIcon() {
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", { viewBox: "0 0 16 16", fill: "none", width: 13, height: 13, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", { d: "M8 2a5 5 0 00-5 5v2.5L2 11h12l-1-1.5V7a5 5 0 00-5-5z", stroke: "#185FA5", strokeWidth: "1.2", strokeLinejoin: "round" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", { d: "M6.5 13a1.5 1.5 0 003 0", stroke: "#185FA5", strokeWidth: "1.2", strokeLinecap: "round" })] }));
+}
+function Calendar({ reminderMap, selectedDay, onSelectDay }) {
+    const now = new Date();
+    const [calYear, setCalYear] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(now.getFullYear());
+    const [calMonth, setCalMonth] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(now.getMonth());
+    function changeMonth(delta) {
+        let m = calMonth + delta;
+        let y = calYear;
+        if (m > 11) {
+            m = 0;
+            y++;
+        }
+        if (m < 0) {
+            m = 11;
+            y--;
+        }
+        setCalMonth(m);
+        setCalYear(y);
+    }
+    const firstDow = new Date(calYear, calMonth, 1).getDay();
+    const totalDays = new Date(calYear, calMonth + 1, 0).getDate();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const cells = [];
+    for (let i = 0; i < firstDow; i++) {
+        cells.push((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", {}, `empty-${i}`));
+    }
+    for (let d = 1; d <= totalDays; d++) {
+        const key = toDateKey(calYear, calMonth, d);
+        const date = new Date(calYear, calMonth, d);
+        const isPast = date < today;
+        const isToday = calYear === now.getFullYear() &&
+            calMonth === now.getMonth() &&
+            d === now.getDate();
+        const isSelected = selectedDay === key;
+        const hasTimes = !!(reminderMap[key] && reminderMap[key].length > 0);
+        let bg = "transparent";
+        let color = "text-slate-900";
+        let fontWeight = "font-normal";
+        if (isPast)
+            color = "text-slate-400";
+        else if (isSelected) {
+            bg = "bg-blue-600";
+            color = "text-white";
+            fontWeight = "font-medium";
+        }
+        else if (hasTimes) {
+            bg = "bg-blue-50";
+            color = "text-blue-600";
+        }
+        else if (isToday) {
+            color = "text-blue-600";
+            fontWeight = "font-medium";
+        }
+        cells.push((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "relative flex items-center justify-center", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { type: "button", disabled: isPast, onClick: () => !isPast && onSelectDay(key), className: `w-full aspect-square flex items-center justify-center text-[11px] rounded-md transition-colors font-sans ${bg} ${color} ${fontWeight} ${isPast ? "cursor-not-allowed" : "cursor-pointer"}`, children: [d, isToday && !isSelected && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "w-0.5 h-0.5 rounded-full bg-blue-600 absolute bottom-0.5 left-1/2 -translate-x-1/2" }))] }) }, key));
+    }
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-white border border-slate-200 rounded-lg overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between p-1.5 border-b border-slate-200", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: () => changeMonth(-1), className: "w-5 h-5 border border-slate-200 rounded-md bg-transparent cursor-pointer flex items-center justify-center text-slate-400 text-xs hover:bg-slate-50", children: "\u2039" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "text-xs font-medium text-slate-950", children: [MONTHS[calMonth], " ", calYear] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: () => changeMonth(1), className: "w-5 h-5 border border-slate-200 rounded-md bg-transparent cursor-pointer flex items-center justify-center text-slate-400 text-xs hover:bg-slate-50", children: "\u203A" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-7 p-1.5 gap-0.5", children: [DAYS_SHORT.map((d) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "text-[9px] font-medium text-slate-400 text-center py-[2px] tracking-wide", children: d }, d))), cells] })] }));
+}
+// ─── Main Component ───────────────────────────────────────────────────────────
+function AcademicTaskCard({ onClose, onSuccess }) {
+    // Form state
+    const [title, setTitle] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
+    const [taskType, setTaskType] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("Grading");
+    const [customType, setCustomType] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
+    const [notes, setNotes] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
+    const [course, setCourse] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
+    const [dueDate, setDueDate] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
+    const [semester, setSemester] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("Spring 2025");
+    const [priority, setPriority] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("medium");
+    // Reminder state
+    const [reminderOn, setReminderOn] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
+    const [reminderMap, setReminderMap] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)({});
+    const [selectedDay, setSelectedDay] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
+    const [notifyEmail, setNotifyEmail] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(true);
+    const [notifyInApp, setNotifyInApp] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
+    // UI state
+    const [success, setSuccess] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
+    const [loading, setLoading] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
+    const isValid = title.trim() !== "" && dueDate !== "";
+    // ── Handlers ──
+    function handleSelectDay(key) {
+        setSelectedDay(key);
+        setReminderMap((prev) => { var _a; return (Object.assign(Object.assign({}, prev), { [key]: (_a = prev[key]) !== null && _a !== void 0 ? _a : [] })); });
+    }
+    function toggleTime(key, time) {
+        setReminderMap((prev) => {
+            var _a;
+            const existing = (_a = prev[key]) !== null && _a !== void 0 ? _a : [];
+            const updated = existing.includes(time)
+                ? existing.filter((t) => t !== time)
+                : [...existing, time];
+            return Object.assign(Object.assign({}, prev), { [key]: updated });
+        });
+    }
+    const handleSubmit = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)(() => __awaiter(this, void 0, void 0, function* () {
+        if (!isValid)
+            return;
+        setLoading(true);
+        const payload = {
+            title: title.trim(),
+            taskType,
+            customType: taskType === "Others" ? customType : undefined,
+            notes,
+            course,
+            dueDate,
+            semester,
+            priority,
+            reminderEnabled: reminderOn,
+            reminderMap,
+            notifyVia: { email: notifyEmail, inApp: notifyInApp },
+        };
+        try {
+            // Use real API call
+            yield _services_api__WEBPACK_IMPORTED_MODULE_2__.api.post("/api/tasks", {
+                title: payload.title,
+                description: payload.notes || `${payload.taskType} - ${payload.course}`,
+                projectId: "", // Academic tasks don't have project IDs
+                priority: payload.priority.charAt(0).toUpperCase() + payload.priority.slice(1),
+                status: "Todo",
+            });
+            onSuccess === null || onSuccess === void 0 ? void 0 : onSuccess(payload);
+            setSuccess(true);
+            setTimeout(() => { setSuccess(false); handleReset(); }, 2400);
+        }
+        catch (err) {
+            console.error("Failed to create task:", err);
+        }
+        finally {
+            setLoading(false);
+        }
+    }), [isValid, title, taskType, customType, notes, course, dueDate, semester, priority, reminderOn, reminderMap, notifyEmail, notifyInApp, onSuccess]);
+    function handleReset() {
+        setTitle("");
+        setTaskType("Grading");
+        setCustomType("");
+        setNotes("");
+        setCourse("");
+        setDueDate("");
+        setSemester("Spring 2025");
+        setPriority("medium");
+        setReminderOn(false);
+        setReminderMap({});
+        setSelectedDay(null);
+        setNotifyEmail(true);
+        setNotifyInApp(false);
+        setSuccess(false);
+    }
+    // ── Summary entries ──
+    const summaryEntries = Object.entries(reminderMap)
+        .filter(([, times]) => times.length > 0)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, times]) => {
+        const [y, m, d] = key.split("-");
+        const label = `${MONTHS[parseInt(m) - 1]} ${parseInt(d)}, ${y}`;
+        const sorted = [...times].sort((a, b) => toMinutes(a) - toMinutes(b));
+        return { label, times: sorted };
+    });
+    // ── Render ──
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "w-full max-w-2xl max-h-[92vh] rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col overflow-hidden mx-auto", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-8 pt-8 pb-5 border-b border-slate-200", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", { viewBox: "0 0 16 16", fill: "none", width: 16, height: 16, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("rect", { x: "2", y: "3", width: "12", height: "10", rx: "1.5", stroke: "#185FA5", strokeWidth: "1.2" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", { d: "M5 7h6M5 9.5h4", stroke: "#185FA5", strokeWidth: "1.2", strokeLinecap: "round" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", { d: "M8 1v3", stroke: "#185FA5", strokeWidth: "1.2", strokeLinecap: "round" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h2", { className: "text-2xl font-semibold text-slate-950", children: "New academic task" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-slate-500 mt-1", children: "Create and schedule your task" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: () => { handleReset(); onClose === null || onClose === void 0 ? void 0 : onClose(); }, className: "w-7 h-7 rounded-lg border border-slate-300 bg-white cursor-pointer flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors", children: "\u2715" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-8 py-5 space-y-5 overflow-y-auto overscroll-contain", children: [success && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700 font-medium flex items-center gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "w-4 h-4 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("svg", { viewBox: "0 0 10 10", fill: "none", width: 10, height: 10, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("polyline", { points: "2,5 4,7.5 8,3", stroke: "#fff", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }) }) }), "Task created successfully!"] })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Field, { label: "Task title", required: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "text", value: title, onChange: (e) => setTitle(e.target.value), placeholder: "e.g. Grade midterm submissions for CS301", className: "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-100" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(Field, { label: "Task type", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex flex-wrap gap-1.5", children: TASK_TYPES.map((t) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: () => setTaskType(t), className: `px-3 py-1.5 rounded-full text-xs font-medium transition-colors border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 ${taskType === t
+                                        ? t === "Others"
+                                            ? "bg-purple-50 border-purple-300 text-purple-700"
+                                            : "bg-blue-50 border-blue-300 text-blue-700"
+                                        : ""}`, children: t }, t))) }), taskType === "Others" && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "text", value: customType, onChange: (e) => setCustomType(e.target.value), placeholder: "Describe task type...", className: "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-100 mt-2" }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Field, { label: "Notes", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("textarea", { value: notes, onChange: (e) => setNotes(e.target.value), placeholder: "Add context, rubric links, or specific instructions...", className: "w-full resize-none rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-100", rows: 3 }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Divider, {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(SectionLabel, { children: "Assign to" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Field, { label: "Course", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("select", { value: course, onChange: (e) => setCourse(e.target.value), className: "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-100 appearance-none pr-10", children: COURSES.map((c) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: c === "No course / general" ? "" : c, children: c }, c))) }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Field, { label: "Assignee", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", className: "inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 rounded-full text-xs font-medium text-slate-700 bg-white w-fit hover:bg-slate-50 cursor-pointer transition-colors", onClick: () => console.log('Assignee clicked'), children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-medium flex-shrink-0 text-slate-700", children: "You" }) }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "grid grid-cols-2 gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Field, { label: "Due date", required: true, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "date", value: dueDate, onChange: (e) => setDueDate(e.target.value), className: "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-100" }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Field, { label: "Semester", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("select", { value: semester, onChange: (e) => setSemester(e.target.value), className: "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-100 appearance-none pr-10", children: SEMESTERS.map((s) => (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { children: s }, s)) }) })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Field, { label: "Priority", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex gap-1.5", children: ["low", "medium", "high"].map((p) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { type: "button", onClick: () => setPriority(p), className: `flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1 ${priority === p
+                                    ? p === "low"
+                                        ? "bg-green-50 border-green-300 text-green-700"
+                                        : p === "medium"
+                                            ? "bg-yellow-50 border-yellow-300 text-yellow-700"
+                                            : "bg-red-50 border-red-300 text-red-700"
+                                    : ""}`, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `w-1.5 h-1.5 rounded-full flex-shrink-0 ${priority === p
+                                            ? p === "low"
+                                                ? "bg-green-600"
+                                                : p === "medium"
+                                                    ? "bg-yellow-600"
+                                                    : "bg-red-600"
+                                            : "bg-slate-400"}` }), p.charAt(0).toUpperCase() + p.slice(1)] }, p))) }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Divider, {}), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(SectionLabel, { children: "Reminder" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "bg-slate-50 border border-slate-200 rounded-lg overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between p-3 cursor-pointer select-none", onClick: () => setReminderOn((v) => !v), role: "button", tabIndex: 0, onKeyDown: (e) => e.key === "Enter" && setReminderOn((v) => !v), children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center gap-2 text-sm font-medium text-slate-950", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(BellIcon, {}), "Set reminders"] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(ToggleSwitch, { on: reminderOn, onClick: () => setReminderOn((v) => !v) })] }), reminderOn && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "p-2.5 border-t border-slate-200 flex flex-col gap-2.5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Field, { label: "Notify via", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex gap-1.5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(ViaButton, { active: notifyEmail, onClick: () => setNotifyEmail((v) => !v), icon: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", { viewBox: "0 0 14 14", fill: "none", width: 12, height: 12, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("rect", { x: "1", y: "3", width: "12", height: "8", rx: "1", stroke: "currentColor", strokeWidth: "1.1" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", { d: "M1 4l6 4 6-4", stroke: "currentColor", strokeWidth: "1.1" })] }), label: "Email" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(ViaButton, { active: notifyInApp, onClick: () => setNotifyInApp((v) => !v), icon: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("svg", { viewBox: "0 0 14 14", fill: "none", width: 12, height: 12, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", { d: "M2 11V4a1 1 0 011-1h8a1 1 0 011 1v5a1 1 0 01-1 1H5l-3 1z", stroke: "currentColor", strokeWidth: "1.1", strokeLinejoin: "round" }) }), label: "In-app" })] }) }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(Field, { label: "Select reminder days & times", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Calendar, { reminderMap: reminderMap, selectedDay: selectedDay, onSelectDay: handleSelectDay }), selectedDay && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "border-t border-slate-200 p-2 flex flex-col gap-1.5 mt-0", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-xs font-medium text-slate-400", children: "Time periods for" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-xs font-medium text-blue-600", children: (() => {
+                                                                    const [y, m, d] = selectedDay.split("-");
+                                                                    return `${MONTHS[parseInt(m) - 1]} ${parseInt(d)}`;
+                                                                })() })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex flex-wrap gap-1", children: TIME_SLOTS.map((t) => {
+                                                            const active = !!(reminderMap[selectedDay] && reminderMap[selectedDay].includes(t));
+                                                            return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: () => toggleTime(selectedDay, t), className: `px-2 py-1 rounded-full text-[10px] font-medium transition-colors font-sans whitespace-nowrap ${active
+                                                                    ? "border border-blue-300 bg-blue-50 text-blue-600"
+                                                                    : "border border-slate-300 bg-transparent text-slate-400 hover:bg-slate-50"}`, children: t }, t));
+                                                        }) })] }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Field, { label: "Scheduled reminders", children: summaryEntries.length === 0 ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-xs text-slate-400 italic", children: "No reminders set yet \u2014 select days above" })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex flex-col gap-1", children: summaryEntries.map(({ label, times }) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-start gap-1.5 text-xs text-slate-400 py-[3px]", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "w-1.5 h-1.5 rounded-full bg-blue-600 flex-shrink-0 mt-1" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "font-medium text-slate-900", children: label }), " — ", times.join(", ")] })] }, label))) })) })] }))] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-8 py-4 border-t border-slate-200 bg-white flex items-center justify-between gap-2.5", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: () => { handleReset(); onClose === null || onClose === void 0 ? void 0 : onClose(); }, className: "px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 font-sans cursor-pointer", children: "Cancel" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: handleSubmit, disabled: !isValid || loading, className: `px-5 py-2 rounded-lg border-0 text-sm font-medium text-white font-sans transition-opacity ${!isValid || loading ? "opacity-35 cursor-not-allowed" : "opacity-100 cursor-pointer"} bg-blue-600 hover:bg-blue-700`, children: loading ? "Creating..." : "Assign task" })] })] }));
+}
+// ─── Helper components ────────────────────────────────────────────────────────
+function Field({ label, required, children }) {
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("label", { className: "text-sm font-medium text-slate-950 flex items-center gap-1", children: [label, required && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "text-red-500", children: "*" })] }), children] }));
+}
+function Divider() {
+    return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "h-px bg-slate-200 my-1" });
+}
+function SectionLabel({ children }) {
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "text-xs font-medium text-slate-400 uppercase tracking-wide mb-0.5", children: children }));
+}
+function ViaButton({ active, onClick, icon, label }) {
+    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { type: "button", onClick: onClick, className: `flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${active
+            ? "bg-blue-50 border-blue-300 text-blue-700"
+            : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"} border`, children: [icon, label] }));
+}
+
+
+/***/ },
+
 /***/ "./ReactApp/Components/AuthFooter.tsx"
 /*!********************************************!*\
   !*** ./ReactApp/Components/AuthFooter.tsx ***!
@@ -776,151 +1053,6 @@ function TableView({ visibleTasks }) {
 
 /***/ },
 
-/***/ "./ReactApp/Components/NewTaskCard.tsx"
-/*!*********************************************!*\
-  !*** ./ReactApp/Components/NewTaskCard.tsx ***!
-  \*********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ NewTaskCard)
-/* harmony export */ });
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/calendar-days.js");
-/* harmony import */ var lucide_react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lucide-react */ "./node_modules/lucide-react/dist/esm/icons/chevron-down.js");
-
-
-
-function validateForm(client, service, dueDate) {
-    const errors = {};
-    if (!client) {
-        errors.client = "Client is required";
-    }
-    if (!service) {
-        errors.service = "Service is required";
-    }
-    if (!dueDate) {
-        errors.dueDate = "Due date is required";
-    }
-    return errors;
-}
-// ── Static data ──────────────────────────────────────────────────────────
-const clients = ["Acme Corp", "Northwind", "Fabrikam", "Globex"];
-const services = ["Bookkeeping", "Tax Filing", "Payroll", "Advisory"];
-const users = ["Sarah Chen", "Mike Johnson", "Alex Kim", "Demo User"];
-const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-];
-// ── Shared styles ────────────────────────────────────────────────────────
-const inputBase = "w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
-const inputNormal = `${inputBase} border-slate-300`;
-const inputError = `${inputBase} border-red-500 ring-1 ring-red-500 focus:border-red-500 focus:ring-red-100`;
-// ── Sub-components ───────────────────────────────────────────────────────
-function FieldLabel({ label, required = false }) {
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("label", { className: "text-sm font-medium text-slate-950", children: [label, required && (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: "ml-1 text-red-500", children: "*" })] }));
-}
-function FieldError({ message }) {
-    if (!message)
-        return null;
-    return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-xs text-red-600 mt-1", children: message });
-}
-function Toggle({ checked, onToggle, disabled, label }) {
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: onToggle, disabled: disabled, className: `relative inline-flex h-[18px] w-8 items-center rounded-full border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${checked ? "bg-blue-600 border-blue-600" : "bg-slate-300 border-slate-300"}`, "aria-pressed": checked, "aria-label": label, children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("span", { className: `inline-block h-4 w-4 rounded-full bg-white transition-transform ${checked ? "translate-x-[14px]" : "translate-x-[1px]"}` }) }));
-}
-// ── Main component ───────────────────────────────────────────────────────
-function NewTaskCard({ onCancel, onCreate }) {
-    const [taskPeriod, setTaskPeriod] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("month");
-    const [selectedClient, setSelectedClient] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
-    const [selectedService, setSelectedService] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
-    const [selectedMonth, setSelectedMonth] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
-    const [dueDate, setDueDate] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
-    const [targetDate, setTargetDate] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
-    const [assignedUser, setAssignedUser] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
-    const [description, setDescription] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
-    const [useClientSettings, setUseClientSettings] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
-    const [isBillable, setIsBillable] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
-    const [createDocumentRequest, setCreateDocumentRequest] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
-    const [tagInput, setTagInput] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("");
-    const [tags, setTags] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
-    const [fieldErrors, setFieldErrors] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)({});
-    const [isSubmitting, setIsSubmitting] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
-    const thisYear = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => new Date().getFullYear(), []);
-    const [selectedYear, setSelectedYear] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(thisYear);
-    const addTag = () => {
-        const nextTag = tagInput.trim();
-        if (!nextTag || tags.includes(nextTag)) {
-            return;
-        }
-        setTags((prev) => [...prev, nextTag]);
-        setTagInput("");
-    };
-    const removeTag = (tagToRemove) => {
-        setTags((prev) => prev.filter((t) => t !== tagToRemove));
-    };
-    const handleCreate = () => {
-        // Validate required fields
-        const errors = validateForm(selectedClient, selectedService, dueDate);
-        setFieldErrors(errors);
-        if (Object.keys(errors).length > 0)
-            return;
-        setIsSubmitting(true);
-        const taskData = {
-            client: selectedClient,
-            service: selectedService,
-            taskPeriod,
-            selectedMonth,
-            selectedYear,
-            dueDate,
-            targetDate,
-            assignedUser,
-            description: description.trim(),
-            tags,
-            useClientSettings,
-            isBillable,
-            createDocumentRequest,
-        };
-        onCreate(taskData);
-    };
-    // Helper to clear a specific field error when the user interacts
-    const clearFieldError = (field) => {
-        if (fieldErrors[field]) {
-            setFieldErrors((prev) => (Object.assign(Object.assign({}, prev), { [field]: undefined })));
-        }
-    };
-    return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "w-full max-w-3xl max-h-[92vh] rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col overflow-hidden", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-8 pt-8 pb-5 border-b border-slate-200", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("h2", { className: "text-2xl font-semibold text-slate-950", children: "Create New Task" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-slate-500 mt-1", children: "Fill in the details to create a task for your team" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-8 py-5 space-y-5 overflow-y-auto overscroll-contain", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldLabel, { label: "Client", required: true }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("select", { value: selectedClient, onChange: (event) => {
-                                            setSelectedClient(event.target.value);
-                                            clearFieldError("client");
-                                        }, className: `${fieldErrors.client ? inputError : inputNormal} appearance-none pr-10 text-[15px]`, disabled: isSubmitting, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: "", children: "Select clients..." }), clients.map((client) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: client, children: client }, client)))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldError, { message: fieldErrors.client })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldLabel, { label: "Service", required: true }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("select", { value: selectedService, onChange: (event) => {
-                                            setSelectedService(event.target.value);
-                                            clearFieldError("service");
-                                        }, className: `${fieldErrors.service ? inputError : inputNormal} appearance-none pr-10 text-[15px]`, disabled: isSubmitting, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: "", children: "Select service..." }), services.map((service) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: service, children: service }, service)))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldError, { message: fieldErrors.service })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldLabel, { label: "Task Period", required: true }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: () => setTaskPeriod("month"), disabled: isSubmitting, className: `min-w-24 rounded-md px-5 py-1.5 text-sm font-medium transition-colors ${taskPeriod === "month" ? "bg-slate-200 text-slate-950" : "text-slate-700"}`, children: "Month" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: () => setTaskPeriod("year"), disabled: isSubmitting, className: `min-w-24 rounded-md px-5 py-1.5 text-sm font-medium transition-colors ${taskPeriod === "year" ? "bg-slate-200 text-slate-950" : "text-slate-700"}`, children: "Year" })] })] }), taskPeriod === "month" ? ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldLabel, { label: "Select Month" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("select", { value: selectedMonth, onChange: (event) => setSelectedMonth(event.target.value), className: `${inputNormal} appearance-none pr-10 text-[15px]`, disabled: isSubmitting, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: "", children: "Pick a month..." }), months.map((month) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: month, children: month }, month)))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" })] })] })) : ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldLabel, { label: "Select Year" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "number", min: thisYear, value: selectedYear, onChange: (event) => setSelectedYear(Number(event.target.value)), className: inputNormal, disabled: isSubmitting })] })), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldLabel, { label: "Due Date", required: true }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "date", value: dueDate, onChange: (event) => {
-                                    setDueDate(event.target.value);
-                                    clearFieldError("dueDate");
-                                }, className: fieldErrors.dueDate ? inputError : inputNormal, disabled: isSubmitting }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldError, { message: fieldErrors.dueDate })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldLabel, { label: "Target Date" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { type: "date", value: targetDate, onChange: (event) => setTargetDate(event.target.value), className: inputNormal, disabled: isSubmitting })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("hr", { className: "border-slate-200" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between gap-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-base font-medium text-slate-950", children: "Use Client-Specific Settings" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-slate-500", children: "Automatically apply settings from client master" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Toggle, { checked: useClientSettings, onToggle: () => setUseClientSettings((prev) => !prev), disabled: isSubmitting, label: "Use client-specific settings" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("hr", { className: "border-slate-200" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldLabel, { label: "Assign Users" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "relative", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("select", { value: assignedUser, onChange: (event) => setAssignedUser(event.target.value), className: `${inputNormal} appearance-none pr-10 text-[15px]`, disabled: isSubmitting, children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: "", children: "Select users..." }), users.map((user) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("option", { value: user, children: user }, user)))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between gap-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-base font-medium text-slate-950", children: "Is this task billable?" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-slate-500", children: "Enable if this task should be charged to the client" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Toggle, { checked: isBillable, onToggle: () => setIsBillable((prev) => !prev), disabled: isSubmitting, label: "Is this task billable" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("hr", { className: "border-slate-200" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldLabel, { label: "Tags" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex gap-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("input", { value: tagInput, onChange: (event) => setTagInput(event.target.value), onKeyDown: (event) => {
-                                            if (event.key === "Enter") {
-                                                event.preventDefault();
-                                                addTag();
-                                            }
-                                        }, className: "w-full rounded-lg border border-transparent bg-slate-100 px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-slate-300", placeholder: "Add a tag...", disabled: isSubmitting }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: addTag, disabled: isSubmitting, className: "rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-950 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed", children: "Add" })] }), tags.length > 0 && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "flex flex-wrap gap-2 pt-1", children: tags.map((tag) => ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("span", { className: "inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700", children: [tag, (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: () => removeTag(tag), disabled: isSubmitting, className: "ml-0.5 text-blue-400 hover:text-blue-700 disabled:opacity-50", "aria-label": `Remove tag ${tag}`, children: "\u00D7" })] }, tag))) }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("hr", { className: "border-slate-200" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "flex items-center justify-between gap-4", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-base font-medium text-slate-950", children: "Create Document Request" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("p", { className: "text-sm text-slate-500", children: "Request documents from the client for this task" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(Toggle, { checked: createDocumentRequest, onToggle: () => setCreateDocumentRequest((prev) => !prev), disabled: isSubmitting, label: "Create document request" })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("hr", { className: "border-slate-200" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "space-y-2", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(FieldLabel, { label: "Description" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("textarea", { value: description, onChange: (event) => setDescription(event.target.value), rows: 3, className: "w-full resize-none rounded-lg border border-transparent bg-slate-100 px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-slate-300", placeholder: "Add task notes or instructions...", disabled: isSubmitting })] })] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("div", { className: "px-8 py-4 border-t border-slate-200 bg-white flex justify-end gap-3", children: [(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { type: "button", onClick: onCancel, disabled: isSubmitting, className: "rounded-lg border border-slate-300 bg-white px-6 py-2 text-sm font-medium text-slate-950 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed", children: "Cancel" }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("button", { type: "button", onClick: handleCreate, disabled: isSubmitting, className: "rounded-lg bg-slate-950 px-6 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2", children: [isSubmitting ? "Creating..." : "Create Task", isSubmitting && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" }))] })] })] }));
-}
-
-
-/***/ },
-
 /***/ "./ReactApp/Components/PageState.tsx"
 /*!*******************************************!*\
   !*** ./ReactApp/Components/PageState.tsx ***!
@@ -1032,7 +1164,7 @@ function Sidebar() {
         { icon: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_3__["default"], { className: "size-5 shrink-0" }), label: "My Tasks", path: "/my-work" },
         { icon: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_7__["default"], { className: "size-5 shrink-0" }), label: "Messages", path: "/message" },
         { icon: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_1__["default"], { className: "size-5 shrink-0" }), label: "Notifications", path: "/notifications" },
-        { icon: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_9__["default"], { className: "size-5 shrink-0" }), label: "Users", path: "/teams" },
+        { icon: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_9__["default"], { className: "size-5 shrink-0" }), label: "Teams", path: "/teams" },
         { icon: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_8__["default"], { className: "size-5 shrink-0" }), label: "Settings", path: "/settings" },
         { icon: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_2__["default"], { className: "size-5 shrink-0" }), label: "Chatbot", path: "/plans" },
     ];
@@ -1258,6 +1390,20 @@ function AuthProvider({ children }) {
     const clearError = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)(() => {
         setError(null);
     }, []);
+    const refreshUser = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)(() => __awaiter(this, void 0, void 0, function* () {
+        try {
+            const userData = yield _services_api__WEBPACK_IMPORTED_MODULE_2__.api.get("/api/auth/me");
+            setUser(userData);
+        }
+        catch (err) {
+            console.error("Failed to refresh user data:", err);
+            // Don't clear token on refresh failure, just log the error
+        }
+    }), []);
+    const updateUser = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)((updatedUser, newToken) => {
+        (0,_services_api__WEBPACK_IMPORTED_MODULE_2__.setAuthToken)(newToken);
+        setUser(updatedUser);
+    }, []);
     const value = {
         user,
         isAuthenticated: user !== null,
@@ -1267,6 +1413,8 @@ function AuthProvider({ children }) {
         logout,
         error,
         clearError,
+        refreshUser,
+        updateUser,
     };
     return (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(AuthContext.Provider, { value: value, children: children });
 }
@@ -2012,13 +2160,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   useSettings: () => (/* binding */ useSettings)
 /* harmony export */ });
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _context_AuthContext__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../context/AuthContext */ "./ReactApp/context/AuthContext.tsx");
 /* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/api */ "./ReactApp/services/api.ts");
 // ── useSettings Hook ───────────────────────────────────────────────────────
 //
-// Custom hook for fetching and managing user settings.
-// Provides loading, error, data, and refetch states.
+// Custom hook that wraps AuthContext for settings operations.
+// Uses AuthContext as single source of truth for user data.
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -2031,42 +2178,11 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 const useSettings = () => {
-    const [profile, setProfile] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
-    const [isLoading, setIsLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
-    const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
-    const fetchData = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
-        let cancelled = false;
-        setIsLoading(true);
-        setError(null);
+    const { user, updateUser, refreshUser } = (0,_context_AuthContext__WEBPACK_IMPORTED_MODULE_0__.useAuth)();
+    const updateProfile = (data) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const data = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.get("/api/settings/profile");
-            if (!cancelled) {
-                setProfile(data);
-            }
-        }
-        catch (err) {
-            if (!cancelled) {
-                const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
-                    ? err.message
-                    : err instanceof Error
-                        ? err.message
-                        : "Failed to load profile";
-                setError(message);
-            }
-        }
-        finally {
-            if (!cancelled) {
-                setIsLoading(false);
-            }
-        }
-        return () => {
-            cancelled = true;
-        };
-    }), []);
-    const updateProfile = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((data) => __awaiter(void 0, void 0, void 0, function* () {
-        try {
-            const updatedProfile = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.put("/settings/profile", data);
-            setProfile(updatedProfile);
+            const response = yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.put("/api/settings/profile", data);
+            updateUser(response.user, response.token);
         }
         catch (err) {
             const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
@@ -2074,13 +2190,12 @@ const useSettings = () => {
                 : err instanceof Error
                     ? err.message
                     : "Failed to update profile";
-            setError(message);
-            throw err;
+            throw new Error(message);
         }
-    }), []);
-    const changePassword = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((data) => __awaiter(void 0, void 0, void 0, function* () {
+    });
+    const changePassword = (data) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.put("/settings/password", data);
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.put("/api/settings/password", data);
         }
         catch (err) {
             const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
@@ -2088,13 +2203,12 @@ const useSettings = () => {
                 : err instanceof Error
                     ? err.message
                     : "Failed to change password";
-            setError(message);
-            throw err;
+            throw new Error(message);
         }
-    }), []);
-    const deleteAccount = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => __awaiter(void 0, void 0, void 0, function* () {
+    });
+    const deleteAccount = () => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.delete("/settings/account");
+            yield _services_api__WEBPACK_IMPORTED_MODULE_1__.api.delete("/api/settings/account");
         }
         catch (err) {
             const message = err instanceof _services_api__WEBPACK_IMPORTED_MODULE_1__.ApiRequestError
@@ -2102,18 +2216,14 @@ const useSettings = () => {
                 : err instanceof Error
                     ? err.message
                     : "Failed to delete account";
-            setError(message);
-            throw err;
+            throw new Error(message);
         }
-    }), []);
-    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-        fetchData();
-    }, [fetchData]);
+    });
     return {
-        profile,
-        isLoading,
-        error,
-        refetch: fetchData,
+        profile: user,
+        isLoading: false,
+        error: null,
+        refetch: refreshUser,
         updateProfile,
         changePassword,
         deleteAccount,
@@ -3214,7 +3324,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Components_Sidebar__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../Components/Sidebar */ "./ReactApp/Components/Sidebar.tsx");
 /* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
 /* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
-/* harmony import */ var _Components_NewTaskCard__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../Components/NewTaskCard */ "./ReactApp/Components/NewTaskCard.tsx");
+/* harmony import */ var _Components_AcademicTaskCard__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../Components/AcademicTaskCard */ "./ReactApp/Components/AcademicTaskCard.tsx");
 /* harmony import */ var _Components_PageState__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../Components/PageState */ "./ReactApp/Components/PageState.tsx");
 /* harmony import */ var _hooks_useTasks__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../hooks/useTasks */ "./ReactApp/hooks/useTasks.ts");
 /* harmony import */ var _Components_MyWork_DefaultView__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../Components/MyWork/DefaultView */ "./ReactApp/Components/MyWork/DefaultView.tsx");
@@ -3315,10 +3425,10 @@ function MyWork() {
     const handleCreateTask = (data) => __awaiter(this, void 0, void 0, function* () {
         try {
             yield createTask({
-                title: data.service,
-                description: data.description,
-                projectId: "", // NewTaskData doesn't have projectId, using empty string
-                priority: "Medium", // NewTaskData doesn't have priority, using default
+                title: data.title,
+                description: data.notes || `${data.taskType} - ${data.course}`,
+                projectId: "", // Academic tasks don't have project IDs
+                priority: data.priority.charAt(0).toUpperCase() + data.priority.slice(1),
                 status: "Todo",
             });
             setShowNewTaskCard(false);
@@ -3436,7 +3546,7 @@ function MyWork() {
                                                                 return ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { onClick: () => setPriorityFilter(p), className: `px-3 py-1.5 rounded-lg text-sm border transition-colors ${active
                                                                         ? colorMap[p]
                                                                         : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"}`, children: p.charAt(0).toUpperCase() + p.slice(1) }, p));
-                                                            }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50", "aria-label": "More filters", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-4" }) })] })] }), renderView()] }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_6__["default"], {})] })] }), showNewTaskCard && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { role: "dialog", "aria-modal": "true", "aria-label": "Create new task", className: "fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-900/30 backdrop-blur-sm px-4", onClick: () => setShowNewTaskCard(false), children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "w-full max-w-3xl", onClick: (e) => e.stopPropagation(), children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_NewTaskCard__WEBPACK_IMPORTED_MODULE_8__["default"], { onCancel: () => setShowNewTaskCard(false), onCreate: handleCreateTask }) }) }))] }));
+                                                            }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("button", { className: "p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50", "aria-label": "More filters", children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(lucide_react__WEBPACK_IMPORTED_MODULE_4__["default"], { className: "size-4" }) })] })] }), renderView()] }))] }), (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_Footer__WEBPACK_IMPORTED_MODULE_6__["default"], {})] })] }), showNewTaskCard && ((0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { role: "dialog", "aria-modal": "true", "aria-label": "Create new task", className: "fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-900/30 backdrop-blur-sm px-4", onClick: () => setShowNewTaskCard(false), children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("div", { className: "w-full max-w-2xl", onClick: (e) => e.stopPropagation(), children: (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(_Components_AcademicTaskCard__WEBPACK_IMPORTED_MODULE_8__["default"], { onClose: () => setShowNewTaskCard(false), onSuccess: handleCreateTask }) }) }))] }));
 }
 
 
@@ -3827,6 +3937,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Components_Header__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../Components/Header */ "./ReactApp/Components/Header.tsx");
 /* harmony import */ var _Components_Footer__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ../Components/Footer */ "./ReactApp/Components/Footer.tsx");
 /* harmony import */ var _hooks_useSettings__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ../hooks/useSettings */ "./ReactApp/hooks/useSettings.ts");
+/* harmony import */ var _context_AuthContext__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! ../context/AuthContext */ "./ReactApp/context/AuthContext.tsx");
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -3836,6 +3947,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+
 
 
 
@@ -3867,29 +3979,32 @@ const NAV_ITEMS = [
    Main component
 ═══════════════════════════════════════════════ */
 function Settings() {
-    var _a, _b;
+    const { refreshUser } = (0,_context_AuthContext__WEBPACK_IMPORTED_MODULE_21__.useAuth)();
+    const { profile, isLoading, error, updateProfile } = (0,_hooks_useSettings__WEBPACK_IMPORTED_MODULE_20__.useSettings)();
+    // Refresh user data on mount
+    (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
+        refreshUser();
+    }, [refreshUser]);
     const [activeSection, setActiveSection] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("profile");
-    const { profile, isLoading, error, refetch, updateProfile } = (0,_hooks_useSettings__WEBPACK_IMPORTED_MODULE_20__.useSettings)();
     // Convert backend profile to form state
     const [profileForm, setProfileForm] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)({
-        firstName: ((_a = profile === null || profile === void 0 ? void 0 : profile.fullName) === null || _a === void 0 ? void 0 : _a.split(' ')[0]) || "",
-        lastName: ((_b = profile === null || profile === void 0 ? void 0 : profile.fullName) === null || _b === void 0 ? void 0 : _b.split(' ')[1]) || "",
+        firstName: (profile === null || profile === void 0 ? void 0 : profile.firstName) || "",
+        lastName: (profile === null || profile === void 0 ? void 0 : profile.lastName) || "",
         email: (profile === null || profile === void 0 ? void 0 : profile.email) || "",
-        company: "",
-        country: "",
+        company: (profile === null || profile === void 0 ? void 0 : profile.company) || "",
+        country: (profile === null || profile === void 0 ? void 0 : profile.country) || "",
         phone: (profile === null || profile === void 0 ? void 0 : profile.phone) || "",
         timezone: (profile === null || profile === void 0 ? void 0 : profile.timezone) || "UTC",
     });
     // Update form when profile changes
     (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
-        var _a, _b;
         if (profile) {
             setProfileForm({
-                firstName: ((_a = profile.fullName) === null || _a === void 0 ? void 0 : _a.split(' ')[0]) || "",
-                lastName: ((_b = profile.fullName) === null || _b === void 0 ? void 0 : _b.split(' ')[1]) || "",
+                firstName: profile.firstName || "",
+                lastName: profile.lastName || "",
                 email: profile.email,
-                company: "",
-                country: "",
+                company: profile.company || "",
+                country: profile.country || "",
                 phone: profile.phone || "",
                 timezone: profile.timezone || "UTC",
             });
@@ -3898,7 +4013,9 @@ function Settings() {
     const handleSaveProfile = () => __awaiter(this, void 0, void 0, function* () {
         try {
             yield updateProfile({
-                fullName: `${profileForm.firstName} ${profileForm.lastName}`,
+                firstName: profileForm.firstName,
+                lastName: profileForm.lastName,
+                email: profileForm.email,
                 avatarUrl: profile === null || profile === void 0 ? void 0 : profile.avatarUrl,
                 company: profileForm.company,
                 country: profileForm.country,
@@ -4090,6 +4207,11 @@ function Signup() {
                 lastName: formData.lastName.trim(),
                 email: formData.email.trim(),
                 password: formData.password,
+                confirmPassword: formData.confirmPassword,
+                company: formData.company.trim() || undefined,
+                country: formData.country.trim() || undefined,
+                phone: formData.phone.trim() || undefined,
+                timezone: formData.timezone.trim() || undefined,
             });
             navigate("/", { replace: true });
         }

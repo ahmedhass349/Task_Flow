@@ -40,7 +40,12 @@ namespace taskflow.Services
             if (!validPassword)
                 throw new UnauthorizedAccessException("Invalid email or password.");
 
-            var token = _jwtHelper.GenerateToken(user.Id, user.Email, user.FullName ?? string.Empty);
+            // Update last login timestamp
+            user.LastLoginAt = DateTime.UtcNow;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+
+            var token = _jwtHelper.GenerateToken(user);
             var userDto = _mapper.Map<UserDto>(user);
 
             return new AuthResponse
@@ -78,7 +83,7 @@ namespace taskflow.Services
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            var token = _jwtHelper.GenerateToken(user.Id, user.Email, user.FullName ?? string.Empty);
+            var token = _jwtHelper.GenerateToken(user);
             var userDto = _mapper.Map<UserDto>(user);
 
             return new AuthResponse

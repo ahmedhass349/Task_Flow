@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using taskflow.Data.Entities;
 
 namespace taskflow.Helpers
 {
@@ -16,7 +17,7 @@ namespace taskflow.Helpers
             _configuration = configuration;
         }
 
-        public string GenerateToken(int userId, string email, string fullName)
+        public string GenerateToken(AppUser user)
         {
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
@@ -25,9 +26,17 @@ namespace taskflow.Helpers
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.Email, email),
-                new Claim(ClaimTypes.Name, fullName)
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.GivenName, user.FirstName),
+                new Claim(ClaimTypes.Surname, user.LastName),
+                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim("avatarUrl", user.AvatarUrl ?? ""),
+                new Claim("company", user.Company ?? ""),
+                new Claim("country", user.Country ?? ""),
+                new Claim("phone", user.Phone ?? ""),
+                new Claim("timezone", user.Timezone ?? ""),
+                new Claim("createdAt", user.CreatedAt.ToString("O"))
             };
 
             var expiresInMinutes = int.TryParse(

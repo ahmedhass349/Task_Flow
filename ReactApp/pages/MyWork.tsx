@@ -16,7 +16,7 @@ import { Search, SlidersHorizontal, ClipboardList } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Footer from "../Components/Footer";
 import Header from "../Components/Header";
-import NewTaskCard, { type NewTaskData } from "../Components/NewTaskCard";
+import AcademicTaskCard, { type TaskPayload } from "../Components/AcademicTaskCard";
 import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
 import { useTasks } from "../hooks/useTasks";
 
@@ -89,13 +89,13 @@ export default function MyWork() {
     refetch();
   };
 
-  const handleCreateTask = async (data: NewTaskData) => {
+  const handleCreateTask = async (data: TaskPayload) => {
     try {
       await createTask({
-        title: data.service,
-        description: data.description,
-        projectId: "", // NewTaskData doesn't have projectId, using empty string
-        priority: "Medium", // NewTaskData doesn't have priority, using default
+        title: data.title,
+        description: data.notes || `${data.taskType} - ${data.course}`,
+        projectId: "", // Academic tasks don't have project IDs
+        priority: data.priority.charAt(0).toUpperCase() + data.priority.slice(1) as "Low" | "Medium" | "High",
         status: "Todo",
       });
       setShowNewTaskCard(false);
@@ -365,12 +365,12 @@ export default function MyWork() {
           onClick={() => setShowNewTaskCard(false)}
         >
           <div
-            className="w-full max-w-3xl"
+            className="w-full max-w-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <NewTaskCard
-              onCancel={() => setShowNewTaskCard(false)}
-              onCreate={handleCreateTask}
+            <AcademicTaskCard
+              onClose={() => setShowNewTaskCard(false)}
+              onSuccess={handleCreateTask}
             />
           </div>
         </div>
