@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using System;
 
 namespace taskflow
 {
@@ -7,7 +10,15 @@ namespace taskflow
     {
         public static void Main(string[] args)
         {
-            BuildWebHost(args).Run();
+            try
+            {
+                BuildWebHost(args).Run();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "=== UNHANDLED EXCEPTION: {Message}", ex.Message);
+                throw;
+            }
         }
 
         public static IWebHost BuildWebHost(string[] args) =>

@@ -80,7 +80,7 @@ const headerCellClass = "text-sm font-semibold text-gray-400";
 const cellClass = "text-sm";
 
 export default function TableView({ visibleTasks }: TableViewProps) {
-  const [expandedRowId, setExpandedRowId] = useState<string | null>("t-001");
+  const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -106,7 +106,7 @@ export default function TableView({ visibleTasks }: TableViewProps) {
       {/* Rows */}
       {visibleTasks.map((task, idx) => {
         const isExpanded = expandedRowId === task.id;
-        const hasChildren = !!SUB_TASKS[task.id];
+        const hasChildren = !!SUB_TASKS[task.id.toString()];
         const isLast = idx === visibleTasks.length - 1;
 
         return (
@@ -177,7 +177,7 @@ export default function TableView({ visibleTasks }: TableViewProps) {
                 </div>
 
                 {/* Sub-rows */}
-                {SUB_TASKS[task.id].map((sub) => (
+                {SUB_TASKS[task.id.toString()].map((sub) => (
                   <div
                     key={sub.id}
                     className="grid items-center gap-2 px-5 py-2.5 bg-white"

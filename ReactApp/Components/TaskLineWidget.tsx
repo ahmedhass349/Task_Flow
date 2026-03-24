@@ -23,9 +23,10 @@ interface TaskLineWidgetProps {
   year: number;
   month: number;
   selectedDay: number;
+  tasks?: any[];
 }
 
-export default function TaskLineWidget({ year, month, selectedDay }: TaskLineWidgetProps) {
+export default function TaskLineWidget({ year, month, selectedDay, tasks = [] }: TaskLineWidgetProps) {
   const dateLabel = `${selectedDay} ${MONTH_NAMES[month]} ${year}`;
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -109,6 +110,43 @@ export default function TaskLineWidget({ year, month, selectedDay }: TaskLineWid
               <div className="flex-1 border-t-[1.5px] border-solid border-[#60B8FF]" />
             </div>
           )}
+
+          {/* Tasks for the selected day */}
+          {tasks.filter(t => {
+            if (!t.dueDate) return false;
+            const d = new Date(t.dueDate);
+            return d.getFullYear() === year && d.getMonth() === month && d.getDate() === selectedDay;
+          }).map(t => {
+            const d = new Date(t.dueDate);
+            const startY = timeToY(d.getHours(), d.getMinutes());
+            // Assume 1 hour duration visually
+            const height = SLOT_HEIGHT * 2; 
+
+            return (
+              <div 
+                key={t.id}
+                className={`absolute left-[64px] w-[calc(100%-80px)] rounded-[10px] flex px-3 py-2 cursor-pointer select-none transition-colors border ${
+                  t.priority === 'High' ? 'bg-red-500/20 border-red-500/50 hover:bg-red-500/30' : 
+                  t.priority === 'Medium' ? 'bg-yellow-500/20 border-yellow-500/50 hover:bg-yellow-500/30' : 
+                  'bg-[#60B8FF]/20 border-[#60B8FF]/50 hover:bg-[#60B8FF]/30'
+                }`}
+                style={{ top: startY, height, zIndex: 5 }}
+              >
+                <div className="flex flex-col overflow-hidden w-full">
+                  <span className="text-white text-xs font-['Poppins'] font-medium truncate leading-tight tracking-[0.36px]">
+                    {t.title}
+                  </span>
+                  <span className="text-white/60 text-[10px] font-['Poppins'] truncate leading-none mt-1.5 flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      t.priority === 'High' ? 'bg-red-500' : 
+                      t.priority === 'Medium' ? 'bg-yellow-500' : 'bg-[#60B8FF]'
+                    }`} />
+                    {new Date(t.dueDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
 
         </div>
       </div>

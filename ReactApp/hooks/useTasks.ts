@@ -6,18 +6,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiRequestError } from "../services/api";
 
-// Task interface matching backend DTO
+// Task interface matching backend TaskDto
 interface Task {
-  id: string;
+  id: number;
   title: string;
   description?: string;
-  projectId: string;
   projectName?: string;
-  assigneeId?: string;
   assigneeName?: string;
   priority: "Low" | "Medium" | "High";
   status: "Todo" | "InProgress" | "Review" | "Completed";
   dueDate?: string;
+  dueDateLabel?: string;
   isStarred: boolean;
   createdAt: string;
 }
@@ -28,28 +27,35 @@ interface UseTasksReturn {
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
-  toggleStar: (id: string) => Promise<void>;
-  updateStatus: (id: string, status: string) => Promise<void>;
+  toggleStar: (id: number) => Promise<void>;
+  updateStatus: (id: number, status: string) => Promise<void>;
   createTask: (data: CreateTaskRequest) => Promise<void>;
-  updateTask: (id: string, data: UpdateTaskRequest) => Promise<void>;
-  deleteTask: (id: string) => Promise<void>;
+  updateTask: (id: number, data: UpdateTaskRequest) => Promise<void>;
+  deleteTask: (id: number) => Promise<void>;
 }
 
 // Request types for CRUD operations
+interface ReminderMap {
+  [dateKey: string]: string[];
+}
+
 interface CreateTaskRequest {
   title: string;
   description?: string;
-  projectId: string;
-  assigneeId?: string;
+  projectId?: number;
+  assigneeId?: number;
   priority: "Low" | "Medium" | "High";
   status: "Todo" | "InProgress" | "Review" | "Completed";
   dueDate?: string;
+  reminderMap?: ReminderMap;
+  notifyEmail?: boolean;
+  notifyInApp?: boolean;
 }
 
 interface UpdateTaskRequest {
   title?: string;
   description?: string;
-  assigneeId?: string;
+  assigneeId?: number;
   priority?: "Low" | "Medium" | "High";
   status?: "Todo" | "InProgress" | "Review" | "Completed";
   dueDate?: string;
@@ -91,9 +97,9 @@ export const useTasks = (): UseTasksReturn => {
     };
   }, []);
 
-  const toggleStar = useCallback(async (id: string) => {
+  const toggleStar = useCallback(async (id: number) => {
     try {
-      await api.patch(`/tasks/${id}/star`);
+      await api.patch(`/api/tasks/${id}/star`);
       // Update local state to reflect change
       setTasks(prev =>
         prev.map(task =>
@@ -112,9 +118,9 @@ export const useTasks = (): UseTasksReturn => {
     }
   }, []);
 
-  const updateStatus = useCallback(async (id: string, status: string) => {
+  const updateStatus = useCallback(async (id: number, status: string) => {
     try {
-      await api.patch(`/tasks/${id}/status`, { status });
+      await api.patch(`/api/tasks/${id}/status`, { status });
       // Update local state to reflect change
       setTasks(prev =>
         prev.map(task =>
@@ -135,8 +141,9 @@ export const useTasks = (): UseTasksReturn => {
 
   const createTask = useCallback(async (data: CreateTaskRequest) => {
     try {
-      const newTask = await api.post<Task>("/tasks", data);
-      setTasks(prev => [...prev, newTask]);
+      await api.post<Task>("/api/tasks", data);
+      // Refetch the full list to get server-generated fields (id, createdAt, etc.)
+      await fetchData();
     } catch (err) {
       const message =
         err instanceof ApiRequestError
@@ -147,11 +154,11 @@ export const useTasks = (): UseTasksReturn => {
       setError(message);
       throw err;
     }
-  }, []);
+  }, [fetchData]);
 
-  const updateTask = useCallback(async (id: string, data: UpdateTaskRequest) => {
+  const updateTask = useCallback(async (id: number, data: UpdateTaskRequest) => {
     try {
-      const updatedTask = await api.put<Task>(`/tasks/${id}`, data);
+      const updatedTask = await api.put<Task>(`/api/tasks/${id}`, data);
       setTasks(prev =>
         prev.map(task =>
           task.id === id ? updatedTask : task
@@ -169,9 +176,9 @@ export const useTasks = (): UseTasksReturn => {
     }
   }, []);
 
-  const deleteTask = useCallback(async (id: string) => {
+  const deleteTask = useCallback(async (id: number) => {
     try {
-      await api.delete(`/tasks/${id}`);
+      await api.delete(`/api/tasks/${id}`);
       setTasks(prev => prev.filter(task => task.id !== id));
     } catch (err) {
       const message =

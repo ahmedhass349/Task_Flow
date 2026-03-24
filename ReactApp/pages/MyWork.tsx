@@ -94,9 +94,12 @@ export default function MyWork() {
       await createTask({
         title: data.title,
         description: data.notes || `${data.taskType} - ${data.course}`,
-        projectId: "", // Academic tasks don't have project IDs
         priority: data.priority.charAt(0).toUpperCase() + data.priority.slice(1) as "Low" | "Medium" | "High",
         status: "Todo",
+        dueDate: data.dueDate || undefined,
+        reminderMap: data.reminderEnabled ? data.reminderMap : undefined,
+        notifyEmail: data.notifyVia.email,
+        notifyInApp: data.notifyVia.inApp,
       });
       setShowNewTaskCard(false);
     } catch (err) {

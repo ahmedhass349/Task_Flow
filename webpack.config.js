@@ -67,7 +67,22 @@ module.exports = (env) => {
         devServer: {
             static: path.join(__dirname, 'wwwroot'),
             port: 3000,
-            historyApiFallback: true
+            historyApiFallback: true,
+            proxy: [
+                {
+                    context: ['/api'],
+                    target: 'http://localhost:5001',
+                    changeOrigin: true,
+                    secure: false,
+                },
+                {
+                    context: ['/hubs'],
+                    target: 'http://localhost:5001',
+                    changeOrigin: true,
+                    secure: false,
+                    ws: true // WebSocket support for SignalR
+                }
+            ]
         },
         plugins: [
             new MiniCssExtractPlugin({ filename: 'main.css' }),

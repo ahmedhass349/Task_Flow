@@ -44,7 +44,9 @@ export const useNotificationHub = (): UseNotificationHubReturn => {
     if (!token) return null;
 
     const connection = new HubConnectionBuilder()
-      .withUrl("http://localhost:5000/hubs/notifications")
+      .withUrl("/hubs/notifications", {
+        accessTokenFactory: () => token,
+      })
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Information)
       .build();
@@ -80,9 +82,9 @@ export const useNotificationHub = (): UseNotificationHubReturn => {
       console.log("Received notification:", notification);
       setLatestNotification(notification);
       
-      // Show toast notification
-      if (Notification.permission === "granted") {
-        new Notification(notification.title, {
+      // Show browser notification
+      if (typeof globalThis.Notification !== "undefined" && globalThis.Notification.permission === "granted") {
+        new globalThis.Notification(notification.title, {
           body: notification.message,
           icon: "/favicon.ico",
           tag: notification.id,

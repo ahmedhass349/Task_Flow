@@ -71,7 +71,7 @@ namespace taskflow.BackgroundServices
                 var notificationKey = $"24h-{task.Id}-{task.AssigneeId}";
                 if (!_sentNotifications.Contains(notificationKey))
                 {
-                    await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId.Value, task, "24 hours");
+                    await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "24 hours");
                     _sentNotifications.Add(notificationKey);
                     _logger.LogInformation("Sent 24-hour due warning for task {TaskId}", task.Id);
                 }
@@ -92,7 +92,7 @@ namespace taskflow.BackgroundServices
                 var notificationKey = $"1h-{task.Id}-{task.AssigneeId}";
                 if (!_sentNotifications.Contains(notificationKey))
                 {
-                    await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId.Value, task, "1 hour");
+                    await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "1 hour");
                     _sentNotifications.Add(notificationKey);
                     _logger.LogInformation("Sent 1-hour due warning for task {TaskId}", task.Id);
                 }
@@ -112,7 +112,7 @@ namespace taskflow.BackgroundServices
                 var notificationKey = $"overdue-{task.Id}-{task.AssigneeId}";
                 if (!_sentNotifications.Contains(notificationKey))
                 {
-                    await notificationService.NotifyTaskOverdueAsync(task.AssigneeId.Value, task);
+                    await notificationService.NotifyTaskOverdueAsync(task.AssigneeId!.Value, task);
                     _sentNotifications.Add(notificationKey);
                     _logger.LogInformation("Sent overdue notification for task {TaskId}", task.Id);
                 }

@@ -10,10 +10,14 @@ import Footer from "../Components/Footer";
 import { PageLoading, PageError } from "../Components/PageState";
 import { useAuth } from "../context/AuthContext";
 import { useDashboard } from "../hooks/useDashboard";
+import { useTasks } from "../hooks/useTasks";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { stats, recentActivity, isLoading, error, refetch } = useDashboard();
+  const { stats, recentActivity, isLoading: isDashboardLoading, error, refetch } = useDashboard();
+  const { tasks, isLoading: isTasksLoading } = useTasks();
+
+  const activeTasks = tasks.filter((t: any) => t.status !== "Completed");
   
   const [calYear, setCalYear] = useState(2022);
   const [calMonth, setCalMonth] = useState(5); // 0-indexed, 5 = Jun
@@ -35,9 +39,9 @@ export default function Dashboard() {
         <Header />
         
         <main className="flex-1 overflow-y-auto">
-          {isLoading && <PageLoading message="Loading dashboard..." />}
+          {isDashboardLoading && <PageLoading message="Loading dashboard..." />}
           {error && <PageError message={error} onRetry={handleRetry} />}
-          {!isLoading && !error && stats && (
+          {!isDashboardLoading && !error && stats && (
           <div className="flex gap-6 p-6 items-start">
           <div className="flex-1 min-w-0 space-y-6">
             {/* Greeting */}
@@ -118,7 +122,23 @@ export default function Dashboard() {
                 icon={CheckSquare}
                 action={{ label: "View all", onClick: () => {} }}
               >
-                <p className="text-sm text-gray-500 py-4 text-center">No tasks assigned yet</p>
+                {activeTasks.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-4 text-center">No tasks assigned yet</p>
+                ) : (
+                  <div className="space-y-4 mt-2">
+                    {activeTasks.slice(0, 4).map((t: any) => (
+                      <div key={`mywork-${t.id}`} className="flex items-start gap-3">
+                        <div className={`mt-0.5 size-4 rounded-full border flex-shrink-0 ${t.priority === 'High' ? 'border-red-500 bg-red-50' : t.priority === 'Medium' ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300 bg-gray-50'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{t.title}</p>
+                          <p className="text-xs text-gray-500 truncate mt-0.5">
+                           {t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'No due date'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </DashboardCard>
 
               {/* Assigned to Me */}
@@ -127,7 +147,23 @@ export default function Dashboard() {
                 icon={Users}
                 action={{ label: "View all", onClick: () => {} }}
               >
-                <p className="text-sm text-gray-500 py-4 text-center">Nothing assigned to you</p>
+                {activeTasks.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-4 text-center">Nothing assigned to you</p>
+                ) : (
+                  <div className="space-y-4 mt-2">
+                    {activeTasks.slice(0, 4).map((t: any) => (
+                      <div key={`assigned-${t.id}`} className="flex items-start gap-3">
+                        <div className={`mt-0.5 size-4 rounded-full border flex-shrink-0 ${t.priority === 'High' ? 'border-red-500 bg-red-50' : t.priority === 'Medium' ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300 bg-gray-50'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{t.title}</p>
+                          <p className="text-xs text-gray-500 truncate mt-0.5">
+                           {t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'No due date'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </DashboardCard>
 
               {/* Agenda */}
@@ -175,8 +211,14 @@ export default function Dashboard() {
                 onYearChange={setCalYear}
                 onMonthChange={setCalMonth}
                 onDaySelect={setCalDay}
+                tasks={tasks}
               />
-              <TaskLineWidget year={calYear} month={calMonth} selectedDay={calDay} />
+              <TaskLineWidget 
+                year={calYear} 
+                month={calMonth} 
+                selectedDay={calDay} 
+                tasks={tasks} 
+              />
             </div>
           </div>
           )}

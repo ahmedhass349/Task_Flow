@@ -1,0 +1,106 @@
+2026-03-24 14:04:47.990 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-24 14:04:48.423 +02:00 [INF] Reminder processor started
+2026-03-24 14:04:54.882 +02:00 [INF] Due date warning service started
+2026-03-24 14:04:58.736 +02:00 [INF] Executed DbCommand (149ms) [Parameters=[@__upTo_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [r].[Id], [r].[CreatedAt], [r].[FireAt], [r].[FiredAt], [r].[HasFired], [r].[NotifyEmail], [r].[NotifyInApp], [r].[TaskId], [r].[UserId], [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [Reminders] AS [r]
+INNER JOIN [TaskItems] AS [t] ON [r].[TaskId] = [t].[Id]
+INNER JOIN [AppUsers] AS [a] ON [r].[UserId] = [a].[Id]
+WHERE [r].[HasFired] = CAST(0 AS bit) AND [r].[FireAt] <= @__upTo_0
+ORDER BY [r].[FireAt]
+2026-03-24 14:04:58.736 +02:00 [INF] Executed DbCommand (149ms) [Parameters=[@__now_0='?' (DbType = DateTime2), @__AddHours_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [TaskItems] AS [t]
+LEFT JOIN [AppUsers] AS [a] ON [t].[AssigneeId] = [a].[Id]
+WHERE [t].[AssigneeId] IS NOT NULL AND [t].[DueDate] IS NOT NULL AND [t].[DueDate] > @__now_0 AND [t].[DueDate] <= @__AddHours_1 AND [t].[Status] <> N'Completed'
+2026-03-24 14:04:58.856 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime2), @__AddHours_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [TaskItems] AS [t]
+LEFT JOIN [AppUsers] AS [a] ON [t].[AssigneeId] = [a].[Id]
+WHERE [t].[AssigneeId] IS NOT NULL AND [t].[DueDate] IS NOT NULL AND [t].[DueDate] > @__now_0 AND [t].[DueDate] <= @__AddHours_1 AND [t].[Status] <> N'Completed'
+2026-03-24 14:04:58.923 +02:00 [INF] Executed DbCommand (16ms) [Parameters=[@__now_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [TaskItems] AS [t]
+LEFT JOIN [AppUsers] AS [a] ON [t].[AssigneeId] = [a].[Id]
+WHERE [t].[AssigneeId] IS NOT NULL AND [t].[DueDate] IS NOT NULL AND [t].[DueDate] < @__now_0 AND [t].[Status] <> N'Completed'
+2026-03-24 14:05:59.142 +02:00 [INF] Executed DbCommand (55ms) [Parameters=[@__upTo_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [r].[Id], [r].[CreatedAt], [r].[FireAt], [r].[FiredAt], [r].[HasFired], [r].[NotifyEmail], [r].[NotifyInApp], [r].[TaskId], [r].[UserId], [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [Reminders] AS [r]
+INNER JOIN [TaskItems] AS [t] ON [r].[TaskId] = [t].[Id]
+INNER JOIN [AppUsers] AS [a] ON [r].[UserId] = [a].[Id]
+WHERE [r].[HasFired] = CAST(0 AS bit) AND [r].[FireAt] <= @__upTo_0
+ORDER BY [r].[FireAt]
+2026-03-24 14:06:34.563 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/ - null null
+2026-03-24 14:06:34.694 +02:00 [INF] The file /index.html was not modified
+2026-03-24 14:06:34.721 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/index.html - 304 null text/html 168.3486ms
+2026-03-24 14:06:34.779 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.css - null null
+2026-03-24 14:06:34.779 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/vendor.js - null null
+2026-03-24 14:06:34.786 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/dist/main.js - null null
+2026-03-24 14:06:34.792 +02:00 [INF] The file /dist/main.css was not modified
+2026-03-24 14:06:34.793 +02:00 [INF] The file /dist/vendor.js was not modified
+2026-03-24 14:06:34.795 +02:00 [INF] The file /dist/main.js was not modified
+2026-03-24 14:06:34.811 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.js - 304 null text/javascript 24.7141ms
+2026-03-24 14:06:34.801 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/vendor.js - 304 null text/javascript 21.2771ms
+2026-03-24 14:06:34.797 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/dist/main.css - 304 null text/css 17.5341ms
+2026-03-24 14:06:35.101 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5001/api/auth/me - application/json null
+2026-03-24 14:06:39.448 +02:00 [INF] Failed to validate the token.
+Microsoft.IdentityModel.Tokens.SecurityTokenExpiredException: IDX10223: Lifetime validation failed. The token is expired. ValidTo (UTC): '3/23/2026 7:51:58 PM', Current time (UTC): '3/24/2026 12:06:39 PM'.
+   at Microsoft.IdentityModel.Tokens.Validators.ValidateLifetime(Nullable`1 notBefore, Nullable`1 expires, SecurityToken securityToken, TokenValidationParameters validationParameters)
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.ValidateTokenPayloadAsync(JsonWebToken jsonWebToken, TokenValidationParameters validationParameters, BaseConfiguration configuration)
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.ValidateJWSAsync(JsonWebToken jsonWebToken, TokenValidationParameters validationParameters, BaseConfiguration configuration)
+2026-03-24 14:06:39.460 +02:00 [INF] Bearer was not authenticated. Failure message: IDX10223: Lifetime validation failed. The token is expired. ValidTo (UTC): '3/23/2026 7:51:58 PM', Current time (UTC): '3/24/2026 12:06:39 PM'.
+2026-03-24 14:06:39.480 +02:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+2026-03-24 14:06:39.698 +02:00 [INF] AuthenticationScheme: Bearer was challenged.
+2026-03-24 14:06:39.708 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/auth/me - 401 null application/json 4607.685ms
+2026-03-24 14:06:59.349 +02:00 [INF] Executed DbCommand (51ms) [Parameters=[@__upTo_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [r].[Id], [r].[CreatedAt], [r].[FireAt], [r].[FiredAt], [r].[HasFired], [r].[NotifyEmail], [r].[NotifyInApp], [r].[TaskId], [r].[UserId], [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [Reminders] AS [r]
+INNER JOIN [TaskItems] AS [t] ON [r].[TaskId] = [t].[Id]
+INNER JOIN [AppUsers] AS [a] ON [r].[UserId] = [a].[Id]
+WHERE [r].[HasFired] = CAST(0 AS bit) AND [r].[FireAt] <= @__upTo_0
+ORDER BY [r].[FireAt]
+2026-03-24 14:07:59.547 +02:00 [INF] Executed DbCommand (49ms) [Parameters=[@__upTo_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [r].[Id], [r].[CreatedAt], [r].[FireAt], [r].[FiredAt], [r].[HasFired], [r].[NotifyEmail], [r].[NotifyInApp], [r].[TaskId], [r].[UserId], [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [Reminders] AS [r]
+INNER JOIN [TaskItems] AS [t] ON [r].[TaskId] = [t].[Id]
+INNER JOIN [AppUsers] AS [a] ON [r].[UserId] = [a].[Id]
+WHERE [r].[HasFired] = CAST(0 AS bit) AND [r].[FireAt] <= @__upTo_0
+ORDER BY [r].[FireAt]
+2026-03-24 14:08:59.738 +02:00 [INF] Executed DbCommand (36ms) [Parameters=[@__upTo_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [r].[Id], [r].[CreatedAt], [r].[FireAt], [r].[FiredAt], [r].[HasFired], [r].[NotifyEmail], [r].[NotifyInApp], [r].[TaskId], [r].[UserId], [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [Reminders] AS [r]
+INNER JOIN [TaskItems] AS [t] ON [r].[TaskId] = [t].[Id]
+INNER JOIN [AppUsers] AS [a] ON [r].[UserId] = [a].[Id]
+WHERE [r].[HasFired] = CAST(0 AS bit) AND [r].[FireAt] <= @__upTo_0
+ORDER BY [r].[FireAt]
+2026-03-24 14:10:00.453 +02:00 [INF] Executed DbCommand (132ms) [Parameters=[@__upTo_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [r].[Id], [r].[CreatedAt], [r].[FireAt], [r].[FiredAt], [r].[HasFired], [r].[NotifyEmail], [r].[NotifyInApp], [r].[TaskId], [r].[UserId], [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [Reminders] AS [r]
+INNER JOIN [TaskItems] AS [t] ON [r].[TaskId] = [t].[Id]
+INNER JOIN [AppUsers] AS [a] ON [r].[UserId] = [a].[Id]
+WHERE [r].[HasFired] = CAST(0 AS bit) AND [r].[FireAt] <= @__upTo_0
+ORDER BY [r].[FireAt]
+2026-03-24 14:11:00.674 +02:00 [INF] Executed DbCommand (67ms) [Parameters=[@__upTo_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [r].[Id], [r].[CreatedAt], [r].[FireAt], [r].[FiredAt], [r].[HasFired], [r].[NotifyEmail], [r].[NotifyInApp], [r].[TaskId], [r].[UserId], [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [Reminders] AS [r]
+INNER JOIN [TaskItems] AS [t] ON [r].[TaskId] = [t].[Id]
+INNER JOIN [AppUsers] AS [a] ON [r].[UserId] = [a].[Id]
+WHERE [r].[HasFired] = CAST(0 AS bit) AND [r].[FireAt] <= @__upTo_0
+ORDER BY [r].[FireAt]
+2026-03-24 14:12:00.795 +02:00 [INF] Executed DbCommand (26ms) [Parameters=[@__upTo_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [r].[Id], [r].[CreatedAt], [r].[FireAt], [r].[FiredAt], [r].[HasFired], [r].[NotifyEmail], [r].[NotifyInApp], [r].[TaskId], [r].[UserId], [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [Reminders] AS [r]
+INNER JOIN [TaskItems] AS [t] ON [r].[TaskId] = [t].[Id]
+INNER JOIN [AppUsers] AS [a] ON [r].[UserId] = [a].[Id]
+WHERE [r].[HasFired] = CAST(0 AS bit) AND [r].[FireAt] <= @__upTo_0
+ORDER BY [r].[FireAt]
+2026-03-24 14:13:00.989 +02:00 [INF] Executed DbCommand (45ms) [Parameters=[@__upTo_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [r].[Id], [r].[CreatedAt], [r].[FireAt], [r].[FiredAt], [r].[HasFired], [r].[NotifyEmail], [r].[NotifyInApp], [r].[TaskId], [r].[UserId], [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [Reminders] AS [r]
+INNER JOIN [TaskItems] AS [t] ON [r].[TaskId] = [t].[Id]
+INNER JOIN [AppUsers] AS [a] ON [r].[UserId] = [a].[Id]
+WHERE [r].[HasFired] = CAST(0 AS bit) AND [r].[FireAt] <= @__upTo_0
+ORDER BY [r].[FireAt]
+2026-03-24 14:13:57.491 +02:00 [INF] Reminder processor stopping...
+2026-03-24 14:13:57.495 +02:00 [INF] Due date warning service stopping...

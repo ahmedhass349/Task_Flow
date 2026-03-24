@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using taskflow.DTOs.Tasks;
 using taskflow.Helpers;
 using taskflow.Services.Interfaces;
@@ -24,10 +25,12 @@ namespace taskflow.Controllers.Api
     public class TasksController : ControllerBase
     {
         private readonly ITaskService _taskService;
+        private readonly ILogger<TasksController> _logger;
 
-        public TasksController(ITaskService taskService)
+        public TasksController(ITaskService taskService, ILogger<TasksController> logger)
         {
             _taskService = taskService;
+            _logger = logger;
         }
 
         private int GetUserId()

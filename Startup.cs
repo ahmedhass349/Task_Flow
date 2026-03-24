@@ -117,6 +117,17 @@ namespace taskflow
                         };
                         var json = JsonConvert.SerializeObject(errorResponse);
                         await context.Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes(json));
+                    },
+                    // Read JWT from query string for SignalR hub connections
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return System.Threading.Tasks.Task.CompletedTask;
                     }
                 };
             });
@@ -128,9 +139,10 @@ namespace taskflow
             {
                 options.AddPolicy("AllowAll", builder =>
                 {
-                    builder.AllowAnyOrigin()
+                    builder.WithOrigins("http://localhost:3000", "http://localhost:5001")
                            .AllowAnyMethod()
-                           .AllowAnyHeader();
+                           .AllowAnyHeader()
+                           .AllowCredentials();
                 });
             });
 

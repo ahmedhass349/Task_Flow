@@ -93,7 +93,8 @@ namespace taskflow.Data
                 entity.HasOne(t => t.Project)
                       .WithMany(p => p.Tasks)
                       .HasForeignKey(t => t.ProjectId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasOne(t => t.Assignee)
                       .WithMany(u => u.AssignedTasks)

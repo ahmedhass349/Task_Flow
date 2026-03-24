@@ -10,9 +10,10 @@ interface CalendarWidgetProps {
   onYearChange: (year: number) => void;
   onMonthChange: (month: number) => void;
   onDaySelect: (day: number) => void;
+  tasks?: any[];
 }
 
-export default function CalendarWidget({ year, month, selectedDay, onYearChange, onMonthChange, onDaySelect }: CalendarWidgetProps) {
+export default function CalendarWidget({ year, month, selectedDay, onYearChange, onMonthChange, onDaySelect, tasks = [] }: CalendarWidgetProps) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
   const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // Mon=0, Sun=6
@@ -103,17 +104,33 @@ export default function CalendarWidget({ year, month, selectedDay, onYearChange,
           const isSelected = cell.type === 'current' && cell.day === selectedDay;
           const isOther = cell.type !== 'current';
 
+          // Check if this cell's date has any tasks
+          const hasTask = !isOther && tasks.some(t => {
+            if (!t.dueDate) return false;
+            const d = new Date(t.dueDate);
+            return d.getFullYear() === year && d.getMonth() === month && d.getDate() === cell.day;
+          });
+
           const innerClasses = [
-            'w-9 h-9 flex items-center justify-center rounded-full text-sm font-[\'Poppins\'] font-normal tracking-[0.42px] transition-colors duration-150',
+            'relative w-9 h-9 flex flex-col items-center justify-center rounded-full text-sm font-[\'Poppins\'] font-normal tracking-[0.42px] transition-colors duration-150',
             isSelected ? 'bg-[#60B8FF] text-white' : '',
             !isSelected && isOther ? 'text-white/30' : '',
             !isSelected && !isOther ? 'text-white hover:bg-white/10' : '',
           ].join(' ');
 
+          const content = (
+            <>
+              {cell.day}
+              {hasTask && (
+                 <span className={`w-1 h-1 rounded-full absolute bottom-1.5 ${isSelected ? 'bg-white' : 'bg-[#60B8FF]'}`} />
+              )}
+            </>
+          );
+
           if (isOther) {
             return (
               <div key={i} className="h-9 flex items-center justify-center" aria-hidden="true">
-                <div className={innerClasses}>{cell.day}</div>
+                <div className={innerClasses}>{content}</div>
               </div>
             );
           }
@@ -123,11 +140,11 @@ export default function CalendarWidget({ year, month, selectedDay, onYearChange,
               key={i}
               type="button"
               onClick={() => onDaySelect(cell.day)}
-              className="h-9 flex items-center justify-center cursor-pointer bg-transparent border-0 p-0"
+              className="h-9 flex items-center justify-center cursor-pointer bg-transparent border-0 p-0 relative"
               aria-label={`${MONTH_NAMES[month]} ${cell.day}`}
               aria-pressed={isSelected}
             >
-              <div className={innerClasses}>{cell.day}</div>
+              <div className={innerClasses}>{content}</div>
             </button>
           );
         })}

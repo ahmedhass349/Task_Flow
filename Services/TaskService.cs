@@ -10,8 +10,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using taskflow.Data.Entities;
 using taskflow.DTOs.Tasks;
+using taskflow.DTOs.Notifications;
 using taskflow.Repositories.Interfaces;
 using taskflow.Services.Interfaces;
 using TaskStatus = taskflow.Data.Entities.TaskStatus;
@@ -22,11 +24,17 @@ namespace taskflow.Services
     {
         private readonly ITaskRepository _taskRepository;
         private readonly IMapper _mapper;
+        private readonly ILogger<TaskService> _logger;
+        private readonly INotificationService _notificationService;
+        private readonly IReminderService _reminderService;
 
-        public TaskService(ITaskRepository taskRepository, IMapper mapper)
+        public TaskService(ITaskRepository taskRepository, IMapper mapper, ILogger<TaskService> logger, INotificationService notificationService, IReminderService reminderService)
         {
             _taskRepository = taskRepository;
             _mapper = mapper;
+            _logger = logger;
+            _notificationService = notificationService;
+            _reminderService = reminderService;
         }
 
         public async Task<IEnumerable<TaskDto>> GetTasksAsync(int userId, TaskFilterRequest filter)
@@ -107,6 +115,38 @@ namespace taskflow.Services
 
             await _taskRepository.AddAsync(task);
             await _taskRepository.SaveChangesAsync();
+
+            // Schedule reminders if provided
+            if (request.ReminderMap != null && (request.NotifyEmail || request.NotifyInApp))
+            {
+                try
+                {
+                    var reminderDto = new CreateReminderDto
+                    {
+                        TaskId = task.Id,
+                        ReminderMap = request.ReminderMap,
+                        NotifyEmail = request.NotifyEmail,
+                        NotifyInApp = request.NotifyInApp
+                    };
+                    await _reminderService.SaveRemindersAsync(reminderDto, userId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to schedule reminders for task {Id}", task.Id);
+                    // Don't fail task creation if reminder scheduling fails
+                }
+            }
+
+            // Send notification
+            try
+            {
+                await _notificationService.NotifyTaskCreatedAsync(userId, task);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send notification for task {Id}", task.Id);
+                // Don't fail task creation if notification fails
+            }
 
             return await GetTaskByIdAsync(task.Id);
         }

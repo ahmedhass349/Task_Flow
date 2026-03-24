@@ -35,7 +35,7 @@ namespace taskflow.Mapping
             CreateMap<TaskItem, TaskDto>()
                 .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority.ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-                .ForMember(dest => dest.ProjectName, opt => opt.MapFrom(src => src.Project.Name))
+                .ForMember(dest => dest.ProjectName, opt => opt.MapFrom(src => src.Project != null ? src.Project.Name : string.Empty))
                 .ForMember(dest => dest.AssigneeName, opt => opt.MapFrom(src => src.Assignee != null ? src.Assignee.FullName : null))
                 .ForMember(dest => dest.DueDateLabel, opt => opt.MapFrom(src =>
                     src.DueDate.HasValue ? src.DueDate.Value.ToString("MMM d", CultureInfo.InvariantCulture) : null));

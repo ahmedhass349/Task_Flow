@@ -3,7 +3,9 @@ import { Bell } from "lucide-react";
 import { useNotificationHub } from "../hooks/useNotificationHub";
 import { useNotificationContext } from "../context/NotificationContext";
 
-const NotificationBell: React.FC = () => {
+export interface NotificationBellProps extends React.ComponentPropsWithoutRef<"div"> {}
+
+const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBellProps>((props, ref) => {
   const { unreadCount, isConnected } = useNotificationHub();
   const { state: notificationState } = useNotificationContext();
 
@@ -11,7 +13,7 @@ const NotificationBell: React.FC = () => {
   const displayCount = isConnected ? unreadCount : notificationState.unreadCount;
 
   return (
-    <div className="relative">
+    <div ref={ref} className="relative" {...props}>
       <button
         className="relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10"
         aria-label="Notifications"
@@ -33,6 +35,6 @@ const NotificationBell: React.FC = () => {
       </button>
     </div>
   );
-};
+});
 
 export default NotificationBell;

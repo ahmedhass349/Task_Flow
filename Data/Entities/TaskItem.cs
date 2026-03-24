@@ -11,7 +11,7 @@ namespace taskflow.Data.Entities
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public int ProjectId { get; set; }
+        public int? ProjectId { get; set; }
         public int? AssigneeId { get; set; }
         public TaskPriority Priority { get; set; } = TaskPriority.Medium;
         public TaskStatus Status { get; set; } = TaskStatus.Todo;
@@ -20,7 +20,7 @@ namespace taskflow.Data.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation
-        public Project Project { get; set; } = null!;
+        public Project? Project { get; set; }
         public AppUser? Assignee { get; set; }
         public ICollection<TaskComment> Comments { get; set; } = new List<TaskComment>();
     }

@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react"
-import { api } from "../services/api"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -9,7 +8,7 @@ interface ReminderMap {
 
 interface AcademicTaskCardProps {
   onClose?: () => void
-  onSuccess?: (task: TaskPayload) => void
+  onSuccess?: (task: TaskPayload) => Promise<void> | void
 }
 
 export interface TaskPayload {
@@ -48,6 +47,7 @@ const COURSES = [
   "MATH201 — Linear Algebra",
   "ENG101 — Academic Writing",
   "BIO210 — Cell Biology",
+  "Others",
 ]
 
 const SEMESTERS = ["Spring 2025", "Summer 2025", "Fall 2025", "Spring 2026"]
@@ -246,10 +246,18 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
   const [notifyInApp, setNotifyInApp] = useState(false)
 
   // UI state
+  const [assigneeActive, setAssigneeActive] = useState(true)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const isValid = title.trim() !== "" && dueDate !== ""
+  // Get current local datetime string for input min attribute
+  const getMinDateTime = useCallback(() => {
+    const now = new Date()
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+    return now.toISOString().slice(0, 16)
+  }, [])
+
+  const isValid = title.trim() !== "" && dueDate !== "" && assigneeActive
 
   // ── Handlers ──
 
@@ -287,20 +295,12 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
     }
 
     try {
-      // Use real API call
-      await api.post("/api/tasks", {
-        title: payload.title,
-        description: payload.notes || `${payload.taskType} - ${payload.course}`,
-        projectId: "", // Academic tasks don't have project IDs
-        priority: payload.priority.charAt(0).toUpperCase() + payload.priority.slice(1) as "Low" | "Medium" | "High",
-        status: "Todo",
-      })
-      
-      onSuccess?.(payload)
+      // Delegate creation to parent (MyWork.handleCreateTask)
+      await onSuccess?.(payload)
       setSuccess(true)
       setTimeout(() => { setSuccess(false); handleReset() }, 2400)
     } catch (err) {
-      console.error("Failed to create task:", err)
+      console.error("Task creation failed:", err)
     } finally {
       setLoading(false)
     }
@@ -309,6 +309,7 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
   function handleReset() {
     setTitle(""); setTaskType("Grading"); setCustomType(""); setNotes("")
     setCourse(""); setDueDate(""); setSemester("Spring 2025"); setPriority("medium")
+    setAssigneeActive(true)
     setReminderOn(false); setReminderMap({}); setSelectedDay(null)
     setNotifyEmail(true); setNotifyInApp(false); setSuccess(false)
   }
@@ -387,12 +388,12 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
                 key={t}
                 type="button"
                 onClick={() => setTaskType(t)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
                   taskType === t 
                     ? t === "Others" 
                       ? "bg-purple-50 border-purple-300 text-purple-700" 
                       : "bg-blue-50 border-blue-300 text-blue-700"
-                    : ""
+                    : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
                 }`}
               >
                 {t}
@@ -421,8 +422,7 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
           />
         </Field>
 
-        <Divider />
-        <SectionLabel>Assign to</SectionLabel>
+
 
         {/* Course */}
         <Field label="Course">
@@ -436,13 +436,19 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
         </Field>
 
         {/* Assignee — You only */}
-        <Field label="Assignee">
+        <Field label="Assignee" required>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 rounded-full text-xs font-medium text-slate-700 bg-white w-fit hover:bg-slate-50 cursor-pointer transition-colors"
-            onClick={() => console.log('Assignee clicked')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-xs font-medium w-fit cursor-pointer transition-colors ${
+              assigneeActive 
+                ? "bg-blue-50 border-blue-300 text-blue-700"
+                : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+            onClick={() => setAssigneeActive(v => !v)}
           >
-            <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-medium flex-shrink-0 text-slate-700">You</span>
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-medium flex-shrink-0 ${
+              assigneeActive ? "text-blue-700 bg-blue-100" : "text-slate-700 bg-slate-100"
+            }`}>You</span>
           </button>
         </Field>
 
@@ -450,7 +456,8 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
         <div className="grid grid-cols-2 gap-3">
           <Field label="Due date" required>
             <input
-              type="date"
+              type="datetime-local"
+              min={getMinDateTime()}
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -471,14 +478,14 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
                 key={p}
                 type="button"
                 onClick={() => setPriority(p)}
-                className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1 ${
+                className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors border flex items-center justify-center gap-1 ${
                   priority === p
                     ? p === "low"
                       ? "bg-green-50 border-green-300 text-green-700"
                       : p === "medium"
                       ? "bg-yellow-50 border-yellow-300 text-yellow-700"
                       : "bg-red-50 border-red-300 text-red-700"
-                    : ""
+                    : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
                 }`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
@@ -547,13 +554,14 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
                 </div>
               </Field>
 
-              {/* Calendar */}
               <Field label="Select reminder days & times">
-                <Calendar
-                  reminderMap={reminderMap}
-                  selectedDay={selectedDay}
-                  onSelectDay={handleSelectDay}
-                />
+                <div className="max-w-[280px]">
+                  <Calendar
+                    reminderMap={reminderMap}
+                    selectedDay={selectedDay}
+                    onSelectDay={handleSelectDay}
+                  />
+                </div>
 
                 {/* Time slots */}
                 {selectedDay && (

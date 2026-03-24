@@ -226,21 +226,24 @@ function AcademicTaskCard({ onClose, onSuccess }) {
             reminderMap,
             notifyVia: { email: notifyEmail, inApp: notifyInApp },
         };
+        console.log("=== SUBMIT: payload", payload);
+        console.log("=== SUBMIT: endpoint", "/api/tasks");
         try {
             // Use real API call
-            yield _services_api__WEBPACK_IMPORTED_MODULE_2__.api.post("/api/tasks", {
+            const response = yield _services_api__WEBPACK_IMPORTED_MODULE_2__.api.post("/api/tasks", {
                 title: payload.title,
                 description: payload.notes || `${payload.taskType} - ${payload.course}`,
                 projectId: "", // Academic tasks don't have project IDs
                 priority: payload.priority.charAt(0).toUpperCase() + payload.priority.slice(1),
                 status: "Todo",
             });
+            console.log("=== SUBMIT: response", response);
             onSuccess === null || onSuccess === void 0 ? void 0 : onSuccess(payload);
             setSuccess(true);
             setTimeout(() => { setSuccess(false); handleReset(); }, 2400);
         }
         catch (err) {
-            console.error("Failed to create task:", err);
+            console.error("=== SUBMIT: error", err);
         }
         finally {
             setLoading(false);
@@ -2088,7 +2091,7 @@ const useNotificationHub = () => {
         if (!token)
             return null;
         const connection = new _microsoft_signalr__WEBPACK_IMPORTED_MODULE_1__.HubConnectionBuilder()
-            .withUrl("http://localhost:5000/hubs/notifications")
+            .withUrl("/hubs/notifications")
             .withAutomaticReconnect()
             .configureLogging(_microsoft_signalr__WEBPACK_IMPORTED_MODULE_2__.LogLevel.Information)
             .build();
@@ -4787,7 +4790,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-const BASE_URL = undefined || "http://localhost:5001";
+const BASE_URL = undefined || "";
 // ── Token management ─────────────────────────────────────────────────────
 let authToken = null;
 function setAuthToken(token) {
