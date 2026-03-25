@@ -163,7 +163,7 @@ namespace taskflow.Services
 
             task.Title = request.Title;
             task.Description = request.Description;
-            task.AssigneeId = request.AssigneeId;
+            task.AssigneeId = request.AssigneeId ?? task.AssigneeId;
             task.Priority = request.Priority;
             task.Status = request.Status;
             task.DueDate = request.DueDate;

@@ -18,10 +18,10 @@ export default function Dashboard() {
   const { tasks, isLoading: isTasksLoading } = useTasks();
 
   const activeTasks = tasks.filter((t: any) => t.status !== "Completed");
-  
-  const [calYear, setCalYear] = useState(2022);
-  const [calMonth, setCalMonth] = useState(5); // 0-indexed, 5 = Jun
-  const [calDay, setCalDay] = useState(10);
+  const now = new Date();
+  const [calYear, setCalYear] = useState(now.getFullYear());
+  const [calMonth, setCalMonth] = useState(now.getMonth()); 
+  const [calDay, setCalDay] = useState(now.getDate());
 
   const currentTime = new Date().getHours();
   const greeting = currentTime < 12 ? "Good morning" : currentTime < 18 ? "Good afternoon" : "Good evening";

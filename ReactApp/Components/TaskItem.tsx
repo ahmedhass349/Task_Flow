@@ -1,4 +1,4 @@
-import { Circle, CheckCircle2, Clock, User } from "lucide-react";
+import { Circle, CheckCircle2, Clock, User, Edit2, Trash2 } from "lucide-react";
 
 interface TaskItemProps {
   title: string;
@@ -7,9 +7,12 @@ interface TaskItemProps {
   assignee?: string;
   priority?: "high" | "medium" | "low";
   completed?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onStatus?: (s: string) => void;
 }
 
-export default function TaskItem({ title, project, dueDate, assignee, priority, completed }: TaskItemProps) {
+export default function TaskItem({ title, project, dueDate, assignee, priority, completed, onEdit, onDelete, onStatus }: TaskItemProps) {
   const priorityColors = {
     high: "bg-red-100 text-red-700 border-red-200",
     medium: "bg-orange-100 text-orange-700 border-orange-200",
@@ -18,7 +21,11 @@ export default function TaskItem({ title, project, dueDate, assignee, priority, 
 
   return (
     <div className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group">
-      <button className="mt-0.5" aria-label={completed ? "Mark task as incomplete" : "Mark task as complete"}>
+      <button 
+        className="mt-0.5" 
+        onClick={() => onStatus && onStatus(completed ? "todo" : "completed")}
+        aria-label={completed ? "Mark task as incomplete" : "Mark task as complete"}
+      >
         {completed ? (
           <CheckCircle2 className="size-5 text-green-600" aria-hidden="true" />
         ) : (
@@ -47,11 +54,33 @@ export default function TaskItem({ title, project, dueDate, assignee, priority, 
         </div>
       </div>
 
-      {priority && (
-        <span className={`px-2 py-1 text-xs font-medium rounded border ${priorityColors[priority]}`}>
-          {priority}
-        </span>
-      )}
+      <div className="flex items-center gap-2">
+        {priority && (
+          <span className={`px-2 py-1 text-xs font-medium rounded border ${priorityColors[priority]}`}>
+            {priority}
+          </span>
+        )}
+        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity ml-2">
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              className="p-1.5 text-gray-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+              aria-label="Edit task"
+            >
+              <Edit2 className="size-4" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors"
+              aria-label="Delete task"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

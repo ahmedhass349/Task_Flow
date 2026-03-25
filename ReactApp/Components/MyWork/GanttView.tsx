@@ -1,7 +1,9 @@
-// ── GanttView: horizontal timeline chart ────────────────────────────────
-//
-// Displays tasks as horizontal bars on a week-based timeline grid.
-// Static seed data; will be driven by props once API is ready.
+import { Edit2, Trash2 } from "lucide-react";
+import type { MyWorkTask, Priority } from "./types";
+
+interface GanttViewProps {
+  visibleTasks: MyWorkTask[];
+}
 
 interface GanttCategory {
   key: string;
@@ -12,54 +14,68 @@ interface GanttCategory {
 interface GanttRow {
   id: string;
   title: string;
-  category: string;
+  category: Priority | string;
   durationLabel: string;
   barLeft: number;
   barWidth: number;
   isMilestone?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-const CATEGORIES: Record<string, GanttCategory> = {
-  "Data Collection":      { key: "Data Collection",      color: "#2B7FFF", textColor: "#1447E6" },
-  "Data Analysis":        { key: "Data Analysis",        color: "#AD46FF", textColor: "#8200DB" },
-  "Strategy Development": { key: "Strategy Development", color: "#00BC7D", textColor: "#007A55" },
-  "Final Delivery":       { key: "Final Delivery",       color: "#FE9A00", textColor: "#BB4D00" },
-  "Milestone":            { key: "Milestone",            color: "#0A0A0A", textColor: "#C70036" },
+const CATEGORIES: Record<Priority, GanttCategory> = {
+  high:   { key: "high",   color: "#EF4444", textColor: "#991B1B" },
+  medium: { key: "medium", color: "#A855F7", textColor: "#6B21A8" },
+  low:    { key: "low",    color: "#2DD4BF", textColor: "#0F766E" },
 };
 
-const WEEK_LABELS = ["Jan 19", "Jan 26", "Feb 2", "Feb 9", "Feb 16", "Feb 23", "Mar 2", "Mar 9", "Mar 16", "Mar 23"];
+const LEGEND_ITEMS: Priority[] = ["high", "medium", "low"];
 
-const GANTT_ROWS: GanttRow[] = [
-  { id: "g-01", title: "Extended Survey Distribution",            category: "Data Collection",      durationLabel: "3 weeks", barLeft: 0,      barWidth: 240 },
-  { id: "g-02", title: "Stakeholder Interviews",                  category: "Data Collection",      durationLabel: "1 day",   barLeft: 34.28,  barWidth: 11.43 },
-  { id: "g-03", title: "Competitor & Market Research",            category: "Data Collection",      durationLabel: "1 week",  barLeft: 0,      barWidth: 91.43 },
-  { id: "g-04", title: "Prepare Data for Analysis",               category: "Data Analysis",        durationLabel: "1 week",  barLeft: 240,    barWidth: 80 },
-  { id: "g-05", title: "Thematic & Statistical Analysis",         category: "Data Analysis",        durationLabel: "4 weeks", barLeft: 240,    barWidth: 320 },
-  { id: "g-06", title: "Midterm Presentation",                    category: "Milestone",            durationLabel: "1 day",   barLeft: 308.56, barWidth: 11.43, isMilestone: true },
-  { id: "g-07", title: "Draft AI-Driven L&D Adoption Strategies", category: "Strategy Development", durationLabel: "4 days",  barLeft: 548.56, barWidth: 45.71 },
-  { id: "g-08", title: "Stakeholder Feedback Session",            category: "Strategy Development", durationLabel: "1 day",   barLeft: 571.43, barWidth: 11.43 },
-  { id: "g-09", title: "Review & Final Editing",                  category: "Final Delivery",       durationLabel: "1 week",  barLeft: 628.56, barWidth: 91.43 },
-  { id: "g-10", title: "Final Report Submission",                 category: "Milestone",            durationLabel: "1 day",   barLeft: 720,    barWidth: 11.43, isMilestone: true },
-];
+export default function GanttView({ visibleTasks }: GanttViewProps) {
+  const now = new Date();
+  
+  // Start timeline from the Sunday 2 weeks ago
+  const startDate = new Date(now);
+  startDate.setDate(now.getDate() - now.getDay() - 14);
 
-const LEGEND_ITEMS = [
-  "Data Collection",
-  "Data Analysis",
-  "Strategy Development",
-  "Final Delivery",
-  "Milestone",
-];
+  const WEEK_LABELS = Array.from({length: 10}).map((_, i) => {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + i * 7);
+    return `${d.toLocaleString('en-US', { month: 'short' })} ${d.getDate()}`;
+  });
 
-export default function GanttView() {
+  const GANTT_ROWS: GanttRow[] = visibleTasks.map((t) => {
+    let barLeft = 0;
+    if (t.dueDateLabel && t.dueDateLabel !== "No due date") {
+      const d = new Date(t.dueDateLabel);
+      const diffTime = d.getTime() - startDate.getTime();
+      const diffDays = diffTime / (1000 * 3600 * 24);
+      barLeft = (diffDays / 70) * 720; // 10 weeks = 70 days mapped to 720px width
+      if (barLeft < 0) barLeft = 0;
+      if (barLeft > 720 - 45) barLeft = 720 - 45; // keep inside bounds
+    }
+
+    return {
+      id: t.id.toString(),
+      title: t.title,
+      category: t.priority,
+      durationLabel: "Due",
+      barLeft,
+      barWidth: 45.71, // visually roughly 4 days
+      onEdit: t.onEdit,
+      onDelete: t.onDelete,
+    };
+  });
+
   return (
     <div className="bg-white rounded-xl p-8 shadow-sm flex flex-col gap-8">
       {/* Header */}
       <div className="flex flex-col gap-2">
         <h2 className="text-2xl font-medium text-gray-900 leading-9">
-          Capstone Project Gantt Chart
+          My Tasks Timeline
         </h2>
         <p className="text-base text-gray-500 leading-6">
-          Summary View - January to March 2026
+          10-Week Rolling Forward View
         </p>
       </div>
 
@@ -71,25 +87,8 @@ export default function GanttView() {
             const cat = CATEGORIES[label];
             return (
               <div key={label} className="flex items-center gap-2">
-                {label === "Milestone" ? (
-                  <div className="size-4 relative overflow-hidden shrink-0">
-                    <div
-                      className="absolute"
-                      style={{
-                        width: 11.43,
-                        height: 11.43,
-                        left: 2.28,
-                        top: 2.28,
-                        background: "#0A0A0A",
-                        outline: "1.14px #0A0A0A solid",
-                        outlineOffset: "-0.57px",
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="size-4 rounded shrink-0" style={{ background: cat.color }} />
-                )}
-                <span className="text-sm text-gray-700 whitespace-nowrap">{label}</span>
+                <div className="size-4 rounded shrink-0" style={{ background: cat.color }} />
+                <span className="text-sm text-gray-700 whitespace-nowrap capitalize">{label}</span>
               </div>
             );
           })}
@@ -118,15 +117,29 @@ export default function GanttView() {
               {GANTT_ROWS.map((row) => {
                 const cat = CATEGORIES[row.category];
                 return (
-                  <div key={row.id} className="relative h-12">
+                  <div key={row.id} className="relative h-12 group">
                     {/* Label */}
-                    <div className="absolute left-0 top-1.5 flex flex-col pr-4" style={{ width: 256 }}>
-                      <span className="text-sm font-medium text-gray-900 leading-5 truncate">
-                        {row.title}
-                      </span>
-                      <span className="text-xs leading-4" style={{ color: cat.textColor }}>
-                        {row.category} &bull; {row.durationLabel}
-                      </span>
+                    <div className="absolute left-0 top-1.5 flex justify-between pr-4 items-center" style={{ width: 256 }}>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-medium text-gray-900 leading-5 truncate">
+                          {row.title}
+                        </span>
+                        <span className="text-xs leading-4" style={{ color: cat?.textColor || "#666" }}>
+                          Priority: {typeof row.category === 'string' ? row.category.charAt(0).toUpperCase() + row.category.slice(1) : ''}
+                        </span>
+                      </div>
+                      <div className="opacity-0 group-hover:opacity-100 flex gap-1 shrink-0">
+                        {row.onEdit && (
+                          <button onClick={row.onEdit} className="p-1 text-gray-400 hover:text-blue-600 rounded hover:bg-blue-50">
+                            <Edit2 className="size-3.5" />
+                          </button>
+                        )}
+                        {row.onDelete && (
+                          <button onClick={row.onDelete} className="p-1 text-gray-400 hover:text-red-600 rounded hover:bg-red-50">
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Timeline track */}
@@ -138,45 +151,25 @@ export default function GanttView() {
                         ))}
                       </div>
 
-                      {/* Milestone diamond */}
-                      {row.isMilestone && (
-                        <div
-                          className="absolute flex items-center justify-center shadow-md overflow-hidden"
-                          style={{ left: row.barLeft, top: 8, width: 11.43, height: 24 }}
-                        >
-                          <div
-                            style={{
-                              width: 9.52,
-                              height: 9.52,
-                              background: "#0A0A0A",
-                              outline: "0.95px #0A0A0A solid",
-                              outlineOffset: "-0.48px",
-                            }}
-                          />
-                        </div>
-                      )}
-
                       {/* Duration bar */}
-                      {!row.isMilestone && (
-                        <div
-                          className="absolute flex items-center justify-center overflow-hidden rounded-lg shadow-md"
-                          style={{
-                            left: row.barLeft,
-                            top: 8,
-                            width: row.barWidth,
-                            height: 32,
-                            background: cat.color,
-                            outline: `1.6px ${cat.color} solid`,
-                            outlineOffset: "-1.6px",
-                          }}
-                        >
-                          {row.barWidth >= 40 && (
-                            <span className="text-white text-xs font-medium leading-4 whitespace-nowrap">
-                              {row.durationLabel}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      <div
+                        className="absolute flex items-center justify-center overflow-hidden rounded-lg shadow-md"
+                        style={{
+                          left: row.barLeft,
+                          top: 8,
+                          width: row.barWidth,
+                          height: 32,
+                          background: cat ? cat.color : "#94A3B8",
+                          outline: `1.6px ${cat ? cat.color : "#94A3B8"} solid`,
+                          outlineOffset: "-1.6px",
+                        }}
+                      >
+                        {row.barWidth >= 40 && (
+                          <span className="text-white text-xs font-medium leading-4 whitespace-nowrap">
+                            {row.durationLabel}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -187,7 +180,7 @@ export default function GanttView() {
 
         {/* Footer */}
         <p className="text-center text-sm text-gray-500 leading-5">
-          Current Date: March 14, 2026
+          Current Date: {now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
       </div>
     </div>

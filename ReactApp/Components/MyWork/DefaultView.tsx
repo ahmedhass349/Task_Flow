@@ -64,6 +64,9 @@ function TaskGroup({
                 assignee={task.assignee}
                 priority={task.status === "completed" ? undefined : task.priority}
                 completed={task.status === "completed"}
+                onEdit={task.onEdit}
+                onDelete={task.onDelete}
+                onStatus={task.onStatus}
               />
             </div>
             <button

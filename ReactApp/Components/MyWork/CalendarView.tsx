@@ -13,40 +13,13 @@ interface CalendarViewProps {
 // ── Calendar-specific types ──────────────────────────────────────────────
 
 interface CalEvent {
-  col: number;
   startHour: number;
   durationHours: number;
   title: string;
   color: "blue" | "violet" | "amber";
   hasLink?: boolean;
+  onEdit?: () => void;
 }
-
-// ── Static data ──────────────────────────────────────────────────────────
-
-const TODAY = 14;
-
-const WEEK_DAYS = [
-  { label: "SUN", day: 9 },
-  { label: "MON", day: 10 },
-  { label: "TUE", day: 11 },
-  { label: "WED", day: 12 },
-  { label: "THU", day: 13 },
-  { label: "FRI", day: 14 },
-  { label: "SAT", day: 15 },
-];
-
-const CAL_EVENTS: CalEvent[] = [
-  { col: 1, startHour: 8,  durationHours: 1,   title: "Monthly catch-up",               color: "blue",   hasLink: true },
-  { col: 1, startHour: 9,  durationHours: 1,   title: "Quarterly review",               color: "blue",   hasLink: true },
-  { col: 1, startHour: 10, durationHours: 1.5, title: "New Employee Welcome Lunch!",     color: "violet" },
-  { col: 2, startHour: 9,  durationHours: 1,   title: "City Sales Pitch",               color: "blue" },
-  { col: 3, startHour: 10, durationHours: 1,   title: "Design Review",                  color: "blue",   hasLink: true },
-  { col: 4, startHour: 8,  durationHours: 1,   title: "Follow up proposal",             color: "amber",  hasLink: true },
-  { col: 4, startHour: 11, durationHours: 1,   title: "Visit to discuss improvements",  color: "blue" },
-  { col: 5, startHour: 9,  durationHours: 1,   title: "Presentation of new products",   color: "blue" },
-  { col: 5, startHour: 13, durationHours: 1,   title: "Design Review",                  color: "blue",   hasLink: true },
-  { col: 6, startHour: 10, durationHours: 1,   title: "1:1 with Jon",                   color: "amber",  hasLink: true },
-];
 
 const COLOR_CLASSES = {
   blue:   { bg: "bg-sky-50",    bar: "bg-sky-400",    text: "text-sky-700",    time: "text-sky-600" },
@@ -54,7 +27,7 @@ const COLOR_CLASSES = {
   amber:  { bg: "bg-amber-50",  bar: "bg-amber-400",  text: "text-amber-700",  time: "text-amber-600" },
 };
 
-const HOUR_ROWS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+const HOUR_ROWS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 const ROW_HEIGHT = 64;
 const START_HOUR = 7;
 
@@ -65,11 +38,13 @@ function formatHour(h: number): string {
 
 // ── Mini Calendar Sub-component ──────────────────────────────────────────
 
-function MiniCalendar({ taskDotsByDay }: { taskDotsByDay: Record<number, string[]> }) {
-  // March 2026 starts on Sunday
-  const miniCalDays: (number | null)[] = [
-    ...Array.from({ length: 31 }, (_, i) => i + 1),
-  ];
+function MiniCalendar({ taskDotsByDay, year, month, todayDate }: { taskDotsByDay: Record<number, string[]>; year: number; month: number; todayDate: number | null }) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+
+  const miniCalDays: (number | null)[] = [];
+  for (let i = 0; i < firstDayOfWeek; i++) miniCalDays.push(null);
+  for (let d = 1; d <= daysInMonth; d++) miniCalDays.push(d);
   while (miniCalDays.length % 7 !== 0) miniCalDays.push(null);
 
   return (
@@ -86,7 +61,7 @@ function MiniCalendar({ taskDotsByDay }: { taskDotsByDay: Record<number, string[
         <div key={week} className="grid grid-cols-7">
           {miniCalDays.slice(week * 7, week * 7 + 7).map((day, cellIdx) => {
             const dots = day ? (taskDotsByDay[day] ?? []) : [];
-            const isToday = day === TODAY;
+            const isToday = day === todayDate;
             return (
               <div key={cellIdx} className="flex flex-col items-center py-0.5">
                 {isToday ? (
@@ -98,8 +73,8 @@ function MiniCalendar({ taskDotsByDay }: { taskDotsByDay: Record<number, string[
                   </div>
                 ) : (
                   <>
-                    <span className={`text-[10px] font-semibold leading-4 ${day === null ? "text-transparent" : day > 28 || day < 1 ? "text-zinc-600" : "text-white"}`}>
-                      {day ?? ""}
+                    <span className={`text-[10px] font-semibold leading-4 ${day === null ? "text-transparent" : "text-white"}`}>
+                      {day}
                     </span>
                     {dots.length > 0 ? (
                       <div className="flex gap-0.5 mt-px">
@@ -123,27 +98,23 @@ function MiniCalendar({ taskDotsByDay }: { taskDotsByDay: Record<number, string[
 
 // ── Agenda Sidebar Sub-component ─────────────────────────────────────────
 
-function AgendaSidebar() {
-  const todayEvents = [
-    { time: "8:30 AM", title: "Monthly catch-up", color: "#3B82F6", link: true },
-    { time: "9:00 AM", title: "Quarterly review", color: "#3B82F6", link: true },
-  ];
+function AgendaSidebar({ visibleTasks }: { visibleTasks: MyWorkTask[] }) {
+  const now = new Date();
+  
+  const todayTasks = visibleTasks.filter((t) => t.dueOrder === 1 && t.status !== "completed");
+  const upcomingTasks = visibleTasks.filter((t) => t.dueOrder > 1 && t.status !== "completed");
 
-  const upcomingSections = [
-    {
-      label: "TOMORROW",
-      date: "3/15/2026",
-      events: [{ time: "9:00 AM", title: "City Sales Pitch", color: "#EC4899", link: true }],
-    },
-    {
-      label: "MONDAY",
-      date: "3/16/2026",
-      events: [
-        { time: "10:00 AM", title: "Design Review", color: "#3B82F6", link: true },
-        { time: "2:00 PM", title: "1:1 with Jon", color: "#FBBF24", link: true },
-      ],
-    },
-  ];
+  const todayEvents = todayTasks.map(t => ({
+    time: "Due",
+    title: t.title,
+    color: t.priority === "high" ? "#EF4444" : t.priority === "medium" ? "#A855F7" : "#2DD4BF"
+  }));
+
+  const upcomingEvents = upcomingTasks.slice(0, 5).map(t => ({
+    time: t.dueDateLabel,
+    title: t.title,
+    color: t.priority === "high" ? "#EF4444" : t.priority === "medium" ? "#A855F7" : "#2DD4BF"
+  }));
 
   return (
     <div className="flex flex-col gap-2.5 overflow-hidden">
@@ -162,26 +133,20 @@ function AgendaSidebar() {
           <div className="flex items-center gap-1.5">
             <span className="size-2.5 rounded-full shrink-0" style={{ background: ev.color }} />
             <span className="text-[10px] text-zinc-400 font-semibold">{ev.time}</span>
-            {ev.link && (
-              <span className="size-3 rounded-full bg-zinc-400 inline-flex items-center justify-center text-zinc-900 text-[9px] font-bold">
-                &nearr;
-              </span>
-            )}
           </div>
           <div className="pl-4 text-[11px] text-white">{ev.title}</div>
         </div>
       ))}
 
       {/* Upcoming */}
-      {upcomingSections.map((section, si) => (
-        <div key={si} className="flex flex-col gap-1">
+      {upcomingEvents.length > 0 && (
+        <div className="flex flex-col gap-1 mt-2">
           <div className="flex justify-between">
             <div className="flex gap-1">
-              <span className="text-xs font-bold text-white/60">{section.label}</span>
-              <span className="text-xs text-white/60">{section.date}</span>
+              <span className="text-xs font-bold text-white/60">UPCOMING</span>
             </div>
           </div>
-          {section.events.map((ev, ei) => (
+          {upcomingEvents.map((ev, ei) => (
             <div key={ei} className="flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5">
                 <span className="size-2.5 rounded-full shrink-0" style={{ background: ev.color }} />
@@ -191,23 +156,49 @@ function AgendaSidebar() {
             </div>
           ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
 
-// ── Main CalendarView Component ──────────────────────────────────────────
-
 export default function CalendarView({ visibleTasks }: CalendarViewProps) {
-  // Build task-dot map for mini-calendar
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const date = now.getDate();
+  const todayDateObj = new Date();
+
+  // Find Sunday of current week
+  const firstDayOfWeek = new Date(now);
+  firstDayOfWeek.setDate(date - now.getDay());
+
+  // Generate grid columns for the week
+  const WEEK_DAYS = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(firstDayOfWeek);
+    d.setDate(d.getDate() + i);
+    return {
+      label: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][d.getDay()],
+      day: d.getDate(),
+      dateObj: d,
+    };
+  });
+
+  const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  // Build task-dot map for mini-calendar (filtering to current month)
   const taskDotsByDay = visibleTasks.reduce<Record<number, string[]>>((acc, task) => {
-    if (!task.dueDay) return acc;
-    if (!acc[task.dueDay]) acc[task.dueDay] = [];
-    const color =
-      task.priority === "high"   ? "#EF4444" :
-      task.priority === "medium" ? "#A855F7" :
-      "#2DD4BF";
-    acc[task.dueDay].push(color);
+    // We expect visibleTasks to have a valid dueDate field from the original Task object, if possible
+    // Wait, MyWorkTask only has `dueDay` (number) and `dueDateLabel`. It doesn't keep the actual Date object!
+    // We can parse `dueDateLabel` if it's there. 
+    if (task.dueDateLabel && task.dueDateLabel !== "No due date") {
+      const d = new Date(task.dueDateLabel);
+      if (d.getMonth() === month && d.getFullYear() === year) {
+        const dd = d.getDate();
+        if (!acc[dd]) acc[dd] = [];
+        const color = task.priority === "high" ? "#EF4444" : task.priority === "medium" ? "#A855F7" : "#2DD4BF";
+        acc[dd].push(color);
+      }
+    }
     return acc;
   }, {});
 
@@ -233,8 +224,8 @@ export default function CalendarView({ visibleTasks }: CalendarViewProps) {
         {/* Month + year */}
         <div className="flex justify-between items-center">
           <div className="flex gap-1 items-baseline">
-            <span className="text-white text-[22px]">March</span>
-            <span className="text-red-500 text-[22px]">2026</span>
+            <span className="text-white text-[22px]">{MONTH_NAMES[month]}</span>
+            <span className="text-red-500 text-[22px]">{year}</span>
           </div>
           <div className="flex">
             {["\u2039", "\u203A"].map((ch, i) => (
@@ -245,9 +236,9 @@ export default function CalendarView({ visibleTasks }: CalendarViewProps) {
           </div>
         </div>
 
-        <MiniCalendar taskDotsByDay={taskDotsByDay} />
+        <MiniCalendar taskDotsByDay={taskDotsByDay} year={year} month={month} todayDate={date} />
         <div className="h-px bg-zinc-800" />
-        <AgendaSidebar />
+        <AgendaSidebar visibleTasks={visibleTasks} />
       </aside>
 
       {/* Main week grid */}
@@ -306,7 +297,7 @@ export default function CalendarView({ visibleTasks }: CalendarViewProps) {
             </div>
 
             {WEEK_DAYS.map((wd) => {
-              const isWeekToday = wd.day === TODAY;
+              const isWeekToday = wd.day === date && wd.dateObj.getMonth() === month && wd.dateObj.getFullYear() === year;
               const isWeekend = wd.label === "SUN" || wd.label === "SAT";
               return (
                 <div
@@ -342,8 +333,25 @@ export default function CalendarView({ visibleTasks }: CalendarViewProps) {
             {/* Day columns */}
             {WEEK_DAYS.map((wd, colIdx) => {
               const isWeekend = wd.label === "SUN" || wd.label === "SAT";
-              const isWeekToday = wd.day === TODAY;
-              const columnEvents = CAL_EVENTS.filter((e) => e.col === colIdx);
+              const isWeekToday = wd.day === date && wd.dateObj.getMonth() === month && wd.dateObj.getFullYear() === year;
+              
+              const columnEvents = visibleTasks.filter(t => {
+                if (!t.dueDateLabel || t.dueDateLabel === "No due date") return false;
+                const d = new Date(t.dueDateLabel);
+                return d.getDate() === wd.day && d.getMonth() === wd.dateObj.getMonth() && d.getFullYear() === wd.dateObj.getFullYear();
+              }).map(t => {
+                // Approximate time if backend didn't parse full ISO to `dueDateLabel`
+                // Wait! `dueDateLabel` is `toLocaleDateString()` which drops time!
+                // We should assume 9 AM or default for day view if time is lost.
+                // We will render it at 9 AM for the calendar blocks so it shows up
+                return {
+                  startHour: 9, 
+                  durationHours: 1,
+                  title: t.title,
+                  color: t.priority === "high" ? "amber" : t.priority === "medium" ? "violet" : "blue",
+                  onEdit: t.onEdit
+                } as CalEvent;
+              });
 
               return (
                 <div
@@ -361,25 +369,21 @@ export default function CalendarView({ visibleTasks }: CalendarViewProps) {
 
                   {/* Event blocks */}
                   {columnEvents.map((ev, ei) => {
-                    const topPx = (ev.startHour - START_HOUR) * ROW_HEIGHT + 1;
+                    const topPx = Math.max(0, (ev.startHour - START_HOUR) * ROW_HEIGHT + 1 + (ei * 20)); // stagger slightly if multiple
                     const heightPx = ev.durationHours * ROW_HEIGHT - 4;
                     const cc = COLOR_CLASSES[ev.color];
                     const startLabel = formatHour(ev.startHour).replace(" ", ":00 ");
                     return (
                       <div
                         key={ei}
-                        className={`absolute left-0.5 right-0.5 rounded-md overflow-hidden flex cursor-pointer ${cc.bg}`}
-                        style={{ top: topPx, height: heightPx }}
+                        onClick={(e) => { e.stopPropagation(); if (ev.onEdit) ev.onEdit(); }}
+                        className={`absolute left-0.5 right-0.5 rounded-md overflow-hidden flex cursor-pointer hover:brightness-95 ${cc.bg}`}
+                        style={{ top: topPx, height: heightPx, zIndex: 10 }}
                       >
                         <div className={`w-[3px] shrink-0 ${cc.bar}`} />
                         <div className="flex-1 p-1 flex flex-col gap-0.5 overflow-hidden">
                           <div className="flex items-center gap-1">
                             <span className={`text-[10px] font-semibold ${cc.time}`}>{startLabel}</span>
-                            {ev.hasLink && (
-                              <span className={`size-3 rounded-full inline-flex items-center justify-center text-[8px] text-white shrink-0 ${cc.bar}`}>
-                                &nearr;
-                              </span>
-                            )}
                           </div>
                           <span
                             className={`text-[11px] font-semibold leading-snug overflow-hidden ${cc.text}`}

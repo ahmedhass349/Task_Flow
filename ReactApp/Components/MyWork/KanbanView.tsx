@@ -3,6 +3,7 @@
 // Renders tasks in 4 status columns (To Do, In Progress, In Review,
 // Completed) with colored headers and task cards.
 
+import { Edit2, Trash2 } from "lucide-react";
 import type { MyWorkTask, Priority, Status } from "./types";
 
 interface KanbanViewProps {
@@ -73,17 +74,29 @@ export default function KanbanView({ visibleTasks }: KanbanViewProps) {
                         </div>
                         <span className="text-sm font-medium text-gray-900 leading-5">{task.title}</span>
                       </div>
-                      <span
-                        className="px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0"
-                        style={{ background: chip.bg, color: chip.color }}
-                      >
-                        {chip.label}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap"
+                          style={{ background: chip.bg, color: chip.color }}
+                        >
+                          {chip.label}
+                        </span>
+                        {task.onEdit && (
+                          <button onClick={task.onEdit} className="p-1 text-gray-400 hover:text-blue-600 rounded hover:bg-blue-50" aria-label="Edit task">
+                            <Edit2 className="size-3.5" />
+                          </button>
+                        )}
+                        {task.onDelete && (
+                          <button onClick={task.onDelete} className="p-1 text-gray-400 hover:text-red-600 rounded hover:bg-red-50" aria-label="Delete task">
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Description */}
                     <p className="text-xs font-light text-gray-500 leading-[18px]">
-                      {task.project} — work tracked for sprint delivery and review.
+                      {task.project}
                     </p>
 
                     {/* Deadline */}
@@ -100,33 +113,11 @@ export default function KanbanView({ visibleTasks }: KanbanViewProps) {
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <div className="flex">
-                          <div className="size-7 rounded-full border-[1.5px] border-white -mr-2 flex items-center justify-center bg-blue-300">
-                            <span className="text-[10px] font-bold text-blue-800">SC</span>
+                          <div className="size-7 rounded-full border-[1.5px] border-white flex items-center justify-center bg-blue-100" title={task.assignee}>
+                            <span className="text-[10px] font-bold text-blue-800">
+                              {task.assignee === "Unassigned" ? "?" : task.assignee.substring(0, 2).toUpperCase()}
+                            </span>
                           </div>
-                          <div className="size-7 rounded-full border-[1.5px] border-white -mr-2 flex items-center justify-center bg-red-300">
-                            <span className="text-[10px] font-bold text-red-900">MJ</span>
-                          </div>
-                          <div className="size-7 rounded-full border-[1.5px] border-white flex items-center justify-center bg-gray-100">
-                            <span className="text-[9px] font-extrabold text-gray-500">+1</span>
-                          </div>
-                        </div>
-                        <button aria-label="Add assignee" className="size-7 rounded-full border border-gray-400 flex items-center justify-center ml-2">
-                          <span className="text-[15px] text-gray-400 leading-none font-light">+</span>
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex items-center gap-1">
-                          <div className="size-3.5 relative">
-                            <div className="absolute left-0.5 top-px w-2.5 h-3.5 bg-gray-400 rounded-sm" />
-                          </div>
-                          <span className="text-xs font-bold text-gray-400">2</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="size-3.5 relative">
-                            <div className="absolute left-px top-[1.5px] w-3 h-[11px] bg-gray-400 rounded-sm" />
-                          </div>
-                          <span className="text-xs font-bold text-gray-400">3</span>
                         </div>
                       </div>
                     </div>

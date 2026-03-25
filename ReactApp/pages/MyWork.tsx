@@ -31,13 +31,14 @@ type Tab = "assigned" | "today" | "upcoming" | "completed";
 type ViewMode = "default" | "kanban" | "table" | "gantt" | "calendar";
 
 export default function MyWork() {
-  const { tasks, isLoading, error, refetch, createTask, updateStatus } = useTasks();
+  const { tasks, isLoading, error, refetch, createTask, updateStatus, updateTask, deleteTask } = useTasks();
   
   const [activeTab, setActiveTab] = useState<Tab>("assigned");
   const [viewMode, setViewMode] = useState<ViewMode>("default");
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
   const [showNewTaskCard, setShowNewTaskCard] = useState(false);
+  const [editingTask, setEditingTask] = useState<MyWorkTask | null>(null);
 
   // Convert backend tasks to MyWorkTask format
   const convertedTasks: MyWorkTask[] = useMemo(() => {
@@ -52,8 +53,36 @@ export default function MyWork() {
       priority: mapPriority(task.priority),
       status: mapStatus(task.status),
       starred: task.isStarred,
+      onEdit: () => {
+        setEditingTask({
+          id: task.id,
+          title: task.title,
+          project: task.projectName || "Unknown Project",
+          assignee: task.assigneeName || "Unassigned",
+          dueDateLabel: task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date",
+          dueOrder: task.dueDate ? getDueOrder(new Date(task.dueDate)) : 999,
+          priority: mapPriority(task.priority),
+          status: mapStatus(task.status),
+          starred: task.isStarred
+        });
+        setShowNewTaskCard(true);
+      },
+      onDelete: async () => {
+        if (confirm("Are you sure you want to delete this task?")) {
+          await deleteTask(task.id);
+          refetch();
+        }
+      },
+      onStatus: async (newStatus: Status) => {
+        const backendStatus =
+          newStatus === "todo" ? "Todo" :
+          newStatus === "inProgress" ? "InProgress" :
+          newStatus === "review" ? "Review" : "Completed";
+        await updateStatus(task.id, backendStatus);
+        refetch();
+      }
     }));
-  }, [tasks]);
+  }, [tasks, deleteTask, updateStatus, refetch]);
 
   // Helper functions
   function getDueOrder(dueDate: Date): number {
@@ -91,17 +120,29 @@ export default function MyWork() {
 
   const handleCreateTask = async (data: TaskPayload) => {
     try {
-      await createTask({
-        title: data.title,
-        description: data.notes || `${data.taskType} - ${data.course}`,
-        priority: data.priority.charAt(0).toUpperCase() + data.priority.slice(1) as "Low" | "Medium" | "High",
-        status: "Todo",
-        dueDate: data.dueDate || undefined,
-        reminderMap: data.reminderEnabled ? data.reminderMap : undefined,
-        notifyEmail: data.notifyVia.email,
-        notifyInApp: data.notifyVia.inApp,
-      });
+      if (editingTask) {
+        await updateTask(editingTask.id, {
+          title: data.title,
+          description: data.notes || `${data.taskType} - ${data.course}`,
+          priority: data.priority.charAt(0).toUpperCase() + data.priority.slice(1) as "Low" | "Medium" | "High",
+          status: editingTask.status === "todo" ? "Todo" : editingTask.status === "inProgress" ? "InProgress" : editingTask.status === "review" ? "Review" : "Completed",
+          dueDate: data.dueDate || undefined,
+        });
+      } else {
+        await createTask({
+          title: data.title,
+          description: data.notes || `${data.taskType} - ${data.course}`,
+          priority: data.priority.charAt(0).toUpperCase() + data.priority.slice(1) as "Low" | "Medium" | "High",
+          status: "Todo",
+          dueDate: data.dueDate || undefined,
+          reminderMap: data.reminderEnabled ? data.reminderMap : undefined,
+          notifyEmail: data.notifyVia.email,
+          notifyInApp: data.notifyVia.inApp,
+        });
+      }
       setShowNewTaskCard(false);
+      setEditingTask(null);
+      refetch();
     } catch (err) {
       // Error is handled by the hook
     }
@@ -192,7 +233,7 @@ export default function MyWork() {
       case "table":
         return <TableView visibleTasks={visibleTasks} />;
       case "gantt":
-        return <GanttView />;
+        return <GanttView visibleTasks={visibleTasks} />;
       case "calendar":
         return <CalendarView visibleTasks={visibleTasks} />;
       default:
@@ -222,7 +263,7 @@ export default function MyWork() {
                   Export
                 </button>
                 <button
-                  onClick={() => setShowNewTaskCard(true)}
+                  onClick={() => { setEditingTask(null); setShowNewTaskCard(true); }}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   New Task
@@ -238,7 +279,7 @@ export default function MyWork() {
                 icon={ClipboardList}
                 title="No tasks assigned"
                 description="You have no tasks right now. Create a new task or ask your team lead to assign work."
-                action={{ label: "New Task", onClick: () => setShowNewTaskCard(true) }}
+                action={{ label: "New Task", onClick: () => { setEditingTask(null); setShowNewTaskCard(true); } }}
               />
             )}
 
@@ -372,7 +413,8 @@ export default function MyWork() {
             onClick={(e) => e.stopPropagation()}
           >
             <AcademicTaskCard
-              onClose={() => setShowNewTaskCard(false)}
+              initialData={editingTask}
+              onClose={() => { setShowNewTaskCard(false); setEditingTask(null); }}
               onSuccess={handleCreateTask}
             />
           </div>

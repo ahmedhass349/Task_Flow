@@ -4,6 +4,7 @@
 // purple-accented nested panel.
 
 import { Fragment, useState } from "react";
+import { Edit2, Trash2 } from "lucide-react";
 import type { MyWorkTask, Priority, Status } from "./types";
 
 interface TableViewProps {
@@ -20,14 +21,7 @@ interface SubTask {
   status: Status;
 }
 
-const SUB_TASKS: Record<string, SubTask[]> = {
-  "t-001": [
-    { id: "st-1a", title: "Create empty state illustrations", dueDate: "Mar 11", priority: "low",    status: "completed" },
-    { id: "st-1b", title: "Write empty state copy",           dueDate: "Mar 12", priority: "medium", status: "completed" },
-    { id: "st-1c", title: "Implement UI component",           dueDate: "Mar 14", priority: "high",   status: "inProgress" },
-    { id: "st-1d", title: "QA review",                        dueDate: "Mar 16", priority: "medium", status: "todo" },
-  ],
-};
+const SUB_TASKS: Record<string, SubTask[]> = {};
 
 // ── Badge helpers ─────────────────────────────────────────────────────────
 
@@ -71,8 +65,8 @@ function PriorityBadge({ priority }: { priority: Priority }) {
 
 // ── Shared grid constants ────────────────────────────────────────────────
 
-const COL_GRID = "52px minmax(180px,2fr) 1fr 1fr 110px 100px 120px";
-const SUB_COL_GRID = "40px 1fr 120px 110px 130px";
+const COL_GRID = "52px minmax(180px,2fr) 1fr 1fr 110px 100px 120px 80px";
+const SUB_COL_GRID = "40px 1fr 120px 110px 130px 80px";
 const DIVIDER_COLOR = "#DCDCDC";
 const PURPLE_ACCENT = "#6C4B99";
 
@@ -101,6 +95,7 @@ export default function TableView({ visibleTasks }: TableViewProps) {
         <div className={headerCellClass}>Due Date</div>
         <div className={headerCellClass}>Priority</div>
         <div className={headerCellClass}>Status</div>
+        <div className={headerCellClass}>Actions</div>
       </div>
 
       {/* Rows */}
@@ -150,6 +145,18 @@ export default function TableView({ visibleTasks }: TableViewProps) {
               <div className={`${cellClass} text-gray-600`}>{task.dueDateLabel}</div>
               <div><PriorityBadge priority={task.priority} /></div>
               <div><StatusBadge status={task.status} /></div>
+              <div className="flex items-center gap-1">
+                {task.onEdit && (
+                  <button onClick={(e) => { e.stopPropagation(); task.onEdit!(); }} className="p-1 text-gray-400 hover:text-blue-600 rounded hover:bg-blue-50">
+                    <Edit2 className="size-4" />
+                  </button>
+                )}
+                {task.onDelete && (
+                  <button onClick={(e) => { e.stopPropagation(); task.onDelete!(); }} className="p-1 text-gray-400 hover:text-red-600 rounded hover:bg-red-50">
+                    <Trash2 className="size-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Expanded sub-task panel */}

@@ -9,6 +9,7 @@ interface ReminderMap {
 interface AcademicTaskCardProps {
   onClose?: () => void
   onSuccess?: (task: TaskPayload) => Promise<void> | void
+  initialData?: any
 }
 
 export interface TaskPayload {
@@ -227,16 +228,25 @@ function Calendar({ reminderMap, selectedDay, onSelectDay }: CalendarProps) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCardProps) {
+export default function AcademicTaskCard({ onClose, onSuccess, initialData }: AcademicTaskCardProps) {
   // Form state
-  const [title, setTitle] = useState("")
+  const [title, setTitle] = useState(initialData?.title || "")
   const [taskType, setTaskType] = useState("Grading")
   const [customType, setCustomType] = useState("")
   const [notes, setNotes] = useState("")
   const [course, setCourse] = useState("")
-  const [dueDate, setDueDate] = useState("")
+  const [dueDate, setDueDate] = useState(() => {
+    if (initialData?.dueDateLabel && initialData.dueDateLabel !== "No due date") {
+      const d = new Date(initialData.dueDateLabel);
+      if (!isNaN(d.getTime())) {
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        return d.toISOString().slice(0, 16);
+      }
+    }
+    return "";
+  })
   const [semester, setSemester] = useState("Spring 2025")
-  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium")
+  const [priority, setPriority] = useState<"low" | "medium" | "high">(initialData?.priority || "medium")
 
   // Reminder state
   const [reminderOn, setReminderOn] = useState(false)
@@ -341,8 +351,8 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
             </svg>
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-slate-950">New academic task</h2>
-            <p className="text-sm text-slate-500 mt-1">Create and schedule your task</p>
+            <h2 className="text-2xl font-semibold text-slate-950">{initialData ? "Edit task" : "New academic task"}</h2>
+            <p className="text-sm text-slate-500 mt-1">{initialData ? "Update your task details" : "Create and schedule your task"}</p>
           </div>
         </div>
         <button 
@@ -365,7 +375,7 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
                 <polyline points="2,5 4,7.5 8,3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            Task created successfully!
+            Task {initialData ? "updated" : "created"} successfully!
           </div>
         )}
 
@@ -645,7 +655,7 @@ export default function AcademicTaskCard({ onClose, onSuccess }: AcademicTaskCar
             !isValid || loading ? "opacity-35 cursor-not-allowed" : "opacity-100 cursor-pointer"
           } bg-blue-600 hover:bg-blue-700`}
         >
-          {loading ? "Creating..." : "Assign task"}
+          {loading ? (initialData ? "Updating..." : "Creating...") : (initialData ? "Update task" : "Assign task")}
         </button>
       </div>
     </div>
