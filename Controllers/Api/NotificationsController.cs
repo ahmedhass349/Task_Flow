@@ -80,5 +80,39 @@ namespace taskflow.Controllers.Api
             await _notificationService.MarkAllAsReadAsync(userId);
             return Ok(ApiResponse<string>.Ok("All notifications marked as read."));
         }
+
+        /// <summary>
+        /// Gets a single notification by id for the authenticated user.
+        /// </summary>
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetNotification(int id)
+        {
+            var userId = GetUserId();
+            var notification = await _notificationService.GetByIdAsync(id, userId);
+            if (notification == null) return NotFound(ApiResponse<string>.Fail("Notification not found."));
+            return Ok(ApiResponse<NotificationDto>.Ok(notification));
+        }
+
+        /// <summary>
+        /// Deletes a specific notification for the authenticated user.
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteNotification(int id)
+        {
+            var userId = GetUserId();
+            await _notificationService.DeleteAsync(id, userId);
+            return Ok(ApiResponse<string>.Ok("Notification deleted."));
+        }
+
+        /// <summary>
+        /// Deletes all notifications for the authenticated user.
+        /// </summary>
+        [HttpDelete]
+        public async Task<IActionResult> DeleteAll()
+        {
+            var userId = GetUserId();
+            await _notificationService.DeleteAllAsync(userId);
+            return Ok(ApiResponse<string>.Ok("All notifications deleted."));
+        }
     }
 }

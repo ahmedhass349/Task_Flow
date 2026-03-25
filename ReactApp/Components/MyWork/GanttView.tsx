@@ -34,14 +34,16 @@ const LEGEND_ITEMS: Priority[] = ["high", "medium", "low"];
 export default function GanttView({ visibleTasks }: GanttViewProps) {
   const now = new Date();
   
-  // Start timeline from the Sunday 2 weeks ago
-  const startDate = new Date(now);
-  startDate.setDate(now.getDate() - now.getDay() - 14);
+  // Timeline: start at Jan 1 of current year and show full year
+  const startDate = new Date(now.getFullYear(), 0, 1);
+  const endDate = new Date(now.getFullYear(), 11, 31);
+  const isLeap = (y: number) => (new Date(y, 1, 29).getDate() === 29);
+  const totalDays = (isLeap(now.getFullYear()) ? 366 : 365);
 
-  const WEEK_LABELS = Array.from({length: 10}).map((_, i) => {
-    const d = new Date(startDate);
-    d.setDate(d.getDate() + i * 7);
-    return `${d.toLocaleString('en-US', { month: 'short' })} ${d.getDate()}`;
+  // Month labels across the year
+  const MONTH_LABELS = Array.from({ length: 12 }).map((_, i) => {
+    const d = new Date(now.getFullYear(), i, 1);
+    return `${d.toLocaleString('en-US', { month: 'short' })}`;
   });
 
   const GANTT_ROWS: GanttRow[] = visibleTasks.map((t) => {
@@ -49,10 +51,11 @@ export default function GanttView({ visibleTasks }: GanttViewProps) {
     if (t.dueDateLabel && t.dueDateLabel !== "No due date") {
       const d = new Date(t.dueDateLabel);
       const diffTime = d.getTime() - startDate.getTime();
-      const diffDays = diffTime / (1000 * 3600 * 24);
-      barLeft = (diffDays / 70) * 720; // 10 weeks = 70 days mapped to 720px width
+      const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
+      const timelineWidth = 1200; // full-year pixel width
+      barLeft = (diffDays / totalDays) * timelineWidth;
       if (barLeft < 0) barLeft = 0;
-      if (barLeft > 720 - 45) barLeft = 720 - 45; // keep inside bounds
+      if (barLeft > timelineWidth - 45) barLeft = timelineWidth - 45;
     }
 
     return {
@@ -96,17 +99,17 @@ export default function GanttView({ visibleTasks }: GanttViewProps) {
 
         {/* Timeline */}
         <div className="overflow-x-auto">
-          <div className="flex flex-col gap-4" style={{ minWidth: 976 }}>
-            {/* Week header row */}
+          <div className="flex flex-col gap-4" style={{ minWidth: 1400 }}>
+            {/* Month header row */}
             <div style={{ paddingLeft: 256 }} className="flex">
-              <div className="flex" style={{ width: 720, borderBottom: "1.6px solid #CAD5E2" }}>
-                {WEEK_LABELS.map((wl) => (
+              <div className="flex" style={{ width: 1200, borderBottom: "1.6px solid #CAD5E2" }}>
+                {MONTH_LABELS.map((ml) => (
                   <div
-                    key={wl}
+                    key={ml}
                     className="flex-1 text-center text-sm font-medium text-gray-700 leading-5 pb-2"
                     style={{ borderLeft: "0.8px solid #E2E8F0" }}
                   >
-                    {wl}
+                    {ml}
                   </div>
                 ))}
               </div>
@@ -143,10 +146,10 @@ export default function GanttView({ visibleTasks }: GanttViewProps) {
                     </div>
 
                     {/* Timeline track */}
-                    <div className="absolute top-0 overflow-hidden" style={{ left: 256, width: 720, height: 48 }}>
+                      <div className="absolute top-0 overflow-hidden" style={{ left: 256, width: 1200, height: 48 }}>
                       {/* Grid lines */}
                       <div className="absolute inset-0 flex">
-                        {WEEK_LABELS.map((_, i) => (
+                        {MONTH_LABELS.map((_, i) => (
                           <div key={i} className="flex-1 h-full" style={{ borderLeft: "0.8px solid #F1F5F9" }} />
                         ))}
                       </div>

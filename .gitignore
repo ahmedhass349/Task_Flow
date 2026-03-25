@@ -1,1 +1,10 @@
 node_modules
+# Ignore appsettings with secrets
+appsettings.*.json
+# Environment files
+.env
+# OS / build folders
+bin/
+obj/
+.vs/
+.vscode/

@@ -19,7 +19,9 @@ namespace taskflow.BackgroundServices
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<DueDateWarningService> _logger;
         private readonly TimeSpan _interval = TimeSpan.FromMinutes(15);
-        private readonly HashSet<string> _sentNotifications = new HashSet<string>();
+        // map notification key -> time sent, used for dedup and cleanup
+        private readonly Dictionary<string, DateTime> _sentNotifications = new Dictionary<string, DateTime>();
+        private readonly object _sentNotificationsLock = new object();
 
         public DueDateWarningService(IServiceProvider serviceProvider, ILogger<DueDateWarningService> logger)
         {
@@ -66,15 +68,24 @@ namespace taskflow.BackgroundServices
                            t.Status != TaskStatus.Completed)
                 .ToListAsync();
 
-            foreach (var task in tasksDueIn24Hours)
+                foreach (var task in tasksDueIn24Hours)
             {
                 var notificationKey = $"24h-{task.Id}-{task.AssigneeId}";
-                if (!_sentNotifications.Contains(notificationKey))
-                {
-                    await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "24 hours");
-                    _sentNotifications.Add(notificationKey);
-                    _logger.LogInformation("Sent 24-hour due warning for task {TaskId}", task.Id);
-                }
+                    var shouldSend = false;
+                    lock (_sentNotificationsLock)
+                    {
+                        if (!_sentNotifications.ContainsKey(notificationKey))
+                        {
+                            _sentNotifications[notificationKey] = DateTime.UtcNow;
+                            shouldSend = true;
+                        }
+                    }
+
+                    if (shouldSend)
+                    {
+                        await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "24 hours");
+                        _logger.LogInformation("Sent 24-hour due warning for task {TaskId}", task.Id);
+                    }
             }
 
             // 1 hour warnings
@@ -87,15 +98,24 @@ namespace taskflow.BackgroundServices
                            t.Status != TaskStatus.Completed)
                 .ToListAsync();
 
-            foreach (var task in tasksDueIn1Hour)
+                foreach (var task in tasksDueIn1Hour)
             {
                 var notificationKey = $"1h-{task.Id}-{task.AssigneeId}";
-                if (!_sentNotifications.Contains(notificationKey))
-                {
-                    await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "1 hour");
-                    _sentNotifications.Add(notificationKey);
-                    _logger.LogInformation("Sent 1-hour due warning for task {TaskId}", task.Id);
-                }
+                    var shouldSend = false;
+                    lock (_sentNotificationsLock)
+                    {
+                        if (!_sentNotifications.ContainsKey(notificationKey))
+                        {
+                            _sentNotifications[notificationKey] = DateTime.UtcNow;
+                            shouldSend = true;
+                        }
+                    }
+
+                    if (shouldSend)
+                    {
+                        await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "1 hour");
+                        _logger.LogInformation("Sent 1-hour due warning for task {TaskId}", task.Id);
+                    }
             }
 
             // Overdue tasks
@@ -107,31 +127,39 @@ namespace taskflow.BackgroundServices
                            t.Status != TaskStatus.Completed)
                 .ToListAsync();
 
-            foreach (var task in overdueTasks)
+                foreach (var task in overdueTasks)
             {
                 var notificationKey = $"overdue-{task.Id}-{task.AssigneeId}";
-                if (!_sentNotifications.Contains(notificationKey))
-                {
-                    await notificationService.NotifyTaskOverdueAsync(task.AssigneeId!.Value, task);
-                    _sentNotifications.Add(notificationKey);
-                    _logger.LogInformation("Sent overdue notification for task {TaskId}", task.Id);
-                }
+                    var shouldSend = false;
+                    lock (_sentNotificationsLock)
+                    {
+                        if (!_sentNotifications.ContainsKey(notificationKey))
+                        {
+                            _sentNotifications[notificationKey] = DateTime.UtcNow;
+                            shouldSend = true;
+                        }
+                    }
+
+                    if (shouldSend)
+                    {
+                        await notificationService.NotifyTaskOverdueAsync(task.AssigneeId!.Value, task);
+                        _logger.LogInformation("Sent overdue notification for task {TaskId}", task.Id);
+                    }
             }
 
             // Clean old notifications (older than 7 days)
             var cutoffDate = now.AddDays(-7);
-            var oldKeys = _sentNotifications.Where(key => 
+            List<string> oldKeys;
+            lock (_sentNotificationsLock)
             {
-                if (DateTime.TryParse(key.Split('-')[1], out var taskDate))
-                {
-                    return taskDate < cutoffDate;
-                }
-                return false;
-            }).ToList();
+                oldKeys = _sentNotifications.Where(kvp => kvp.Value < cutoffDate)
+                                            .Select(kvp => kvp.Key)
+                                            .ToList();
 
-            foreach (var oldKey in oldKeys)
-            {
-                _sentNotifications.Remove(oldKey);
+                foreach (var oldKey in oldKeys)
+                {
+                    _sentNotifications.Remove(oldKey);
+                }
             }
         }
 

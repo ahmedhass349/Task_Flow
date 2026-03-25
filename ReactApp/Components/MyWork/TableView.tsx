@@ -90,7 +90,7 @@ export default function TableView({ visibleTasks }: TableViewProps) {
       >
         <div />
         <div className={headerCellClass}>Task</div>
-        <div className={headerCellClass}>Project</div>
+        <div className={headerCellClass}>Notes</div>
         <div className={headerCellClass}>Assignee</div>
         <div className={headerCellClass}>Due Date</div>
         <div className={headerCellClass}>Priority</div>
@@ -140,7 +140,7 @@ export default function TableView({ visibleTasks }: TableViewProps) {
               </div>
 
               <div className={`${cellClass} font-semibold text-gray-900`}>{task.title}</div>
-              <div className={`${cellClass} text-gray-600`}>{task.project}</div>
+              <div className={`${cellClass} text-gray-600 truncate`}>{task.notes || task.project}</div>
               <div className={`${cellClass} text-gray-600`}>{task.assignee}</div>
               <div className={`${cellClass} text-gray-600`}>{task.dueDateLabel}</div>
               <div><PriorityBadge priority={task.priority} /></div>

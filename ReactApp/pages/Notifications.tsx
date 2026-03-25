@@ -10,7 +10,7 @@ import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
 
 // Notification interface for UI
 interface NotificationItem {
-  id: number;
+  id: string;
   icon: React.ReactNode;
   iconBg: string;
   iconColor: string;
@@ -22,19 +22,18 @@ interface NotificationItem {
 }
 
 export default function Notifications() {
-  const { notifications, isLoading, error, refetch, markAsRead, markAllAsRead } = useNotifications();
-  const { isConnected } = useNotificationHub();
+  const { notifications, isLoading, error, refetch, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications } = useNotifications();
+  const { isConnected, markAsRead: signalRMarkAsRead, markAllRead: signalRMarkAllRead } = useNotificationHub();
   const { state: notificationState } = useNotificationContext();
   const [tab, setTab] = useState<"all" | "unread">("all");
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const groupBy = "Date";
 
   // Use SignalR methods if connected, otherwise fall back to API methods
   const handleMarkAsRead = async (id: string) => {
     if (isConnected) {
       // Use SignalR method
-      const { markAsRead: signalRMarkAsRead } = useNotificationHub();
       await signalRMarkAsRead(id);
     } else {
       // Fall back to API method
@@ -45,12 +44,31 @@ export default function Notifications() {
   const handleMarkAllAsRead = async () => {
     if (isConnected) {
       // Use SignalR method
-      const { markAllRead: signalRMarkAllRead } = useNotificationHub();
       await signalRMarkAllRead();
     } else {
       // Fall back to API method
       await markAllAsRead();
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteNotification(id);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selected.size === 0) return;
+    // If all visible selected, allow delete all
+    if (selected.size === notifications.length) {
+      await deleteAllNotifications();
+      setSelected(new Set());
+      return;
+    }
+
+    const ids = Array.from(selected) as string[];
+    for (const id of ids) {
+      await deleteNotification(id);
+    }
+    setSelected(new Set());
   };
 
   // Convert backend notifications to UI format
@@ -94,7 +112,7 @@ export default function Notifications() {
       const iconColors = getIconColors();
 
       return {
-        id: index,
+        id: notification.id,
         icon: getIcon(),
         iconBg: iconColors.bg,
         iconColor: iconColors.color,
@@ -142,7 +160,7 @@ export default function Notifications() {
     }
   }
 
-  function toggleSelect(id: number) {
+  function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -150,14 +168,11 @@ export default function Notifications() {
     });
   }
 
-  function markRead(id: number) {
-  const notif = notifications[id];
-  if (notif) {
-    handleMarkAsRead(notif.id);
+  function markRead(id: string) {
+    handleMarkAsRead(id);
   }
-}
 
-function markUnread(id: number) {
+function markUnread(id: string) {
   // Backend doesn't have mark as unread, so we'll just update local state
   // This would need to be implemented in the backend
 }
@@ -229,6 +244,22 @@ function markUnread(id: number) {
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-8 pr-3 py-1.5 text-sm text-[#24292F] placeholder-[#6E7781] bg-[#F6F8FA] border border-[#D0D7DE] rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
+              </div>
+
+              {/* Delete actions */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDeleteSelected}
+                  className="px-3 py-1.5 text-sm font-medium bg-red-50 text-red-700 border border-red-100 rounded-md hover:bg-red-100"
+                >
+                  Delete Selected
+                </button>
+                <button
+                  onClick={async () => { await deleteAllNotifications(); setSelected(new Set()); }}
+                  className="px-3 py-1.5 text-sm font-medium bg-red-50 text-red-700 border border-red-100 rounded-md hover:bg-red-100"
+                >
+                  Delete All
+                </button>
               </div>
 
               {/* Group by dropdown */}
@@ -325,6 +356,15 @@ function markUnread(id: number) {
                               n.unread ? "bg-[#0969DA]" : "bg-transparent border border-[#57606A]"
                             }`}
                           />
+                        </button>
+                        {/* Delete button */}
+                        <button
+                          onClick={() => handleDelete(n.id)}
+                          title="Delete notification"
+                          aria-label="Delete notification"
+                          className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full border border-[rgba(27,31,36,0.15)] bg-white hover:bg-red-50 flex items-center justify-center transition-opacity text-red-600"
+                        >
+                          ×
                         </button>
                       </div>
                     </li>

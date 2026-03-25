@@ -119,7 +119,10 @@ export default function Header() {
         {/* ── Notifications dropdown ── */}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <NotificationBell />
+            <NotificationBell 
+              unreadCount={signalrUnreadCount} 
+              isConnected={isConnected} 
+            />
           </DropdownMenu.Trigger>
 
           <DropdownMenu.Portal>

@@ -7,6 +7,7 @@ export interface MyWorkTask {
   id: number;
   title: string;
   project: string;
+  notes?: string;
   assignee: string;
   dueDateLabel: string;
   dueOrder: number;

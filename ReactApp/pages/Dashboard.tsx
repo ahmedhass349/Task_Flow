@@ -11,9 +11,11 @@ import { PageLoading, PageError } from "../Components/PageState";
 import { useAuth } from "../context/AuthContext";
 import { useDashboard } from "../hooks/useDashboard";
 import { useTasks } from "../hooks/useTasks";
+import { useToast } from "../context/ToastContext";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const { stats, recentActivity, isLoading: isDashboardLoading, error, refetch } = useDashboard();
   const { tasks, isLoading: isTasksLoading } = useTasks();
 
@@ -29,6 +31,15 @@ export default function Dashboard() {
 
   const handleRetry = () => {
     refetch();
+  };
+
+  const testToast = () => {
+    addToast({
+      title: "Test Notification",
+      message: "This is a test in-app notification!",
+      type: "info",
+      duration: 5000,
+    });
   };
 
   return (
@@ -48,6 +59,12 @@ export default function Dashboard() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{greeting}, {displayName}</h1>
               <p className="text-gray-600 mt-1">Here's what's happening with your projects today</p>
+              <button 
+                onClick={testToast}
+                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                Test Toast Notification
+              </button>
             </div>
 
             {/* Stats Grid */}

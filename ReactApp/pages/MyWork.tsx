@@ -45,7 +45,8 @@ export default function MyWork() {
     return tasks.map(task => ({
       id: task.id,
       title: task.title,
-      project: task.projectName || "Unknown Project",
+    project: task.projectName || "Unknown Project",
+    notes: task.description || "",
       assignee: task.assigneeName || "Unassigned",
       dueDateLabel: task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date",
       dueOrder: task.dueDate ? getDueOrder(new Date(task.dueDate)) : 999,
@@ -53,11 +54,12 @@ export default function MyWork() {
       priority: mapPriority(task.priority),
       status: mapStatus(task.status),
       starred: task.isStarred,
-      onEdit: () => {
+        onEdit: () => {
         setEditingTask({
           id: task.id,
           title: task.title,
-          project: task.projectName || "Unknown Project",
+            project: task.projectName || "Unknown Project",
+            notes: task.description || "",
           assignee: task.assigneeName || "Unassigned",
           dueDateLabel: task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date",
           dueOrder: task.dueDate ? getDueOrder(new Date(task.dueDate)) : 999,
@@ -177,9 +179,11 @@ export default function MyWork() {
 
   const visibleTasks = useMemo(() => {
     return tabFilteredTasks.filter((t) => {
+      const q = searchQuery.toLowerCase();
       const matchesSearch =
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.project.toLowerCase().includes(searchQuery.toLowerCase());
+        t.title.toLowerCase().includes(q) ||
+        (t.project || "").toLowerCase().includes(q) ||
+        (t.notes || "").toLowerCase().includes(q);
       const matchesPriority = priorityFilter === "all" || t.priority === priorityFilter;
       return matchesSearch && matchesPriority;
     });

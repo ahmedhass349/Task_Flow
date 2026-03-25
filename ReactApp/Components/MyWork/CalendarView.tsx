@@ -166,30 +166,19 @@ export default function CalendarView({ visibleTasks }: CalendarViewProps) {
   const year = now.getFullYear();
   const month = now.getMonth();
   const date = now.getDate();
-  const todayDateObj = new Date();
 
-  // Find Sunday of current week
-  const firstDayOfWeek = new Date(now);
-  firstDayOfWeek.setDate(date - now.getDay());
-
-  // Generate grid columns for the week
-  const WEEK_DAYS = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date(firstDayOfWeek);
-    d.setDate(d.getDate() + i);
-    return {
-      label: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][d.getDay()],
-      day: d.getDate(),
-      dateObj: d,
-    };
-  });
+  // Build month grid for current month
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const monthGrid: (Date | null)[] = [];
+  for (let i = 0; i < firstDayOfMonth; i++) monthGrid.push(null);
+  for (let d = 1; d <= daysInMonth; d++) monthGrid.push(new Date(year, month, d));
+  while (monthGrid.length % 7 !== 0) monthGrid.push(null);
 
   const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-  // Build task-dot map for mini-calendar (filtering to current month)
+  // Build task-dot map for mini-calendar (current month)
   const taskDotsByDay = visibleTasks.reduce<Record<number, string[]>>((acc, task) => {
-    // We expect visibleTasks to have a valid dueDate field from the original Task object, if possible
-    // Wait, MyWorkTask only has `dueDay` (number) and `dueDateLabel`. It doesn't keep the actual Date object!
-    // We can parse `dueDateLabel` if it's there. 
     if (task.dueDateLabel && task.dueDateLabel !== "No due date") {
       const d = new Date(task.dueDateLabel);
       if (d.getMonth() === month && d.getFullYear() === year) {
@@ -285,124 +274,31 @@ export default function CalendarView({ visibleTasks }: CalendarViewProps) {
 
         {/* Grid area */}
         <div className="flex-1 overflow-y-auto relative">
-          {/* Day column headers */}
-          <div
-            className="grid border-b border-gray-200 sticky top-0 bg-white z-10"
-            style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}
-          >
-            {/* Timezone cell */}
-            <div className="p-1.5 text-right text-[10px] text-zinc-500 border-r border-gray-200">
-              <div>EST</div>
-              <div>GMT-5</div>
-            </div>
-
-            {WEEK_DAYS.map((wd) => {
-              const isWeekToday = wd.day === date && wd.dateObj.getMonth() === month && wd.dateObj.getFullYear() === year;
-              const isWeekend = wd.label === "SUN" || wd.label === "SAT";
-              return (
-                <div
-                  key={wd.day}
-                  className={`px-2 py-1.5 border-l border-gray-200 ${
-                    isWeekToday ? "bg-blue-50" : isWeekend ? "bg-gray-50" : "bg-white"
-                  }`}
-                >
-                  <div className="text-[10px] font-bold text-zinc-500 uppercase">{wd.label}</div>
-                  <div className={`text-[22px] leading-tight ${isWeekToday ? "text-blue-700" : "text-gray-900"}`}>
-                    {wd.day}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Time + column grid */}
-          <div className="grid relative" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
-            {/* Time labels */}
-            <div className="border-r border-gray-200">
-              {HOUR_ROWS.map((hour) => (
-                <div
-                  key={hour}
-                  className="flex items-start justify-end pr-1.5 pt-1 text-[11px] text-zinc-500 border-t border-gray-200"
-                  style={{ height: ROW_HEIGHT }}
-                >
-                  {formatHour(hour)}
-                </div>
-              ))}
-            </div>
-
-            {/* Day columns */}
-            {WEEK_DAYS.map((wd, colIdx) => {
-              const isWeekend = wd.label === "SUN" || wd.label === "SAT";
-              const isWeekToday = wd.day === date && wd.dateObj.getMonth() === month && wd.dateObj.getFullYear() === year;
-              
-              const columnEvents = visibleTasks.filter(t => {
-                if (!t.dueDateLabel || t.dueDateLabel === "No due date") return false;
-                const d = new Date(t.dueDateLabel);
-                return d.getDate() === wd.day && d.getMonth() === wd.dateObj.getMonth() && d.getFullYear() === wd.dateObj.getFullYear();
-              }).map(t => {
-                // Approximate time if backend didn't parse full ISO to `dueDateLabel`
-                // Wait! `dueDateLabel` is `toLocaleDateString()` which drops time!
-                // We should assume 9 AM or default for day view if time is lost.
-                // We will render it at 9 AM for the calendar blocks so it shows up
-                return {
-                  startHour: 9, 
-                  durationHours: 1,
-                  title: t.title,
-                  color: t.priority === "high" ? "amber" : t.priority === "medium" ? "violet" : "blue",
-                  onEdit: t.onEdit
-                } as CalEvent;
-              });
-
-              return (
-                <div
-                  key={wd.day}
-                  className={`relative border-l border-gray-200 ${
-                    isWeekToday ? "bg-blue-50" : isWeekend ? "bg-gray-50" : "bg-white"
-                  }`}
-                >
-                  {/* Hour slot rows */}
-                  {HOUR_ROWS.map((hour) => (
-                    <div key={hour} className="border-t border-gray-200" style={{ height: ROW_HEIGHT }}>
-                      <div className="border-t border-dashed border-gray-100" style={{ marginTop: ROW_HEIGHT / 2 - 1 }} />
+          {/* Month grid */}
+            <div className="grid grid-cols-7 gap-0">
+              {monthGrid.map((d, idx) => {
+                const isToday = d && d.getDate() === date && d.getMonth() === month && d.getFullYear() === year;
+                const dayNumber = d ? d.getDate() : null;
+                const dayTasks = d
+                  ? visibleTasks.filter(t => t.dueDateLabel && new Date(t.dueDateLabel).toDateString() === d.toDateString())
+                  : [];
+                return (
+                  <div key={idx} className={`p-3 min-h-[100px] border ${isToday ? 'bg-blue-50' : 'bg-white'}`}>
+                    <div className="flex justify-between items-start">
+                      <div className="text-sm font-semibold text-gray-700">{dayNumber ?? ''}</div>
                     </div>
-                  ))}
-
-                  {/* Event blocks */}
-                  {columnEvents.map((ev, ei) => {
-                    const topPx = Math.max(0, (ev.startHour - START_HOUR) * ROW_HEIGHT + 1 + (ei * 20)); // stagger slightly if multiple
-                    const heightPx = ev.durationHours * ROW_HEIGHT - 4;
-                    const cc = COLOR_CLASSES[ev.color];
-                    const startLabel = formatHour(ev.startHour).replace(" ", ":00 ");
-                    return (
-                      <div
-                        key={ei}
-                        onClick={(e) => { e.stopPropagation(); if (ev.onEdit) ev.onEdit(); }}
-                        className={`absolute left-0.5 right-0.5 rounded-md overflow-hidden flex cursor-pointer hover:brightness-95 ${cc.bg}`}
-                        style={{ top: topPx, height: heightPx, zIndex: 10 }}
-                      >
-                        <div className={`w-[3px] shrink-0 ${cc.bar}`} />
-                        <div className="flex-1 p-1 flex flex-col gap-0.5 overflow-hidden">
-                          <div className="flex items-center gap-1">
-                            <span className={`text-[10px] font-semibold ${cc.time}`}>{startLabel}</span>
-                          </div>
-                          <span
-                            className={`text-[11px] font-semibold leading-snug overflow-hidden ${cc.text}`}
-                            style={{
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                            }}
-                          >
-                            {ev.title}
-                          </span>
+                    <div className="mt-2 space-y-1">
+                      {dayTasks.map((t, ti) => (
+                        <div key={ti} onClick={() => t.onEdit && t.onEdit()} className="p-1 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100">
+                          <div className="text-xs font-semibold text-gray-800 truncate">{t.title}</div>
+                          <div className="text-[11px] text-gray-500 truncate">{t.notes || t.project}</div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
         </div>
       </div>
     </div>

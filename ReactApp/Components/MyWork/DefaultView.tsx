@@ -59,6 +59,7 @@ function TaskGroup({
             <div className="flex-1 min-w-0">
               <TaskItem
                 title={task.title}
+                notes={task.notes}
                 project={task.project}
                 dueDate={task.dueDateLabel}
                 assignee={task.assignee}

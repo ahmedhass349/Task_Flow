@@ -3,6 +3,7 @@ import { Circle, CheckCircle2, Clock, User, Edit2, Trash2 } from "lucide-react";
 interface TaskItemProps {
   title: string;
   project?: string;
+  notes?: string;
   dueDate?: string;
   assignee?: string;
   priority?: "high" | "medium" | "low";
@@ -12,7 +13,7 @@ interface TaskItemProps {
   onStatus?: (s: string) => void;
 }
 
-export default function TaskItem({ title, project, dueDate, assignee, priority, completed, onEdit, onDelete, onStatus }: TaskItemProps) {
+export default function TaskItem({ title, project, notes, dueDate, assignee, priority, completed, onEdit, onDelete, onStatus }: TaskItemProps) {
   const priorityColors = {
     high: "bg-red-100 text-red-700 border-red-200",
     medium: "bg-orange-100 text-orange-700 border-orange-200",
@@ -38,7 +39,11 @@ export default function TaskItem({ title, project, dueDate, assignee, priority, 
           {title}
         </p>
         <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
-          {project && <span className="text-blue-600">{project}</span>}
+          {notes ? (
+            <span className="text-gray-600 truncate">{notes}</span>
+          ) : (
+            project && <span className="text-blue-600">{project}</span>
+          )}
           {dueDate && (
             <span className="flex items-center gap-1">
               <Clock className="size-3" aria-hidden="true" />

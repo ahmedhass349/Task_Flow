@@ -1,16 +1,18 @@
 import React from "react";
 import { Bell } from "lucide-react";
-import { useNotificationHub } from "../hooks/useNotificationHub";
 import { useNotificationContext } from "../context/NotificationContext";
 
-export interface NotificationBellProps extends React.ComponentPropsWithoutRef<"div"> {}
+export interface NotificationBellProps extends React.ComponentPropsWithoutRef<"div"> {
+  unreadCount?: number;
+  isConnected?: boolean;
+}
 
 const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBellProps>((props, ref) => {
-  const { unreadCount, isConnected } = useNotificationHub();
   const { state: notificationState } = useNotificationContext();
+  const { unreadCount: propUnreadCount, isConnected: propIsConnected } = props;
 
-  // Use SignalR count if connected, otherwise fall back to context count
-  const displayCount = isConnected ? unreadCount : notificationState.unreadCount;
+  // Use SignalR count if connected and provided, otherwise fall back to context count
+  const displayCount = propIsConnected && propUnreadCount !== undefined ? propUnreadCount : notificationState.unreadCount;
 
   return (
     <div ref={ref} className="relative" {...props}>
@@ -25,13 +27,6 @@ const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBellProps>
             {displayCount > 99 ? "99+" : displayCount}
           </span>
         )}
-        
-        {/* Connection indicator */}
-        <div className={`absolute bottom-0 right-0 w-2 h-2 rounded-full ${
-          isConnected 
-            ? "bg-green-500" 
-            : "bg-gray-400"
-        }`} />
       </button>
     </div>
   );

@@ -6,6 +6,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { HubConnectionBuilder, LogLevel, HubConnection } from "@microsoft/signalr";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 // Notification interface matching backend DTO
 export interface Notification {
@@ -34,6 +35,7 @@ interface UseNotificationHubReturn {
 
 export const useNotificationHub = (): UseNotificationHubReturn => {
   const { token } = useAuth();
+  const { addToast } = useToast();
   const connectionRef = useRef<HubConnection | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -82,14 +84,18 @@ export const useNotificationHub = (): UseNotificationHubReturn => {
       console.log("Received notification:", notification);
       setLatestNotification(notification);
       
-      // Show browser notification
-      if (typeof globalThis.Notification !== "undefined" && globalThis.Notification.permission === "granted") {
-        new globalThis.Notification(notification.title, {
-          body: notification.message,
-          icon: "/favicon.ico",
-          tag: notification.id,
-        });
-      }
+      // Show in-app toast notification
+      const toastType = notification.priority === "high" ? "warning" : 
+                       notification.type.includes("error") ? "error" : 
+                       notification.type.includes("success") ? "success" : "info";
+      
+      addToast({
+        title: notification.title,
+        message: notification.message,
+        type: toastType,
+        duration: notification.priority === "high" ? 8000 : 5000, // High priority stays longer
+        persistent: notification.priority === "high", // High priority requires manual close
+      });
     });
 
     connection.on("UnreadCount", (count: number) => {

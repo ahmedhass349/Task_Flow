@@ -32,6 +32,7 @@ interface UseNotificationsReturn {
   markAllAsRead: () => Promise<void>;
   unreadCount: number;
   deleteNotification: (id: string) => Promise<void>;
+  deleteAllNotifications: () => Promise<void>;
 }
 
 export const useNotifications = (): UseNotificationsReturn => {
@@ -129,6 +130,22 @@ export const useNotifications = (): UseNotificationsReturn => {
     }
   }, []);
 
+  const deleteAllNotifications = useCallback(async () => {
+    try {
+      await api.delete(`/api/notifications`);
+      setNotifications([]);
+    } catch (err) {
+      const message =
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to delete all notifications";
+      setError(message);
+      throw err;
+    }
+  }, []);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -143,6 +160,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    deleteAllNotifications,
     unreadCount,
   };
 };

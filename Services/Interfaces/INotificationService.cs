@@ -30,5 +30,7 @@ namespace taskflow.Services.Interfaces
         Task MarkAsReadAsync(int notificationId, int userId);
         Task MarkAllAsReadAsync(int userId);
         Task DeleteAsync(int notificationId, int userId);
+        Task DeleteAllAsync(int userId);
+        Task<NotificationDto?> GetByIdAsync(int notificationId, int userId);
     }
 }

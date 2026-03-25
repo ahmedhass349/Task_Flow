@@ -16,6 +16,7 @@ namespace taskflow.Services
     public class NotificationService : INotificationService
     {
         private readonly INotificationRepository _notificationRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly IHubContext<NotificationHub> _hubContext;
         private readonly IEmailService _emailService;
@@ -23,12 +24,14 @@ namespace taskflow.Services
 
         public NotificationService(
             INotificationRepository notificationRepository,
+            IUserRepository userRepository,
             IMapper mapper,
             IHubContext<NotificationHub> hubContext,
             IEmailService emailService,
             ILogger<NotificationService> logger)
         {
             _notificationRepository = notificationRepository;
+            _userRepository = userRepository;
             _mapper = mapper;
             _hubContext = hubContext;
             _emailService = emailService;
@@ -264,6 +267,32 @@ namespace taskflow.Services
                 .SendAsync("UnreadCount", newCount);
         }
 
+        public async Task DeleteAllAsync(int userId)
+        {
+            // Remove all notifications for the user
+            var notifications = await _notificationRepository.GetUserNotificationsAsync(userId);
+            foreach (var n in notifications)
+            {
+                _notificationRepository.Remove(n);
+            }
+            await _notificationRepository.SaveChangesAsync();
+
+            // Update unread count via SignalR
+            await _hubContext.Clients
+                .User(userId.ToString())
+                .SendAsync("UnreadCount", 0);
+        }
+
+        public async Task<NotificationDto?> GetByIdAsync(int notificationId, int userId)
+        {
+            var notification = await _notificationRepository.FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
+            if (notification == null) return null;
+
+            var dto = _mapper.Map<NotificationDto>(notification);
+            dto.TimeAgo = GetTimeAgo(notification.CreatedAt);
+            return dto;
+        }
+
         // Helper methods
         private static string GetTimeAgo(DateTime createdAt)
         {
@@ -277,10 +306,15 @@ namespace taskflow.Services
 
         private async Task<AppUser?> GetUserById(int userId)
         {
-            // This would need to be injected via IUserRepository
-            // For now, returning null to avoid compilation errors
-            await Task.CompletedTask;
-            return null;
+            try
+            {
+                return await _userRepository.GetByIdAsync(userId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve user {UserId}", userId);
+                return null;
+            }
         }
 
         private string GetBaseUrl()
