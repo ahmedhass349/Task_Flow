@@ -38,7 +38,7 @@ export default function MyWork() {
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
   const [showNewTaskCard, setShowNewTaskCard] = useState(false);
-  const [editingTask, setEditingTask] = useState<MyWorkTask | null>(null);
+  const [editingTask, setEditingTask] = useState<any>(null);
 
   // Convert backend tasks to MyWorkTask format
   const convertedTasks: MyWorkTask[] = useMemo(() => {
@@ -58,12 +58,20 @@ export default function MyWork() {
         setEditingTask({
           id: task.id,
           title: task.title,
-            project: task.projectName || "Unknown Project",
-            notes: task.description || "",
-          assignee: task.assigneeName || "Unassigned",
+          project: task.projectName || "Unknown Project",
+          notes: task.description || "",
+          // AcademicTaskCard expects some additional fields for initialData
+          taskType: "Grading",
+          customType: "",
+          course: "",
           dueDateLabel: task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date",
-          dueOrder: task.dueDate ? getDueOrder(new Date(task.dueDate)) : 999,
+          dueDate: task.dueDate || null,
+          semester: "Spring 2025",
           priority: mapPriority(task.priority),
+          reminderMap: {},
+          notifyVia: { email: false, inApp: false },
+          assignee: task.assigneeName || "Unassigned",
+          dueOrder: task.dueDate ? getDueOrder(new Date(task.dueDate)) : 999,
           status: mapStatus(task.status),
           starred: task.isStarred
         });
@@ -239,7 +247,7 @@ export default function MyWork() {
       case "gantt":
         return <GanttView visibleTasks={visibleTasks} />;
       case "calendar":
-        return <CalendarView visibleTasks={visibleTasks} />;
+        return <CalendarView visibleTasks={visibleTasks} updateTask={updateTask} refetch={refetch} />;
       default:
         return <DefaultView visibleTasks={visibleTasks} grouped={grouped} activeTab={activeTab} />;
     }

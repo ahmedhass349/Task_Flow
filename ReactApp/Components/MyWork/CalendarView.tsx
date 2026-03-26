@@ -3,11 +3,14 @@
 // Shows a dark-sidebar mini-calendar + agenda alongside a weekly time-grid
 // with event cards. This is the "Calendar" view mode within My Tasks.
 
+import React, { useState } from "react";
 import { Search } from "lucide-react";
 import type { MyWorkTask } from "./types";
 
 interface CalendarViewProps {
   visibleTasks: MyWorkTask[];
+  updateTask?: (id: number, data: { dueDate?: string }) => Promise<void>;
+  refetch?: () => void;
 }
 
 // ── Calendar-specific types ──────────────────────────────────────────────
@@ -161,27 +164,36 @@ function AgendaSidebar({ visibleTasks }: { visibleTasks: MyWorkTask[] }) {
   );
 }
 
-export default function CalendarView({ visibleTasks }: CalendarViewProps) {
+export default function CalendarView({ visibleTasks, updateTask, refetch }: CalendarViewProps) {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const date = now.getDate();
+  const [calYear, setCalYear] = useState(now.getFullYear());
+  const [calMonth, setCalMonth] = useState(now.getMonth());
 
-  // Build month grid for current month
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  function changeMonth(delta: number) {
+    let m = calMonth + delta;
+    let y = calYear;
+    if (m > 11) { m = 0; y++; }
+    if (m < 0) { m = 11; y--; }
+    setCalMonth(m);
+    setCalYear(y);
+  }
+
+  // Build month grid for current selected month
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
   const monthGrid: (Date | null)[] = [];
   for (let i = 0; i < firstDayOfMonth; i++) monthGrid.push(null);
-  for (let d = 1; d <= daysInMonth; d++) monthGrid.push(new Date(year, month, d));
+  for (let d = 1; d <= daysInMonth; d++) monthGrid.push(new Date(calYear, calMonth, d));
   while (monthGrid.length % 7 !== 0) monthGrid.push(null);
 
   const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-  // Build task-dot map for mini-calendar (current month)
+  // Build task-dot map for mini-calendar (current selected month)
+  const todayDate = (now.getMonth() === calMonth && now.getFullYear() === calYear) ? now.getDate() : null;
   const taskDotsByDay = visibleTasks.reduce<Record<number, string[]>>((acc, task) => {
     if (task.dueDateLabel && task.dueDateLabel !== "No due date") {
       const d = new Date(task.dueDateLabel);
-      if (d.getMonth() === month && d.getFullYear() === year) {
+      if (d.getMonth() === calMonth && d.getFullYear() === calYear) {
         const dd = d.getDate();
         if (!acc[dd]) acc[dd] = [];
         const color = task.priority === "high" ? "#EF4444" : task.priority === "medium" ? "#A855F7" : "#2DD4BF";
@@ -213,9 +225,9 @@ export default function CalendarView({ visibleTasks }: CalendarViewProps) {
         {/* Month + year */}
         <div className="flex justify-between items-center">
           <div className="flex gap-1 items-baseline">
-            <span className="text-white text-[22px]">{MONTH_NAMES[month]}</span>
-            <span className="text-red-500 text-[22px]">{year}</span>
-          </div>
+              <span className="text-white text-[22px]">{MONTH_NAMES[calMonth]}</span>
+              <span className="text-red-500 text-[22px]">{calYear}</span>
+            </div>
           <div className="flex">
             {["\u2039", "\u203A"].map((ch, i) => (
               <button key={i} aria-label={i === 0 ? "Previous month" : "Next month"} className="bg-transparent border-none text-white text-lg cursor-pointer px-1 leading-none opacity-70 hover:opacity-100">
@@ -225,7 +237,7 @@ export default function CalendarView({ visibleTasks }: CalendarViewProps) {
           </div>
         </div>
 
-        <MiniCalendar taskDotsByDay={taskDotsByDay} year={year} month={month} todayDate={date} />
+        <MiniCalendar taskDotsByDay={taskDotsByDay} year={calYear} month={calMonth} todayDate={todayDate} />
         <div className="h-px bg-zinc-800" />
         <AgendaSidebar visibleTasks={visibleTasks} />
       </aside>
@@ -234,41 +246,18 @@ export default function CalendarView({ visibleTasks }: CalendarViewProps) {
       <div className="flex-1 bg-white flex flex-col overflow-hidden">
         {/* Toolbar */}
         <div className="px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2 bg-white">
-          {/* Nav */}
-          <div className="flex gap-px">
-            {["\u2039", "Today", "\u203A"].map((label, li) => (
-              <button
-                key={li}
-                aria-label={li === 0 ? "Previous week" : li === 2 ? "Next week" : undefined}
-                className={`bg-gray-100 border-none cursor-pointer text-xs text-gray-900 ${
-                  label === "Today" ? "px-3 py-1" : "px-2 py-1"
-                } ${li === 0 ? "rounded-l-md" : li === 2 ? "rounded-r-md" : ""}`}
-              >
-                {label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <button onClick={() => changeMonth(-1)} className="px-2 py-1 rounded-md bg-gray-50">‹</button>
+            <button onClick={() => { setCalMonth(new Date().getMonth()); setCalYear(new Date().getFullYear()); }} className="px-2 py-1 rounded-md bg-gray-50">Today</button>
+            <button onClick={() => changeMonth(1)} className="px-2 py-1 rounded-md bg-gray-50">›</button>
+            <div className="ml-3 text-sm font-semibold">{MONTH_NAMES[calMonth]} {calYear}</div>
           </div>
 
-          {/* View switcher */}
-          <div className="flex gap-1">
-            {["Day", "Week", "Month", "Year"].map((label) => (
-              <button
-                key={label}
-                className={`px-3.5 py-1 rounded-lg border-none cursor-pointer text-[13px] ${
-                  label === "Week"
-                    ? "bg-red-600 text-white font-semibold"
-                    : "bg-transparent text-zinc-500"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Search */}
-          <div className="flex items-center gap-1.5 bg-gray-100 rounded-md px-2 py-1" style={{ minWidth: 160 }}>
-            <Search className="size-3.5 text-gray-400" />
-            <span className="text-xs text-zinc-400">Search</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-gray-100 rounded-md px-2 py-1">
+              <Search className="size-3.5 text-gray-400" />
+              <span className="text-xs text-zinc-400">Search</span>
+            </div>
           </div>
         </div>
 
@@ -277,19 +266,37 @@ export default function CalendarView({ visibleTasks }: CalendarViewProps) {
           {/* Month grid */}
             <div className="grid grid-cols-7 gap-0">
               {monthGrid.map((d, idx) => {
-                const isToday = d && d.getDate() === date && d.getMonth() === month && d.getFullYear() === year;
+                const isToday = d && new Date().toDateString() === d.toDateString();
                 const dayNumber = d ? d.getDate() : null;
                 const dayTasks = d
                   ? visibleTasks.filter(t => t.dueDateLabel && new Date(t.dueDateLabel).toDateString() === d.toDateString())
                   : [];
                 return (
-                  <div key={idx} className={`p-3 min-h-[100px] border ${isToday ? 'bg-blue-50' : 'bg-white'}`}>
+                  <div key={idx}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={async (e) => {
+                      const id = e.dataTransfer.getData('text/plain');
+                      if (!id || !d || !updateTask) return;
+                      try {
+                        await updateTask(parseInt(id, 10), { dueDate: d.toISOString() });
+                        refetch && refetch();
+                      } catch (err) {
+                        console.error('Failed to move task:', err);
+                      }
+                    }}
+                    className={`p-3 min-h-[100px] border ${isToday ? 'bg-blue-50' : 'bg-white'}`}
+                  >
                     <div className="flex justify-between items-start">
                       <div className="text-sm font-semibold text-gray-700">{dayNumber ?? ''}</div>
                     </div>
                     <div className="mt-2 space-y-1">
                       {dayTasks.map((t, ti) => (
-                        <div key={ti} onClick={() => t.onEdit && t.onEdit()} className="p-1 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100">
+                        <div key={ti}
+                          draggable
+                          onDragStart={(e) => { e.dataTransfer.setData('text/plain', t.id.toString()); }}
+                          onClick={() => t.onEdit && t.onEdit()}
+                          className="p-1 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100"
+                        >
                           <div className="text-xs font-semibold text-gray-800 truncate">{t.title}</div>
                           <div className="text-[11px] text-gray-500 truncate">{t.notes || t.project}</div>
                         </div>
