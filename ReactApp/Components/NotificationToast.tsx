@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { TOAST_CLOSE_MS, DEFAULT_TOAST_DURATION_MS } from "../config/constants";
 import { X, Check, AlertCircle, Info, Bell } from "lucide-react";
 
 interface NotificationToastProps {
@@ -29,8 +30,8 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(onClose, 300);
-    }, 5000);
+      setTimeout(onClose, TOAST_CLOSE_MS);
+    }, DEFAULT_TOAST_DURATION_MS);
 
     return () => clearTimeout(timer);
   }, [onClose]);

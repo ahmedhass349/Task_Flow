@@ -58,7 +58,7 @@ namespace taskflow.Services
 
                 var createdNotification = await _notificationRepository.CreateAsync(notification);
                 var notificationDto = _mapper.Map<NotificationDto>(createdNotification);
-                
+
                 // Compute TimeAgo
                 notificationDto.TimeAgo = GetTimeAgo(createdNotification.CreatedAt);
 
@@ -96,7 +96,7 @@ namespace taskflow.Services
                 _ => NotificationPriority.Medium
             };
 
-            await CreateAsync(userId, title, message, NotificationType.TaskCreated, priority, 
+            await CreateAsync(userId, title, message, NotificationType.TaskCreated, priority,
                 $"/tasks/{task.Id}", task.Id);
         }
 
@@ -104,7 +104,7 @@ namespace taskflow.Services
         {
             var title = "Task Updated";
             var message = $"Task '{task.Title}' was updated: {whatChanged}";
-            
+
             await CreateAsync(userId, title, message, NotificationType.TaskUpdated, NotificationPriority.Low,
                 $"/tasks/{task.Id}", task.Id);
         }
@@ -113,7 +113,7 @@ namespace taskflow.Services
         {
             var title = "Task Deleted";
             var message = $"Task '{taskTitle}' has been deleted";
-            
+
             await CreateAsync(userId, title, message, NotificationType.TaskDeleted, NotificationPriority.Medium);
         }
 
@@ -146,7 +146,7 @@ namespace taskflow.Services
         {
             var title = "Task Overdue";
             var message = $"Your task '{task.Title}' is overdue";
-            
+
             await CreateAsync(userId, title, message, NotificationType.TaskOverdue, NotificationPriority.Critical,
                 $"/tasks/{task.Id}", task.Id);
 
@@ -170,7 +170,7 @@ namespace taskflow.Services
         {
             var title = "Task Completed";
             var message = $"Task '{task.Title}' has been marked as completed";
-            
+
             await CreateAsync(userId, title, message, NotificationType.TaskCompleted, NotificationPriority.Low,
                 $"/tasks/{task.Id}", task.Id);
         }
@@ -179,7 +179,7 @@ namespace taskflow.Services
         {
             var title = "Task Reminder";
             var message = $"Reminder: {task.Title} at {fireTime:hh:mm tt}";
-            
+
             await CreateAsync(userId, title, message, NotificationType.ReminderFired, NotificationPriority.High,
                 $"/tasks/{task.Id}", task.Id);
 
@@ -203,7 +203,7 @@ namespace taskflow.Services
         {
             var title = "Welcome to Task Flow!";
             var message = $"Welcome {firstName}! Your account has been created successfully.";
-            
+
             await CreateAsync(userId, title, message, NotificationType.AccountWelcome, NotificationPriority.Medium);
         }
 
@@ -211,7 +211,7 @@ namespace taskflow.Services
         {
             var title = "Profile Updated";
             var message = "Your profile has been updated successfully.";
-            
+
             await CreateAsync(userId, title, message, NotificationType.AccountProfileUpdated, NotificationPriority.Low);
         }
 
@@ -220,13 +220,13 @@ namespace taskflow.Services
         {
             var notifications = await _notificationRepository.GetByUserIdAsync(userId, page, pageSize);
             var dtos = _mapper.Map<IEnumerable<NotificationDto>>(notifications);
-            
+
             // Compute TimeAgo for each notification
             foreach (var dto in dtos)
             {
                 dto.TimeAgo = GetTimeAgo(dto.CreatedAt);
             }
-            
+
             return dtos;
         }
 
@@ -238,7 +238,7 @@ namespace taskflow.Services
         public async Task MarkAsReadAsync(int notificationId, int userId)
         {
             await _notificationRepository.MarkAsReadAsync(notificationId, userId);
-            
+
             // Update unread count via SignalR
             var newCount = await _notificationRepository.GetUnreadCountAsync(userId);
             await _hubContext.Clients
@@ -249,7 +249,7 @@ namespace taskflow.Services
         public async Task MarkAllAsReadAsync(int userId)
         {
             await _notificationRepository.MarkAllAsReadAsync(userId);
-            
+
             // Update unread count via SignalR
             await _hubContext.Clients
                 .User(userId.ToString())
@@ -259,7 +259,7 @@ namespace taskflow.Services
         public async Task DeleteAsync(int notificationId, int userId)
         {
             await _notificationRepository.DeleteAsync(notificationId, userId);
-            
+
             // Update unread count via SignalR
             var newCount = await _notificationRepository.GetUnreadCountAsync(userId);
             await _hubContext.Clients

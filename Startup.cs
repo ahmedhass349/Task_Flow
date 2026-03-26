@@ -89,7 +89,7 @@ namespace taskflow
                     ValidAudience = jwtAudience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
                 };
-                
+
                 // Return JSON for auth failures instead of default plain text
                 options.Events = new JwtBearerEvents
                 {

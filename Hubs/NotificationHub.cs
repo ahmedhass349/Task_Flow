@@ -27,7 +27,7 @@ namespace taskflow.Hubs
                 // Send unread count on connect
                 var count = await _notificationService.GetUnreadCountAsync(int.Parse(userId));
                 await Clients.Caller.SendAsync("UnreadCount", count);
-                
+
                 _logger.LogInformation("User {UserId} connected to NotificationHub", userId);
             }
             await base.OnConnectedAsync();

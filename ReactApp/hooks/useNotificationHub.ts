@@ -65,30 +65,26 @@ export const useNotificationHub = (): UseNotificationHubReturn => {
 
     // Connection lifecycle
     connection.onreconnecting(() => {
-      console.log("SignalR reconnecting...");
       setIsConnected(false);
     });
 
     connection.onreconnected(() => {
-      console.log("SignalR reconnected");
       setIsConnected(true);
     });
 
     connection.onclose(() => {
-      console.log("SignalR connection closed");
       setIsConnected(false);
     });
 
     // Hub events
     connection.on("ReceiveNotification", (notification: Notification) => {
-      console.log("Received notification:", notification);
       setLatestNotification(notification);
-      
+
       // Show in-app toast notification
       const toastType = notification.priority === "high" ? "warning" : 
                        notification.type.includes("error") ? "error" : 
                        notification.type.includes("success") ? "success" : "info";
-      
+
       addToast({
         title: notification.title,
         message: notification.message,
@@ -99,14 +95,12 @@ export const useNotificationHub = (): UseNotificationHubReturn => {
     });
 
     connection.on("UnreadCount", (count: number) => {
-      console.log("Unread count updated:", count);
       setUnreadCount(count);
     });
 
     // Start connection
     connection.start()
       .then(() => {
-        console.log("SignalR connected");
         setIsConnected(true);
       })
       .catch(err => {

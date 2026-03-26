@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { DEFAULT_TOAST_DURATION_MS } from '../config/constants';
 import { X, Bell, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
 // Toast notification interface
@@ -31,7 +32,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const newToast: Toast = {
       ...toast,
       id,
-      duration: toast.duration ?? 5000,
+      duration: toast.duration ?? DEFAULT_TOAST_DURATION_MS,
     };
 
     setToasts(prev => [...prev, newToast]);

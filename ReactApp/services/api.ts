@@ -6,9 +6,7 @@
 // - Consistent error handling
 // - Typed request/response helpers
 //
-// Usage:
-//   import { api } from "../services/api";
-//   const user = await api.post<AuthResponse>("/auth/login", { email, password });
+// Usage example available in repository docs or README.
 
 import type { ApiError, ApiResponse } from "../types";
 

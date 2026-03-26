@@ -58,7 +58,7 @@ namespace taskflow.Repositories
         {
             var notification = await _dbSet
                 .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
-            
+
             if (notification != null)
             {
                 notification.IsRead = true;
@@ -86,7 +86,7 @@ namespace taskflow.Repositories
         {
             var notification = await _dbSet
                 .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
-            
+
             if (notification != null)
             {
                 _dbSet.Remove(notification);

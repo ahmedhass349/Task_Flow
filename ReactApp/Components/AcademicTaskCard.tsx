@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react"
+import { SUCCESS_DISPLAY_MS } from "../config/constants"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -308,7 +309,7 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData }: Ac
       // Delegate creation to parent (MyWork.handleCreateTask)
       await onSuccess?.(payload)
       setSuccess(true)
-      setTimeout(() => { setSuccess(false); handleReset() }, 2400)
+      setTimeout(() => { setSuccess(false); handleReset() }, SUCCESS_DISPLAY_MS)
     } catch (err) {
       console.error("Task creation failed:", err)
     } finally {

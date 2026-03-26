@@ -93,7 +93,7 @@ namespace taskflow.Services
             try
             {
                 var pendingReminders = await _reminderRepository.GetPendingAsync(DateTime.UtcNow);
-                
+
                 foreach (var reminder in pendingReminders)
                 {
                     try
@@ -104,14 +104,14 @@ namespace taskflow.Services
                         {
                             // Create notification
                             await _notificationService.NotifyReminderFiredAsync(
-                                reminder.UserId, 
-                                task, 
+                                reminder.UserId,
+                                task,
                                 reminder.FireAt);
 
                             // Mark the reminder as fired
                             await _reminderRepository.MarkFiredAsync(reminder.Id);
 
-                            _logger.LogInformation("Processed reminder {ReminderId} for task {TaskId}", 
+                            _logger.LogInformation("Processed reminder {ReminderId} for task {TaskId}",
                                 reminder.Id, task.Id);
                         }
                         else

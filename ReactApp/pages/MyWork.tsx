@@ -38,7 +38,17 @@ export default function MyWork() {
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
   const [showNewTaskCard, setShowNewTaskCard] = useState(false);
-  const [editingTask, setEditingTask] = useState<any>(null);
+  const [editingTask, setEditingTask] = useState<
+    (Partial<TaskPayload> & {
+      id: number;
+      status: Status;
+      starred?: boolean;
+      assignee?: string;
+      dueDateLabel?: string;
+      dueOrder?: number;
+      project?: string;
+    }) | null
+  >(null);
 
   // Convert backend tasks to MyWorkTask format
   const convertedTasks: MyWorkTask[] = useMemo(() => {

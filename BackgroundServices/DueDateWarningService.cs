@@ -57,94 +57,94 @@ namespace taskflow.BackgroundServices
         private async Task ProcessDueDateWarnings(AppDbContext dbContext, INotificationService notificationService)
         {
             var now = DateTime.UtcNow;
-            
+
             // 24 hour warnings
             var tasksDueIn24Hours = await dbContext.TaskItems
                 .Include(t => t.Assignee)
-                .Where(t => t.AssigneeId.HasValue && 
-                           t.DueDate.HasValue && 
+                .Where(t => t.AssigneeId.HasValue &&
+                           t.DueDate.HasValue &&
                            t.DueDate.Value > now &&
                            t.DueDate.Value <= now.AddHours(24) &&
                            t.Status != TaskStatus.Completed)
                 .ToListAsync();
 
-                foreach (var task in tasksDueIn24Hours)
+            foreach (var task in tasksDueIn24Hours)
             {
                 var notificationKey = $"24h-{task.Id}-{task.AssigneeId}";
-                    var shouldSend = false;
-                    lock (_sentNotificationsLock)
+                var shouldSend = false;
+                lock (_sentNotificationsLock)
+                {
+                    if (!_sentNotifications.ContainsKey(notificationKey))
                     {
-                        if (!_sentNotifications.ContainsKey(notificationKey))
-                        {
-                            _sentNotifications[notificationKey] = DateTime.UtcNow;
-                            shouldSend = true;
-                        }
+                        _sentNotifications[notificationKey] = DateTime.UtcNow;
+                        shouldSend = true;
                     }
+                }
 
-                    if (shouldSend)
-                    {
-                        await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "24 hours");
-                        _logger.LogInformation("Sent 24-hour due warning for task {TaskId}", task.Id);
-                    }
+                if (shouldSend)
+                {
+                    await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "24 hours");
+                    _logger.LogInformation("Sent 24-hour due warning for task {TaskId}", task.Id);
+                }
             }
 
             // 1 hour warnings
             var tasksDueIn1Hour = await dbContext.TaskItems
                 .Include(t => t.Assignee)
-                .Where(t => t.AssigneeId.HasValue && 
-                           t.DueDate.HasValue && 
+                .Where(t => t.AssigneeId.HasValue &&
+                           t.DueDate.HasValue &&
                            t.DueDate.Value > now &&
                            t.DueDate.Value <= now.AddHours(1) &&
                            t.Status != TaskStatus.Completed)
                 .ToListAsync();
 
-                foreach (var task in tasksDueIn1Hour)
+            foreach (var task in tasksDueIn1Hour)
             {
                 var notificationKey = $"1h-{task.Id}-{task.AssigneeId}";
-                    var shouldSend = false;
-                    lock (_sentNotificationsLock)
+                var shouldSend = false;
+                lock (_sentNotificationsLock)
+                {
+                    if (!_sentNotifications.ContainsKey(notificationKey))
                     {
-                        if (!_sentNotifications.ContainsKey(notificationKey))
-                        {
-                            _sentNotifications[notificationKey] = DateTime.UtcNow;
-                            shouldSend = true;
-                        }
+                        _sentNotifications[notificationKey] = DateTime.UtcNow;
+                        shouldSend = true;
                     }
+                }
 
-                    if (shouldSend)
-                    {
-                        await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "1 hour");
-                        _logger.LogInformation("Sent 1-hour due warning for task {TaskId}", task.Id);
-                    }
+                if (shouldSend)
+                {
+                    await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "1 hour");
+                    _logger.LogInformation("Sent 1-hour due warning for task {TaskId}", task.Id);
+                }
             }
 
             // Overdue tasks
             var overdueTasks = await dbContext.TaskItems
                 .Include(t => t.Assignee)
-                .Where(t => t.AssigneeId.HasValue && 
-                           t.DueDate.HasValue && 
+                .Where(t => t.AssigneeId.HasValue &&
+                           t.DueDate.HasValue &&
                            t.DueDate.Value < now &&
                            t.Status != TaskStatus.Completed)
                 .ToListAsync();
 
-                foreach (var task in overdueTasks)
+            foreach (var task in overdueTasks)
             {
                 var notificationKey = $"overdue-{task.Id}-{task.AssigneeId}";
-                    var shouldSend = false;
-                    lock (_sentNotificationsLock)
+                var shouldSend = false;
+                lock (_sentNotificationsLock)
+                {
+                    if (!_sentNotifications.ContainsKey(notificationKey))
                     {
-                        if (!_sentNotifications.ContainsKey(notificationKey))
-                        {
-                            _sentNotifications[notificationKey] = DateTime.UtcNow;
-                            shouldSend = true;
-                        }
+                        _sentNotifications[notificationKey] = DateTime.UtcNow;
+                        shouldSend = true;
                     }
+                }
 
-                    if (shouldSend)
-                    {
-                        await notificationService.NotifyTaskOverdueAsync(task.AssigneeId!.Value, task);
-                        _logger.LogInformation("Sent overdue notification for task {TaskId}", task.Id);
-                    }
+                if (shouldSend)
+                {
+                    await notificationService.NotifyTaskOverdueAsync(task.AssigneeId!.Value, task);
+                    _logger.LogInformation("Sent overdue notification for task {TaskId}", task.Id);
+                }
             }
 
             // Clean old notifications (older than 7 days)
