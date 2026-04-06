@@ -68,16 +68,27 @@ module.exports = (env) => {
             static: path.join(__dirname, 'wwwroot'),
             port: 3000,
             historyApiFallback: true,
+            headers: {
+                "Content-Security-Policy": [
+                    "default-src 'self' http://localhost:3000 ws://localhost:3000 http://127.0.0.1:* ws://127.0.0.1:*",
+                    "script-src 'self' 'unsafe-inline' http://localhost:3000",
+                    "style-src 'self' 'unsafe-inline' http://localhost:3000 https://fonts.googleapis.com",
+                    "style-src-elem 'self' 'unsafe-inline' http://localhost:3000 https://fonts.googleapis.com",
+                    "connect-src 'self' http://localhost:3000 http://127.0.0.1:* http://localhost:* ws://localhost:3000 ws://localhost:* ws://127.0.0.1:*",
+                    "img-src 'self' data: blob:",
+                    "font-src 'self' data: https://fonts.gstatic.com"
+                ].join('; ')
+            },
             proxy: [
                 {
                     context: ['/api'],
-                    target: 'http://localhost:5001',
+                    target: 'http://localhost:5000',
                     changeOrigin: true,
                     secure: false,
                 },
                 {
                     context: ['/hubs'],
-                    target: 'http://localhost:5001',
+                    target: 'http://localhost:5000',
                     changeOrigin: true,
                     secure: false,
                     ws: true // WebSocket support for SignalR

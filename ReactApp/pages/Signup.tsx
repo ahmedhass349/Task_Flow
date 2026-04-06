@@ -106,9 +106,9 @@ export default function Signup() {
 
     setIsSubmitting(true);
     try {
+      const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim();
       await signup({
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
+        fullName,
         email: formData.email.trim(),
         password: formData.password,
         confirmPassword: formData.confirmPassword,

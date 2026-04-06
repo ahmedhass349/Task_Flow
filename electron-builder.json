@@ -1,0 +1,51 @@
+{
+  "appId": "com.taskflow.desktop",
+  "productName": "TaskFlow",
+  "directories": {
+    "buildResources": "public",
+    "output": "dist"
+  },
+  "files": [
+    "public/**/*",
+    "wwwroot/**/*",
+    "appsettings*.json",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "publish/backend",
+      "to": "backend",
+      "filter": [
+        "**/*"
+      ]
+    }
+  ],
+  "asar": true,
+  "win": {
+    "signAndEditExecutable": false,
+    "target": [
+      "nsis",
+      "portable"
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  },
+  "mac": {
+    "target": [
+      "dmg",
+      "zip"
+    ],
+    "category": "public.app-category.productivity"
+  },
+  "linux": {
+    "target": [
+      "AppImage",
+      "deb"
+    ],
+    "category": "Productivity"
+  }
+}

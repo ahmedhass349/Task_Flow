@@ -71,8 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       const response = await api.post<AuthResponse>("/api/auth/login", credentials);
-      setAuthToken(response.token);
-      setUser(response.user);
+      const token = (response as any).token ?? (response as any).Token ?? null;
+      const user = (response as any).user ?? (response as any).User ?? null;
+      setAuthToken(token);
+      setUser(user);
     } catch (err) {
       const message =
         err instanceof ApiRequestError
@@ -87,8 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       const response = await api.post<AuthResponse>("/api/auth/register", data);
-      setAuthToken(response.token);
-      setUser(response.user);
+      const token = (response as any).token ?? (response as any).Token ?? null;
+      const user = (response as any).user ?? (response as any).User ?? null;
+      setAuthToken(token);
+      setUser(user);
     } catch (err) {
       const message =
         err instanceof ApiRequestError

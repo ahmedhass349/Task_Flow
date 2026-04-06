@@ -14,7 +14,8 @@ namespace taskflow.Repositories
 
         public async Task<AppUser?> GetByEmailAsync(string email)
         {
-            return await _dbSet.FirstOrDefaultAsync(u => u.Email == email);
+            var normalized = email.ToLower();
+            return await _dbSet.FirstOrDefaultAsync(u => u.Email.ToLower() == normalized);
         }
     }
 }

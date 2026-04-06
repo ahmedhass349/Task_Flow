@@ -7,6 +7,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { HubConnectionBuilder, LogLevel, HubConnection } from "@microsoft/signalr";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { getApiBaseUrl } from "../config/api";
 
 // Notification interface matching backend DTO
 export interface Notification {
@@ -45,8 +46,11 @@ export const useNotificationHub = (): UseNotificationHubReturn => {
   const createConnection = useCallback(() => {
     if (!token) return null;
 
+    const baseUrl = getApiBaseUrl();
+    const hubUrl = `${baseUrl || ""}/hubs/notifications`;
+
     const connection = new HubConnectionBuilder()
-      .withUrl("/hubs/notifications", {
+      .withUrl(hubUrl, {
         accessTokenFactory: () => token,
       })
       .withAutomaticReconnect()

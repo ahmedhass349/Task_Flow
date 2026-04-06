@@ -1,4 +1,13 @@
+/*
+      FILE: Data/AppDbContext.cs
+      PHASE: Phase 1
+      PURPOSE: Defines EF Core model and applies SQLite-safe enum and DateTime conversions.
+      CHANGED FROM: DbContext model configuration without global DateTime value converters and without Notification enum string conversions.
+*/
+
+using System;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using taskflow.Data.Entities;
 
 namespace taskflow.Data
@@ -176,6 +185,14 @@ namespace taskflow.Data
                 entity.Property(e => e.Message).HasMaxLength(1000);
                 entity.Property(e => e.ActionUrl).HasMaxLength(500);
 
+                entity.Property(e => e.Type)
+                      .HasConversion<string>()
+                      .HasMaxLength(50);
+
+                entity.Property(e => e.Priority)
+                      .HasConversion<string>()
+                      .HasMaxLength(50);
+
                 // Indexes for performance
                 entity.HasIndex(e => new { e.UserId, e.IsRead });
                 entity.HasIndex(e => new { e.UserId, e.CreatedAt });
@@ -249,6 +266,30 @@ namespace taskflow.Data
                       .HasForeignKey(m => m.ConversationId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
+
+                  var dateTimeConverter = new ValueConverter<DateTime, string>(
+                        v => v.ToString("o"),
+                        v => DateTime.Parse(v, null, System.Globalization.DateTimeStyles.RoundtripKind));
+
+                  var nullableDateTimeConverter = new ValueConverter<DateTime?, string?>(
+                        v => v.HasValue ? v.Value.ToString("o") : null,
+                        v => v != null ? DateTime.Parse(v, null, System.Globalization.DateTimeStyles.RoundtripKind) : null);
+
+                  foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+                  {
+                        foreach (var property in entityType.GetProperties())
+                        {
+                              if (property.ClrType == typeof(DateTime))
+                              {
+                                    property.SetValueConverter(dateTimeConverter);
+                              }
+
+                              if (property.ClrType == typeof(DateTime?))
+                              {
+                                    property.SetValueConverter(nullableDateTimeConverter);
+                              }
+                        }
+                  }
         }
     }
 }

@@ -6,5 +6,9 @@ appsettings.*.json
 # OS / build folders
 bin/
 obj/
+dist/
+publish/
+*.db
+*.sqlite
 .vs/
 .vscode/

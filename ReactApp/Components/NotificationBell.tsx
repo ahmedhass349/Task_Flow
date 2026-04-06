@@ -9,13 +9,17 @@ export interface NotificationBellProps extends React.ComponentPropsWithoutRef<"d
 
 const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBellProps>((props, ref) => {
   const { state: notificationState } = useNotificationContext();
-  const { unreadCount: propUnreadCount, isConnected: propIsConnected } = props;
+  const {
+    unreadCount: propUnreadCount,
+    isConnected: propIsConnected,
+    ...divProps
+  } = props;
 
   // Use SignalR count if connected and provided, otherwise fall back to context count
   const displayCount = propIsConnected && propUnreadCount !== undefined ? propUnreadCount : notificationState.unreadCount;
 
   return (
-    <div ref={ref} className="relative" {...props}>
+    <div ref={ref} className="relative" {...divProps}>
       <button
         className="relative p-2 outline-none rounded-lg transition-colors hover:bg-white/10"
         aria-label="Notifications"

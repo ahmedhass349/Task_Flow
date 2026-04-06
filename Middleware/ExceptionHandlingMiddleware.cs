@@ -45,7 +45,7 @@ namespace taskflow.Middleware
             var (statusCode, message) = exception switch
             {
                 KeyNotFoundException knf => (HttpStatusCode.NotFound, knf.Message),
-                UnauthorizedAccessException uae => (HttpStatusCode.Forbidden, uae.Message),
+                UnauthorizedAccessException uae => (HttpStatusCode.Unauthorized, uae.Message),
                 InvalidOperationException ioe => (HttpStatusCode.BadRequest, ioe.Message),
                 ArgumentException ae => (HttpStatusCode.BadRequest, ae.Message),
                 _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")

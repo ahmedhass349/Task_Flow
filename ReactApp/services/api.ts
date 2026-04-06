@@ -9,8 +9,7 @@
 // Usage example available in repository docs or README.
 
 import type { ApiError, ApiResponse } from "../types";
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+import { getApiBaseUrl } from "../config/api";
 
 // ── Token management ─────────────────────────────────────────────────────
 
@@ -61,7 +60,8 @@ interface RequestOptions {
 }
 
 async function request<T>(endpoint: string, options: RequestOptions): Promise<T> {
-  const url = `${BASE_URL}${endpoint}`;
+  const baseUrl = getApiBaseUrl() || (import.meta as any).env?.VITE_API_BASE_URL || "";
+  const url = `${baseUrl}${endpoint}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

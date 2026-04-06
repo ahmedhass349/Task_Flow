@@ -2,13 +2,23 @@
   "name": "taskflow",
   "version": "0.0.1-alpha",
   "description": "taskflow template project",
-  "main": "dist/main.js",
+  "main": "public/electron.js",
+  "homepage": "./",
   "scripts": {
     "build:dev": "webpack --progress",
     "build": "cross-env NODE_ENV=production webpack --env prod --progress",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:web": "cross-env NODE_ENV=production webpack --env prod --progress",
+    "publish:backend": "dotnet publish TaskFlow.csproj -c Release -o publish/backend --nologo",
     "start": "webpack serve --open",
-    "dev": "concurrently \"dotnet run --project TaskFlow.csproj\" \"webpack --progress --watch\""
+    "dev:web": "concurrently \"dotnet run --project TaskFlow.csproj\" \"webpack --progress --watch\"",
+    "dev:electron": "concurrently \"webpack serve --port 3000 --no-open\" \"wait-on http://localhost:3000 && cross-env ELECTRON_IS_DEV=true electron .\"",
+    "electron-dev": "cross-env ELECTRON_IS_DEV=true electron .",
+    "preelectron-dev": "npm run build:dev",
+    "preelectron-build": "npm run build:web && npm run publish:backend",
+    "electron-build": "electron-builder --config electron-builder.json",
+    "test:phase4": "python phase4_test.py",
+    "test:phase5": "python phase5_test.py",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "files": [
     "dist"
@@ -61,6 +71,9 @@
     "typescript": "^5.4.5",
     "webpack": "^5.105.4",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.2.3"
+    "webpack-dev-server": "^5.2.3",
+    "electron": "^31.0.0",
+    "electron-builder": "^25.0.0",
+    "wait-on": "^8.0.1"
   }
 }

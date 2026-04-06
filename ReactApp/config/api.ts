@@ -1,104 +1,161 @@
 // ── API Configuration for Task Flow ────────────────────────────────────────
 //
 // Centralized endpoint configuration for all API calls.
-// Uses environment variable for base URL with fallback to localhost.
+// Supports:
+// 1. Electron desktop app (gets backend URL from main process)
+// 2. Web dev server (uses localhost with proxy or environment variable)
+// 3. Production deployment (uses configurable base URL)
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+// Detect if running in Electron
+const isElectron = typeof window !== 'undefined' && (window as any).electron !== undefined;
 
-export const ENDPOINTS = {
+// Initialize API base URL - will be set dynamically for Electron
+let API_BASE_URL = "";
+let apiBaseUrlInitialized = false;
+
+// Get API base URL - handles both Electron and web contexts
+const initializeApiBaseUrl = async (): Promise<string> => {
+  if (apiBaseUrlInitialized) {
+    return API_BASE_URL;
+  }
+
+  if (isElectron && (window as any).electron?.getBackendUrl) {
+    try {
+      const backendUrl = await (window as any).electron.getBackendUrl();
+      console.log('[API] Electron backend URL:', backendUrl);
+      API_BASE_URL = backendUrl;
+      apiBaseUrlInitialized = true;
+      return backendUrl;
+    } catch (error) {
+      console.error('[API] Failed to get Electron backend URL:', error);
+    }
+  }
+
+  // Web context: use environment variable or empty string (will use relative URLs via webpack proxy)
+  const envUrl = (import.meta as any).env?.VITE_API_BASE_URL || "";
+  console.log('[API] Using web base URL:', envUrl || 'relative URLs with webpack proxy');
+  API_BASE_URL = envUrl;
+  apiBaseUrlInitialized = true;
+  return envUrl;
+};
+
+// Helper function to build endpoint URL
+const buildUrl = (path: string): string => {
+  return `${API_BASE_URL}${path}`;
+};
+
+// Export initialization function for use in React app entry
+export const initializeApi = async (): Promise<void> => {
+  await initializeApiBaseUrl();
+};
+
+// Build endpoints object - these are functions that return the URL at call time
+const createEndpoints = () => ({
   // Authentication endpoints
   auth: {
-    login: `${API_BASE_URL}/api/auth/login`,
-    register: `${API_BASE_URL}/api/auth/register`,
-    logout: `${API_BASE_URL}/api/auth/logout`,
-    me: `${API_BASE_URL}/api/auth/me`,
-    forgotPassword: `${API_BASE_URL}/api/auth/forgot-password`,
-    resetPassword: `${API_BASE_URL}/api/auth/reset-password`,
+    login: buildUrl("/api/auth/login"),
+    register: buildUrl("/api/auth/register"),
+    logout: buildUrl("/api/auth/logout"),
+    me: buildUrl("/api/auth/me"),
+    forgotPassword: buildUrl("/api/auth/forgot-password"),
+    resetPassword: buildUrl("/api/auth/reset-password"),
   },
 
   // Tasks endpoints
   tasks: {
-    getAll: `${API_BASE_URL}/api/tasks`,
-    getById: (id: number) => `${API_BASE_URL}/api/tasks/${id}`,
-    create: `${API_BASE_URL}/api/tasks`,
-    update: (id: number) => `${API_BASE_URL}/api/tasks/${id}`,
-    delete: (id: number) => `${API_BASE_URL}/api/tasks/${id}`,
-    toggleStar: (id: number) => `${API_BASE_URL}/api/tasks/${id}/star`,
-    updateStatus: (id: number) => `${API_BASE_URL}/api/tasks/${id}/status`,
-    getComments: (taskId: number) => `${API_BASE_URL}/api/tasks/${taskId}/comments`,
-    createComment: (taskId: number) => `${API_BASE_URL}/api/tasks/${taskId}/comments`,
-    updateComment: (id: number) => `${API_BASE_URL}/api/task-comments/${id}`,
-    deleteComment: (id: number) => `${API_BASE_URL}/api/task-comments/${id}`,
+    getAll: buildUrl("/api/tasks"),
+    getById: (id: number) => buildUrl(`/api/tasks/${id}`),
+    create: buildUrl("/api/tasks"),
+    update: (id: number) => buildUrl(`/api/tasks/${id}`),
+    delete: (id: number) => buildUrl(`/api/tasks/${id}`),
+    toggleStar: (id: number) => buildUrl(`/api/tasks/${id}/star`),
+    updateStatus: (id: number) => buildUrl(`/api/tasks/${id}/status`),
+    getComments: (taskId: number) => buildUrl(`/api/tasks/${taskId}/comments`),
+    createComment: (taskId: number) => buildUrl(`/api/tasks/${taskId}/comments`),
+    updateComment: (id: number) => buildUrl(`/api/task-comments/${id}`),
+    deleteComment: (id: number) => buildUrl(`/api/task-comments/${id}`),
   },
 
   // Projects endpoints
   projects: {
-    getAll: `${API_BASE_URL}/api/projects`,
-    getById: (id: number) => `${API_BASE_URL}/api/projects/${id}`,
-    create: `${API_BASE_URL}/api/projects`,
-    update: (id: number) => `${API_BASE_URL}/api/projects/${id}`,
-    delete: (id: number) => `${API_BASE_URL}/api/projects/${id}`,
-    toggleStar: (id: number) => `${API_BASE_URL}/api/projects/${id}/star`,
-    getMembers: (id: number) => `${API_BASE_URL}/api/projects/${id}/members`,
+    getAll: buildUrl("/api/projects"),
+    getById: (id: number) => buildUrl(`/api/projects/${id}`),
+    create: buildUrl("/api/projects"),
+    update: (id: number) => buildUrl(`/api/projects/${id}`),
+    delete: (id: number) => buildUrl(`/api/projects/${id}`),
+    toggleStar: (id: number) => buildUrl(`/api/projects/${id}/star`),
+    getMembers: (id: number) => buildUrl(`/api/projects/${id}/members`),
   },
 
   // Teams endpoints
   teams: {
-    getAll: `${API_BASE_URL}/api/teams`,
-    getById: (id: number) => `${API_BASE_URL}/api/teams/${id}`,
-    create: `${API_BASE_URL}/api/teams`,
-    update: (id: number) => `${API_BASE_URL}/api/teams/${id}`,
-    delete: (id: number) => `${API_BASE_URL}/api/teams/${id}`,
-    getMembers: (id: number) => `${API_BASE_URL}/api/teams/${id}/members`,
-    addMember: (id: number) => `${API_BASE_URL}/api/teams/${id}/members`,
-    removeMember: (id: number, memberUserId: number) => `${API_BASE_URL}/api/teams/${id}/members/${memberUserId}`,
+    getAll: buildUrl("/api/teams"),
+    getById: (id: number) => buildUrl(`/api/teams/${id}`),
+    create: buildUrl("/api/teams"),
+    update: (id: number) => buildUrl(`/api/teams/${id}`),
+    delete: (id: number) => buildUrl(`/api/teams/${id}`),
+    getMembers: (id: number) => buildUrl(`/api/teams/${id}/members`),
+    addMember: (id: number) => buildUrl(`/api/teams/${id}/members`),
+    removeMember: (id: number, memberUserId: number) => buildUrl(`/api/teams/${id}/members/${memberUserId}`),
   },
 
   // Dashboard endpoints
   dashboard: {
-    stats: `${API_BASE_URL}/api/dashboard/stats`,
-    activity: `${API_BASE_URL}/api/dashboard/activity`,
+    stats: buildUrl("/api/dashboard/stats"),
+    activity: buildUrl("/api/dashboard/activity"),
   },
 
   // Calendar events endpoints
   calendarEvents: {
-    getAll: `${API_BASE_URL}/api/calendar-events`,
-    getById: (id: number) => `${API_BASE_URL}/api/calendar-events/${id}`,
-    create: `${API_BASE_URL}/api/calendar-events`,
-    update: (id: number) => `${API_BASE_URL}/api/calendar-events/${id}`,
-    delete: (id: number) => `${API_BASE_URL}/api/calendar-events/${id}`,
+    getAll: buildUrl("/api/calendar-events"),
+    getById: (id: number) => buildUrl(`/api/calendar-events/${id}`),
+    create: buildUrl("/api/calendar-events"),
+    update: (id: number) => buildUrl(`/api/calendar-events/${id}`),
+    delete: (id: number) => buildUrl(`/api/calendar-events/${id}`),
   },
 
   // Messages endpoints
   messages: {
-    getContacts: `${API_BASE_URL}/api/messages/contacts`,
-    getConversation: (contactId: number) => `${API_BASE_URL}/api/messages/${contactId}`,
-    send: `${API_BASE_URL}/api/messages`,
+    getContacts: buildUrl("/api/messages/contacts"),
+    getConversation: (contactId: number) => buildUrl(`/api/messages/${contactId}`),
+    send: buildUrl("/api/messages"),
   },
 
   // Notifications endpoints
   notifications: {
-    getAll: `${API_BASE_URL}/api/notifications`,
-    markAsRead: (id: number) => `${API_BASE_URL}/api/notifications/${id}/read`,
-    markAllAsRead: `${API_BASE_URL}/api/notifications/read-all`,
+    getAll: buildUrl("/api/notifications"),
+    markAsRead: (id: number) => buildUrl(`/api/notifications/${id}/read`),
+    markAllAsRead: buildUrl("/api/notifications/read-all"),
   },
 
   // Settings endpoints
   settings: {
-    getProfile: `${API_BASE_URL}/api/settings/profile`,
-    updateProfile: `${API_BASE_URL}/api/settings/profile`,
-    changePassword: `${API_BASE_URL}/api/settings/password`,
-    deleteAccount: `${API_BASE_URL}/api/settings/account`,
+    getProfile: buildUrl("/api/settings/profile"),
+    updateProfile: buildUrl("/api/settings/profile"),
+    changePassword: buildUrl("/api/settings/password"),
+    deleteAccount: buildUrl("/api/settings/account"),
   },
 
   // Chatbot endpoints
   chatbot: {
-    getConversations: `${API_BASE_URL}/api/chatbot/conversations`,
-    getConversation: (id: number) => `${API_BASE_URL}/api/chatbot/conversations/${id}`,
-    createConversation: `${API_BASE_URL}/api/chatbot/conversations`,
-    sendMessage: (id: number) => `${API_BASE_URL}/api/chatbot/conversations/${id}/messages`,
-    deleteConversation: (id: number) => `${API_BASE_URL}/api/chatbot/conversations/${id}`,
+    getConversations: buildUrl("/api/chatbot/conversations"),
+    getConversation: (id: number) => buildUrl(`/api/chatbot/conversations/${id}`),
+    createConversation: buildUrl("/api/chatbot/conversations"),
+    sendMessage: (id: number) => buildUrl(`/api/chatbot/conversations/${id}/messages`),
+    deleteConversation: (id: number) => buildUrl(`/api/chatbot/conversations/${id}`),
   },
+});
+
+// Export ENDPOINTS - this will be updated once API is initialized
+export let ENDPOINTS = createEndpoints();
+
+// Export function to get current base URL
+export const getApiBaseUrl = (): string => API_BASE_URL;
+
+// Export signal for when API is ready
+export const getApiReady = async (): Promise<void> => {
+  await initializeApiBaseUrl();
 };
 
+// Export default base URL
 export default API_BASE_URL;

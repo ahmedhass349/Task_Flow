@@ -1,3 +1,10 @@
+/*
+    FILE: Startup.cs
+    PHASE: Phase 1
+    PURPOSE: Configures services and middleware with provider-switching database support and desktop startup readiness signals.
+    CHANGED FROM: SQL Server-only DbContext registration and restricted CORS without startup DB readiness signals.
+*/
+
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -10,12 +17,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System;
+using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using taskflow.Data;
@@ -36,10 +46,20 @@ namespace taskflow
             Environment = env;
             Configuration = configuration;
 
+            var logDirectory = env.IsProduction()
+                ? Path.Combine(
+                    System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+                    "TaskFlow",
+                    "Logs")
+                : Path.Combine("App_Data", "Logs");
+
+            Directory.CreateDirectory(logDirectory);
+            var logFilePath = Path.Combine(logDirectory, "log-.txt");
+
             Log.Logger = new LoggerConfiguration()
               .Enrich.FromLogContext()
               .WriteTo.Console()
-              .WriteTo.File("App_Data/Logs/log-.txt",
+              .WriteTo.File(logFilePath,
                   rollingInterval: RollingInterval.Day,
                   fileSizeLimitBytes: 536870912,
                   retainedFileCountLimit: 7)
@@ -61,8 +81,7 @@ namespace taskflow
             });
 
             // ── Entity Framework ─────────────────────────────────────────────
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddConfiguredDatabase(Configuration);
 
             // ── AutoMapper ───────────────────────────────────────────────────
             services.AddAutoMapper(typeof(MappingProfile).Assembly);
@@ -71,6 +90,12 @@ namespace taskflow
             var jwtKey = Configuration["Jwt:Key"]!;
             var jwtIssuer = Configuration["Jwt:Issuer"]!;
             var jwtAudience = Configuration["Jwt:Audience"]!;
+
+            if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
+            {
+                throw new InvalidOperationException(
+                    "Invalid JWT signing key. Configure Jwt:Key with at least 32 UTF-8 bytes for HS256.");
+            }
 
             services.AddAuthentication(options =>
             {
@@ -139,7 +164,7 @@ namespace taskflow
             {
                 options.AddPolicy("AllowAll", builder =>
                 {
-                    builder.WithOrigins("http://localhost:3000", "http://localhost:5001")
+                    builder.SetIsOriginAllowed(_ => true)
                            .AllowAnyMethod()
                            .AllowAnyHeader()
                            .AllowCredentials();
@@ -238,6 +263,39 @@ namespace taskflow
             loggerFactory.AddSerilog();
 
             appLifetime.ApplicationStopped.Register(Log.CloseAndFlush);
+            appLifetime.ApplicationStarted.Register(() =>
+            {
+                var address = app.ServerFeatures.Get<IServerAddressesFeature>()?.Addresses.FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(address))
+                {
+                    var electronFriendlyAddress = address
+                        .Replace("127.0.0.1", "localhost", StringComparison.OrdinalIgnoreCase)
+                        .Replace("[::1]", "localhost", StringComparison.OrdinalIgnoreCase);
+                    Console.WriteLine($"TASKFLOW_BACKEND_READY:{electronFriendlyAddress}");
+                    Console.Out.Flush();
+                }
+            });
+
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                try
+                {
+                    db.Database.Migrate();
+                    Console.WriteLine("TASKFLOW_DB_READY");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"TASKFLOW_DB_ERROR:{ex.Message}");
+                    try
+                    {
+                        db.Database.EnsureCreated();
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
 
             if (env.IsDevelopment())
             {
@@ -278,6 +336,8 @@ namespace taskflow
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapControllers();
+
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}/{status?}");

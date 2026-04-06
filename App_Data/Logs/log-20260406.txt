@@ -229,3 +229,426 @@ WHERE [t].[UserId] = @__userId_0
 2026-04-06 13:30:38.396 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/hubs/notifications?id=qOoGu3OdrvZlsl2_9qxYFw&access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjQiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJUMDAzMTczMzdAZ21haWwuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvZ2l2ZW5uYW1lIjoiVGVzdF8xIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvc3VybmFtZSI6IkRlbW8iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiVGVzdF8xIERlbW8iLCJhdmF0YXJVcmwiOiIiLCJjb21wYW55IjoiR2VybWFuIFVuaXZlcnNpdHkgaW4gQ2Fpcm8iLCJjb3VudHJ5IjoiRWd5cHQiLCJwaG9uZSI6IisyMDEyMzQ1Njc4OTEiLCJ0aW1lem9uZSI6IkdNVCsyIiwiY3JlYXRlZEF0IjoiMjAyNi0wMy0xNVQxNToyMzo0Ny42ODIxMjY3IiwiZXhwIjoxNzc1NTYxNDMxLCJpc3MiOiJUYXNrRmxvdyIsImF1ZCI6IlRhc2tGbG93QXBwIn0.N5VXNT_ViR1pvt6BdkIu82Ec9fGeOFQOvca8uQw2BiA - 101 null null 6400.4718ms
 2026-04-06 13:30:49.677 +02:00 [INF] Reminder processor stopping...
 2026-04-06 13:30:49.681 +02:00 [INF] Due date warning service stopping...
+2026-04-06 14:09:52.374 +02:00 [INF] Executed DbCommand (43ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+PRAGMA journal_mode = 'wal';
+2026-04-06 14:09:52.528 +02:00 [INF] Executed DbCommand (11ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "__EFMigrationsHistory" (
+    "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+    "ProductVersion" TEXT NOT NULL
+);
+2026-04-06 14:09:52.547 +02:00 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+2026-04-06 14:09:52.555 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM "__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2026-04-06 14:09:52.579 +02:00 [INF] Applying migration '20260406120911_InitialCreate'.
+2026-04-06 14:09:52.660 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "AppUsers" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_AppUsers" PRIMARY KEY AUTOINCREMENT,
+    "FullName" TEXT NOT NULL,
+    "FirstName" TEXT NOT NULL,
+    "LastName" TEXT NOT NULL,
+    "Email" TEXT NOT NULL,
+    "PasswordHash" TEXT NOT NULL,
+    "AvatarUrl" TEXT NULL,
+    "Company" TEXT NULL,
+    "Country" TEXT NULL,
+    "Phone" TEXT NULL,
+    "Timezone" TEXT NULL,
+    "ResetToken" TEXT NULL,
+    "ResetTokenExpiry" TEXT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "LastLoginAt" TEXT NULL
+);
+2026-04-06 14:09:52.664 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "CalendarEvents" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_CalendarEvents" PRIMARY KEY AUTOINCREMENT,
+    "OwnerId" INTEGER NOT NULL,
+    "Title" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "StartAt" TEXT NOT NULL,
+    "EndAt" TEXT NOT NULL,
+    "Color" TEXT NULL,
+    "MeetingLink" TEXT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_CalendarEvents_AppUsers_OwnerId" FOREIGN KEY ("OwnerId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE
+);
+2026-04-06 14:09:52.673 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "ChatbotConversations" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_ChatbotConversations" PRIMARY KEY AUTOINCREMENT,
+    "Title" TEXT NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "UpdatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_ChatbotConversations_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE
+);
+2026-04-06 14:09:52.677 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Messages" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Messages" PRIMARY KEY AUTOINCREMENT,
+    "SenderId" INTEGER NOT NULL,
+    "ReceiverId" INTEGER NOT NULL,
+    "Body" TEXT NOT NULL,
+    "IsRead" INTEGER NOT NULL,
+    "SentAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Messages_AppUsers_ReceiverId" FOREIGN KEY ("ReceiverId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_Messages_AppUsers_SenderId" FOREIGN KEY ("SenderId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT
+);
+2026-04-06 14:09:52.681 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Projects" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Projects" PRIMARY KEY AUTOINCREMENT,
+    "Name" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "Color" TEXT NULL,
+    "OwnerId" INTEGER NOT NULL,
+    "IsStarred" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Projects_AppUsers_OwnerId" FOREIGN KEY ("OwnerId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT
+);
+2026-04-06 14:09:52.689 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Teams" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Teams" PRIMARY KEY AUTOINCREMENT,
+    "Name" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "OwnerId" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Teams_AppUsers_OwnerId" FOREIGN KEY ("OwnerId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT
+);
+2026-04-06 14:09:52.692 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "ChatbotMessages" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_ChatbotMessages" PRIMARY KEY AUTOINCREMENT,
+    "ConversationId" INTEGER NOT NULL,
+    "Role" TEXT NOT NULL,
+    "Text" TEXT NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_ChatbotMessages_ChatbotConversations_ConversationId" FOREIGN KEY ("ConversationId") REFERENCES "ChatbotConversations" ("Id") ON DELETE CASCADE
+);
+2026-04-06 14:09:52.696 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "ProjectMembers" (
+    "ProjectId" INTEGER NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "Role" TEXT NOT NULL,
+    CONSTRAINT "PK_ProjectMembers" PRIMARY KEY ("ProjectId", "UserId"),
+    CONSTRAINT "FK_ProjectMembers_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_ProjectMembers_Projects_ProjectId" FOREIGN KEY ("ProjectId") REFERENCES "Projects" ("Id") ON DELETE CASCADE
+);
+2026-04-06 14:09:52.700 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "TaskItems" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_TaskItems" PRIMARY KEY AUTOINCREMENT,
+    "Title" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "ProjectId" INTEGER NULL,
+    "AssigneeId" INTEGER NULL,
+    "Priority" TEXT NOT NULL,
+    "Status" TEXT NOT NULL,
+    "DueDate" TEXT NULL,
+    "IsStarred" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_TaskItems_AppUsers_AssigneeId" FOREIGN KEY ("AssigneeId") REFERENCES "AppUsers" ("Id") ON DELETE SET NULL,
+    CONSTRAINT "FK_TaskItems_Projects_ProjectId" FOREIGN KEY ("ProjectId") REFERENCES "Projects" ("Id") ON DELETE SET NULL
+);
+2026-04-06 14:09:52.704 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "TeamMembers" (
+    "TeamId" INTEGER NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "Role" TEXT NOT NULL,
+    CONSTRAINT "PK_TeamMembers" PRIMARY KEY ("TeamId", "UserId"),
+    CONSTRAINT "FK_TeamMembers_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_TeamMembers_Teams_TeamId" FOREIGN KEY ("TeamId") REFERENCES "Teams" ("Id") ON DELETE CASCADE
+);
+2026-04-06 14:09:52.711 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Notifications" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Notifications" PRIMARY KEY AUTOINCREMENT,
+    "UserId" INTEGER NOT NULL,
+    "Title" TEXT NOT NULL,
+    "Message" TEXT NOT NULL,
+    "Type" TEXT NOT NULL,
+    "Priority" TEXT NOT NULL,
+    "IsRead" INTEGER NOT NULL,
+    "ActionUrl" TEXT NULL,
+    "RelatedTaskId" INTEGER NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "ReadAt" TEXT NULL,
+    CONSTRAINT "FK_Notifications_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_Notifications_TaskItems_RelatedTaskId" FOREIGN KEY ("RelatedTaskId") REFERENCES "TaskItems" ("Id") ON DELETE SET NULL
+);
+2026-04-06 14:09:52.716 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Reminders" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Reminders" PRIMARY KEY AUTOINCREMENT,
+    "TaskId" INTEGER NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "FireAt" TEXT NOT NULL,
+    "NotifyEmail" INTEGER NOT NULL,
+    "NotifyInApp" INTEGER NOT NULL,
+    "HasFired" INTEGER NOT NULL,
+    "FiredAt" TEXT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Reminders_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_Reminders_TaskItems_TaskId" FOREIGN KEY ("TaskId") REFERENCES "TaskItems" ("Id") ON DELETE CASCADE
+);
+2026-04-06 14:09:52.719 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "TaskComments" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_TaskComments" PRIMARY KEY AUTOINCREMENT,
+    "TaskId" INTEGER NOT NULL,
+    "AuthorId" INTEGER NOT NULL,
+    "Body" TEXT NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_TaskComments_AppUsers_AuthorId" FOREIGN KEY ("AuthorId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_TaskComments_TaskItems_TaskId" FOREIGN KEY ("TaskId") REFERENCES "TaskItems" ("Id") ON DELETE CASCADE
+);
+2026-04-06 14:09:52.724 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_AppUsers_Email" ON "AppUsers" ("Email");
+2026-04-06 14:09:52.727 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_CalendarEvents_OwnerId" ON "CalendarEvents" ("OwnerId");
+2026-04-06 14:09:52.730 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_ChatbotConversations_UserId" ON "ChatbotConversations" ("UserId");
+2026-04-06 14:09:52.734 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_ChatbotMessages_ConversationId" ON "ChatbotMessages" ("ConversationId");
+2026-04-06 14:09:52.737 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Messages_ReceiverId" ON "Messages" ("ReceiverId");
+2026-04-06 14:09:52.740 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Messages_SenderId" ON "Messages" ("SenderId");
+2026-04-06 14:09:52.743 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Notifications_RelatedTaskId" ON "Notifications" ("RelatedTaskId");
+2026-04-06 14:09:52.747 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Notifications_UserId_CreatedAt" ON "Notifications" ("UserId", "CreatedAt");
+2026-04-06 14:09:52.751 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Notifications_UserId_IsRead" ON "Notifications" ("UserId", "IsRead");
+2026-04-06 14:09:52.755 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_ProjectMembers_UserId" ON "ProjectMembers" ("UserId");
+2026-04-06 14:09:52.759 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Projects_OwnerId" ON "Projects" ("OwnerId");
+2026-04-06 14:09:52.765 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Reminders_FireAt_HasFired" ON "Reminders" ("FireAt", "HasFired");
+2026-04-06 14:09:52.770 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Reminders_TaskId" ON "Reminders" ("TaskId");
+2026-04-06 14:09:52.774 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Reminders_UserId" ON "Reminders" ("UserId");
+2026-04-06 14:09:52.777 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskComments_AuthorId" ON "TaskComments" ("AuthorId");
+2026-04-06 14:09:52.781 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskComments_TaskId" ON "TaskComments" ("TaskId");
+2026-04-06 14:09:52.785 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskItems_AssigneeId" ON "TaskItems" ("AssigneeId");
+2026-04-06 14:09:52.790 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskItems_ProjectId" ON "TaskItems" ("ProjectId");
+2026-04-06 14:09:52.798 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TeamMembers_UserId" ON "TeamMembers" ("UserId");
+2026-04-06 14:09:52.801 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Teams_OwnerId" ON "Teams" ("OwnerId");
+2026-04-06 14:09:52.804 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260406120911_InitialCreate', '8.0.0');
+2026-04-06 14:09:53.067 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-04-06 14:09:53.104 +02:00 [INF] Reminder processor started
+2026-04-06 14:09:53.770 +02:00 [INF] Executed DbCommand (8ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-06 14:09:53.783 +02:00 [INF] Due date warning service started
+2026-04-06 14:09:53.929 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28), @__AddHours_1='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @__now_0 AND "t"."DueDate" <= @__AddHours_1 AND "t"."Status" <> 'Completed'
+2026-04-06 14:09:53.939 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28), @__AddHours_1='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @__now_0 AND "t"."DueDate" <= @__AddHours_1 AND "t"."Status" <> 'Completed'
+2026-04-06 14:09:53.962 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @__now_0 AND "t"."Status" <> 'Completed'
+2026-04-06 14:09:53.979 +02:00 [WRN] Overriding address(es) 'http://localhost:5001/'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
+2026-04-06 14:10:53.787 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-06 14:11:18.402 +02:00 [INF] Reminder processor stopping...
+2026-04-06 14:11:18.405 +02:00 [INF] Due date warning service stopping...
+2026-04-06 14:11:32.555 +02:00 [INF] Applying migration '20260406120911_InitialCreate'.
+2026-04-06 14:11:32.948 +02:00 [INF] Reminder processor started
+2026-04-06 14:11:33.469 +02:00 [INF] Due date warning service started
+2026-04-06 14:11:33.620 +02:00 [INF] Reminder processor stopping...
+2026-04-06 14:11:33.624 +02:00 [INF] Due date warning service stopping...
+2026-04-06 14:12:35.391 +02:00 [INF] No migrations were applied. The database is already up to date.
+2026-04-06 14:12:35.779 +02:00 [INF] Reminder processor started
+2026-04-06 14:12:36.460 +02:00 [INF] Due date warning service started
+2026-04-06 14:12:58.076 +02:00 [INF] Reminder processor stopping...
+2026-04-06 14:12:58.079 +02:00 [INF] Due date warning service stopping...
+2026-04-06 14:15:10.430 +02:00 [INF] No migrations were applied. The database is already up to date.
+2026-04-06 14:15:10.851 +02:00 [INF] Reminder processor started
+2026-04-06 14:15:11.277 +02:00 [INF] Due date warning service started
+2026-04-06 14:17:52.330 +02:00 [INF] Reminder processor stopping...
+2026-04-06 14:17:52.337 +02:00 [INF] Due date warning service stopping...
+2026-04-06 14:37:40.812 +02:00 [INF] No migrations were applied. The database is already up to date.
+2026-04-06 14:37:41.021 +02:00 [INF] Reminder processor started
+2026-04-06 14:37:41.376 +02:00 [INF] Due date warning service started
+2026-04-06 14:39:12.706 +02:00 [INF] No migrations were applied. The database is already up to date.
+2026-04-06 14:39:12.890 +02:00 [INF] Reminder processor started
+2026-04-06 14:39:13.199 +02:00 [INF] Due date warning service started
+2026-04-06 14:48:51.139 +02:00 [INF] No migrations were applied. The database is already up to date.
+2026-04-06 14:48:51.359 +02:00 [INF] Reminder processor started
+2026-04-06 14:48:51.783 +02:00 [INF] Due date warning service started
+2026-04-06 14:50:33.134 +02:00 [INF] No migrations were applied. The database is already up to date.
+2026-04-06 14:50:33.437 +02:00 [INF] Reminder processor started
+2026-04-06 14:50:34.249 +02:00 [INF] Due date warning service started
+2026-04-06 15:01:01.073 +02:00 [INF] Executed DbCommand (29ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+2026-04-06 15:01:01.131 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+2026-04-06 15:01:01.143 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM "__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2026-04-06 15:01:01.164 +02:00 [INF] No migrations were applied. The database is already up to date.
+2026-04-06 15:01:01.378 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-04-06 15:01:01.405 +02:00 [INF] Reminder processor started
+2026-04-06 15:01:01.839 +02:00 [INF] Executed DbCommand (6ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-06 15:01:01.856 +02:00 [INF] Due date warning service started
+2026-04-06 15:01:01.982 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28), @__AddHours_1='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @__now_0 AND "t"."DueDate" <= @__AddHours_1 AND "t"."Status" <> 'Completed'
+2026-04-06 15:01:01.989 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28), @__AddHours_1='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @__now_0 AND "t"."DueDate" <= @__AddHours_1 AND "t"."Status" <> 'Completed'
+2026-04-06 15:01:02.007 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @__now_0 AND "t"."Status" <> 'Completed'
+2026-04-06 15:01:02.026 +02:00 [WRN] Overriding address(es) 'http://localhost:5001/'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
+2026-04-06 15:02:01.869 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-06 15:02:37.663 +02:00 [INF] Reminder processor stopping...
+2026-04-06 15:02:37.664 +02:00 [INF] Due date warning service stopping...
+2026-04-06 15:04:41.422 +02:00 [INF] Executed DbCommand (17ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+2026-04-06 15:04:41.491 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+2026-04-06 15:04:41.511 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM "__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2026-04-06 15:04:41.538 +02:00 [INF] No migrations were applied. The database is already up to date.
+2026-04-06 15:04:41.754 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-04-06 15:04:41.779 +02:00 [INF] Reminder processor started
+2026-04-06 15:04:42.206 +02:00 [INF] Executed DbCommand (8ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-06 15:04:42.215 +02:00 [INF] Due date warning service started
+2026-04-06 15:04:42.339 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28), @__AddHours_1='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @__now_0 AND "t"."DueDate" <= @__AddHours_1 AND "t"."Status" <> 'Completed'
+2026-04-06 15:04:42.345 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28), @__AddHours_1='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @__now_0 AND "t"."DueDate" <= @__AddHours_1 AND "t"."Status" <> 'Completed'
+2026-04-06 15:04:42.359 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @__now_0 AND "t"."Status" <> 'Completed'
+2026-04-06 15:04:42.375 +02:00 [WRN] Overriding address(es) 'http://localhost:5001/'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
+2026-04-06 15:04:59.240 +02:00 [INF] Reminder processor stopping...
+2026-04-06 15:04:59.242 +02:00 [INF] Due date warning service stopping...
+2026-04-06 15:08:39.637 +02:00 [INF] Executed DbCommand (85ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+2026-04-06 15:08:39.902 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+2026-04-06 15:08:39.957 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM "__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2026-04-06 15:08:39.987 +02:00 [INF] No migrations were applied. The database is already up to date.
+2026-04-06 15:08:40.420 +02:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-04-06 15:08:40.462 +02:00 [INF] Reminder processor started
+2026-04-06 15:08:41.198 +02:00 [INF] Executed DbCommand (5ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-06 15:08:41.214 +02:00 [INF] Due date warning service started
+2026-04-06 15:08:41.382 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28), @__AddHours_1='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @__now_0 AND "t"."DueDate" <= @__AddHours_1 AND "t"."Status" <> 'Completed'
+2026-04-06 15:08:41.386 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28), @__AddHours_1='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @__now_0 AND "t"."DueDate" <= @__AddHours_1 AND "t"."Status" <> 'Completed'
+2026-04-06 15:08:41.402 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__now_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @__now_0 AND "t"."Status" <> 'Completed'
+2026-04-06 15:08:41.433 +02:00 [WRN] Overriding address(es) 'http://localhost:5001/'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
+2026-04-06 15:09:41.226 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-06 15:10:41.243 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-06 15:11:41.253 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-06 15:12:41.257 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-06 15:13:41.261 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
