@@ -88,7 +88,6 @@ export const useNotifications = (): UseNotificationsReturn => {
             ? err.message
             : "Failed to mark notification as read";
       setError(message);
-      throw err;
     }
   }, []);
 

@@ -10,9 +10,7 @@ const root = createRoot(rootEl);
 
 // Initialize API configuration (handles Electron backend URL resolution)
 initializeApi().then(() => {
-  console.log('[App] API initialized, rendering...');
   root.render(<App />);
 }).catch((error) => {
-  console.error('[App] Failed to initialize API:', error);
   root.render(<App />);
 });

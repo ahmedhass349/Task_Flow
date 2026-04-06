@@ -118,8 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await api.get<User>("/api/auth/me");
       setUser(userData);
     } catch (err) {
-      console.error("Failed to refresh user data:", err);
-      // Don't clear token on refresh failure, just log the error
+      // Don't clear token on refresh failure, error will be handled by caller
     }
   }, []);
 

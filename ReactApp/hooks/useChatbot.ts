@@ -138,7 +138,7 @@ export const useChatbot = (): UseChatbotReturn => {
 
   const createConversation = useCallback(async (data: CreateConversationRequest) => {
     try {
-      const newConversation = await api.post<ChatbotConversation>("/chatbot/conversations", data);
+      const newConversation = await api.post<ChatbotConversation>("/api/chatbot/conversations", data);
       setConversations(prev => [...prev, newConversation]);
       setConversationList(prev => [...prev, {
         id: newConversation.id,
@@ -154,13 +154,12 @@ export const useChatbot = (): UseChatbotReturn => {
             ? err.message
             : "Failed to create conversation";
       setError(message);
-      throw err;
     }
   }, []);
 
   const sendMessage = useCallback(async (conversationId: string, text: string) => {
     try {
-      const newMessage = await api.post<ChatbotMessage>(`/chatbot/conversations/${conversationId}/messages`, { text });
+      const newMessage = await api.post<ChatbotMessage>(`/api/chatbot/conversations/${conversationId}/messages`, { text });
       
       // Update the conversation with the new message
       setConversations(prev =>
@@ -198,7 +197,7 @@ export const useChatbot = (): UseChatbotReturn => {
 
   const deleteConversation = useCallback(async (id: string) => {
     try {
-      await api.delete(`/chatbot/conversations/${id}`);
+      await api.delete(`/api/chatbot/conversations/${id}`);
       setConversations(prev => prev.filter(conv => conv.id !== id));
       setConversationList(prev => prev.filter(item => item.id !== id));
       if (activeConversationId === id) {

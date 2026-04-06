@@ -95,7 +95,7 @@ export const useTeams = (): UseTeamsReturn => {
 
   const createTeam = useCallback(async (data: CreateTeamRequest) => {
     try {
-      const newTeam = await api.post<Team>("/teams", data);
+      const newTeam = await api.post<Team>("/api/teams", data);
       setTeams(prev => [...prev, newTeam]);
     } catch (err) {
       const message =
@@ -105,13 +105,12 @@ export const useTeams = (): UseTeamsReturn => {
             ? err.message
             : "Failed to create team";
       setError(message);
-      throw err;
     }
   }, []);
 
   const updateTeam = useCallback(async (id: string, data: UpdateTeamRequest) => {
     try {
-      const updatedTeam = await api.put<Team>(`/teams/${id}`, data);
+      const updatedTeam = await api.put<Team>(`/api/teams/${id}`, data);
       setTeams(prev =>
         prev.map(team =>
           team.id === id ? updatedTeam : team
@@ -131,7 +130,7 @@ export const useTeams = (): UseTeamsReturn => {
 
   const deleteTeam = useCallback(async (id: string) => {
     try {
-      await api.delete(`/teams/${id}`);
+      await api.delete(`/api/teams/${id}`);
       setTeams(prev => prev.filter(team => team.id !== id));
     } catch (err) {
       const message =
@@ -147,7 +146,7 @@ export const useTeams = (): UseTeamsReturn => {
 
   const addMember = useCallback(async (teamId: string, data: AddTeamMemberRequest) => {
     try {
-      await api.post(`/teams/${teamId}/members`, data);
+      await api.post(`/api/teams/${teamId}/members`, data);
       // Refetch to get updated member list
       fetchData();
     } catch (err) {
@@ -164,7 +163,7 @@ export const useTeams = (): UseTeamsReturn => {
 
   const removeMember = useCallback(async (teamId: string, memberUserId: string) => {
     try {
-      await api.delete(`/teams/${teamId}/members/${memberUserId}`);
+      await api.delete(`/api/teams/${teamId}/members/${memberUserId}`);
       // Refetch to get updated member list
       fetchData();
     } catch (err) {

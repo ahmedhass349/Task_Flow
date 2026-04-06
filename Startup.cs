@@ -84,7 +84,7 @@ namespace taskflow
             services.AddConfiguredDatabase(Configuration);
 
             // ── AutoMapper ───────────────────────────────────────────────────
-            services.AddAutoMapper(typeof(MappingProfile).Assembly);
+            services.AddAutoMapper(_ => { }, typeof(MappingProfile).Assembly);
 
             // ── JWT Authentication ───────────────────────────────────────────
             var jwtKey = Configuration["Jwt:Key"]!;
@@ -162,9 +162,10 @@ namespace taskflow
             // ── CORS ─────────────────────────────────────────────────────────
             services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", builder =>
+                var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000", "http://localhost:5000" };
+                options.AddPolicy("AllowConfigured", builder =>
                 {
-                    builder.SetIsOriginAllowed(_ => true)
+                    builder.WithOrigins(allowedOrigins)
                            .AllowAnyMethod()
                            .AllowAnyHeader()
                            .AllowCredentials();
@@ -260,6 +261,17 @@ namespace taskflow
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, IHostApplicationLifetime appLifetime)
         {
+            // ── Security Headers ────────────────────────────────────────────────
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+                context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+                context.Response.Headers["X-Frame-Options"] = "DENY";
+                context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+                context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+                await next();
+            });
+
             loggerFactory.AddSerilog();
 
             appLifetime.ApplicationStopped.Register(Log.CloseAndFlush);
@@ -328,7 +340,7 @@ namespace taskflow
             app.UseRouting();
 
             // ── CORS ─────────────────────────────────────────────────────────
-            app.UseCors("AllowAll");
+            app.UseCors("AllowConfigured");
 
             // ── Auth middleware (order matters: after routing, before endpoints)
             app.UseAuthentication();

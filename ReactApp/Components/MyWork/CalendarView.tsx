@@ -281,7 +281,7 @@ export default function CalendarView({ visibleTasks, updateTask, refetch }: Cale
                         await updateTask(parseInt(id, 10), { dueDate: d.toISOString() });
                         refetch && refetch();
                       } catch (err) {
-                        console.error('Failed to move task:', err);
+                        // Error is handled by parent component
                       }
                     }}
                     className={`p-3 min-h-[100px] border ${isToday ? 'bg-blue-50' : 'bg-white'}`}

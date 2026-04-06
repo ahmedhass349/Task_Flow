@@ -84,7 +84,7 @@ export const useProjects = (): UseProjectsReturn => {
 
   const toggleStar = useCallback(async (id: string) => {
     try {
-      await api.patch(`/projects/${id}/star`);
+      await api.patch(`/api/projects/${id}/star`);
       // Update local state to reflect change
       setProjects(prev =>
         prev.map(project =>
@@ -99,13 +99,12 @@ export const useProjects = (): UseProjectsReturn => {
             ? err.message
             : "Failed to toggle project star";
       setError(message);
-      throw err;
     }
   }, []);
 
   const createProject = useCallback(async (data: CreateProjectRequest) => {
     try {
-      const newProject = await api.post<Project>("/projects", data);
+      const newProject = await api.post<Project>("/api/projects", data);
       setProjects(prev => [...prev, newProject]);
     } catch (err) {
       const message =
@@ -121,7 +120,7 @@ export const useProjects = (): UseProjectsReturn => {
 
   const updateProject = useCallback(async (id: string, data: UpdateProjectRequest) => {
     try {
-      const updatedProject = await api.put<Project>(`/projects/${id}`, data);
+      const updatedProject = await api.put<Project>(`/api/projects/${id}`, data);
       setProjects(prev =>
         prev.map(project =>
           project.id === id ? updatedProject : project
@@ -141,7 +140,7 @@ export const useProjects = (): UseProjectsReturn => {
 
   const deleteProject = useCallback(async (id: string) => {
     try {
-      await api.delete(`/projects/${id}`);
+      await api.delete(`/api/projects/${id}`);
       setProjects(prev => prev.filter(project => project.id !== id));
     } catch (err) {
       const message =

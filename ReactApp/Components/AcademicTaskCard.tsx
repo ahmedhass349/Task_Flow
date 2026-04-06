@@ -311,7 +311,7 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData }: Ac
       setSuccess(true)
       setTimeout(() => { setSuccess(false); handleReset() }, SUCCESS_DISPLAY_MS)
     } catch (err) {
-      console.error("Task creation failed:", err)
+      // Error is handled by parent component
     } finally {
       setLoading(false)
     }

@@ -117,7 +117,7 @@ export const useMessages = (): UseMessagesReturn => {
 
   const sendMessage = useCallback(async (contactId: string, body: string) => {
     try {
-      const newMessage = await api.post<Message>("/messages", { receiverId: contactId, body });
+      const newMessage = await api.post<Message>("/api/messages", { receiverId: contactId, body });
       setMessages(prev => [...prev, newMessage]);
       // Update contact's last message
       setContacts(prev =>
@@ -135,7 +135,6 @@ export const useMessages = (): UseMessagesReturn => {
             ? err.message
             : "Failed to send message";
       setError(message);
-      throw err;
     }
   }, []);
 

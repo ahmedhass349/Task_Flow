@@ -22,18 +22,16 @@ const initializeApiBaseUrl = async (): Promise<string> => {
   if (isElectron && (window as any).electron?.getBackendUrl) {
     try {
       const backendUrl = await (window as any).electron.getBackendUrl();
-      console.log('[API] Electron backend URL:', backendUrl);
       API_BASE_URL = backendUrl;
       apiBaseUrlInitialized = true;
       return backendUrl;
     } catch (error) {
-      console.error('[API] Failed to get Electron backend URL:', error);
+      // Failed to get Electron backend URL, will fall back to web context
     }
   }
 
   // Web context: use environment variable or empty string (will use relative URLs via webpack proxy)
   const envUrl = (import.meta as any).env?.VITE_API_BASE_URL || "";
-  console.log('[API] Using web base URL:', envUrl || 'relative URLs with webpack proxy');
   API_BASE_URL = envUrl;
   apiBaseUrlInitialized = true;
   return envUrl;

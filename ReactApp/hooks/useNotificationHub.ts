@@ -108,7 +108,6 @@ export const useNotificationHub = (): UseNotificationHubReturn => {
         setIsConnected(true);
       })
       .catch(err => {
-        console.error("SignalR connection error:", err);
         setIsConnected(false);
       });
 
