@@ -2904,3 +2904,15 @@ WHERE [t].[UserId] = @__userId_0
 2026-03-26 17:43:57.180 +02:00 [INF] Executed action taskflow.Controllers.Api.DashboardController.GetStats (taskflow) in 400.8541ms
 2026-03-26 17:43:57.182 +02:00 [INF] Executed endpoint 'taskflow.Controllers.Api.DashboardController.GetStats (taskflow)'
 2026-03-26 17:43:57.183 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/api/dashboard/stats - 200 null application/json; charset=utf-8 436.2374ms
+2026-03-26 17:44:47.123 +02:00 [INF] Executed DbCommand (15ms) [Parameters=[@__upTo_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [r].[Id], [r].[CreatedAt], [r].[FireAt], [r].[FiredAt], [r].[HasFired], [r].[NotifyEmail], [r].[NotifyInApp], [r].[TaskId], [r].[UserId], [t].[Id], [t].[AssigneeId], [t].[CreatedAt], [t].[Description], [t].[DueDate], [t].[IsStarred], [t].[Priority], [t].[ProjectId], [t].[Status], [t].[Title], [a].[Id], [a].[AvatarUrl], [a].[Company], [a].[Country], [a].[CreatedAt], [a].[Email], [a].[FirstName], [a].[FullName], [a].[LastLoginAt], [a].[LastName], [a].[PasswordHash], [a].[Phone], [a].[ResetToken], [a].[ResetTokenExpiry], [a].[Timezone]
+FROM [Reminders] AS [r]
+INNER JOIN [TaskItems] AS [t] ON [r].[TaskId] = [t].[Id]
+INNER JOIN [AppUsers] AS [a] ON [r].[UserId] = [a].[Id]
+WHERE [r].[HasFired] = CAST(0 AS bit) AND [r].[FireAt] <= @__upTo_0
+ORDER BY [r].[FireAt]
+2026-03-26 17:45:21.846 +02:00 [INF] User 4 disconnected from NotificationHub
+2026-03-26 17:45:21.850 +02:00 [INF] Executed endpoint '/hubs/notifications'
+2026-03-26 17:45:21.853 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5001/hubs/notifications?id=Xt6ltB80wCrt2QQb2qD4Gg&access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjQiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJUMDAzMTczMzdAZ21haWwuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvZ2l2ZW5uYW1lIjoiVGVzdF8xIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvc3VybmFtZSI6IkRlbW8iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiVGVzdF8xIERlbW8iLCJhdmF0YXJVcmwiOiIiLCJjb21wYW55IjoiR2VybWFuIFVuaXZlcnNpdHkgaW4gQ2Fpcm8iLCJjb3VudHJ5IjoiRWd5cHQiLCJwaG9uZSI6IisyMDEyMzQ1Njc4OTEiLCJ0aW1lem9uZSI6IkdNVCsyIiwiY3JlYXRlZEF0IjoiMjAyNi0wMy0xNVQxNToyMzo0Ny42ODIxMjY3IiwiZXhwIjoxNzc0NjA4MTA3LCJpc3MiOiJUYXNrRmxvdyIsImF1ZCI6IlRhc2tGbG93QXBwIn0.mcUY9jHZ34qX5EiylBLHIwsAsLRFZp9Jo2ixP8bUOxI - 101 null null 85027.6021ms
+2026-03-26 17:45:24.544 +02:00 [INF] Reminder processor stopping...
+2026-03-26 17:45:24.548 +02:00 [INF] Due date warning service stopping...

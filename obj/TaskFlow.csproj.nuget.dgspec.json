@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Ahmed-Abdelbarr\\ASP .NET Core\\Task_Flow\\TaskFlow.csproj": {}
+    "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Task_Flow\\TaskFlow.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Ahmed-Abdelbarr\\ASP .NET Core\\Task_Flow\\TaskFlow.csproj": {
+    "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Task_Flow\\TaskFlow.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Ahmed-Abdelbarr\\ASP .NET Core\\Task_Flow\\TaskFlow.csproj",
+        "projectUniqueName": "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Task_Flow\\TaskFlow.csproj",
         "projectName": "taskflow",
-        "projectPath": "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Ahmed-Abdelbarr\\ASP .NET Core\\Task_Flow\\TaskFlow.csproj",
+        "projectPath": "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Task_Flow\\TaskFlow.csproj",
         "packagesPath": "C:\\Users\\Ahmed Abdelbarr\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Ahmed-Abdelbarr\\ASP .NET Core\\Task_Flow\\obj\\",
+        "outputPath": "C:\\Users\\Ahmed Abdelbarr\\OneDrive\\Documents\\GitHub\\Task_Flow\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -135,7 +135,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.200/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
