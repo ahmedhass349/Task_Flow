@@ -26,20 +26,11 @@ export default function Dashboard() {
   const [calDay, setCalDay] = useState(now.getDate());
 
   const currentTime = new Date().getHours();
-  const greeting = currentTime < 12 ? "Good morning" : currentTime < 18 ? "Good afternoon" : "Good evening";
-  const displayName = user ? user.fullName : "Demo User";
+  const greeting = currentTime < 12 ? "Good Morning" : currentTime < 18 ? "Good Afternoon" : "Good Evening";
+  const firstName = user ? (user.firstName || user.fullName?.split(" ")[0] || "there") : "there";
 
   const handleRetry = () => {
     refetch();
-  };
-
-  const testToast = () => {
-    addToast({
-      title: "Test Notification",
-      message: "This is a test in-app notification!",
-      type: "info",
-      duration: 5000,
-    });
   };
 
   return (
@@ -57,14 +48,8 @@ export default function Dashboard() {
           <div className="flex-1 min-w-0 space-y-6">
             {/* Greeting */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{greeting}, {displayName}</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{greeting}, {firstName}</h1>
               <p className="text-gray-600 mt-1">Here's what's happening with your projects today</p>
-              <button 
-                onClick={testToast}
-                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              >
-                Test Toast Notification
-              </button>
             </div>
 
             {/* Stats Grid */}

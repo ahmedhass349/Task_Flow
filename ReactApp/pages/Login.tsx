@@ -5,6 +5,7 @@ import { AuthFooter } from "../Components/AuthFooter";
 import LoginPromotion from "../imports/LoginPromotion1";
 import PromotionBg from "../imports/PromotionBg";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 // ── Validation helpers ───────────────────────────────────────────────────
 
@@ -37,9 +38,11 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated, error: authError, clearError } = useAuth();
+  const { addToast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,7 +63,13 @@ export default function Login() {
 
     setIsSubmitting(true);
     try {
-      await login({ email, password });
+      const signedInUser = await login({ email, password }, rememberMe);
+      const firstName = signedInUser?.firstName || signedInUser?.fullName?.split(" ")[0] || "there";
+      addToast({
+        title: "Sign-in successful",
+        message: `Welcome back, ${firstName}.`,
+        type: "success",
+      });
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
       navigate(from, { replace: true });
     } catch {
@@ -154,6 +163,20 @@ export default function Login() {
                   {fieldErrors.password}
                 </p>
               )}
+            </div>
+
+            {/* Login button + Forgot password row */}
+            <div className="flex items-center mb-[16px] w-[345px]">
+              <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 accent-[#0969DA]"
+                  disabled={isSubmitting}
+                />
+                <span className="text-sm text-foreground">Remember Me</span>
+              </label>
             </div>
 
             {/* Login button + Forgot password row */}

@@ -8,6 +8,7 @@ import Header from "../Components/Header";
 import Footer from "../Components/Footer";
 import { useSettings } from "../hooks/useSettings";
 import { useAuth } from "../context/AuthContext";
+import { getRememberMePreference, setRememberMePreference } from "../services/api";
 
 /* ─────── types ─────── */
 type Section = "profile" | "account" | "notifications" | "appearance" | "security" | "privacy";
@@ -99,6 +100,7 @@ export default function Settings() {
   }, [refreshUser]);
 
   const [activeSection, setActiveSection] = useState<Section>("profile");
+  const [rememberMeEnabled, setRememberMeEnabled] = useState<boolean>(getRememberMePreference());
 
   // Convert backend profile to form state
   const [profileForm, setProfileForm] = useState({
@@ -141,6 +143,11 @@ export default function Settings() {
     } catch (err) {
       // Error is handled by the hook
     }
+  };
+
+  const handleRememberMeChange = (enabled: boolean) => {
+    setRememberMeEnabled(enabled);
+    setRememberMePreference(enabled);
   };
 
   /* ── Notifications state ── */
@@ -277,7 +284,8 @@ export default function Settings() {
                         </button>
                       </div>
                     </SectionCard>
-                  </>
+
+                    </>
                 )}
 
                 {/* ══════════ ACCOUNT ══════════ */}
@@ -317,6 +325,15 @@ export default function Settings() {
                         </div>
                       </div>
                     </SectionCard>
+
+                      <SectionCard title="Sign-in Preference">
+                        <ToggleRow
+                          label="Remember Me"
+                          description="Keep me signed in on this device between app restarts"
+                          value={rememberMeEnabled}
+                          onChange={handleRememberMeChange}
+                        />
+                      </SectionCard>
 
                     <SectionCard title="Danger Zone">
                       <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">

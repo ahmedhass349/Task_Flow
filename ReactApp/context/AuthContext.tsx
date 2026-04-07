@@ -17,7 +17,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   token: string | null;
-  login: (credentials: LoginRequest) => Promise<void>;
+  login: (credentials: LoginRequest, rememberMe?: boolean) => Promise<User | null>;
   signup: (data: SignupRequest) => Promise<void>;
   logout: () => void;
   error: string | null;
@@ -67,14 +67,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (credentials: LoginRequest) => {
+  const login = useCallback(async (credentials: LoginRequest, rememberMe = false) => {
     setError(null);
     try {
       const response = await api.post<AuthResponse>("/api/auth/login", credentials);
       const token = (response as any).token ?? (response as any).Token ?? null;
       const user = (response as any).user ?? (response as any).User ?? null;
-      setAuthToken(token);
+      setAuthToken(token, rememberMe);
       setUser(user);
+      return user;
     } catch (err) {
       const message =
         err instanceof ApiRequestError

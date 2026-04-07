@@ -17,7 +17,8 @@ const SLOTS = Array.from({ length: 48 }, (_, i) => ({
 const TOTAL_HEIGHT = SLOTS.length * SLOT_HEIGHT; // 48 × 50 = 2400 px
 
 /** Convert a clock time to a pixel offset from the top of the timeline */
-const timeToY = (hour: number, min = 0) => (hour * 2 + min / 30) * SLOT_HEIGHT;
+const timeToY = (hour: number, min = 0) => (hour * 2 + Math.floor(min / 30)) * SLOT_HEIGHT + (min % 30) * (SLOT_HEIGHT / 30);
+const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
 interface TaskLineWidgetProps {
   year: number;
@@ -44,6 +45,7 @@ export default function TaskLineWidget({ year, month, selectedDay, tasks = [] }:
     now.getMonth() === month &&
     now.getDate() === selectedDay;
   const nowY = isToday ? timeToY(now.getHours(), now.getMinutes()) : null;
+  const nowLabel = isToday ? formatTime(now) : null;
 
   return (
     <div className="w-[372px] p-6 bg-[#171717] shadow-[0_0_6px_rgba(0,0,0,0.25)] rounded-[30px] flex flex-col gap-[18px]">
@@ -102,10 +104,12 @@ export default function TaskLineWidget({ year, month, selectedDay, tasks = [] }:
           {nowY !== null && (
             <div
               className="absolute left-0 right-0 flex items-center z-10 pointer-events-none"
-              style={{ top: nowY }}
+              style={{ top: `${nowY}px`, transform: 'translateY(-50%)' }}
             >
               <div className="flex justify-end pr-1" style={{ width: LABEL_WIDTH }}>
-                <div className="w-2 h-2 rounded-full bg-[#60B8FF] shrink-0" />
+                <span className="text-[#60B8FF] text-[10px] font-['Poppins'] font-medium tracking-[0.3px] leading-none">
+                  {nowLabel}
+                </span>
               </div>
               <div className="flex-1 border-t-[1.5px] border-solid border-[#60B8FF]" />
             </div>

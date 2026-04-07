@@ -14,26 +14,70 @@ import { getApiBaseUrl } from "../config/api";
 // ── Token management ─────────────────────────────────────────────────────
 
 let authToken: string | null = null;
+const TOKEN_KEY = "taskflow_token";
+const SESSION_TOKEN_KEY = "taskflow_session_token";
+const REMEMBER_ME_KEY = "taskflow_remember_me";
 
-export function setAuthToken(token: string | null): void {
+export function getRememberMePreference(): boolean {
+  return localStorage.getItem(REMEMBER_ME_KEY) === "true";
+}
+
+export function setRememberMePreference(rememberMe: boolean): void {
+  localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
+
+  const localToken = localStorage.getItem(TOKEN_KEY);
+  const sessionToken = sessionStorage.getItem(SESSION_TOKEN_KEY);
+  const tokenToKeep = localToken || sessionToken;
+
+  if (!tokenToKeep) {
+    return;
+  }
+
+  if (rememberMe) {
+    localStorage.setItem(TOKEN_KEY, tokenToKeep);
+    sessionStorage.removeItem(SESSION_TOKEN_KEY);
+  } else {
+    sessionStorage.setItem(SESSION_TOKEN_KEY, tokenToKeep);
+    localStorage.removeItem(TOKEN_KEY);
+  }
+
+  authToken = tokenToKeep;
+}
+
+export function setAuthToken(token: string | null, rememberMe = true): void {
   authToken = token;
   if (token) {
-    localStorage.setItem("taskflow_token", token);
+    if (rememberMe) {
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(REMEMBER_ME_KEY, "true");
+      sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    } else {
+      sessionStorage.setItem(SESSION_TOKEN_KEY, token);
+      localStorage.setItem(REMEMBER_ME_KEY, "false");
+      localStorage.removeItem(TOKEN_KEY);
+    }
   } else {
-    localStorage.removeItem("taskflow_token");
+    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    localStorage.removeItem(REMEMBER_ME_KEY);
   }
 }
 
 export function getAuthToken(): string | null {
   if (!authToken) {
-    authToken = localStorage.getItem("taskflow_token");
+    const rememberMe = localStorage.getItem(REMEMBER_ME_KEY) === "true";
+    authToken = rememberMe
+      ? localStorage.getItem(TOKEN_KEY)
+      : sessionStorage.getItem(SESSION_TOKEN_KEY);
   }
   return authToken;
 }
 
 export function clearAuthToken(): void {
   authToken = null;
-  localStorage.removeItem("taskflow_token");
+  localStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(SESSION_TOKEN_KEY);
+  localStorage.removeItem(REMEMBER_ME_KEY);
 }
 
 // ── Error class ──────────────────────────────────────────────────────────
