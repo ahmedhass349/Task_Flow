@@ -101,6 +101,9 @@ namespace taskflow.Services
 
         public async Task<TaskDto> CreateTaskAsync(int userId, CreateTaskRequest request)
         {
+            if (request.DueDate.HasValue && request.DueDate.Value.Date < DateTime.UtcNow.Date)
+                throw new ArgumentException("Due date cannot be before today.");
+
             var task = new TaskItem
             {
                 Title = request.Title,
@@ -125,6 +128,7 @@ namespace taskflow.Services
                     {
                         TaskId = task.Id,
                         ReminderMap = request.ReminderMap,
+                        DueDate = request.DueDate,
                         NotifyEmail = request.NotifyEmail,
                         NotifyInApp = request.NotifyInApp
                     };
@@ -156,6 +160,9 @@ namespace taskflow.Services
             var task = await _taskRepository.GetByIdAsync(taskId);
             if (task == null)
                 throw new KeyNotFoundException($"Task with ID {taskId} not found.");
+
+            if (request.DueDate.HasValue && request.DueDate.Value.Date < DateTime.UtcNow.Date)
+                throw new ArgumentException("Due date cannot be before today.");
 
             // Ownership check (#2)
             if (task.AssigneeId != userId)

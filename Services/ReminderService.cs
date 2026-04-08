@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -34,6 +35,10 @@ namespace taskflow.Services
                 await _reminderRepository.DeleteByTaskIdAsync(dto.TaskId);
 
                 var reminders = new List<Reminder>();
+                var todayUtcDate = DateTime.UtcNow.Date;
+                var dueDateUtc = dto.DueDate.HasValue
+                    ? NormalizeToUtc(dto.DueDate.Value)
+                    : (DateTime?)null;
 
                 // Parse the ReminderMap dictionary
                 foreach (var kvp in dto.ReminderMap)
@@ -49,19 +54,34 @@ namespace taskflow.Services
 
                     foreach (var timeString in timeStrings)
                     {
-                        if (DateTime.TryParse(timeString, out var time))
+                        if (TryParseReminderTime(timeString, out var time))
                         {
-                            // Combine date and time
-                            var fireAt = date.Date + time.TimeOfDay;
+                            // Combine date and time in local time then normalize to UTC.
+                            var fireAtLocal = DateTime.SpecifyKind(date.Date + time.TimeOfDay, DateTimeKind.Local);
+                            var fireAtUtc = fireAtLocal.ToUniversalTime();
+
+                            // Reminder date cannot precede current day.
+                            if (fireAtUtc.Date < todayUtcDate)
+                            {
+                                _logger.LogWarning("Skipping reminder before current day: {FireAt}", fireAtUtc);
+                                continue;
+                            }
+
+                            // Reminder cannot exceed due date (if provided).
+                            if (dueDateUtc.HasValue && fireAtUtc > dueDateUtc.Value)
+                            {
+                                _logger.LogWarning("Skipping reminder beyond due date. Reminder: {FireAt}, DueDate: {DueDate}", fireAtUtc, dueDateUtc.Value);
+                                continue;
+                            }
 
                             // Only save if the DateTime is in the future
-                            if (fireAt > DateTime.UtcNow)
+                            if (fireAtUtc > DateTime.UtcNow)
                             {
                                 reminders.Add(new Reminder
                                 {
                                     TaskId = dto.TaskId,
                                     UserId = userId,
-                                    FireAt = fireAt,
+                                    FireAt = fireAtUtc,
                                     NotifyEmail = dto.NotifyEmail,
                                     NotifyInApp = dto.NotifyInApp,
                                     HasFired = false
@@ -149,6 +169,24 @@ namespace taskflow.Services
                 _logger.LogError(ex, "Error deleting reminders for task {TaskId}", taskId);
                 throw;
             }
+        }
+
+        private static DateTime NormalizeToUtc(DateTime value)
+        {
+            if (value.Kind == DateTimeKind.Utc) return value;
+            if (value.Kind == DateTimeKind.Local) return value.ToUniversalTime();
+            return DateTime.SpecifyKind(value, DateTimeKind.Local).ToUniversalTime();
+        }
+
+        private static bool TryParseReminderTime(string timeString, out DateTime time)
+        {
+            var formats = new[] { "HH:mm", "H:mm", "hh:mm tt", "h:mm tt" };
+            if (DateTime.TryParseExact(timeString, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out time))
+            {
+                return true;
+            }
+
+            return DateTime.TryParse(timeString, CultureInfo.InvariantCulture, DateTimeStyles.None, out time);
         }
     }
 }

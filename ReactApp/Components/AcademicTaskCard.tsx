@@ -69,22 +69,27 @@ const VIA_OPTIONS: { id: ReminderVia; label: string; icon: JSX.Element }[] = [
   { id: "both", label: "Both", icon: <Bell className="size-3.5" /> },
 ];
 
-function toDateInputValue(value?: string): string {
+function toDateTimeLocalInputValue(value?: string): string {
   if (!value) return "";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "";
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+function getTodayDateInputValue(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
-function time24hTo12h(value: string): string {
-  const [hh, mm] = value.split(":").map(Number);
-  if (Number.isNaN(hh) || Number.isNaN(mm)) return value;
-  const mer = hh >= 12 ? "PM" : "AM";
-  const h12 = hh % 12 === 0 ? 12 : hh % 12;
-  return `${h12}:${String(mm).padStart(2, "0")} ${mer}`;
+function getTodayStartDateTimeLocalValue(): string {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const local = new Date(start.getTime() - start.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
 }
 
 function DropdownField<T extends string>({
@@ -149,12 +154,16 @@ function DropdownField<T extends string>({
 }
 
 function ReminderRow({
-  reminder, index, onChange, onRemove,
+  reminder, index, onChange, onRemove, minDate, maxDate, dateError, timeError,
 }: {
   reminder: Reminder;
   index: number;
   onChange: (id: string, field: "date" | "time" | "via", value: string) => void;
   onRemove: (id: string) => void;
+  minDate: string;
+  maxDate?: string;
+  dateError?: string;
+  timeError?: string;
 }) {
   return (
     <div
@@ -186,10 +195,13 @@ function ReminderRow({
               type="date"
               value={reminder.date}
               onChange={(e) => onChange(reminder.id, "date", e.target.value)}
+              min={minDate}
+              max={maxDate}
               className="flex-1 bg-transparent outline-none text-[12px] text-gray-800"
               style={{ colorScheme: "light" }}
             />
           </div>
+          {dateError && <p className="text-[11px] text-red-500">{dateError}</p>}
         </div>
 
         <div className="flex flex-col gap-1">
@@ -207,6 +219,7 @@ function ReminderRow({
               style={{ colorScheme: "light" }}
             />
           </div>
+          {timeError && <p className="text-[11px] text-red-500">{timeError}</p>}
         </div>
       </div>
 
@@ -258,7 +271,7 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData }: Ac
     if (raw === "completed" || raw === "done") return "Done";
     return "To Do";
   });
-  const [due, setDue] = useState(toDateInputValue(initialData?.dueDate));
+  const [due, setDue] = useState(toDateTimeLocalInputValue(initialData?.dueDate));
   const [assignee, setAssignee] = useState(initialData?.assignee || "");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -301,13 +314,46 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData }: Ac
 
   function validate() {
     const e: Record<string, string> = {};
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
     if (!title.trim()) e.title = "Task title is required.";
     if (!priority) e.priority = "Please select a priority.";
     if (!status) e.status = "Please select a status.";
+
+    if (due) {
+      const dueDate = new Date(due);
+      if (dueDate < todayStart) {
+        e.due = "Due date cannot be before today.";
+      }
+    }
+
     reminders.forEach((r, i) => {
       if (!r.date) e[`rem_date_${i}`] = "required";
       if (!r.time) e[`rem_time_${i}`] = "required";
+
+      if (r.date) {
+        const reminderDay = new Date(`${r.date}T00:00`);
+        if (reminderDay < todayStart) {
+          e[`rem_date_${i}`] = "Reminder date cannot be before today.";
+        }
+      }
+
+      if (r.date && r.time) {
+        const reminderAt = new Date(`${r.date}T${r.time}`);
+        if (reminderAt <= now) {
+          e[`rem_time_${i}`] = "Reminder time must be in the future.";
+        }
+
+        if (due) {
+          const dueAt = new Date(due);
+          if (reminderAt > dueAt) {
+            e[`rem_time_${i}`] = "Reminder cannot be after the due date/time.";
+          }
+        }
+      }
     });
+
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -328,7 +374,7 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData }: Ac
     const reminderMap = reminders.reduce<Record<string, string[]>>((acc, r) => {
       if (!r.date || !r.time) return acc;
       if (!acc[r.date]) acc[r.date] = [];
-      acc[r.date].push(time24hTo12h(r.time));
+      acc[r.date].push(r.time);
       return acc;
     }, {});
 
@@ -479,13 +525,15 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData }: Ac
               <div className="flex items-center gap-3 px-4 py-3 rounded-[10px]" style={{ border: "1.5px solid #e5e7eb", background: "#fafafa" }}>
                 <Calendar className="size-4 text-gray-400 shrink-0" />
                 <input
-                  type="date"
+                    type="datetime-local"
                   value={due}
                   onChange={(e) => setDue(e.target.value)}
+                    min={getTodayStartDateTimeLocalValue()}
                   className="flex-1 bg-transparent outline-none text-[13px] text-gray-800"
                   style={{ colorScheme: "light" }}
                 />
               </div>
+                {errors.due && <p className="text-[11px] text-red-500">{errors.due}</p>}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -591,7 +639,17 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData }: Ac
             {reminders.length > 0 && (
               <div className="flex flex-col gap-2">
                 {reminders.map((r, i) => (
-                  <ReminderRow key={r.id} reminder={r} index={i} onChange={updateReminder} onRemove={removeReminder} />
+                  <ReminderRow
+                    key={r.id}
+                    reminder={r}
+                    index={i}
+                    onChange={updateReminder}
+                    onRemove={removeReminder}
+                    minDate={getTodayDateInputValue()}
+                    maxDate={due ? due.slice(0, 10) : undefined}
+                    dateError={errors[`rem_date_${i}`]}
+                    timeError={errors[`rem_time_${i}`]}
+                  />
                 ))}
               </div>
             )}

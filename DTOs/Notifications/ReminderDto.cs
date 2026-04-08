@@ -17,6 +17,7 @@ namespace taskflow.DTOs.Notifications
         public int TaskId { get; set; }
         public System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>> ReminderMap { get; set; } = new();
         // key = "YYYY-MM-DD", value = ["9:00 AM", "2:00 PM"]
+        public DateTime? DueDate { get; set; }
         public bool NotifyEmail { get; set; }
         public bool NotifyInApp { get; set; }
     }

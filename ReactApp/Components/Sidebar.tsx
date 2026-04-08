@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, MessageSquare, ClipboardList, Bell, User, Settings, Bot, LogOut } from "lucide-react";
+import { LayoutDashboard, FolderKanban, MessageSquare, ClipboardList, Bell, User, Settings, Bot, LogOut, FileText } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { useState } from "react";
 import { TaskFlowLogo } from "./TaskFlowLogo";
@@ -23,8 +23,9 @@ export default function Sidebar() {
     { icon: <MessageSquare className="size-5 shrink-0" />, label: "Messages",      path: "/message" },
     { icon: <Bell          className="size-5 shrink-0" />, label: "Notifications", path: "/notifications" },
     { icon: <User          className="size-5 shrink-0" />, label: "Teams",         path: "/teams" },
-    { icon: <Settings      className="size-5 shrink-0" />, label: "Settings",      path: "/settings" },
     { icon: <Bot            className="size-5 shrink-0" />, label: "Chatbot",       path: "/plans" },
+    { icon: <Settings      className="size-5 shrink-0" />, label: "Settings",      path: "/settings" },
+    { icon: <FileText      className="size-5 shrink-0" />, label: "Legal",         path: "/terms-of-service" },
   ];
 
   return (

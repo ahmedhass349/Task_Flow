@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { useNavigate } from "react-router";
 import { Github, Twitter, Linkedin } from "lucide-react";
 
 const COLUMNS = [
@@ -46,7 +47,16 @@ const COLUMNS = [
 
 const BOTTOM_LINKS = ["Terms of Service", "Privacy Policy", "Cookie Policy", "Security"];
 
+const BOTTOM_LINK_ROUTES: Record<string, string> = {
+  "Terms of Service": "/terms-of-service",
+  "Privacy Policy": "/privacy-policy",
+  "Cookie Policy": "/cookie-policy",
+  Security: "/security",
+};
+
 export default function Footer() {
+  const navigate = useNavigate();
+
   return (
     <footer style={{ background: "#F7F7F7", borderTop: "1px solid #DDDDDD", fontFamily: "Roboto, sans-serif" }}>
       {/* Link columns */}
@@ -128,6 +138,7 @@ export default function Footer() {
                 }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.textDecoration = "underline")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.textDecoration = "none")}
+                onClick={() => navigate(BOTTOM_LINK_ROUTES[text])}
               >
                 {text}
               </button>

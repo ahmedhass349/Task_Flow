@@ -1,4 +1,5 @@
 import { useState, useEffect, useId } from "react";
+import { useNavigate } from "react-router";
 import {
   User, Bell, Shield, Palette, Globe, Key, Trash2, Camera,
   Moon, Sun, Monitor, Mail, MessageSquare, CheckSquare, Save,
@@ -91,6 +92,7 @@ const NAV_ITEMS: { id: Section; label: string; icon: React.ElementType }[] = [
    Main component
 ═══════════════════════════════════════════════ */
 export default function Settings() {
+  const navigate = useNavigate();
   const { refreshUser } = useAuth();
   const { profile, isLoading, error, updateProfile } = useSettings();
 
@@ -540,7 +542,7 @@ export default function Settings() {
                       ))}
                       <div className="mt-4 p-4 bg-gray-50 rounded-lg text-xs text-gray-500 leading-relaxed">
                         We never sell your personal data. See our{" "}
-                        <button type="button" onClick={() => {}} className="text-blue-600 hover:underline">Privacy Policy</button>{" "}
+                        <button type="button" onClick={() => navigate("/privacy-policy")} className="text-blue-600 hover:underline">Privacy Policy</button>{" "}
                         for full details on how your information is used.
                       </div>
                     </SectionCard>

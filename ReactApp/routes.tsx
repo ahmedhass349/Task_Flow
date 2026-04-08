@@ -18,6 +18,10 @@ import Settings from "./pages/Settings";
 import Message from "./pages/Message";
 import Notifications from "./pages/Notifications";
 import Chatbot from "./pages/Chatbot";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CookiePolicy from "./pages/CookiePolicy";
+import Security from "./pages/Security";
 
 // ── 404 ──────────────────────────────────────────────────────────────────
 import NotFound from "./pages/NotFound";
@@ -47,6 +51,26 @@ export const router = createBrowserRouter([
   {
     path: "/reset-password",
     element: <ResetPassword />,
+    errorElement: <ErrorBoundary />,
+  },
+  {
+    path: "/terms-of-service",
+    element: <TermsOfService />,
+    errorElement: <ErrorBoundary />,
+  },
+  {
+    path: "/privacy-policy",
+    element: <PrivacyPolicy />,
+    errorElement: <ErrorBoundary />,
+  },
+  {
+    path: "/cookie-policy",
+    element: <CookiePolicy />,
+    errorElement: <ErrorBoundary />,
+  },
+  {
+    path: "/security",
+    element: <Security />,
     errorElement: <ErrorBoundary />,
   },
 
