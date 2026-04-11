@@ -1,11 +1,12 @@
-import { useMemo } from "react";
-import { Search, Bell, Mail, User, Settings, LogOut, UserCircle } from "lucide-react";
+import { useMemo, useState, useCallback } from "react";
+import { Search, Bell, Mail, User, Settings, LogOut, UserCircle, UserPlus, X, Check } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Link, useNavigate } from "react-router";
 import { useNotifications } from "../hooks/useNotifications";
 import { useNotificationHub } from "../hooks/useNotificationHub";
 import { useMessages } from "../hooks/useMessages";
 import { useAuth } from "../context/AuthContext";
+import { useAccountSwitcher, type SavedAccount } from "../hooks/useAccountSwitcher";
 import NotificationBell from "./NotificationBell";
 
 /* ─── Messages data ─── */
@@ -26,13 +27,179 @@ const AVATAR_COLORS: Record<string, string> = {
   DT: "bg-orange-200 text-orange-700",
 };
 
+// ── Switch Account Modal ──────────────────────────────────────────────────
+
+function avatarBg(email: string): string {
+  const palette = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ec4899", "#14b8a6"];
+  let h = 0;
+  for (let i = 0; i < email.length; i++) h = email.charCodeAt(i) + ((h << 5) - h);
+  return palette[Math.abs(h) % palette.length];
+}
+
+function accountInitials(fullName: string): string {
+  return fullName.split(" ").map((w) => w[0] ?? "").join("").toUpperCase().slice(0, 2);
+}
+
+interface SwitchAccountModalProps {
+  currentUser: { email: string; fullName: string } | null;
+  otherAccounts: SavedAccount[];
+  onSwitch: (account: SavedAccount) => void;
+  onClose: () => void;
+  onAddAccount: () => void;
+  switchError: string | null;
+  switching: boolean;
+}
+
+function SwitchAccountModal({
+  currentUser,
+  otherAccounts,
+  onSwitch,
+  onClose,
+  onAddAccount,
+  switchError,
+  switching,
+}: SwitchAccountModalProps) {
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* Card */}
+      <div
+        className="relative bg-white rounded-2xl shadow-2xl w-80 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="text-base font-semibold text-gray-900">Switch account</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors rounded-md p-0.5"
+            aria-label="Close"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {/* Current account */}
+        {currentUser && (
+          <div className="px-4 pt-4 pb-2">
+            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-2">
+              Current
+            </p>
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-blue-50 border border-blue-100">
+              <div
+                className="size-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                style={{ background: avatarBg(currentUser.email) }}
+              >
+                {accountInitials(currentUser.fullName)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{currentUser.fullName}</p>
+                <p className="text-xs text-gray-500 truncate">{currentUser.email}</p>
+              </div>
+              <Check className="size-4 text-blue-600 shrink-0" />
+            </div>
+          </div>
+        )}
+
+        {/* Other accounts */}
+        <div className="px-4 py-2">
+          {otherAccounts.length > 0 ? (
+            <>
+              <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-2">
+                Other accounts
+              </p>
+              <div className="flex flex-col gap-1 max-h-52 overflow-y-auto">
+                {otherAccounts.map((acc) => (
+                  <button
+                    key={acc.email}
+                    onClick={() => onSwitch(acc)}
+                    disabled={switching}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-left w-full disabled:opacity-60"
+                  >
+                    <div
+                      className="size-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                      style={{ background: avatarBg(acc.email) }}
+                    >
+                      {accountInitials(acc.fullName)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{acc.fullName}</p>
+                      <p className="text-xs text-gray-500 truncate">{acc.email}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-5">
+              <p className="text-sm text-gray-500 font-medium">No other accounts on this device</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Sign in with another account to add it here.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Inline error */}
+        {switchError && (
+          <div className="px-4 pb-2">
+            <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{switchError}</p>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="px-4 pb-4 pt-2 border-t border-gray-100 mt-2">
+          <button
+            onClick={onAddAccount}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+          >
+            <div className="size-9 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center shrink-0">
+              <UserPlus className="size-4 text-gray-400" />
+            </div>
+            <span>Add another account</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ═════════════════════════════ */
 export default function Header() {
   const { notifications, markAllAsRead } = useNotifications();
   const { unreadCount: signalrUnreadCount, isConnected, latestNotification } = useNotificationHub();
   const { contacts, unreadCount } = useMessages();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+
+  // ── Account switcher ──────────────────────────────────────────────────
+  const { otherAccounts, switchTo } = useAccountSwitcher(user?.email);
+  const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const [switchError, setSwitchError]         = useState<string | null>(null);
+  const [switching, setSwitching]             = useState(false);
+
+  const handleSwitch = useCallback(async (account: SavedAccount) => {
+    setSwitching(true);
+    setSwitchError(null);
+    let failed = false;
+    await switchTo(account, refreshUser, (msg) => { setSwitchError(msg); failed = true; });
+    setSwitching(false);
+    if (!failed) {
+      setShowSwitchModal(false);
+      navigate("/");
+    }
+  }, [switchTo, refreshUser, navigate]);
+
+  const handleAddAccount = useCallback(() => {
+    setShowSwitchModal(false);
+    logout(); // saves current account; clears active session so /login is accessible
+    navigate("/login");
+  }, [logout, navigate]);
 
   const displayName = user ? user.fullName : "Demo User";
   const initials = user
@@ -285,7 +452,10 @@ export default function Header() {
                 </Link>
               </DropdownMenu.Item>
 
-              <DropdownMenu.Item className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none">
+              <DropdownMenu.Item
+                onSelect={() => setShowSwitchModal(true)}
+                className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none"
+              >
                 <UserCircle className="size-4" />
                 <span className="text-sm">Switch account</span>
               </DropdownMenu.Item>
@@ -307,6 +477,19 @@ export default function Header() {
         </DropdownMenu.Root>
 
       </div>
+
+      {/* ── Switch Account Modal ── */}
+      {showSwitchModal && (
+        <SwitchAccountModal
+          currentUser={user}
+          otherAccounts={otherAccounts}
+          onSwitch={handleSwitch}
+          onClose={() => { setShowSwitchModal(false); setSwitchError(null); }}
+          onAddAccount={handleAddAccount}
+          switchError={switchError}
+          switching={switching}
+        />
+      )}
     </header>
   );
 }

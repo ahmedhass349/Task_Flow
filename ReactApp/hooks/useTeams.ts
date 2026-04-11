@@ -1,13 +1,14 @@
-// ── useTeams Hook ────────────────────────────────────────────────────────
+﻿// â”€â”€ useTeams Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //
-// Custom hook for fetching and managing teams.
-// Provides loading, error, data, and refetch states.
+// MongoDB-backed teams invitation hook.
+// Manages: local SQLite teams, shared invitations (incoming/outgoing), shared members.
 
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiRequestError } from "../services/api";
 
-// Team member interface matching backend DTO
-interface TeamMember {
+// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+export interface TeamMember {
   id: string;
   userId: string;
   name: string;
@@ -17,8 +18,7 @@ interface TeamMember {
   avatarUrl?: string;
 }
 
-// Team interface matching backend DTO
-interface Team {
+export interface Team {
   id: string;
   name: string;
   description?: string;
@@ -28,159 +28,265 @@ interface Team {
   memberCount: number;
 }
 
-// Hook return type
-interface UseTeamsReturn {
+export interface Invitation {
+  id: string;
+  senderEmail: string;
+  senderFullName: string;
+  senderAvatarUrl: string;
+  recipientEmail: string;
+  recipientFullName: string;
+  teamId: string;
+  teamName: string;
+  message: string;
+  role: string;
+  status: "Pending" | "Accepted" | "Declined" | "Cancelled" | "Expired";
+  sentAt: string;
+  respondedAt?: string;
+  expiresAt: string;
+  declineReason?: string;
+}
+
+export interface SharedMember {
+  id: string;
+  teamId: string;
+  teamName: string;
+  userEmail: string;
+  userFullName: string;
+  avatarUrl: string;
+  role: string;
+  ownerEmail: string;
+  joinedAt: string;
+  isActive: boolean;
+}
+
+export interface UserSearchResult {
+  email: string;
+  fullName: string;
+  avatarUrl: string;
+  acceptsInvitations: boolean;
+}
+
+export interface SendInvitationRequest {
+  recipientEmail: string;
+  teamId?: string;
+  teamName?: string;
+  message?: string;
+  role?: string;
+}
+
+// â”€â”€ Hook return type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+export interface UseTeamsReturn {
+  // SQLite local teams
   teams: Team[];
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
-  createTeam: (data: CreateTeamRequest) => Promise<void>;
-  updateTeam: (id: string, data: UpdateTeamRequest) => Promise<void>;
+  createTeam: (data: { name: string; description?: string }) => Promise<void>;
+  updateTeam: (id: string, data: { name?: string; description?: string }) => Promise<void>;
   deleteTeam: (id: string) => Promise<void>;
-  addMember: (teamId: string, data: AddTeamMemberRequest) => Promise<void>;
-  removeMember: (teamId: string, memberUserId: string) => Promise<void>;
+
+  // Invitations
+  incomingInvitations: Invitation[];
+  outgoingInvitations: Invitation[];
+  invitationsLoading: boolean;
+  sendInvitation: (data: SendInvitationRequest) => Promise<void>;
+  acceptInvitation: (id: string) => Promise<void>;
+  declineInvitation: (id: string, reason?: string) => Promise<void>;
+  cancelInvitation: (id: string) => Promise<void>;
+  deleteInvitation: (id: string) => Promise<void>;
+  refetchInvitations: () => void;
+
+  // Shared (MongoDB) members
+  sharedMembers: SharedMember[];
+  sharedMembersLoading: boolean;
+  fetchSharedMembers: (teamId: string) => Promise<void>;
+  removeSharedMember: (teamId: string, memberEmail: string) => Promise<void>;
+  removeMemberAllRecords: (memberEmail: string) => Promise<void>;
+  addMemberToTeam: (teamId: string, memberEmail: string, memberFullName: string) => Promise<SharedMember>;
+
+  // All shared members (across all teams)
+  allSharedMembers: SharedMember[];
+  allSharedMembersLoading: boolean;
+  fetchAllSharedMembers: () => Promise<void>;
+
+  // User search
+  searchUsers: (query: string) => Promise<UserSearchResult[]>;
 }
 
-// Request types for CRUD operations
-interface CreateTeamRequest {
-  name: string;
-  description?: string;
-}
-
-interface UpdateTeamRequest {
-  name?: string;
-  description?: string;
-}
-
-interface AddTeamMemberRequest {
-  userId: string;
-  role: "Member" | "Admin";
-}
+// â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const useTeams = (): UseTeamsReturn => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [incomingInvitations, setIncomingInvitations] = useState<Invitation[]>([]);
+  const [outgoingInvitations, setOutgoingInvitations] = useState<Invitation[]>([]);
+  const [invitationsLoading, setInvitationsLoading] = useState(false);
+
+  const [sharedMembers, setSharedMembers] = useState<SharedMember[]>([]);
+  const [sharedMembersLoading, setSharedMembersLoading] = useState(false);
+
+  const [allSharedMembers, setAllSharedMembers] = useState<SharedMember[]>([]);
+  const [allSharedMembersLoading, setAllSharedMembersLoading] = useState(false);
+
+  // â”€â”€ SQLite teams â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
   const fetchData = useCallback(async () => {
-    let cancelled = false;
     setIsLoading(true);
     setError(null);
-
     try {
       const data = await api.get<Team[]>("/api/teams");
-      if (!cancelled) {
-        setTeams(data);
-      }
+      setTeams(data);
     } catch (err) {
-      if (!cancelled) {
-        const message =
-          err instanceof ApiRequestError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : "Failed to load teams";
-        setError(message);
-      }
-    } finally {
-      if (!cancelled) {
-        setIsLoading(false);
-      }
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const createTeam = useCallback(async (data: CreateTeamRequest) => {
-    try {
-      const newTeam = await api.post<Team>("/api/teams", data);
-      setTeams(prev => [...prev, newTeam]);
-    } catch (err) {
-      const message =
+      setError(
         err instanceof ApiRequestError
           ? err.message
           : err instanceof Error
             ? err.message
-            : "Failed to create team";
-      setError(message);
-    }
-  }, []);
-
-  const updateTeam = useCallback(async (id: string, data: UpdateTeamRequest) => {
-    try {
-      const updatedTeam = await api.put<Team>(`/api/teams/${id}`, data);
-      setTeams(prev =>
-        prev.map(team =>
-          team.id === id ? updatedTeam : team
-        )
+            : "Failed to load teams"
       );
-    } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to update team";
-      setError(message);
-      throw err;
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
+
+  const createTeam = useCallback(async (data: { name: string; description?: string }) => {
+    const newTeam = await api.post<Team>("/api/teams", data);
+    setTeams(prev => [...prev, newTeam]);
+  }, []);
+
+  const updateTeam = useCallback(async (id: string, data: { name?: string; description?: string }) => {
+    const updated = await api.put<Team>(`/api/teams/${id}`, data);
+    setTeams(prev => prev.map(t => (t.id === id ? updated : t)));
   }, []);
 
   const deleteTeam = useCallback(async (id: string) => {
+    await api.delete(`/api/teams/${id}`);
+    setTeams(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // â”€â”€ Invitations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  const fetchInvitations = useCallback(async () => {
+    setInvitationsLoading(true);
     try {
-      await api.delete(`/api/teams/${id}`);
-      setTeams(prev => prev.filter(team => team.id !== id));
-    } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to delete team";
-      setError(message);
-      throw err;
+      const [incoming, outgoing] = await Promise.all([
+        api.get<Invitation[]>("/api/teams/invitations/incoming"),
+        api.get<Invitation[]>("/api/teams/invitations/outgoing"),
+      ]);
+      setIncomingInvitations(incoming ?? []);
+      setOutgoingInvitations(outgoing ?? []);
+    } catch {
+      // Invitation relay unavailable â€” keep empty lists, don't block UI
+    } finally {
+      setInvitationsLoading(false);
     }
   }, []);
 
-  const addMember = useCallback(async (teamId: string, data: AddTeamMemberRequest) => {
-    try {
-      await api.post(`/api/teams/${teamId}/members`, data);
-      // Refetch to get updated member list
-      fetchData();
-    } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to add team member";
-      setError(message);
-      throw err;
-    }
-  }, [fetchData]);
+  const sendInvitation = useCallback(async (data: SendInvitationRequest) => {
+    await api.post("/api/teams/invitations/send", data);
+    fetchInvitations();
+  }, [fetchInvitations]);
 
-  const removeMember = useCallback(async (teamId: string, memberUserId: string) => {
+  const acceptInvitation = useCallback(async (id: string) => {
+    await api.post(`/api/teams/invitations/${id}/accept`, {});
+    setIncomingInvitations(prev =>
+      prev.map(inv => (inv.id === id ? { ...inv, status: "Accepted" as const } : inv))
+    );
+  }, []);
+
+  const declineInvitation = useCallback(async (id: string, reason?: string) => {
+    await api.post(`/api/teams/invitations/${id}/decline`, { reason: reason ?? "" });
+    setIncomingInvitations(prev =>
+      prev.map(inv => (inv.id === id ? { ...inv, status: "Declined" as const } : inv))
+    );
+  }, []);
+
+  const cancelInvitation = useCallback(async (id: string) => {
+    await api.delete(`/api/teams/invitations/${id}/cancel`);
+    setOutgoingInvitations(prev =>
+      prev.map(inv => (inv.id === id ? { ...inv, status: "Cancelled" as const } : inv))
+    );
+  }, []);
+
+  const deleteInvitation = useCallback(async (id: string) => {
+    await api.delete(`/api/teams/invitations/${id}`);
+    setOutgoingInvitations(prev => prev.filter(inv => inv.id !== id));
+  }, []);
+
+  // â”€â”€ Shared members â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  const fetchSharedMembers = useCallback(async (teamId: string) => {
+    setSharedMembersLoading(true);
     try {
-      await api.delete(`/api/teams/${teamId}/members/${memberUserId}`);
-      // Refetch to get updated member list
-      fetchData();
-    } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to remove team member";
-      setError(message);
-      throw err;
+      const members = await api.get<SharedMember[]>(`/api/teams/${teamId}/members-shared`);
+      setSharedMembers(members ?? []);
+    } catch {
+      setSharedMembers([]);
+    } finally {
+      setSharedMembersLoading(false);
     }
-  }, [fetchData]);
+  }, []);
+
+  const fetchAllSharedMembers = useCallback(async () => {
+    setAllSharedMembersLoading(true);
+    try {
+      const members = await api.get<SharedMember[]>(`/api/teams/members-shared/all`);
+      setAllSharedMembers(members ?? []);
+    } catch {
+      setAllSharedMembers([]);
+    } finally {
+      setAllSharedMembersLoading(false);
+    }
+  }, []);
+
+  const removeSharedMember = useCallback(async (teamId: string, memberEmail: string) => {
+    await api.delete(`/api/teams/${teamId}/members-shared/${encodeURIComponent(memberEmail)}`);
+    setSharedMembers(prev => prev.filter(m => m.userEmail !== memberEmail));
+    setAllSharedMembers(prev => prev.filter(m => !(m.userEmail === memberEmail && m.teamId === teamId)));
+  }, []);
+
+  const removeMemberAllRecords = useCallback(async (memberEmail: string) => {
+    await api.delete(`/api/teams/members-shared-all/${encodeURIComponent(memberEmail)}`);
+    setSharedMembers(prev => prev.filter(m => m.userEmail !== memberEmail));
+    setAllSharedMembers(prev => prev.filter(m => m.userEmail !== memberEmail));
+  }, []);
+
+  const addMemberToTeam = useCallback(async (teamId: string, memberEmail: string, memberFullName: string): Promise<SharedMember> => {
+    const result = await api.post<SharedMember>(`/api/teams/${teamId}/members-shared/assign`, {
+      memberEmail,
+      memberFullName,
+    });
+    setSharedMembers(prev => {
+      if (prev.some(m => m.userEmail === memberEmail && m.teamId === teamId)) return prev;
+      return [...prev, result];
+    });
+    setAllSharedMembers(prev => {
+      if (prev.some(m => m.userEmail === memberEmail && m.teamId === teamId)) return prev;
+      return [result, ...prev];
+    });
+    return result;
+  }, []);
+
+  // â”€â”€ User search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  const searchUsers = useCallback(async (query: string): Promise<UserSearchResult[]> => {
+    if (!query.trim()) return [];
+    try {
+      return await api.get<UserSearchResult[]>(`/api/teams/users/search?q=${encodeURIComponent(query)}`);
+    } catch {
+      return [];
+    }
+  }, []);
+
+  // â”€â”€ Initial load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    fetchInvitations();
+  }, [fetchData, fetchInvitations]);
 
   return {
     teams,
@@ -190,7 +296,25 @@ export const useTeams = (): UseTeamsReturn => {
     createTeam,
     updateTeam,
     deleteTeam,
-    addMember,
-    removeMember,
+    incomingInvitations,
+    outgoingInvitations,
+    invitationsLoading,
+    sendInvitation,
+    acceptInvitation,
+    declineInvitation,
+    cancelInvitation,
+    deleteInvitation,
+    refetchInvitations: fetchInvitations,
+    sharedMembers,
+    sharedMembersLoading,
+    fetchSharedMembers,
+    removeSharedMember,
+    removeMemberAllRecords,
+    addMemberToTeam,
+    allSharedMembers,
+    allSharedMembersLoading,
+    fetchAllSharedMembers,
+    searchUsers,
   };
 };
+

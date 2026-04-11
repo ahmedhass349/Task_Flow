@@ -6,8 +6,8 @@
 // 2. Web dev server (uses localhost with proxy or environment variable)
 // 3. Production deployment (uses configurable base URL)
 
-// Detect if running in Electron
-const isElectron = typeof window !== 'undefined' && (window as any).electron !== undefined;
+// Detect if running in Electron (preload.js exposes window.electronAPI)
+const isElectron = typeof window !== 'undefined' && (window as any).electronAPI !== undefined;
 
 // Initialize API base URL - will be set dynamically for Electron
 let API_BASE_URL = "";
@@ -19,12 +19,14 @@ const initializeApiBaseUrl = async (): Promise<string> => {
     return API_BASE_URL;
   }
 
-  if (isElectron && (window as any).electron?.getBackendUrl) {
+  if (isElectron && (window as any).electronAPI?.invoke) {
     try {
-      const backendUrl = await (window as any).electron.getBackendUrl();
-      API_BASE_URL = backendUrl;
-      apiBaseUrlInitialized = true;
-      return backendUrl;
+      const backendUrl = await (window as any).electronAPI.invoke('get-backend-url');
+      if (backendUrl) {
+        API_BASE_URL = backendUrl;
+        apiBaseUrlInitialized = true;
+        return backendUrl;
+      }
     } catch (error) {
       // Failed to get Electron backend URL, will fall back to web context
     }
@@ -85,7 +87,7 @@ const createEndpoints = () => ({
     getMembers: (id: number) => buildUrl(`/api/projects/${id}/members`),
   },
 
-  // Teams endpoints
+  // Teams endpoints (SQLite local)
   teams: {
     getAll: buildUrl("/api/teams"),
     getById: (id: number) => buildUrl(`/api/teams/${id}`),
@@ -95,6 +97,20 @@ const createEndpoints = () => ({
     getMembers: (id: number) => buildUrl(`/api/teams/${id}/members`),
     addMember: (id: number) => buildUrl(`/api/teams/${id}/members`),
     removeMember: (id: number, memberUserId: number) => buildUrl(`/api/teams/${id}/members/${memberUserId}`),
+  },
+
+  // Teams invitation relay endpoints (MongoDB shared)
+  teamsInvitations: {
+    presence: buildUrl("/api/teams/presence"),
+    searchUsers: (q: string) => buildUrl(`/api/teams/users/search?q=${encodeURIComponent(q)}`),
+    sendInvitation: buildUrl("/api/teams/invitations/send"),
+    cancelInvitation: (id: string) => buildUrl(`/api/teams/invitations/${id}/cancel`),
+    incoming: buildUrl("/api/teams/invitations/incoming"),
+    outgoing: buildUrl("/api/teams/invitations/outgoing"),
+    accept: (id: string) => buildUrl(`/api/teams/invitations/${id}/accept`),
+    decline: (id: string) => buildUrl(`/api/teams/invitations/${id}/decline`),
+    sharedMembers: (teamId: string) => buildUrl(`/api/teams/${teamId}/members-shared`),
+    removeSharedMember: (teamId: string, email: string) => buildUrl(`/api/teams/${teamId}/members-shared/${encodeURIComponent(email)}`),
   },
 
   // Dashboard endpoints

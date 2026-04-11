@@ -1,6 +1,7 @@
 // FILE: Controllers/Api/AuthController.cs
 // STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() to return 401 (#3), removed try-catch blocks (#15), cleaned usings (#17)
+// CHANGES: Fixed GetUserId() to return 401 (#3), removed try-catch blocks (#15), cleaned usings (#17),
+//          added fire-and-forget presence upsert to MongoDB relay on login/register (Phase 2)
 
 using System;
 using System.Security.Claims;
@@ -21,10 +22,12 @@ namespace taskflow.Controllers.Api
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IMongoService _mongoService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IMongoService mongoService)
         {
             _authService = authService;
+            _mongoService = mongoService;
         }
 
         /// <summary>
@@ -47,6 +50,14 @@ namespace taskflow.Controllers.Api
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var result = await _authService.LoginAsync(request);
+
+            // Fire-and-forget presence upsert — MongoDB failure must not block login
+            _ = Task.Run(async () =>
+            {
+                try { await _mongoService.UpsertPresenceAsync(result.User.Email, result.User.FullName, result.User.AvatarUrl ?? string.Empty); }
+                catch { /* intentionally swallowed */ }
+            });
+
             return Ok(ApiResponse<AuthResponse>.Ok(result, "Login successful"));
         }
 
@@ -58,6 +69,14 @@ namespace taskflow.Controllers.Api
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(request);
+
+            // Fire-and-forget presence upsert — MongoDB failure must not block registration
+            _ = Task.Run(async () =>
+            {
+                try { await _mongoService.UpsertPresenceAsync(result.User.Email, result.User.FullName, result.User.AvatarUrl ?? string.Empty); }
+                catch { /* intentionally swallowed */ }
+            });
+
             return StatusCode(201, ApiResponse<AuthResponse>.Ok(result, "Registration successful"));
         }
 

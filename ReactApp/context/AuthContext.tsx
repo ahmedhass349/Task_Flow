@@ -11,6 +11,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { User, AuthResponse, LoginRequest, SignupRequest } from "../types";
 import { api, setAuthToken, getAuthToken, clearAuthToken, ApiRequestError } from "../services/api";
+import { saveAccount } from "../hooks/useAccountSwitcher";
 
 interface AuthContextValue {
   user: User | null;
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const user = (response as any).user ?? (response as any).User ?? null;
       setAuthToken(token, rememberMe);
       setUser(user);
+      if (token && user) saveAccount(user.email, user.fullName, token, user.avatarUrl ?? undefined);
       return user;
     } catch (err) {
       const message =
@@ -96,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const user = (response as any).user ?? (response as any).User ?? null;
       setAuthToken(token);
       setUser(user);
+      if (token && user) saveAccount(user.email, user.fullName, token, user.avatarUrl ?? undefined);
     } catch (err) {
       const message =
         err instanceof ApiRequestError

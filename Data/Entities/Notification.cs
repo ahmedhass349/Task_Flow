@@ -13,7 +13,10 @@ namespace taskflow.Data.Entities
         ReminderFired,
         AccountWelcome,
         AccountProfileUpdated,
-        SystemAnnouncement
+        SystemAnnouncement,
+        TeamInvitationReceived,
+        TeamInvitationAccepted,
+        TeamInvitationDeclined
     }
 
     public enum NotificationPriority

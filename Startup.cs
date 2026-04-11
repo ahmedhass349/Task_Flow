@@ -160,12 +160,18 @@ namespace taskflow
             services.AddAuthorization();
 
             // ── CORS ─────────────────────────────────────────────────────────
+            // PHASE 1 CHANGE: Switched from WithOrigins() to SetIsOriginAllowed(_ => true).
+            // Reason: In Electron production the React renderer loads from file:// origin,
+            // which is not covered by specific localhost origins.
+            // The backend only binds to 127.0.0.1 so permitting any origin is safe —
+            // no external machine can reach the API.
+            // SetIsOriginAllowed (not AllowAnyOrigin) is used so AllowCredentials()
+            // is still valid, which is required for SignalR hub connections.
             services.AddCors(options =>
             {
-                var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000", "http://localhost:5000" };
                 options.AddPolicy("AllowConfigured", builder =>
                 {
-                    builder.WithOrigins(allowedOrigins)
+                    builder.SetIsOriginAllowed(_ => true)
                            .AllowAnyMethod()
                            .AllowAnyHeader()
                            .AllowCredentials();
@@ -247,6 +253,9 @@ namespace taskflow
             services.AddScoped<ISettingsService, SettingsService>();
             services.AddScoped<IChatbotService, ChatbotService>();
             services.AddScoped<ITaskCommentService, TaskCommentService>();
+
+            // ── MongoDB relay (Singleton — MongoClient is thread-safe) ────────
+            services.AddSingleton<IMongoService, MongoService>();
 
             // ── SignalR ─────────────────────────────────────────────────────
             services.AddSignalR();
