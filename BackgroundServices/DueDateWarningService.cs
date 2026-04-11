@@ -18,7 +18,7 @@ namespace taskflow.BackgroundServices
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<DueDateWarningService> _logger;
-        private readonly TimeSpan _interval = TimeSpan.FromMinutes(15);
+        private readonly TimeSpan _interval = TimeSpan.FromMinutes(1);
         // map notification key -> time sent, used for dedup and cleanup
         private readonly Dictionary<string, DateTime> _sentNotifications = new Dictionary<string, DateTime>();
         private readonly object _sentNotificationsLock = new object();
@@ -129,6 +129,11 @@ namespace taskflow.BackgroundServices
 
             foreach (var task in overdueTasks)
             {
+                if (task.Status != TaskStatus.Overdue)
+                {
+                    task.Status = TaskStatus.Overdue;
+                }
+
                 var notificationKey = $"overdue-{task.Id}-{task.AssigneeId}";
                 var shouldSend = false;
                 lock (_sentNotificationsLock)
@@ -145,6 +150,11 @@ namespace taskflow.BackgroundServices
                     await notificationService.NotifyTaskOverdueAsync(task.AssigneeId!.Value, task);
                     _logger.LogInformation("Sent overdue notification for task {TaskId}", task.Id);
                 }
+            }
+
+            if (overdueTasks.Count > 0)
+            {
+                await dbContext.SaveChangesAsync();
             }
 
             // Clean old notifications (older than 7 days)

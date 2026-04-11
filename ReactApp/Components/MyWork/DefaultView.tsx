@@ -64,10 +64,12 @@ function TaskGroup({
                 dueDate={task.dueDateLabel}
                 assignee={task.assignee}
                 priority={task.status === "completed" ? undefined : task.priority}
+                status={task.status}
                 completed={task.status === "completed"}
                 onEdit={task.onEdit}
                 onDelete={task.onDelete}
                 onStatus={task.onStatus}
+                showStatusSelector
               />
             </div>
             <button

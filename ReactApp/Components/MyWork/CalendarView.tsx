@@ -39,6 +39,23 @@ function formatHour(h: number): string {
   return h < 12 ? `${h} AM` : `${h - 12} PM`;
 }
 
+function getCalendarCardSubtitle(task: MyWorkTask): string {
+  if (!task.notes) {
+    return task.project;
+  }
+
+  const summary = task.notes
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .filter((line) => !/^- \[(x| )\]\s+/i.test(line))
+    .filter((line) => line.toLowerCase() !== "subtasks:")
+    .join(" ")
+    .trim();
+
+  return summary || task.project;
+}
+
 // ── Mini Calendar Sub-component ──────────────────────────────────────────
 
 function MiniCalendar({ taskDotsByDay, year, month, todayDate }: { taskDotsByDay: Record<number, string[]>; year: number; month: number; todayDate: number | null }) {
@@ -298,7 +315,7 @@ export default function CalendarView({ visibleTasks, updateTask, refetch }: Cale
                           className="p-1 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100"
                         >
                           <div className="text-xs font-semibold text-gray-800 truncate">{t.title}</div>
-                          <div className="text-[11px] text-gray-500 truncate">{t.notes || t.project}</div>
+                          <div className="text-[11px] text-gray-500 truncate">{getCalendarCardSubtitle(t)}</div>
                         </div>
                       ))}
                     </div>

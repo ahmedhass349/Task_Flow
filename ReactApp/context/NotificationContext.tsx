@@ -3,8 +3,8 @@ import { Notification as NotificationType } from "../hooks/useNotificationHub";
 
 // Notification interface
 interface Notification {
-  id: string;
-  userId: string;
+  id: number;
+  userId?: number;
   title: string;
   message: string;
   type: string;
@@ -28,8 +28,8 @@ interface NotificationContextState {
 // Context actions
 type NotificationAction =
   | { type: "ADD_NOTIFICATION"; payload: NotificationType }
-  | { type: "UPDATE_NOTIFICATION"; payload: { id: string; updates: Partial<NotificationType> } }
-  | { type: "REMOVE_NOTIFICATION"; payload: string }
+  | { type: "UPDATE_NOTIFICATION"; payload: { id: number; updates: Partial<NotificationType> } }
+  | { type: "REMOVE_NOTIFICATION"; payload: number }
   | { type: "SET_NOTIFICATIONS"; payload: NotificationType[] }
   | { type: "SET_UNREAD_COUNT"; payload: number }
   | { type: "SET_CONNECTION_STATUS"; payload: boolean }
@@ -140,12 +140,12 @@ export const notificationActions = {
     payload: notification,
   }),
   
-  updateNotification: (id: string, updates: Partial<NotificationType>) => ({
+  updateNotification: (id: number, updates: Partial<NotificationType>) => ({
     type: "UPDATE_NOTIFICATION" as const,
     payload: { id, updates },
   }),
   
-  removeNotification: (id: string) => ({
+  removeNotification: (id: number) => ({
     type: "REMOVE_NOTIFICATION" as const,
     payload: id,
   }),

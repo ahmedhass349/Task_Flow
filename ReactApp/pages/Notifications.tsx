@@ -1,16 +1,14 @@
 import React, { useState, useMemo } from "react";
-import { Search, ChevronDown, Lightbulb, Bell, Check, AlertCircle, Info } from "lucide-react";
+import { Search, ChevronDown, Lightbulb, Bell, Check, AlertCircle, Info, Eye } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
 import { useNotifications } from "../hooks/useNotifications";
-import { useNotificationHub } from "../hooks/useNotificationHub";
-import { useNotificationContext } from "../context/NotificationContext";
 import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
 
 // Notification interface for UI
 interface NotificationItem {
-  id: string;
+  id: number;
   icon: React.ReactNode;
   iconBg: string;
   iconColor: string;
@@ -23,61 +21,25 @@ interface NotificationItem {
 
 export default function Notifications() {
   const { notifications, isLoading, error, refetch, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications } = useNotifications();
-  const { isConnected, markAsRead: signalRMarkAsRead, markAllRead: signalRMarkAllRead } = useNotificationHub();
-  const { state: notificationState } = useNotificationContext();
   const [tab, setTab] = useState<"all" | "unread">("all");
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const groupBy = "Date";
 
-  // Use SignalR methods if connected, otherwise fall back to API methods
-  const handleMarkAsRead = async (id: string) => {
-    if (isConnected) {
-      // Use SignalR method
-      await signalRMarkAsRead(id);
-    } else {
-      // Fall back to API method
-      await markAsRead(id);
-    }
+  const handleMarkAsRead = async (id: number) => {
+    await markAsRead(id);
   };
 
   const handleMarkAllAsRead = async () => {
-    if (isConnected) {
-      // Use SignalR method
-      await signalRMarkAllRead();
-    } else {
-      // Fall back to API method
-      await markAllAsRead();
-    }
+    await markAllAsRead();
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     await deleteNotification(id);
-  };
-
-  const handleDeleteSelected = async () => {
-    if (selected.size === 0) return;
-    // If all visible selected, allow delete all
-    if (selected.size === notifications.length) {
-      await deleteAllNotifications();
-      setSelected(new Set());
-      return;
-    }
-
-    const ids = Array.from(selected) as string[];
-    for (const id of ids) {
-      await deleteNotification(id);
-    }
-    setSelected(new Set());
   };
 
   // Convert backend notifications to UI format
   const notifs: NotificationItem[] = useMemo(() => {
-    const notificationList = isConnected && notificationState.notifications.length > 0 
-      ? notificationState.notifications 
-      : notifications;
-
-    return notificationList.map((notification, index) => {
+    return notifications.map((notification) => {
       // Get icon based on notification type
       const getIcon = () => {
         switch (notification.type) {
@@ -123,7 +85,7 @@ export default function Notifications() {
         actionUrl: notification.actionUrl,
       };
     });
-  }, [notifications, notificationState.notifications, isConnected]);
+  }, [notifications]);
 
   const handleRetry = () => {
     refetch();
@@ -142,40 +104,9 @@ export default function Notifications() {
     return list;
   }, [notifs, tab, search]);
 
-  const allSelected = visible.length > 0 && visible.every((n) => selected.has(n.id));
-
-  function toggleSelectAll() {
-    if (allSelected) {
-      setSelected((prev) => {
-        const next = new Set(prev);
-        visible.forEach((n) => next.delete(n.id));
-        return next;
-      });
-    } else {
-      setSelected((prev) => {
-        const next = new Set(prev);
-        visible.forEach((n) => next.add(n.id));
-        return next;
-      });
-    }
-  }
-
-  function toggleSelect(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
-
-  function markRead(id: string) {
+  function markRead(id: number) {
     handleMarkAsRead(id);
   }
-
-function markUnread(id: string) {
-  // Backend doesn't have mark as unread, so we'll just update local state
-  // This would need to be implemented in the backend
-}
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -246,16 +177,16 @@ function markUnread(id: string) {
                 />
               </div>
 
-              {/* Delete actions */}
+              {/* Bulk actions */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={handleDeleteSelected}
-                  className="px-3 py-1.5 text-sm font-medium bg-red-50 text-red-700 border border-red-100 rounded-md hover:bg-red-100"
+                  onClick={handleMarkAllAsRead}
+                  className="px-3 py-1.5 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-100 rounded-md hover:bg-blue-100"
                 >
-                  Delete Selected
+                  Mark all as Read
                 </button>
                 <button
-                  onClick={async () => { await deleteAllNotifications(); setSelected(new Set()); }}
+                  onClick={async () => { await deleteAllNotifications(); }}
                   className="px-3 py-1.5 text-sm font-medium bg-red-50 text-red-700 border border-red-100 rounded-md hover:bg-red-100"
                 >
                   Delete All
@@ -272,23 +203,6 @@ function markUnread(id: string) {
 
             {/* Notification list */}
             <div className="bg-white rounded-md border border-[#D0D7DE] overflow-hidden">
-              {/* Select-all header */}
-              <div className="flex items-center gap-3 px-4 py-3 bg-[#F6F8FA] border-b border-[#D0D7DE]">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={toggleSelectAll}
-                  aria-label="Select all notifications"
-                  className="w-3.5 h-3.5 rounded accent-[#0969DA] cursor-pointer"
-                />
-                <span className="text-xs font-semibold text-[#24292F]">Select all</span>
-                {selected.size > 0 && (
-                  <span className="ml-auto text-xs text-[#57606A]">
-                    {selected.size} selected
-                  </span>
-                )}
-              </div>
-
               {/* Items */}
               {visible.length === 0 ? (
                 <div className="px-6 py-12 text-center text-sm text-[#57606A]">
@@ -303,19 +217,12 @@ function markUnread(id: string) {
                         n.unread ? "bg-white" : "bg-[#F6F8FA]"
                       } ${i < visible.length - 1 ? "border-b border-[#D8DEE4]" : ""}`}
                     >
-                      {/* Unread dot + checkbox */}
-                      <div className="flex items-center gap-2 shrink-0 w-8">
+                      {/* Unread dot */}
+                      <div className="flex items-center shrink-0 w-3">
                         <span
                           className={`w-2 h-2 rounded-full shrink-0 transition-opacity ${
                             n.unread ? "bg-[#0969DA]" : "opacity-0"
                           }`}
-                        />
-                        <input
-                          type="checkbox"
-                          checked={selected.has(n.id)}
-                          onChange={() => toggleSelect(n.id)}
-                          aria-label={`Select notification: ${n.title}`}
-                          className="w-3.5 h-3.5 rounded accent-[#0969DA] cursor-pointer"
                         />
                       </div>
 
@@ -344,18 +251,15 @@ function markUnread(id: string) {
                       <div className="flex items-center gap-3 shrink-0 text-xs text-[#24292F]">
                         <span className="text-right min-w-[70px] text-[#57606A]">{n.time}</span>
 
-                        {/* Mark read/unread on hover */}
+                        {/* Mark read */}
                         <button
-                          onClick={() => (n.unread ? markRead(n.id) : markUnread(n.id))}
-                          title={n.unread ? "Mark as read" : "Mark as unread"}
-                          aria-label={n.unread ? "Mark as read" : "Mark as unread"}
-                          className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded-full border border-[rgba(27,31,36,0.15)] bg-[#F6F8FA] hover:bg-[#EEEFF2] flex items-center justify-center transition-opacity"
+                          onClick={() => markRead(n.id)}
+                          title="Mark as read"
+                          aria-label="Mark as read"
+                          disabled={!n.unread}
+                          className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full border border-[rgba(27,31,36,0.15)] bg-[#F6F8FA] hover:bg-[#EEEFF2] flex items-center justify-center transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              n.unread ? "bg-[#0969DA]" : "bg-transparent border border-[#57606A]"
-                            }`}
-                          />
+                          <Eye className="size-3.5 text-[#0969DA]" />
                         </button>
                         {/* Delete button */}
                         <button
@@ -379,12 +283,8 @@ function markUnread(id: string) {
               <div className="flex items-center gap-1.5 text-xs text-[#57606A]">
                 <Lightbulb size={14} className="text-[#57606A] shrink-0" />
                 <span>
-                  <span className="font-semibold">ProTip!</span> When viewing a notification, press{" "}
+                  <span className="font-semibold">ProTip!</span> Use the eye icon on unread items to mark them as read quickly.
                 </span>
-                <kbd className="px-1.5 py-0.5 text-[11px] font-mono bg-[#F6F8FA] border border-[rgba(175,184,193,0.2)] rounded text-[#24292F]">
-                  shift u
-                </kbd>
-                <span> to mark it as Unread.</span>
               </div>
 
               {/* Pagination */}

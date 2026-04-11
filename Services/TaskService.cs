@@ -168,6 +168,27 @@ namespace taskflow.Services
             if (task.AssigneeId != userId)
                 throw new UnauthorizedAccessException("You do not have permission to update this task.");
 
+            var changes = new List<string>();
+
+            if (!string.Equals(task.Title, request.Title, StringComparison.Ordinal))
+                changes.Add($"title: '{task.Title}' -> '{request.Title}'");
+
+            if (!string.Equals(task.Description ?? string.Empty, request.Description ?? string.Empty, StringComparison.Ordinal))
+                changes.Add("description");
+
+            if (task.Priority != request.Priority)
+                changes.Add($"priority: {task.Priority} -> {request.Priority}");
+
+            if (task.Status != request.Status)
+                changes.Add($"status: {task.Status} -> {request.Status}");
+
+            if (task.DueDate != request.DueDate)
+            {
+                var fromDue = task.DueDate.HasValue ? task.DueDate.Value.ToString("MMM dd, yyyy h:mm tt") : "none";
+                var toDue = request.DueDate.HasValue ? request.DueDate.Value.ToString("MMM dd, yyyy h:mm tt") : "none";
+                changes.Add($"due date: {fromDue} -> {toDue}");
+            }
+
             task.Title = request.Title;
             task.Description = request.Description;
             task.AssigneeId = request.AssigneeId ?? task.AssigneeId;
@@ -177,6 +198,38 @@ namespace taskflow.Services
 
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();
+
+            if (request.ReminderMap != null)
+            {
+                try
+                {
+                    var reminderDto = new CreateReminderDto
+                    {
+                        TaskId = task.Id,
+                        ReminderMap = request.ReminderMap,
+                        DueDate = request.DueDate,
+                        NotifyEmail = request.NotifyEmail,
+                        NotifyInApp = request.NotifyInApp
+                    };
+
+                    await _reminderService.SaveRemindersAsync(reminderDto, userId);
+                    changes.Add("reminders");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to update reminders for task {Id}", task.Id);
+                }
+            }
+
+            try
+            {
+                var changeSummary = changes.Count > 0 ? string.Join(", ", changes) : "details updated";
+                await _notificationService.NotifyTaskUpdatedAsync(userId, task, changeSummary);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send update notification for task {Id}", task.Id);
+            }
 
             return await GetTaskByIdAsync(task.Id);
         }

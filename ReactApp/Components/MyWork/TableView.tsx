@@ -28,6 +28,7 @@ const SUB_TASKS: Record<string, SubTask[]> = {};
 const STATUS_MAP: Record<Status, { bg: string; border: string; color: string; label: string }> = {
   inProgress: { bg: "#FFFBEB", border: "#C69F10", color: "#C9A41C", label: "In Progress" },
   review:     { bg: "#EEF2FF", border: "#6366F1", color: "#4F46E5", label: "In Review" },
+  overdue:    { bg: "#FEF2F2", border: "#DC2626", color: "#DC2626", label: "Overdue" },
   todo:       { bg: "#F8FAFC", border: "#94A3B8", color: "#64748B", label: "To Do" },
   completed:  { bg: "#F3FFEB", border: "#47AD08", color: "#47AD08", label: "Completed" },
 };

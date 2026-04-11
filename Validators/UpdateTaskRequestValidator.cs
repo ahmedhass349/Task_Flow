@@ -16,7 +16,7 @@ namespace taskflow.Validators
                 .IsInEnum().WithMessage("Priority must be one of: Low, Medium, High.");
 
             RuleFor(x => x.Status)
-                .IsInEnum().WithMessage("Status must be one of: Todo, InProgress, Review, Completed.");
+                .IsInEnum().WithMessage("Status must be one of: Todo, InProgress, Review, Completed, Overdue.");
         }
     }
 }

@@ -1,7 +1,7 @@
 // ── KanbanView: column-based board ──────────────────────────────────────
 //
-// Renders tasks in 4 status columns (To Do, In Progress, In Review,
-// Completed) with colored headers and task cards.
+// Renders tasks in status columns (To Do, In Progress, In Review,
+// Overdue, Completed) with colored headers and task cards.
 
 import { Edit2, Trash2 } from "lucide-react";
 import type { MyWorkTask, Priority, Status } from "./types";
@@ -20,6 +20,7 @@ const COLUMNS: KanbanCol[] = [
   { key: "todo",       title: "To Do",       borderColor: "rgba(255, 167, 38, 0.70)" },
   { key: "inProgress", title: "In Progress", borderColor: "rgba(0, 102, 204, 0.70)" },
   { key: "review",     title: "In Review",   borderColor: "rgba(108, 75, 153, 0.70)" },
+  { key: "overdue",    title: "Overdue",     borderColor: "rgba(220, 38, 38, 0.70)" },
   { key: "completed",  title: "Completed",   borderColor: "rgba(0, 184, 148, 0.70)" },
 ];
 
@@ -33,13 +34,14 @@ const STATUS_CHIP: Record<Status, { bg: string; color: string; label: string }> 
   todo:       { bg: "rgba(99, 110, 114, 0.10)", color: "#636E72", label: "To Do" },
   inProgress: { bg: "rgba(47, 128, 237, 0.10)", color: "#2F80ED", label: "Ongoing" },
   review:     { bg: "rgba(108, 75, 153, 0.10)", color: "#6C4B99", label: "In Review" },
+  overdue:    { bg: "rgba(220, 38, 38, 0.10)", color: "#DC2626", label: "Overdue" },
   completed:  { bg: "rgba(33, 150, 83, 0.10)",  color: "#219653", label: "Done" },
 };
 
 export default function KanbanView({ visibleTasks }: KanbanViewProps) {
   return (
     <div className="overflow-x-auto">
-      <div className="grid grid-cols-4 gap-4" style={{ minWidth: 960 }}>
+      <div className="grid grid-cols-5 gap-4" style={{ minWidth: 1180 }}>
           {COLUMNS.map((col) => {
           const colTasks = visibleTasks.filter((t) => t.status === col.key);
           return (

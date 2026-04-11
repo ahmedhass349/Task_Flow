@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using taskflow.Data.Entities;
 
@@ -20,5 +21,11 @@ namespace taskflow.DTOs.Tasks
         public TaskStatus Status { get; set; }
 
         public DateTime? DueDate { get; set; }
+
+        public Dictionary<string, List<string>>? ReminderMap { get; set; }
+
+        public bool NotifyEmail { get; set; } = false;
+
+        public bool NotifyInApp { get; set; } = false;
     }
 }

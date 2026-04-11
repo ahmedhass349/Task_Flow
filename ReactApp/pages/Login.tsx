@@ -6,6 +6,7 @@ import LoginPromotion from "../imports/LoginPromotion1";
 import PromotionBg from "../imports/PromotionBg";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { getRememberMePreference } from "../services/api";
 
 // ── Validation helpers ───────────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(getRememberMePreference());
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 

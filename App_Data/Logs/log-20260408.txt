@@ -3256,3 +3256,24 @@ INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
 INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
 WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
 ORDER BY "r"."FireAt"
+2026-04-08 20:42:13.322 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-08 20:43:13.333 +02:00 [INF] Executed DbCommand (1ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"
+2026-04-08 20:44:13.342 +02:00 [INF] Executed DbCommand (0ms) [Parameters=[@__upTo_0='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."NotifyEmail", "r"."NotifyInApp", "r"."TaskId", "r"."UserId", "t"."Id", "t"."AssigneeId", "t"."CreatedAt", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."Title", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @__upTo_0
+ORDER BY "r"."FireAt"

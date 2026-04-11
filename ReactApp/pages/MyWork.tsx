@@ -97,7 +97,8 @@ export default function MyWork() {
         const backendStatus =
           newStatus === "todo" ? "Todo" :
           newStatus === "inProgress" ? "InProgress" :
-          newStatus === "review" ? "Review" : "Completed";
+          newStatus === "review" ? "Review" :
+          newStatus === "overdue" ? "Overdue" : "Completed";
         await updateStatus(task.id, backendStatus);
         refetch();
       }
@@ -129,8 +130,26 @@ export default function MyWork() {
       case "todo": return "todo";
       case "inprogress": return "inProgress";
       case "review": return "review";
+      case "overdue": return "overdue";
       case "completed": return "completed";
       default: return "todo";
+    }
+  }
+
+  function mapCardStatusToBackend(taskType: string): "Todo" | "InProgress" | "Review" | "Overdue" | "Completed" {
+    switch (taskType.toLowerCase()) {
+      case "to do":
+        return "Todo";
+      case "in progress":
+        return "InProgress";
+      case "in review":
+        return "Review";
+      case "overdue":
+        return "Overdue";
+      case "done":
+        return "Completed";
+      default:
+        return "Todo";
     }
   }
 
@@ -145,8 +164,11 @@ export default function MyWork() {
           title: data.title,
           description: data.notes || `${data.taskType} - ${data.course}`,
           priority: data.priority.charAt(0).toUpperCase() + data.priority.slice(1) as "Low" | "Medium" | "High",
-          status: editingTask.status === "todo" ? "Todo" : editingTask.status === "inProgress" ? "InProgress" : editingTask.status === "review" ? "Review" : "Completed",
+          status: mapCardStatusToBackend(data.taskType),
           dueDate: data.dueDate || undefined,
+          reminderMap: data.reminderEnabled ? data.reminderMap : {},
+          notifyEmail: data.notifyVia.email,
+          notifyInApp: data.notifyVia.inApp,
         });
       } else {
         await createTask({

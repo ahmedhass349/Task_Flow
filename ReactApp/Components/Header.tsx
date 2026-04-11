@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useMemo } from "react";
 import { Search, Bell, Mail, User, Settings, LogOut, UserCircle } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Link, useNavigate } from "react-router";
 import { useNotifications } from "../hooks/useNotifications";
 import { useNotificationHub } from "../hooks/useNotificationHub";
-import { useNotificationContext } from "../context/NotificationContext";
 import { useMessages } from "../hooks/useMessages";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "./NotificationBell";
@@ -30,8 +29,7 @@ const AVATAR_COLORS: Record<string, string> = {
 /* ═════════════════════════════ */
 export default function Header() {
   const { notifications, markAllAsRead } = useNotifications();
-  const { unreadCount: signalrUnreadCount, isConnected } = useNotificationHub();
-  const { state: notificationState } = useNotificationContext();
+  const { unreadCount: signalrUnreadCount, isConnected, latestNotification } = useNotificationHub();
   const { contacts, unreadCount } = useMessages();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -59,9 +57,22 @@ export default function Header() {
     }
   };
   
+  const mergedNotifications = useMemo(() => {
+    if (!latestNotification) {
+      return notifications;
+    }
+
+    const exists = notifications.some((notification) => notification.id === latestNotification.id);
+    if (exists) {
+      return notifications;
+    }
+
+    return [latestNotification, ...notifications];
+  }, [notifications, latestNotification]);
+
   // Convert backend notifications to UI format
-  const uiNotifications = notifications.slice(0, 3).map((notification, index) => ({
-    id: index,
+  const uiNotifications = mergedNotifications.slice(0, 3).map((notification) => ({
+    id: notification.id,
     icon: Bell,
     iconBg: "bg-blue-100",
     iconColor: "text-blue-600",

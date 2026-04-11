@@ -103,7 +103,10 @@ namespace taskflow.Services
         public async Task NotifyTaskUpdatedAsync(int userId, TaskItem task, string whatChanged)
         {
             var title = "Task Updated";
-            var message = $"Task '{task.Title}' was updated: {whatChanged}";
+            var dueInfo = task.DueDate.HasValue
+                ? $" Due: {task.DueDate.Value:MMM dd, yyyy h:mm tt}."
+                : string.Empty;
+            var message = $"\"{task.Title}\" was updated. Changes: {whatChanged}.{dueInfo}";
 
             await CreateAsync(userId, title, message, NotificationType.TaskUpdated, NotificationPriority.Low,
                 $"/tasks/{task.Id}", task.Id);
@@ -178,7 +181,10 @@ namespace taskflow.Services
         public async Task NotifyReminderFiredAsync(int userId, TaskItem task, DateTime fireTime)
         {
             var title = "Task Reminder";
-            var message = $"Reminder: {task.Title} at {fireTime:hh:mm tt}";
+            var dueInfo = task.DueDate.HasValue
+                ? $" It is due on {task.DueDate.Value:MMM dd, yyyy h:mm tt}."
+                : string.Empty;
+            var message = $"Reminder for \"{task.Title}\" at {fireTime:hh:mm tt}.{dueInfo}";
 
             await CreateAsync(userId, title, message, NotificationType.ReminderFired, NotificationPriority.High,
                 $"/tasks/{task.Id}", task.Id);

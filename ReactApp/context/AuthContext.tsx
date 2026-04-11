@@ -50,10 +50,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(userData);
         }
       })
-      .catch(() => {
-        // Token is invalid/expired -- clear it
-        if (!cancelled) {
+      .catch((err) => {
+        // Only clear persisted auth on explicit auth failures.
+        // Network/transient server errors should not log the user out.
+        if (!cancelled && err instanceof ApiRequestError && (err.status === 401 || err.status === 403)) {
           clearAuthToken();
+          setUser(null);
         }
       })
       .finally(() => {

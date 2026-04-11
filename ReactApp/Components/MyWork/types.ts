@@ -1,7 +1,7 @@
 // ── Shared types for MyWork page views ────────────────────────────────────
 
 export type Priority = "high" | "medium" | "low";
-export type Status = "todo" | "inProgress" | "review" | "completed";
+export type Status = "todo" | "inProgress" | "review" | "overdue" | "completed";
 
 export interface MyWorkTask {
   id: number;
@@ -17,5 +17,5 @@ export interface MyWorkTask {
   starred?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
-  onStatus?: (newStatus: string) => void;
+  onStatus?: (newStatus: Status) => void;
 }

@@ -8,8 +8,8 @@ import { api, ApiRequestError } from "../services/api";
 
 // Notification interface matching backend DTO
 interface Notification {
-  id: string;
-  userId: string;
+  id: number;
+  userId?: number;
   title: string;
   message: string;
   type: string;
@@ -28,10 +28,10 @@ interface UseNotificationsReturn {
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
-  markAsRead: (id: string) => Promise<void>;
+  markAsRead: (id: number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   unreadCount: number;
-  deleteNotification: (id: string) => Promise<void>;
+  deleteNotification: (id: number) => Promise<void>;
   deleteAllNotifications: () => Promise<void>;
 }
 
@@ -71,7 +71,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     };
   }, []);
 
-  const markAsRead = useCallback(async (id: string) => {
+  const markAsRead = useCallback(async (id: number) => {
     try {
       await api.patch(`/api/notifications/${id}/read`);
       // Update local state to reflect change
@@ -110,7 +110,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     }
   }, []);
 
-  const deleteNotification = useCallback(async (id: string) => {
+  const deleteNotification = useCallback(async (id: number) => {
     try {
       await api.delete(`/api/notifications/${id}`);
       // Update local state to reflect change
@@ -148,6 +148,31 @@ export const useNotifications = (): UseNotificationsReturn => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    const onNotificationReceived = (event: Event) => {
+      const customEvent = event as CustomEvent<Notification>;
+      const incoming = customEvent.detail;
+
+      if (!incoming) {
+        return;
+      }
+
+      setNotifications((prev) => {
+        if (prev.some((n) => n.id === incoming.id)) {
+          return prev;
+        }
+
+        return [incoming, ...prev];
+      });
+    };
+
+    window.addEventListener("taskflow:notification-received", onNotificationReceived as EventListener);
+
+    return () => {
+      window.removeEventListener("taskflow:notification-received", onNotificationReceived as EventListener);
+    };
+  }, []);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 

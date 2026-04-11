@@ -14,7 +14,7 @@ interface Task {
   projectName?: string;
   assigneeName?: string;
   priority: "Low" | "Medium" | "High";
-  status: "Todo" | "InProgress" | "Review" | "Completed";
+  status: "Todo" | "InProgress" | "Review" | "Completed" | "Overdue";
   dueDate?: string;
   dueDateLabel?: string;
   isStarred: boolean;
@@ -45,7 +45,7 @@ interface CreateTaskRequest {
   projectId?: number;
   assigneeId?: number;
   priority: "Low" | "Medium" | "High";
-  status: "Todo" | "InProgress" | "Review" | "Completed";
+  status: "Todo" | "InProgress" | "Review" | "Completed" | "Overdue";
   dueDate?: string;
   reminderMap?: ReminderMap;
   notifyEmail?: boolean;
@@ -57,8 +57,11 @@ interface UpdateTaskRequest {
   description?: string;
   assigneeId?: number;
   priority?: "Low" | "Medium" | "High";
-  status?: "Todo" | "InProgress" | "Review" | "Completed";
+  status?: "Todo" | "InProgress" | "Review" | "Completed" | "Overdue";
   dueDate?: string;
+  reminderMap?: ReminderMap;
+  notifyEmail?: boolean;
+  notifyInApp?: boolean;
 }
 
 export const useTasks = (): UseTasksReturn => {

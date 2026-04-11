@@ -30,7 +30,7 @@ interface AcademicTaskCardProps {
 }
 
 type Priority = "Low" | "Medium" | "High" | "Urgent";
-type Status = "To Do" | "In Progress" | "In Review" | "Done";
+type Status = "To Do" | "In Progress" | "In Review" | "Overdue" | "Done";
 type ReminderVia = "email" | "notification" | "both";
 
 interface Subtask {
@@ -47,7 +47,7 @@ interface Reminder {
 }
 
 const PRIORITIES: Priority[] = ["Low", "Medium", "High", "Urgent"];
-const STATUSES: Status[] = ["To Do", "In Progress", "In Review", "Done"];
+const STATUSES: Status[] = ["To Do", "In Progress", "In Review", "Overdue", "Done"];
 
 const PRIORITY_COLORS: Record<Priority, { bg: string; text: string; dot: string }> = {
   Low: { bg: "#f0fdf4", text: "#16a34a", dot: "#22c55e" },
@@ -60,6 +60,7 @@ const STATUS_COLORS: Record<Status, { bg: string; text: string }> = {
   "To Do": { bg: "#f1f5f9", text: "#475569" },
   "In Progress": { bg: "#eff6ff", text: "#3b82f6" },
   "In Review": { bg: "#fefce8", text: "#ca8a04" },
+  "Overdue": { bg: "#fef2f2", text: "#dc2626" },
   "Done": { bg: "#f0fdf4", text: "#16a34a" },
 };
 
@@ -268,6 +269,7 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData }: Ac
     const raw = String(initialData?.status || "").toLowerCase();
     if (raw === "inprogress" || raw === "in progress") return "In Progress";
     if (raw === "review" || raw === "in review") return "In Review";
+    if (raw === "overdue") return "Overdue";
     if (raw === "completed" || raw === "done") return "Done";
     return "To Do";
   });
@@ -447,7 +449,17 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData }: Ac
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col overflow-y-auto">
+      <form
+        onSubmit={handleSubmit}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return;
+          const target = e.target as HTMLElement;
+          const tag = target.tagName.toLowerCase();
+          if (tag === "textarea" || tag === "button") return;
+          e.preventDefault();
+        }}
+        className="flex flex-col overflow-y-auto"
+      >
         <div className="px-7 py-6 flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-[13px] text-gray-700" style={{ fontWeight: 500 }}>

@@ -11,8 +11,8 @@ import { getApiBaseUrl } from "../config/api";
 
 // Notification interface matching backend DTO
 export interface Notification {
-  id: string;
-  userId: string;
+  id: number;
+  userId?: number;
   title: string;
   message: string;
   type: string;
@@ -30,7 +30,7 @@ interface UseNotificationHubReturn {
   isConnected: boolean;
   unreadCount: number;
   latestNotification: Notification | null;
-  markAsRead: (id: string) => Promise<void>;
+  markAsRead: (id: number) => Promise<void>;
   markAllRead: () => Promise<void>;
 }
 
@@ -84,10 +84,20 @@ export const useNotificationHub = (): UseNotificationHubReturn => {
     connection.on("ReceiveNotification", (notification: Notification) => {
       setLatestNotification(notification);
 
+      window.dispatchEvent(new CustomEvent("taskflow:notification-received", {
+        detail: notification,
+      }));
+
       // Show in-app toast notification
-      const toastType = notification.priority === "high" ? "warning" : 
-                       notification.type.includes("error") ? "error" : 
-                       notification.type.includes("success") ? "success" : "info";
+      const priority = notification.priority.toLowerCase();
+      const notificationType = notification.type.toLowerCase();
+      const toastType = priority === "high" || priority === "critical"
+        ? "warning"
+        : notificationType.includes("error")
+          ? "error"
+          : notificationType.includes("success")
+            ? "success"
+            : "info";
 
       addToast({
         title: notification.title,
@@ -100,6 +110,9 @@ export const useNotificationHub = (): UseNotificationHubReturn => {
 
     connection.on("UnreadCount", (count: number) => {
       setUnreadCount(count);
+      window.dispatchEvent(new CustomEvent("taskflow:notification-unread-count", {
+        detail: count,
+      }));
     });
 
     // Start connection
@@ -120,7 +133,7 @@ export const useNotificationHub = (): UseNotificationHubReturn => {
   }, [createConnection]);
 
   // Hub methods
-  const markAsRead = useCallback(async (id: string) => {
+  const markAsRead = useCallback(async (id: number) => {
     if (connectionRef.current) {
       await connectionRef.current.invoke("MarkAsRead", id);
     }

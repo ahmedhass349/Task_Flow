@@ -4,7 +4,14 @@ using System.Collections.Generic;
 namespace taskflow.Data.Entities
 {
     public enum TaskPriority { Low, Medium, High }
-    public enum TaskStatus { Todo, InProgress, Review, Completed }
+    public enum TaskStatus
+    {
+        Todo = 0,
+        InProgress = 1,
+        Review = 2,
+        Completed = 3,
+        Overdue = 4
+    }
 
     public class TaskItem
     {
