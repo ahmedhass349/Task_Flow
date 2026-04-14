@@ -254,8 +254,15 @@ namespace taskflow
             services.AddScoped<IChatbotService, ChatbotService>();
             services.AddScoped<ITaskCommentService, TaskCommentService>();
 
-            // ── MongoDB relay (Singleton — MongoClient is thread-safe) ────────
-            services.AddSingleton<IMongoService, MongoService>();
+            // ── MongoDB relay + offline/online sync ──────────────────────────
+            // Register concrete MongoService first so it can be injected directly
+            services.AddSingleton<MongoService>();
+            // ConnectivityService depends on MongoService (concrete) for pinging
+            services.AddSingleton<IConnectivityService, ConnectivityService>();
+            // OfflineAwareMongoService wraps MongoService with offline read/write
+            services.AddSingleton<IMongoService, OfflineAwareMongoService>();
+            // MirrorService mirrors every SQLite write to MongoDB (fire-and-forget)
+            services.AddSingleton<IMirrorService, MirrorService>();
 
             // ── SignalR ─────────────────────────────────────────────────────
             services.AddSignalR();
@@ -263,6 +270,8 @@ namespace taskflow
             // ── Background Services ───────────────────────────────────────────
             services.AddHostedService<BackgroundServices.ReminderProcessorService>();
             services.AddHostedService<BackgroundServices.DueDateWarningService>();
+            services.AddHostedService<BackgroundServices.OfflineSyncService>();
+            services.AddHostedService<BackgroundServices.BulkSyncStartupService>();
 
             // ── Helpers (DI) ─────────────────────────────────────────────────
             services.AddScoped<JwtHelper>();

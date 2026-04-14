@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from "react";
+﻿import { useState, useRef, useEffect, useMemo } from "react";
 import {
   Users,
   Mail,
@@ -13,7 +13,8 @@ import {
   Trash2,
   Plus,
   Users2,
-  UserCheck,
+  Pencil,
+  LogOut,
 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Footer from "../Components/Footer";
@@ -144,21 +145,148 @@ function CreateTeamModal({ onClose, onCreate }: CreateTeamModalProps) {
   );
 }
 
-// â”€â”€ Invite Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Edit Team Modal ───────────────────────────────────────────────────────
+
+interface EditTeamModalProps {
+  team: Team;
+  onClose: () => void;
+  onUpdate: (id: string, data: { name: string; description?: string }) => Promise<void>;
+}
+
+function EditTeamModal({ team, onClose, onUpdate }: EditTeamModalProps) {
+  const [name, setName] = useState(team.name);
+  const [description, setDescription] = useState(team.description ?? "");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) { setSaveError("Team name is required"); return; }
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onUpdate(team.id, { name: trimmed, description: description.trim() || undefined });
+      onClose();
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : "Failed to update team");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-gray-900">Edit Team</h2>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <X className="size-5" />
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Team name<span className="text-red-500 ml-0.5">*</span></label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleSave()}
+              className="w-full py-2.5 px-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description <span className="text-gray-400 font-normal">(optional)</span></label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={2}
+              className="w-full py-2.5 px-3 border border-gray-300 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          {saveError && <p className="text-sm text-red-500">{saveError}</p>}
+          <div className="flex gap-2 pt-1">
+            <button onClick={onClose} className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+            <button
+              onClick={handleSave}
+              disabled={saving || !name.trim()}
+              className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {saving && <span className="size-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Accepted contact card ─────────────────────────────────────────────────
+
+interface AcceptedContact {
+  invitationId: string;
+  email: string;
+  fullName: string;
+  role: string;
+  teamName: string;
+  acceptedAt: string;
+}
+
+interface AcceptedContactCardProps {
+  contact: AcceptedContact;
+  onRemove: (invitationId: string) => Promise<void>;
+}
+
+function AcceptedContactCard({ contact, onRemove }: AcceptedContactCardProps) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+      <div className={`${avatarColor(contact.email)} size-11 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>
+        {getInitials(contact.fullName || contact.email)}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-gray-900">{contact.fullName || contact.email}</p>
+        <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+          <Mail className="size-3" />
+          <span className="truncate">{contact.email}</span>
+          {contact.role && <span className="ml-2 font-medium text-gray-700">· {contact.role}</span>}
+        </div>
+        {contact.teamName && (
+          <p className="text-xs text-gray-400 mt-0.5">Team: {contact.teamName}</p>
+        )}
+        {contact.acceptedAt && (
+          <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+            <CheckCircle className="size-3 text-green-500" /> Accepted {fmtDate(contact.acceptedAt)}
+          </p>
+        )}
+      </div>
+      <button
+        onClick={async () => { setBusy(true); try { await onRemove(contact.invitationId); } finally { setBusy(false); } }}
+        disabled={busy}
+        aria-label="Remove contact"
+        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
+      >
+        <Trash2 className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+// ── Invite Modal ──────────────────────────────────────────────────────────
 
 interface InviteModalProps {
-  teams: Team[];
   onClose: () => void;
   onSend: (data: SendInvitationRequest) => Promise<void>;
   searchUsers: (q: string) => Promise<UserSearchResult[]>;
+  preselectedTeam?: { id: string; name: string };
 }
 
-function InviteModal({ teams, onClose, onSend, searchUsers }: InviteModalProps) {
+function InviteModal({ onClose, onSend, searchUsers, preselectedTeam }: InviteModalProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UserSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<UserSearchResult | null>(null);
-  const [teamId, setTeamId] = useState(teams[0]?.id ?? "");
   const [role, setRole] = useState("Member");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -179,8 +307,6 @@ function InviteModal({ teams, onClose, onSend, searchUsers }: InviteModalProps) 
     }, 350);
   };
 
-  const selectedTeam = teams.find(t => t.id === teamId);
-
   const handleSend = async () => {
     if (!selected) return;
     setSending(true);
@@ -188,8 +314,8 @@ function InviteModal({ teams, onClose, onSend, searchUsers }: InviteModalProps) 
     try {
       await onSend({
         recipientEmail: selected.email,
-        teamId: teamId || undefined,
-        teamName: selectedTeam?.name || undefined,
+        teamId: preselectedTeam?.id || undefined,
+        teamName: preselectedTeam?.name || undefined,
         message,
         role,
       });
@@ -226,7 +352,7 @@ function InviteModal({ teams, onClose, onSend, searchUsers }: InviteModalProps) 
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-gray-900">Invite to Team</h2>
+          <h2 className="text-lg font-bold text-gray-900">{preselectedTeam ? `Invite to "${preselectedTeam.name}"` : "Invite a Member"}</h2>
           <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
             <X className="size-5" />
           </button>
@@ -291,21 +417,6 @@ function InviteModal({ teams, onClose, onSend, searchUsers }: InviteModalProps) 
                 </button>
               </div>
             )}
-          </div>
-
-          {/* Team selector */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Team <span className="text-gray-400 font-normal">(optional)</span></label>
-            <select
-              value={teamId}
-              onChange={e => setTeamId(e.target.value)}
-              className="w-full py-2.5 px-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">— No specific team —</option>
-              {teams.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
           </div>
 
           {/* Role */}
@@ -452,7 +563,7 @@ function OutgoingCard({ inv, onCancel, onDelete }: OutgoingCardProps) {
           </span>
         </div>
         <p className="text-sm text-gray-700 mt-1">
-          Team: <strong>{inv.teamName || "\u2014"}</strong> &middot; Role: <span className="font-medium">{inv.role}</span>
+          {inv.teamName && <>Team: <strong>{inv.teamName}</strong> &middot; </>}Role: <span className="font-medium">{inv.role}</span>
         </p>
         {inv.message && <p className="text-sm text-gray-500 italic mt-0.5">&quot;{inv.message}&quot;</p>}
         <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
@@ -527,6 +638,42 @@ function SharedMemberCard({ member, onRemove, showTeam }: SharedMemberCardProps)
   );
 }
 
+// ── Membership card (teams where *I* was added by someone else) ───────────
+
+interface MembershipCardProps {
+  member: SharedMember;
+  onLeave: (teamId: string) => Promise<void>;
+}
+
+function MembershipCard({ member, onLeave }: MembershipCardProps) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="p-5 flex items-start gap-4 hover:bg-gray-50 transition-colors">
+      <div className={`${avatarColor(member.ownerEmail)} size-11 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>
+        {getInitials(member.ownerEmail)}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-gray-900">{member.ownerEmail}</p>
+        <p className="text-sm text-gray-700 mt-1">
+          Added you to <strong>{member.teamName || "their team"}</strong> as <span className="font-medium">{member.role}</span>
+        </p>
+        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+          <Clock className="size-3" /> {fmtDate(member.joinedAt)}
+        </p>
+      </div>
+      <button
+        onClick={async () => { setBusy(true); try { await onLeave(member.teamId); } finally { setBusy(false); } }}
+        disabled={busy}
+        aria-label="Leave team"
+        title="Leave team"
+        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
+      >
+        <LogOut className="size-4" />
+      </button>
+    </div>
+  );
+}
+
 // â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function Teams() {
@@ -550,17 +697,59 @@ export default function Teams() {
     allSharedMembersLoading,
     fetchAllSharedMembers,
     createTeam,
+    updateTeam,
+    deleteTeam,
     searchUsers,
     deleteInvitation,
     addMemberToTeam,
     removeMemberAllRecords,
+    refetchInvitations,
+    membershipsByMe,
+    membershipsByMeLoading,
+    leaveTeam,
   } = useTeams();
 
   const [activeTab, setActiveTab] = useState<Tab>("all-members");
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteToTeam, setInviteToTeam] = useState<{ id: string; name: string } | null>(null);
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
-  const [showAddMemberPicker, setShowAddMemberPicker] = useState(false);
+  const [selectedMembershipId, setSelectedMembershipId] = useState<string | null>(null);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [deletingTeamId, setDeletingTeamId] = useState<string | null>(null);
+
+  // Derived: contacts who have accepted an invitation (bidirectional)
+  const acceptedContacts = useMemo<AcceptedContact[]>(() => {
+    const seen = new Set<string>();
+    const contacts: AcceptedContact[] = [];
+    for (const inv of outgoingInvitations) {
+      if (inv.status === "Accepted" && !seen.has(inv.recipientEmail)) {
+        seen.add(inv.recipientEmail);
+        contacts.push({
+          invitationId: inv.id,
+          email: inv.recipientEmail,
+          fullName: inv.recipientFullName,
+          role: inv.role,
+          teamName: inv.teamName,
+          acceptedAt: inv.respondedAt ?? inv.sentAt,
+        });
+      }
+    }
+    for (const inv of incomingInvitations) {
+      if (inv.status === "Accepted" && !seen.has(inv.senderEmail)) {
+        seen.add(inv.senderEmail);
+        contacts.push({
+          invitationId: inv.id,
+          email: inv.senderEmail,
+          fullName: inv.senderFullName,
+          role: inv.role,
+          teamName: inv.teamName,
+          acceptedAt: inv.respondedAt ?? inv.sentAt,
+        });
+      }
+    }
+    return contacts;
+  }, [incomingInvitations, outgoingInvitations]);
 
   const pendingIn = incomingInvitations.filter(i => i.status === "Pending").length;
   const pendingOut = outgoingInvitations.filter(i => i.status === "Pending").length;
@@ -607,7 +796,7 @@ export default function Teams() {
                   Create a Team
                 </button>
                 <button
-                  onClick={() => setShowInviteModal(true)}
+                  onClick={() => { setInviteToTeam(null); setShowInviteModal(true); }}
                   className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm"
                 >
                   <UserPlus className="size-4" />
@@ -623,7 +812,7 @@ export default function Teams() {
                   key={tab.id}
                   onClick={() => {
                     setActiveTab(tab.id);
-                    if (tab.id === "all-members") fetchAllSharedMembers();
+                    if (tab.id === "all-members") refetchInvitations();
                   }}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === tab.id
@@ -643,29 +832,28 @@ export default function Teams() {
             </div>
 
             {/* â”€â”€ TAB: MY TEAM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-            {/* all-members tab */}
+            {/* -- TAB: MEMBERS (accepted contacts, bidirectional) -- */}
             {activeTab === "all-members" && (
               <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                 <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                  <h2 className="font-semibold text-gray-900">All Members</h2>
-                  {allSharedMembersLoading && (
+                  <h2 className="font-semibold text-gray-900">Contacts</h2>
+                  {(invitationsLoading || membershipsByMeLoading) && (
                     <span className="size-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin inline-block" />
                   )}
                 </div>
-                {!allSharedMembersLoading && allSharedMembers.length === 0 ? (
+                {!invitationsLoading && acceptedContacts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-48 text-gray-400">
                     <Users2 className="size-10 mb-2 opacity-30" />
-                    <p className="text-sm">No members yet</p>
-                    <p className="text-xs mt-1">Invite someone and ask them to accept your invitation.</p>
+                    <p className="text-sm">No accepted contacts yet</p>
+                    <p className="text-xs mt-1">Invite someone and ask them to accept, or accept an incoming invitation.</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-100">
-                    {allSharedMembers.map(m => (
-                      <SharedMemberCard
-                        key={m.id}
-                        member={m}
-                        onRemove={async (email) => removeMemberAllRecords(email)}
-                        showTeam
+                    {acceptedContacts.map(c => (
+                      <AcceptedContactCard
+                        key={c.invitationId}
+                        contact={c}
+                        onRemove={deleteInvitation}
                       />
                     ))}
                   </div>
@@ -677,47 +865,102 @@ export default function Teams() {
               <>
                 {isLoading && <PageLoading message="Loading teams..." />}
                 {error && <PageError message={error} onRetry={refetch} />}
-                {!isLoading && !error && teams.length === 0 && (
+                {!isLoading && !error && teams.length === 0 && membershipsByMe.length === 0 && (
                   <PageEmpty
                     icon={Users}
                     title="No teams yet"
-                    description="Create your first team, then invite members to collaborate."
-                    action={{ label: "Invite a Member", onClick: () => setShowInviteModal(true) }}
+                    description="Create a team or accept an invitation to get started."
+                    action={{ label: "Create a Team", onClick: () => setShowCreateTeamModal(true) }}
                   />
                 )}
 
-                {!isLoading && !error && teams.length > 0 && (
+                {!isLoading && !error && (teams.length > 0 || membershipsByMe.length > 0) && (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Team list */}
+                    {/* Left column */}
                     <div className="lg:col-span-1 space-y-2">
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1">Your Teams</p>
-                      {teams.map(team => (
-                        <button
-                          key={team.id}
-                          onClick={() => handleSelectTeam(team.id)}
-                          className={`w-full text-left p-4 rounded-xl border transition-colors ${
-                            selectedTeamId === team.id
-                              ? "border-blue-500 bg-blue-50"
-                              : "border-gray-200 bg-white hover:border-blue-300"
-                          }`}
-                        >
-                          <p className="font-semibold text-gray-900">{team.name}</p>
-                          {team.description && (
-                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{team.description}</p>
-                          )}
-                          <p className="text-xs text-gray-400 mt-1">{team.memberCount} local member{team.memberCount !== 1 ? "s" : ""}</p>
-                        </button>
-                      ))}
+                      {teams.length > 0 && (
+                        <>
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1">Your Teams</p>
+                          {teams.map(team => (
+                            <div
+                              key={team.id}
+                              className={`relative w-full text-left p-4 rounded-xl border transition-colors ${
+                                selectedTeamId === team.id
+                                  ? "border-blue-500 bg-blue-50"
+                                  : "border-gray-200 bg-white hover:border-blue-300"
+                              }`}
+                            >
+                              <button className="w-full text-left pr-16" onClick={() => { handleSelectTeam(team.id); setSelectedMembershipId(null); }}>
+                                <p className="font-semibold text-gray-900">{team.name}</p>
+                                {team.description && (
+                                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{team.description}</p>
+                                )}
+                                <p className="text-xs text-gray-400 mt-1">{team.memberCount} member{team.memberCount !== 1 ? "s" : ""}</p>
+                              </button>
+                              <div className="absolute top-3 right-3 flex gap-1">
+                                <button
+                                  onClick={() => setEditingTeam(team)}
+                                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  aria-label="Edit team"
+                                >
+                                  <Pencil className="size-3.5" />
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    if (!window.confirm(`Delete team "${team.name}"? This cannot be undone.`)) return;
+                                    setDeletingTeamId(team.id);
+                                    try {
+                                      await deleteTeam(team.id);
+                                      if (selectedTeamId === team.id) setSelectedTeamId(null);
+                                    } finally {
+                                      setDeletingTeamId(null);
+                                    }
+                                  }}
+                                  disabled={deletingTeamId === team.id}
+                                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                  aria-label="Delete team"
+                                >
+                                  <Trash2 className="size-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+
+                      {membershipsByMe.length > 0 && (
+                        <>
+                          {teams.length > 0 && <div className="h-px bg-gray-200 my-2" />}
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1">Teams You've Joined</p>
+                          {membershipsByMe.map(m => (
+                            <button
+                              key={m.id}
+                              onClick={() => { setSelectedMembershipId(m.id); setSelectedTeamId(null); }}
+                              className={`w-full text-left p-4 rounded-xl border transition-colors ${
+                                selectedMembershipId === m.id
+                                  ? "border-green-500 bg-green-50"
+                                  : "border-gray-200 bg-white hover:border-green-300"
+                              }`}
+                            >
+                              <p className="font-semibold text-gray-900">{m.teamName || "Team"}</p>
+                              <p className="text-xs text-gray-500 mt-0.5 truncate">by {m.ownerEmail}</p>
+                              <p className="text-xs text-gray-400 mt-1">{m.role}</p>
+                            </button>
+                          ))}
+                        </>
+                      )}
                     </div>
 
-                    {/* Shared members panel */}
+                    {/* Right panel */}
                     <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl overflow-hidden">
-                      {!selectedTeamId ? (
+                      {!selectedTeamId && !selectedMembershipId && (
                         <div className="flex flex-col items-center justify-center h-48 text-gray-400">
                           <Users className="size-10 mb-2 opacity-30" />
-                          <p className="text-sm">Select a team to see shared members</p>
+                          <p className="text-sm">Select a team to view details</p>
                         </div>
-                      ) : (
+                      )}
+
+                      {selectedTeamId && (
                         <>
                           <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                             <h2 className="font-semibold text-gray-900">
@@ -725,10 +968,13 @@ export default function Teams() {
                             </h2>
                             <div className="flex items-center gap-2">
                               <button
-                                onClick={() => { fetchAllSharedMembers(); setShowAddMemberPicker(true); }}
+                                onClick={() => {
+                                  const team = teams.find(t => t.id === selectedTeamId);
+                                  if (team) { setInviteToTeam({ id: team.id, name: team.name }); setShowInviteModal(true); }
+                                }}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
                               >
-                                <UserCheck className="size-3.5" /> Add Member
+                                <UserPlus className="size-3.5" /> Invite Member
                               </button>
                               {sharedMembersLoading && (
                                 <span className="size-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
@@ -738,7 +984,7 @@ export default function Teams() {
                           {!sharedMembersLoading && sharedMembers.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-36 text-gray-400">
                               <Users className="size-8 mb-2 opacity-30" />
-                              <p className="text-sm">No shared members yet â€” invite someone!</p>
+                              <p className="text-sm">No members yet &mdash; invite someone!</p>
                             </div>
                           ) : (
                             <div className="divide-y divide-gray-100">
@@ -753,13 +999,55 @@ export default function Teams() {
                           )}
                         </>
                       )}
+
+                      {selectedMembershipId && (() => {
+                        const membership = membershipsByMe.find(m => m.id === selectedMembershipId);
+                        if (!membership) return null;
+                        return (
+                          <>
+                            <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                              <h2 className="font-semibold text-gray-900">{membership.teamName || "Team"}</h2>
+                              <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">{membership.role}</span>
+                            </div>
+                            <div className="p-6 space-y-4">
+                              <div className="flex items-center gap-3">
+                                <div className={`${avatarColor(membership.ownerEmail)} size-10 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>
+                                  {getInitials(membership.ownerEmail)}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">Team Owner</p>
+                                  <p className="text-xs text-gray-500">{membership.ownerEmail}</p>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Your Role</p>
+                                  <p className="font-medium text-gray-900">{membership.role}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Joined</p>
+                                  <p className="font-medium text-gray-900">{fmtDate(membership.joinedAt)}</p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={async () => {
+                                  if (!window.confirm(`Leave "${membership.teamName || "this team"}"?`)) return;
+                                  await leaveTeam(membership.teamId);
+                                  setSelectedMembershipId(null);
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors"
+                              >
+                                <LogOut className="size-4" /> Leave Team
+                              </button>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
               </>
             )}
-
-            {/* â”€â”€ TAB: INCOMING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {activeTab === "incoming" && (
               <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                 <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
@@ -824,10 +1112,10 @@ export default function Teams() {
 
       {showInviteModal && (
         <InviteModal
-          teams={teams}
-          onClose={() => setShowInviteModal(false)}
+          onClose={() => { setShowInviteModal(false); setInviteToTeam(null); }}
           onSend={sendInvitation}
           searchUsers={searchUsers}
+          preselectedTeam={inviteToTeam ?? undefined}
         />
       )}
 
@@ -838,51 +1126,15 @@ export default function Teams() {
         />
       )}
 
-      {showAddMemberPicker && selectedTeamId && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowAddMemberPicker(false)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Add Member to Team</h3>
-              <button onClick={() => setShowAddMemberPicker(false)} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg">
-                <X className="size-5" />
-              </button>
-            </div>
-            <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
-              {(() => {
-                const available = allSharedMembers.filter(
-                  m => !sharedMembers.some(s => s.userEmail === m.userEmail)
-                );
-                if (available.length === 0) return (
-                  <div className="flex flex-col items-center justify-center h-32 text-gray-400">
-                    <UserCheck className="size-8 mb-2 opacity-30" />
-                    <p className="text-sm">All accepted members are already in this team</p>
-                  </div>
-                );
-                return available.map(m => (
-                  <div key={m.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50">
-                    <div className={`${avatarColor(m.userEmail)} size-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
-                      {getInitials(m.userFullName || m.userEmail)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 text-sm">{m.userFullName || m.userEmail}</p>
-                      <p className="text-xs text-gray-500">{m.userEmail}</p>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        await addMemberToTeam(selectedTeamId, m.userEmail, m.userFullName || m.userEmail);
-                        setShowAddMemberPicker(false);
-                      }}
-                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
-                    >
-                      Add
-                    </button>
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
-        </div>
+      {editingTeam && (
+        <EditTeamModal
+          team={editingTeam}
+          onClose={() => setEditingTeam(null)}
+          onUpdate={updateTeam}
+        />
       )}
+
+
     </div>
   );
 }

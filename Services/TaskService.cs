@@ -27,14 +27,16 @@ namespace taskflow.Services
         private readonly ILogger<TaskService> _logger;
         private readonly INotificationService _notificationService;
         private readonly IReminderService _reminderService;
+        private readonly IMirrorService _mirror;
 
-        public TaskService(ITaskRepository taskRepository, IMapper mapper, ILogger<TaskService> logger, INotificationService notificationService, IReminderService reminderService)
+        public TaskService(ITaskRepository taskRepository, IMapper mapper, ILogger<TaskService> logger, INotificationService notificationService, IReminderService reminderService, IMirrorService mirror)
         {
             _taskRepository = taskRepository;
             _mapper = mapper;
             _logger = logger;
             _notificationService = notificationService;
             _reminderService = reminderService;
+            _mirror = mirror;
         }
 
         public async Task<IEnumerable<TaskDto>> GetTasksAsync(int userId, TaskFilterRequest filter)
@@ -118,6 +120,7 @@ namespace taskflow.Services
 
             await _taskRepository.AddAsync(task);
             await _taskRepository.SaveChangesAsync();
+            _mirror.Mirror("tasks", task.Id, task);
 
             // Schedule reminders if provided
             if (request.ReminderMap != null && (request.NotifyEmail || request.NotifyInApp))
@@ -198,6 +201,7 @@ namespace taskflow.Services
 
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();
+            _mirror.Mirror("tasks", task.Id, task);
 
             if (request.ReminderMap != null)
             {
@@ -246,6 +250,7 @@ namespace taskflow.Services
 
             _taskRepository.Remove(task);
             await _taskRepository.SaveChangesAsync();
+            _mirror.Erase("tasks", taskId);
         }
 
         public async Task<TaskDto> ToggleStarAsync(int userId, int taskId)
@@ -262,6 +267,7 @@ namespace taskflow.Services
 
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();
+            _mirror.Mirror("tasks", task.Id, task);
 
             return await GetTaskByIdAsync(task.Id);
         }
@@ -283,6 +289,7 @@ namespace taskflow.Services
 
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();
+            _mirror.Mirror("tasks", task.Id, task);
 
             return await GetTaskByIdAsync(task.Id);
         }

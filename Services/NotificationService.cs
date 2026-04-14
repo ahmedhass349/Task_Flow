@@ -21,6 +21,7 @@ namespace taskflow.Services
         private readonly IHubContext<NotificationHub> _hubContext;
         private readonly IEmailService _emailService;
         private readonly ILogger<NotificationService> _logger;
+        private readonly IMirrorService _mirror;
 
         public NotificationService(
             INotificationRepository notificationRepository,
@@ -28,7 +29,8 @@ namespace taskflow.Services
             IMapper mapper,
             IHubContext<NotificationHub> hubContext,
             IEmailService emailService,
-            ILogger<NotificationService> logger)
+            ILogger<NotificationService> logger,
+            IMirrorService mirror)
         {
             _notificationRepository = notificationRepository;
             _userRepository = userRepository;
@@ -36,6 +38,7 @@ namespace taskflow.Services
             _hubContext = hubContext;
             _emailService = emailService;
             _logger = logger;
+            _mirror = mirror;
         }
 
         // Core creation method
@@ -57,6 +60,7 @@ namespace taskflow.Services
                 };
 
                 var createdNotification = await _notificationRepository.CreateAsync(notification);
+                _mirror.Mirror("notifications", createdNotification.Id, createdNotification);
                 var notificationDto = _mapper.Map<NotificationDto>(createdNotification);
 
                 // Compute TimeAgo
@@ -265,6 +269,7 @@ namespace taskflow.Services
         public async Task DeleteAsync(int notificationId, int userId)
         {
             await _notificationRepository.DeleteAsync(notificationId, userId);
+            _mirror.Erase("notifications", notificationId);
 
             // Update unread count via SignalR
             var newCount = await _notificationRepository.GetUnreadCountAsync(userId);

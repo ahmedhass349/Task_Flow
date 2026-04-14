@@ -28,7 +28,15 @@ namespace taskflow.Services.Interfaces
         Task<List<MongoTeamMemberDto>> GetAllTeamMembersAsync(string ownerEmail);
         Task RemoveTeamMemberAsync(string teamId, string memberEmail, string ownerEmail);
         Task RemoveAllMemberRecordsAsync(string memberEmail, string ownerEmail);
-        Task<MongoTeamMemberDto> AddMemberToTeamAsync(string ownerEmail, string memberEmail, string memberFullName, string targetTeamId, string targetTeamName);
+        Task<MongoTeamMemberDto> AddMemberToTeamAsync(string ownerEmail, string memberEmail, string memberFullName, string targetTeamId, string targetTeamName, string role = "Member");
         Task DeleteInvitationAsync(string invitationId, string ownerEmail);
+        Task<List<MongoTeamMemberDto>> DeleteTeamMembersAsync(string teamId);
+
+        // ── Cross-member queries ──────────────────────────────────────────────
+        Task<List<MongoTeamMemberDto>> GetMembershipsByUserAsync(string userEmail);
+        Task LeaveTeamAsync(string teamId, string userEmail);
+
+        // ── Dev / testing ─────────────────────────────────────────────────────
+        Task ClearAllAsync();
     }
 }

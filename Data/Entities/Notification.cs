@@ -16,7 +16,8 @@ namespace taskflow.Data.Entities
         SystemAnnouncement,
         TeamInvitationReceived,
         TeamInvitationAccepted,
-        TeamInvitationDeclined
+        TeamInvitationDeclined,
+        TeamDeleted
     }
 
     public enum NotificationPriority

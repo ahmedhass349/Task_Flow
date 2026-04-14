@@ -20,15 +20,18 @@ namespace taskflow.Services
         private readonly IChatbotRepository _chatbotRepository;
         private readonly IGenericRepository<ChatbotMessage> _chatbotMessageRepository;
         private readonly IMapper _mapper;
+        private readonly IMirrorService _mirror;
 
         public ChatbotService(
             IChatbotRepository chatbotRepository,
             IGenericRepository<ChatbotMessage> chatbotMessageRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IMirrorService mirror)
         {
             _chatbotRepository = chatbotRepository;
             _chatbotMessageRepository = chatbotMessageRepository;
             _mapper = mapper;
+            _mirror = mirror;
         }
 
         public async Task<IEnumerable<ConversationListDto>> GetConversationsAsync(int userId)
@@ -82,6 +85,7 @@ namespace taskflow.Services
 
             await _chatbotRepository.AddAsync(conversation);
             await _chatbotRepository.SaveChangesAsync();
+            _mirror.Mirror("chatbot_conversations", conversation.Id, conversation);
 
             return new ConversationDto
             {
@@ -127,6 +131,8 @@ namespace taskflow.Services
             _chatbotRepository.Update(conversation);
 
             await _chatbotMessageRepository.SaveChangesAsync();
+            _mirror.Mirror("chatbot_messages", userMessage.Id, userMessage);
+            _mirror.Mirror("chatbot_messages", botMessage.Id, botMessage);
 
             // Return the bot's message so the caller sees the response
             return new ChatbotMessageDto
@@ -156,6 +162,7 @@ namespace taskflow.Services
 
             _chatbotRepository.Remove(conversation);
             await _chatbotRepository.SaveChangesAsync();
+            _mirror.Erase("chatbot_conversations", conversationId);
         }
     }
 }

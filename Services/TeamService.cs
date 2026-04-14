@@ -26,19 +26,22 @@ namespace taskflow.Services
         private readonly IUserRepository _userRepository;
         private readonly ITaskRepository _taskRepository;
         private readonly IMapper _mapper;
+        private readonly IMirrorService _mirror;
 
         public TeamService(
             IGenericRepository<Team> teamRepository,
             IGenericRepository<TeamMember> teamMemberRepository,
             IUserRepository userRepository,
             ITaskRepository taskRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IMirrorService mirror)
         {
             _teamRepository = teamRepository;
             _teamMemberRepository = teamMemberRepository;
             _userRepository = userRepository;
             _taskRepository = taskRepository;
             _mapper = mapper;
+            _mirror = mirror;
         }
 
         public async Task<IEnumerable<TeamDto>> GetUserTeamsAsync(int userId)
@@ -64,6 +67,7 @@ namespace taskflow.Services
 
             await _teamRepository.AddAsync(team);
             await _teamRepository.SaveChangesAsync();
+            _mirror.Mirror("teams", team.Id, team);
 
             // Fix #14: Use single SaveChangesAsync instead of two
             var ownerMember = new TeamMember
@@ -100,6 +104,7 @@ namespace taskflow.Services
 
             _teamRepository.Update(team);
             await _teamRepository.SaveChangesAsync();
+            _mirror.Mirror("teams", team.Id, team);
 
             var saved = await _teamRepository.Query()
                 .Include(t => t.Owner)
@@ -130,6 +135,7 @@ namespace taskflow.Services
 
             _teamRepository.Remove(team);
             await _teamRepository.SaveChangesAsync();
+            _mirror.Erase("teams", teamId);
         }
 
         public async Task<IEnumerable<TeamMemberDto>> GetTeamMembersAsync(int teamId)

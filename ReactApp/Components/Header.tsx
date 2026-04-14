@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from "react";
-import { Search, Bell, Mail, User, Settings, LogOut, UserCircle, UserPlus, X, Check } from "lucide-react";
+import { Search, Bell, Mail, User, Settings, LogOut, UserCircle, UserPlus, X, Check, Wifi, WifiOff } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Link, useNavigate } from "react-router";
 import { useNotifications } from "../hooks/useNotifications";
@@ -7,6 +7,7 @@ import { useNotificationHub } from "../hooks/useNotificationHub";
 import { useMessages } from "../hooks/useMessages";
 import { useAuth } from "../context/AuthContext";
 import { useAccountSwitcher, type SavedAccount } from "../hooks/useAccountSwitcher";
+import { useConnectivity } from "../hooks/useConnectivity";
 import NotificationBell from "./NotificationBell";
 
 /* ─── Messages data ─── */
@@ -176,6 +177,9 @@ export default function Header() {
   const { contacts, unreadCount } = useMessages();
   const navigate = useNavigate();
   const { user, logout, refreshUser } = useAuth();
+
+  // ── Connectivity state ────────────────────────────────────────────────
+  const { isEffectivelyOnline, toggleManualOffline, isManualOffline } = useConnectivity();
 
   // ── Account switcher ──────────────────────────────────────────────────
   const { otherAccounts, switchTo } = useAccountSwitcher(user?.email);
@@ -419,8 +423,12 @@ export default function Header() {
             <span className="text-white" style={{ fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: 500, letterSpacing: '0.48px' }}>
               {displayName}
             </span>
-            <div className="size-8 rounded-full border border-white bg-brand flex items-center justify-center flex-shrink-0">
+            <div className="size-8 rounded-full border border-white bg-brand flex items-center justify-center flex-shrink-0 relative">
               <span className="text-white text-xs font-bold">{initials}</span>
+              <span
+                className={`absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-black ${isEffectivelyOnline ? 'bg-green-400' : 'bg-red-400'}`}
+                title={isEffectivelyOnline ? "Connected to cloud" : "Offline"}
+              />
             </div>
           </DropdownMenu.Trigger>
 
@@ -458,6 +466,15 @@ export default function Header() {
               >
                 <UserCircle className="size-4" />
                 <span className="text-sm">Switch account</span>
+              </DropdownMenu.Item>
+
+              <DropdownMenu.Item
+                onSelect={toggleManualOffline}
+                className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none"
+              >
+                {isManualOffline
+                  ? <><Wifi className="size-4 text-green-500" /><span className="text-sm">Go Online</span></>
+                  : <><WifiOff className="size-4 text-red-500" /><span className="text-sm">Go Offline</span></>}
               </DropdownMenu.Item>
 
               <DropdownMenu.Separator className="h-px bg-gray-200 my-2" />

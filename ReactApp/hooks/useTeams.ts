@@ -1,4 +1,4 @@
-﻿// â”€â”€ useTeams Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ useTeams Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //
 // MongoDB-backed teams invitation hook.
 // Manages: local SQLite teams, shared invitations (incoming/outgoing), shared members.
@@ -103,12 +103,18 @@ export interface UseTeamsReturn {
   fetchSharedMembers: (teamId: string) => Promise<void>;
   removeSharedMember: (teamId: string, memberEmail: string) => Promise<void>;
   removeMemberAllRecords: (memberEmail: string) => Promise<void>;
-  addMemberToTeam: (teamId: string, memberEmail: string, memberFullName: string) => Promise<SharedMember>;
+  addMemberToTeam: (teamId: string, memberEmail: string, memberFullName: string, role?: string) => Promise<SharedMember>;
 
   // All shared members (across all teams)
   allSharedMembers: SharedMember[];
   allSharedMembersLoading: boolean;
   fetchAllSharedMembers: () => Promise<void>;
+
+  // Teams where I am a member (added by others)
+  membershipsByMe: SharedMember[];
+  membershipsByMeLoading: boolean;
+  fetchMembershipsByMe: () => Promise<void>;
+  leaveTeam: (teamId: string) => Promise<void>;
 
   // User search
   searchUsers: (query: string) => Promise<UserSearchResult[]>;
@@ -130,6 +136,9 @@ export const useTeams = (): UseTeamsReturn => {
 
   const [allSharedMembers, setAllSharedMembers] = useState<SharedMember[]>([]);
   const [allSharedMembersLoading, setAllSharedMembersLoading] = useState(false);
+
+  const [membershipsByMe, setMembershipsByMe] = useState<SharedMember[]>([]);
+  const [membershipsByMeLoading, setMembershipsByMeLoading] = useState(false);
 
   // â”€â”€ SQLite teams â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -190,12 +199,25 @@ export const useTeams = (): UseTeamsReturn => {
     fetchInvitations();
   }, [fetchInvitations]);
 
+  const fetchMembershipsByMe = useCallback(async () => {
+    setMembershipsByMeLoading(true);
+    try {
+      const members = await api.get<SharedMember[]>('/api/teams/members-shared/as-member');
+      setMembershipsByMe(members ?? []);
+    } catch {
+      setMembershipsByMe([]);
+    } finally {
+      setMembershipsByMeLoading(false);
+    }
+  }, []);
+
   const acceptInvitation = useCallback(async (id: string) => {
     await api.post(`/api/teams/invitations/${id}/accept`, {});
     setIncomingInvitations(prev =>
       prev.map(inv => (inv.id === id ? { ...inv, status: "Accepted" as const } : inv))
     );
-  }, []);
+    fetchMembershipsByMe();
+  }, [fetchMembershipsByMe]);
 
   const declineInvitation = useCallback(async (id: string, reason?: string) => {
     await api.post(`/api/teams/invitations/${id}/decline`, { reason: reason ?? "" });
@@ -214,6 +236,7 @@ export const useTeams = (): UseTeamsReturn => {
   const deleteInvitation = useCallback(async (id: string) => {
     await api.delete(`/api/teams/invitations/${id}`);
     setOutgoingInvitations(prev => prev.filter(inv => inv.id !== id));
+    setIncomingInvitations(prev => prev.filter(inv => inv.id !== id));
   }, []);
 
   // â”€â”€ Shared members â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -243,6 +266,12 @@ export const useTeams = (): UseTeamsReturn => {
   }, []);
 
   const removeSharedMember = useCallback(async (teamId: string, memberEmail: string) => {
+    if (!teamId) {
+      await api.delete(`/api/teams/members-shared-all/${encodeURIComponent(memberEmail)}`);
+      setSharedMembers(prev => prev.filter(m => m.userEmail !== memberEmail));
+      setAllSharedMembers(prev => prev.filter(m => m.userEmail !== memberEmail));
+      return;
+    }
     await api.delete(`/api/teams/${teamId}/members-shared/${encodeURIComponent(memberEmail)}`);
     setSharedMembers(prev => prev.filter(m => m.userEmail !== memberEmail));
     setAllSharedMembers(prev => prev.filter(m => !(m.userEmail === memberEmail && m.teamId === teamId)));
@@ -254,10 +283,11 @@ export const useTeams = (): UseTeamsReturn => {
     setAllSharedMembers(prev => prev.filter(m => m.userEmail !== memberEmail));
   }, []);
 
-  const addMemberToTeam = useCallback(async (teamId: string, memberEmail: string, memberFullName: string): Promise<SharedMember> => {
+  const addMemberToTeam = useCallback(async (teamId: string, memberEmail: string, memberFullName: string, role: string = "Member"): Promise<SharedMember> => {
     const result = await api.post<SharedMember>(`/api/teams/${teamId}/members-shared/assign`, {
       memberEmail,
       memberFullName,
+      role,
     });
     setSharedMembers(prev => {
       if (prev.some(m => m.userEmail === memberEmail && m.teamId === teamId)) return prev;
@@ -271,6 +301,13 @@ export const useTeams = (): UseTeamsReturn => {
   }, []);
 
   // â”€â”€ User search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+
+  const leaveTeam = useCallback(async (teamId) => {
+    if (!teamId) return;
+    await api.delete(`/api/teams/${teamId}/membership`);
+    setMembershipsByMe(prev => prev.filter(m => m.teamId !== teamId));
+  }, []);
 
   const searchUsers = useCallback(async (query: string): Promise<UserSearchResult[]> => {
     if (!query.trim()) return [];
@@ -286,7 +323,43 @@ export const useTeams = (): UseTeamsReturn => {
   useEffect(() => {
     fetchData();
     fetchInvitations();
-  }, [fetchData, fetchInvitations]);
+    fetchAllSharedMembers();
+    fetchMembershipsByMe();
+  }, [fetchData, fetchInvitations, fetchAllSharedMembers, fetchMembershipsByMe]);
+
+  // ── Refresh on page visibility / window focus ─────────────────────────────
+
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === "visible") {
+        fetchInvitations();
+        fetchMembershipsByMe();
+        fetchAllSharedMembers();
+      }
+    };
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [fetchInvitations, fetchMembershipsByMe, fetchAllSharedMembers]);
+
+  // ── Refresh on team-related notifications ─────────────────────────────────
+
+  useEffect(() => {
+    const TEAM_TYPES = ["teamdeleted", "teaminvitationreceived", "teaminvitationaccepted", "teaminvitationdeclined"];
+    const onNotification = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.type && TEAM_TYPES.includes((detail.type as string).toLowerCase())) {
+        fetchInvitations();
+        fetchMembershipsByMe();
+        fetchAllSharedMembers();
+      }
+    };
+    window.addEventListener("taskflow:notification-received", onNotification);
+    return () => window.removeEventListener("taskflow:notification-received", onNotification);
+  }, [fetchInvitations, fetchMembershipsByMe, fetchAllSharedMembers]);
 
   return {
     teams,
@@ -314,6 +387,10 @@ export const useTeams = (): UseTeamsReturn => {
     allSharedMembers,
     allSharedMembersLoading,
     fetchAllSharedMembers,
+    membershipsByMe,
+    membershipsByMeLoading,
+    fetchMembershipsByMe,
+    leaveTeam,
     searchUsers,
   };
 };

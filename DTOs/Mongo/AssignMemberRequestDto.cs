@@ -4,5 +4,6 @@ namespace taskflow.DTOs.Mongo
     {
         public string MemberEmail { get; set; } = string.Empty;
         public string MemberFullName { get; set; } = string.Empty;
+        public string? Role { get; set; }
     }
 }

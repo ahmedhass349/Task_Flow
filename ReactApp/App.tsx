@@ -7,11 +7,11 @@ import { ToastProvider } from "./context/ToastContext";
 export default function App() {
   return (
     <AuthProvider>
-      <NotificationProvider>
-        <ToastProvider>
+      <ToastProvider>
+        <NotificationProvider>
           <RouterProvider router={router} />
-        </ToastProvider>
-      </NotificationProvider>
+        </NotificationProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

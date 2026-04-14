@@ -18,15 +18,18 @@ namespace taskflow.Services
         private readonly ITaskCommentRepository _commentRepository;
         private readonly ITaskRepository _taskRepository;
         private readonly IMapper _mapper;
+        private readonly IMirrorService _mirror;
 
         public TaskCommentService(
             ITaskCommentRepository commentRepository,
             ITaskRepository taskRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IMirrorService mirror)
         {
             _commentRepository = commentRepository;
             _taskRepository = taskRepository;
             _mapper = mapper;
+            _mirror = mirror;
         }
 
         public async Task<IEnumerable<TaskCommentDto>> GetCommentsAsync(int taskId)
@@ -64,6 +67,7 @@ namespace taskflow.Services
 
             await _commentRepository.AddAsync(comment);
             await _commentRepository.SaveChangesAsync();
+            _mirror.Mirror("task_comments", comment.Id, comment);
 
             var saved = await _commentRepository.GetByIdWithAuthorAsync(comment.Id);
             return _mapper.Map<TaskCommentDto>(saved!);
@@ -83,6 +87,7 @@ namespace taskflow.Services
 
             _commentRepository.Update(comment);
             await _commentRepository.SaveChangesAsync();
+            _mirror.Mirror("task_comments", comment.Id, comment);
 
             var saved = await _commentRepository.GetByIdWithAuthorAsync(comment.Id);
             return _mapper.Map<TaskCommentDto>(saved!);
@@ -100,6 +105,7 @@ namespace taskflow.Services
 
             _commentRepository.Remove(comment);
             await _commentRepository.SaveChangesAsync();
+            _mirror.Erase("task_comments", commentId);
         }
     }
 }

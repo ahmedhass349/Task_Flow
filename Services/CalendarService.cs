@@ -20,11 +20,13 @@ namespace taskflow.Services
     {
         private readonly IGenericRepository<CalendarEvent> _calendarRepository;
         private readonly IMapper _mapper;
+        private readonly IMirrorService _mirror;
 
-        public CalendarService(IGenericRepository<CalendarEvent> calendarRepository, IMapper mapper)
+        public CalendarService(IGenericRepository<CalendarEvent> calendarRepository, IMapper mapper, IMirrorService mirror)
         {
             _calendarRepository = calendarRepository;
             _mapper = mapper;
+            _mirror = mirror;
         }
 
         public async Task<IEnumerable<CalendarEventDto>> GetEventsAsync(int userId, DateTime? from, DateTime? to)
@@ -63,6 +65,7 @@ namespace taskflow.Services
 
             await _calendarRepository.AddAsync(calendarEvent);
             await _calendarRepository.SaveChangesAsync();
+            _mirror.Mirror("calendar_events", calendarEvent.Id, calendarEvent);
 
             return _mapper.Map<CalendarEventDto>(calendarEvent);
         }
@@ -86,6 +89,7 @@ namespace taskflow.Services
 
             _calendarRepository.Update(calendarEvent);
             await _calendarRepository.SaveChangesAsync();
+            _mirror.Mirror("calendar_events", calendarEvent.Id, calendarEvent);
 
             return _mapper.Map<CalendarEventDto>(calendarEvent);
         }
@@ -102,6 +106,7 @@ namespace taskflow.Services
 
             _calendarRepository.Remove(calendarEvent);
             await _calendarRepository.SaveChangesAsync();
+            _mirror.Erase("calendar_events", eventId);
         }
     }
 }

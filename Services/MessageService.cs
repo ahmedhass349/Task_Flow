@@ -19,13 +19,16 @@ namespace taskflow.Services
     {
         private readonly IMessageRepository _messageRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IMirrorService _mirror;
 
         public MessageService(
             IMessageRepository messageRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IMirrorService mirror)
         {
             _messageRepository = messageRepository;
             _userRepository = userRepository;
+            _mirror = mirror;
         }
 
         public async Task<IEnumerable<ContactDto>> GetContactsAsync(int userId)
@@ -111,6 +114,7 @@ namespace taskflow.Services
 
             await _messageRepository.AddAsync(message);
             await _messageRepository.SaveChangesAsync();
+            _mirror.Mirror("messages", message.Id, message);
 
             return new MessageDto
             {

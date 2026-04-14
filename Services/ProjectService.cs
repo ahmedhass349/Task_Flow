@@ -21,11 +21,13 @@ namespace taskflow.Services
     {
         private readonly IProjectRepository _projectRepository;
         private readonly IMapper _mapper;
+        private readonly IMirrorService _mirror;
 
-        public ProjectService(IProjectRepository projectRepository, IMapper mapper)
+        public ProjectService(IProjectRepository projectRepository, IMapper mapper, IMirrorService mirror)
         {
             _projectRepository = projectRepository;
             _mapper = mapper;
+            _mirror = mirror;
         }
 
         public async Task<IEnumerable<ProjectDto>> GetUserProjectsAsync(int userId)
@@ -56,6 +58,7 @@ namespace taskflow.Services
 
             await _projectRepository.AddAsync(project);
             await _projectRepository.SaveChangesAsync();
+            _mirror.Mirror("projects", project.Id, project);
 
             // Fix #13: Re-fetch with details in one call instead of double-fetch
             var saved = await _projectRepository.GetProjectWithDetailsAsync(project.Id);
@@ -78,6 +81,7 @@ namespace taskflow.Services
 
             _projectRepository.Update(project);
             await _projectRepository.SaveChangesAsync();
+            _mirror.Mirror("projects", project.Id, project);
 
             // Fix #13: Single re-fetch
             var saved = await _projectRepository.GetProjectWithDetailsAsync(project.Id);
@@ -96,6 +100,7 @@ namespace taskflow.Services
 
             _projectRepository.Remove(project);
             await _projectRepository.SaveChangesAsync();
+            _mirror.Erase("projects", projectId);
         }
 
         public async Task<ProjectDto> ToggleStarAsync(int userId, int projectId)
@@ -112,6 +117,7 @@ namespace taskflow.Services
 
             _projectRepository.Update(project);
             await _projectRepository.SaveChangesAsync();
+            _mirror.Mirror("projects", project.Id, project);
 
             // Fix #13: Single re-fetch
             var saved = await _projectRepository.GetProjectWithDetailsAsync(project.Id);

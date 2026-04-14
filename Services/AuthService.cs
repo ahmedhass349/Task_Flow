@@ -22,12 +22,14 @@ namespace taskflow.Services
         private readonly IUserRepository _userRepository;
         private readonly JwtHelper _jwtHelper;
         private readonly IMapper _mapper;
+        private readonly IMirrorService _mirror;
 
-        public AuthService(IUserRepository userRepository, JwtHelper jwtHelper, IMapper mapper)
+        public AuthService(IUserRepository userRepository, JwtHelper jwtHelper, IMapper mapper, IMirrorService mirror)
         {
             _userRepository = userRepository;
             _jwtHelper = jwtHelper;
             _mapper = mapper;
+            _mirror = mirror;
         }
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
@@ -82,6 +84,7 @@ namespace taskflow.Services
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
+            _mirror.Mirror("users", user.Id, user);
 
             var token = _jwtHelper.GenerateToken(user);
             var userDto = _mapper.Map<UserDto>(user);

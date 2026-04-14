@@ -1,155 +1,34 @@
-// ── useNotificationHub Hook ─────────────────────────────────────────────
+﻿// â”€â”€ useNotificationHub Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //
-// Custom hook for real-time SignalR notifications.
-// Handles connection, events, and automatic reconnection.
+// Thin shim over NotificationContext.
+// The actual SignalR connection lives in NotificationContext so there is ONE
+// persistent connection for the entire authenticated session, regardless of
+// how many times components mount/unmount during navigation.
 
-import { useEffect, useRef, useCallback, useState } from "react";
-import { HubConnectionBuilder, LogLevel, HubConnection } from "@microsoft/signalr";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
-import { getApiBaseUrl } from "../config/api";
+import { useCallback } from "react";
+import { useNotificationContext } from "../context/NotificationContext";
 
-// Notification interface matching backend DTO
-export interface Notification {
-  id: number;
-  userId?: number;
-  title: string;
-  message: string;
-  type: string;
-  priority: string;
-  isRead: boolean;
-  actionUrl?: string;
-  relatedTaskId?: number;
-  createdAt: string;
-  readAt?: string;
-  timeAgo: string;
-}
+// Re-export the Notification type so existing imports keep working
+export type { NotificationType as Notification } from "../context/NotificationContext";
 
 // Hook return type
 interface UseNotificationHubReturn {
   isConnected: boolean;
   unreadCount: number;
-  latestNotification: Notification | null;
+  latestNotification: import("../context/NotificationContext").NotificationType | null;
   markAsRead: (id: number) => Promise<void>;
   markAllRead: () => Promise<void>;
 }
 
 export const useNotificationHub = (): UseNotificationHubReturn => {
-  const { token } = useAuth();
-  const { addToast } = useToast();
-  const connectionRef = useRef<HubConnection | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [latestNotification, setLatestNotification] = useState<Notification | null>(null);
-
-  // Create connection
-  const createConnection = useCallback(() => {
-    if (!token) return null;
-
-    const baseUrl = getApiBaseUrl();
-    const hubUrl = `${baseUrl || ""}/hubs/notifications`;
-
-    const connection = new HubConnectionBuilder()
-      .withUrl(hubUrl, {
-        accessTokenFactory: () => token,
-      })
-      .withAutomaticReconnect()
-      .configureLogging(LogLevel.Information)
-      .build();
-
-    return connection;
-  }, [token]);
-
-  // Start connection
-  useEffect(() => {
-    const connection = createConnection();
-    if (!connection) return;
-
-    connectionRef.current = connection;
-
-    // Connection lifecycle
-    connection.onreconnecting(() => {
-      setIsConnected(false);
-    });
-
-    connection.onreconnected(() => {
-      setIsConnected(true);
-    });
-
-    connection.onclose(() => {
-      setIsConnected(false);
-    });
-
-    // Hub events
-    connection.on("ReceiveNotification", (notification: Notification) => {
-      setLatestNotification(notification);
-
-      window.dispatchEvent(new CustomEvent("taskflow:notification-received", {
-        detail: notification,
-      }));
-
-      // Show in-app toast notification
-      const priority = notification.priority.toLowerCase();
-      const notificationType = notification.type.toLowerCase();
-      const toastType = priority === "high" || priority === "critical"
-        ? "warning"
-        : notificationType.includes("error")
-          ? "error"
-          : notificationType.includes("success")
-            ? "success"
-            : "info";
-
-      addToast({
-        title: notification.title,
-        message: notification.message,
-        type: toastType,
-        duration: notification.priority === "high" ? 8000 : 5000, // High priority stays longer
-        persistent: notification.priority === "high", // High priority requires manual close
-      });
-    });
-
-    connection.on("UnreadCount", (count: number) => {
-      setUnreadCount(count);
-      window.dispatchEvent(new CustomEvent("taskflow:notification-unread-count", {
-        detail: count,
-      }));
-    });
-
-    // Start connection
-    connection.start()
-      .then(() => {
-        setIsConnected(true);
-      })
-      .catch(err => {
-        setIsConnected(false);
-      });
-
-    return () => {
-      if (connectionRef.current) {
-        connectionRef.current.stop();
-        connectionRef.current = null;
-      }
-    };
-  }, [createConnection]);
-
-  // Hub methods
-  const markAsRead = useCallback(async (id: number) => {
-    if (connectionRef.current) {
-      await connectionRef.current.invoke("MarkAsRead", id);
-    }
-  }, []);
-
-  const markAllRead = useCallback(async () => {
-    if (connectionRef.current) {
-      await connectionRef.current.invoke("MarkAllRead");
-    }
-  }, []);
+  const { state, markAsRead, markAllRead } = useNotificationContext();
 
   return {
-    isConnected,
-    unreadCount,
-    latestNotification,
+    isConnected: state.isConnected,
+    unreadCount: state.unreadCount,
+    latestNotification: state.latestNotification,
     markAsRead,
     markAllRead,
   };
 };
+

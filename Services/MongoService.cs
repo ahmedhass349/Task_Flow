@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -16,13 +17,15 @@ namespace taskflow.Services
     public class MongoService : IMongoService
     {
         private const string ConnectionString =
-            "mongodb+srv://ahmedabdelbarr2003_db_user:igZrHOkdS80CMbfY@cluster.zmsrng7.mongodb.net/";
+            "mongodb://ahmedabdelbarr2003_db_user:buYRySH3L2hIS5Fm@ac-omzibpf-shard-00-00.zmsrng7.mongodb.net:27017,ac-omzibpf-shard-00-01.zmsrng7.mongodb.net:27017,ac-omzibpf-shard-00-02.zmsrng7.mongodb.net:27017/?ssl=true&replicaSet=atlas-k8r7te-shard-0&authSource=admin";
         private const string DatabaseName = "TaskFlow";
 
         private readonly IMongoCollection<UserPresence>? _presenceCollection;
         private readonly IMongoCollection<TeamInvitation>? _invitationsCollection;
         private readonly IMongoCollection<MongoTeamMember>? _membersCollection;
         private readonly ILogger<MongoService> _logger;
+        private IMongoClient? _client;
+        private IMongoDatabase? _db;
 
         public MongoService(ILogger<MongoService> logger)
         {
@@ -33,8 +36,9 @@ namespace taskflow.Services
                 settings.ServerSelectionTimeout = TimeSpan.FromSeconds(10);
                 settings.ConnectTimeout = TimeSpan.FromSeconds(10);
 
-                var client = new MongoClient(settings);
-                var db = client.GetDatabase(DatabaseName);
+                _client = new MongoClient(settings);
+                var db = _client.GetDatabase(DatabaseName);
+                _db = db;
 
                 _presenceCollection = db.GetCollection<UserPresence>("user_presence");
                 _invitationsCollection = db.GetCollection<TeamInvitation>("team_invitations");
@@ -82,6 +86,71 @@ namespace taskflow.Services
                     .Ascending(m => m.OwnerEmail);
                 await _membersCollection.Indexes.CreateOneAsync(
                     new CreateIndexModel<MongoTeamMember>(teamIdx, new CreateIndexOptions { Name = "team_owner" }));
+            }
+        }
+
+        // ── Generic entity mirror ─────────────────────────────────────────────
+
+        /// <summary>
+        /// Upserts any entity into the named collection using its SQLite int ID as _id.
+        /// </summary>
+        internal async Task UpsertDocumentAsync(string collectionName, int id, MongoDB.Bson.BsonDocument doc)
+        {
+            if (_db == null) return;
+            try
+            {
+                doc["_id"] = id;
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>(collectionName);
+                var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", id);
+                await collection.ReplaceOneAsync(filter, doc,
+                    new MongoDB.Driver.ReplaceOptions { IsUpsert = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "UpsertDocumentAsync failed: col={Col} id={Id}", collectionName, id);
+            }
+        }
+
+        /// <summary>
+        /// Deletes a document by its SQLite int ID from the named collection.
+        /// </summary>
+        internal async Task DeleteDocumentAsync(string collectionName, int id)
+        {
+            if (_db == null) return;
+            try
+            {
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>(collectionName);
+                var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", id);
+                await collection.DeleteOneAsync(filter);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "DeleteDocumentAsync failed: col={Col} id={Id}", collectionName, id);
+            }
+        }
+
+        // ── Connectivity ping ─────────────────────────────────────────────────
+
+        /// <summary>
+        /// Pings the MongoDB admin database with a 5-second timeout.
+        /// Returns true when MongoDB is reachable.
+        /// </summary>
+        internal async Task<bool> PingAsync(CancellationToken ct = default)
+        {
+            if (_client == null) return false;
+            try
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                cts.CancelAfter(TimeSpan.FromSeconds(5));
+                await _client.GetDatabase("admin")
+                    .RunCommandAsync<MongoDB.Bson.BsonDocument>(
+                        new MongoDB.Bson.BsonDocument("ping", 1),
+                        cancellationToken: cts.Token);
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -282,7 +351,8 @@ namespace taskflow.Services
             if (invitation == null)
                 throw new KeyNotFoundException("Invitation not found or already responded to.");
 
-            // Always add recipient to shared team_members collection
+            // Only add recipient to team_members when the invitation is for a specific team
+            if (!string.IsNullOrEmpty(invitation.TeamId))
             {
                 var memberFilter = Builders<MongoTeamMember>.Filter.And(
                     Builders<MongoTeamMember>.Filter.Eq(m => m.TeamId, invitation.TeamId ?? string.Empty),
@@ -454,7 +524,7 @@ namespace taskflow.Services
 
         public async Task<MongoTeamMemberDto> AddMemberToTeamAsync(
             string ownerEmail, string memberEmail, string memberFullName,
-            string targetTeamId, string targetTeamName)
+            string targetTeamId, string targetTeamName, string role = "Member")
         {
             if (_membersCollection == null)
                 throw new InvalidOperationException("MongoDB is unavailable.");
@@ -472,7 +542,7 @@ namespace taskflow.Services
                 .Set(m => m.UserFullName, memberFullName)
                 .Set(m => m.OwnerEmail, ownerEmail)
                 .Set(m => m.IsActive, true)
-                .SetOnInsert(m => m.Role, "Member")
+                .SetOnInsert(m => m.Role, role)
                 .SetOnInsert(m => m.JoinedAt, DateTime.UtcNow);
 
             var opts = new FindOneAndUpdateOptions<MongoTeamMember>
@@ -497,6 +567,28 @@ namespace taskflow.Services
             };
         }
 
+        public async Task<List<MongoTeamMemberDto>> DeleteTeamMembersAsync(string teamId)
+        {
+            if (_membersCollection == null) return [];
+            var filter = Builders<MongoTeamMember>.Filter.Eq(m => m.TeamId, teamId);
+            var members = await _membersCollection.Find(filter).ToListAsync();
+            if (members.Count > 0)
+                await _membersCollection.DeleteManyAsync(filter);
+            return members.ConvertAll(m => new MongoTeamMemberDto
+            {
+                Id = m.Id ?? string.Empty,
+                TeamId = m.TeamId,
+                TeamName = m.TeamName,
+                UserEmail = m.UserEmail,
+                UserFullName = m.UserFullName,
+                AvatarUrl = m.AvatarUrl,
+                Role = m.Role,
+                OwnerEmail = m.OwnerEmail,
+                JoinedAt = m.JoinedAt,
+                IsActive = m.IsActive,
+            });
+        }
+
         public async Task DeleteInvitationAsync(string invitationId, string ownerEmail)
         {
             if (_invitationsCollection == null)
@@ -504,12 +596,67 @@ namespace taskflow.Services
 
             var filter = Builders<TeamInvitation>.Filter.And(
                 Builders<TeamInvitation>.Filter.Eq(i => i.Id, invitationId),
-                Builders<TeamInvitation>.Filter.Eq(i => i.SenderEmail, ownerEmail)
+                Builders<TeamInvitation>.Filter.Or(
+                    Builders<TeamInvitation>.Filter.Eq(i => i.SenderEmail, ownerEmail),
+                    Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, ownerEmail)
+                )
             );
 
             var result = await _invitationsCollection.DeleteOneAsync(filter);
             if (result.DeletedCount == 0)
                 throw new KeyNotFoundException("Invitation not found.");
+        }
+
+        public async Task<List<MongoTeamMemberDto>> GetMembershipsByUserAsync(string userEmail)
+        {
+            if (_membersCollection == null) return [];
+            try
+            {
+                var filter = Builders<MongoTeamMember>.Filter.And(
+                    Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, userEmail),
+                    Builders<MongoTeamMember>.Filter.Ne(m => m.OwnerEmail, userEmail),
+                    Builders<MongoTeamMember>.Filter.Eq(m => m.IsActive, true),
+                    Builders<MongoTeamMember>.Filter.Ne(m => m.TeamId, null),
+                    Builders<MongoTeamMember>.Filter.Ne(m => m.TeamId, string.Empty)
+                );
+                var members = await _membersCollection.Find(filter)
+                    .SortByDescending(m => m.JoinedAt)
+                    .ToListAsync();
+                return members.ConvertAll(m => new MongoTeamMemberDto
+                {
+                    Id = m.Id ?? string.Empty,
+                    TeamId = m.TeamId,
+                    TeamName = m.TeamName,
+                    UserEmail = m.UserEmail,
+                    UserFullName = m.UserFullName,
+                    AvatarUrl = m.AvatarUrl,
+                    Role = m.Role,
+                    OwnerEmail = m.OwnerEmail,
+                    JoinedAt = m.JoinedAt,
+                    IsActive = m.IsActive,
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MongoService.GetMembershipsByUserAsync failed for {Email}", userEmail);
+                return [];
+            }
+        }
+
+        public async Task LeaveTeamAsync(string teamId, string userEmail)
+        {
+            if (_membersCollection == null)
+                throw new InvalidOperationException("MongoDB is unavailable.");
+
+            var filter = Builders<MongoTeamMember>.Filter.And(
+                Builders<MongoTeamMember>.Filter.Eq(m => m.TeamId, teamId),
+                Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, userEmail)
+            );
+            var result = await _membersCollection.UpdateOneAsync(filter,
+                Builders<MongoTeamMember>.Update.Set(m => m.IsActive, false));
+
+            if (result.MatchedCount == 0)
+                throw new KeyNotFoundException("Team membership not found.");
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
@@ -532,5 +679,19 @@ namespace taskflow.Services
             ExpiresAt = i.ExpiresAt,
             DeclineReason = i.DeclineReason,
         };
+
+        // ── Dev / testing ─────────────────────────────────────────────────────
+
+        /// <summary>Drops every document from all three MongoDB collections.</summary>
+        public async Task ClearAllAsync()
+        {
+            var empty = Builders<MongoDB.Bson.BsonDocument>.Filter.Empty;
+            if (_presenceCollection != null)
+                await _db!.GetCollection<MongoDB.Bson.BsonDocument>("user_presence").DeleteManyAsync(empty);
+            if (_invitationsCollection != null)
+                await _db!.GetCollection<MongoDB.Bson.BsonDocument>("team_invitations").DeleteManyAsync(empty);
+            if (_membersCollection != null)
+                await _db!.GetCollection<MongoDB.Bson.BsonDocument>("team_members").DeleteManyAsync(empty);
+        }
     }
 }

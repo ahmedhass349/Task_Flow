@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -101,7 +102,36 @@ namespace taskflow.Controllers.Api
         public async Task<IActionResult> DeleteTeam(int id)
         {
             var userId = GetUserId();
+            var ownerEmail = GetUserEmail();
+
+            // Capture mongo members (with teamName) before deletion
+            var mongoMembers = await _mongoService.GetTeamMembersAsync(id.ToString(), ownerEmail);
+            string teamName = mongoMembers.FirstOrDefault()?.TeamName ?? "a team";
+
             await _teamService.DeleteTeamAsync(userId, id);
+
+            // Hard-delete all MongoDB team_member records for this team
+            await _mongoService.DeleteTeamMembersAsync(id.ToString());
+
+            // Notify every member (excluding the owner) that the team was deleted
+            foreach (var member in mongoMembers)
+            {
+                if (string.Equals(member.UserEmail, ownerEmail, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var user = await _userRepository.GetByEmailAsync(member.UserEmail);
+                if (user != null)
+                {
+                    await _notificationService.CreateAsync(
+                        user.Id,
+                        "Team Deleted",
+                        $"You are no longer a member of \"{teamName}\" — the team owner deleted it.",
+                        NotificationType.TeamDeleted,
+                        NotificationPriority.Medium,
+                        "/teams");
+                }
+            }
+
             return NoContent();
         }
 
@@ -196,11 +226,12 @@ namespace taskflow.Controllers.Api
                     var recipient = await _userRepository.GetByEmailAsync(request.RecipientEmail);
                     if (recipient != null)
                     {
-                        var teamLabel = string.IsNullOrEmpty(request.TeamName) ? "your team" : request.TeamName;
+                        var teamLabel = string.IsNullOrEmpty(request.TeamName) ? "a team" : $"\"{ request.TeamName}\"";
+                        var roleLabel = string.IsNullOrEmpty(request.Role) ? "Member" : request.Role;
                         await _notificationService.CreateAsync(
                             recipient.Id,
                             "Team Invitation",
-                            $"{fullName} invited you to join {teamLabel}.",
+                            $"{fullName} invited you to join {teamLabel} as {roleLabel}.",
                             NotificationType.TeamInvitationReceived,
                             NotificationPriority.Medium,
                             actionUrl: "/teams"
@@ -294,7 +325,7 @@ namespace taskflow.Controllers.Api
                     if (sender != null)
                     {
                         var recipientName = GetUserFullName();
-                        var teamLabel = string.IsNullOrEmpty(invitation.TeamName) ? "your invitation" : $"your {invitation.TeamName} invitation";
+                        var teamLabel = string.IsNullOrEmpty(invitation.TeamName) ? "your team invitation" : $"your invitation to join \"{invitation.TeamName}\"";
                         await _notificationService.CreateAsync(
                             sender.Id,
                             "Invitation Accepted",
@@ -337,7 +368,7 @@ namespace taskflow.Controllers.Api
                     if (sender != null)
                     {
                         var recipientName = GetUserFullName();
-                        var teamLabel = string.IsNullOrEmpty(invitation.TeamName) ? "your invitation" : $"your {invitation.TeamName} invitation";
+                        var teamLabel = string.IsNullOrEmpty(invitation.TeamName) ? "your team invitation" : $"your invitation to join \"{invitation.TeamName}\"";
                         await _notificationService.CreateAsync(
                             sender.Id,
                             "Invitation Declined",
@@ -400,7 +431,7 @@ namespace taskflow.Controllers.Api
                     if (t.Id.ToString() == teamId) { teamName = t.Name; break; }
 
                 var member = await _mongoService.AddMemberToTeamAsync(
-                    email, request.MemberEmail, request.MemberFullName, teamId, teamName);
+                    email, request.MemberEmail, request.MemberFullName, teamId, teamName, request.Role ?? "Member");
                 return StatusCode(201, ApiResponse<MongoTeamMemberDto>.Ok(member, "Member assigned to team"));
             }
             catch (Exception ex) when (ex is not UnauthorizedAccessException)
@@ -483,6 +514,48 @@ namespace taskflow.Controllers.Api
             catch (Exception ex) when (ex is not UnauthorizedAccessException)
             {
                 return StatusCode(503, ApiResponse<string>.Fail($"Could not remove member: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Returns all teams where the current user has been added as a shared member by another owner.
+        /// </summary>
+        [HttpGet("members-shared/as-member")]
+        public async Task<IActionResult> GetMyMemberships()
+        {
+            try
+            {
+                var email = GetUserEmail();
+                var members = await _mongoService.GetMembershipsByUserAsync(email);
+                return Ok(ApiResponse<List<MongoTeamMemberDto>>.Ok(members, "Memberships retrieved"));
+            }
+            catch (Exception ex) when (ex is not UnauthorizedAccessException)
+            {
+                return Ok(ApiResponse<List<MongoTeamMemberDto>>.Ok([], "Memberships unavailable"));
+            }
+        }
+
+        /// <summary>
+        /// Removes the current user from a team they were added to (leave team).
+        /// </summary>
+        [HttpDelete("{teamId}/membership")]
+        public async Task<IActionResult> LeaveTeam(string teamId)
+        {
+            if (string.IsNullOrWhiteSpace(teamId))
+                return BadRequest(ApiResponse<string>.Fail("Team ID is required."));
+            try
+            {
+                var email = GetUserEmail();
+                await _mongoService.LeaveTeamAsync(teamId, email);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(ApiResponse<string>.Fail("Team membership not found."));
+            }
+            catch (Exception ex) when (ex is not UnauthorizedAccessException)
+            {
+                return StatusCode(503, ApiResponse<string>.Fail($"Could not leave team: {ex.Message}"));
             }
         }
 

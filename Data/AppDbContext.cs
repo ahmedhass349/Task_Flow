@@ -31,6 +31,11 @@ namespace taskflow.Data
         public DbSet<ChatbotConversation> ChatbotConversations => Set<ChatbotConversation>();
         public DbSet<ChatbotMessage> ChatbotMessages => Set<ChatbotMessage>();
 
+        // ── Offline sync ──────────────────────────────────────────────────────
+        public DbSet<SyncOutboxEntry> SyncOutboxEntries => Set<SyncOutboxEntry>();
+        public DbSet<LocalInvitation> LocalInvitations => Set<LocalInvitation>();
+        public DbSet<LocalTeamMember> LocalTeamMembers => Set<LocalTeamMember>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -290,6 +295,29 @@ namespace taskflow.Data
                               }
                         }
                   }
+
+            // ── SyncOutboxEntry ───────────────────────────────────────────────
+            modelBuilder.Entity<SyncOutboxEntry>(e =>
+            {
+                e.HasIndex(x => x.Status);
+                e.HasIndex(x => x.CreatedAt);
+                e.HasIndex(x => x.OperationId).IsUnique();
+            });
+
+            // ── LocalInvitation ───────────────────────────────────────────────
+            modelBuilder.Entity<LocalInvitation>(e =>
+            {
+                e.HasIndex(x => x.MongoId).IsUnique();
+                e.HasIndex(x => x.RecipientEmail);
+                e.HasIndex(x => x.SenderEmail);
+            });
+
+            // ── LocalTeamMember ───────────────────────────────────────────────
+            modelBuilder.Entity<LocalTeamMember>(e =>
+            {
+                e.HasIndex(x => new { x.TeamId, x.OwnerEmail, x.UserEmail }).IsUnique();
+                e.HasIndex(x => x.OwnerEmail);
+            });
         }
     }
 }

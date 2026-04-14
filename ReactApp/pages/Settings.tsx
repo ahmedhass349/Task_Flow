@@ -2,17 +2,17 @@ import { useState, useEffect, useId } from "react";
 import { useNavigate } from "react-router";
 import {
   User, Bell, Shield, Palette, Globe, Key, Trash2, Camera,
-  Moon, Sun, Monitor, Mail, MessageSquare, CheckSquare, Save,
+  Moon, Sun, Monitor, Mail, MessageSquare, CheckSquare, Save, Wrench,
 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
 import { useSettings } from "../hooks/useSettings";
 import { useAuth } from "../context/AuthContext";
-import { getRememberMePreference, setRememberMePreference } from "../services/api";
+import { api, clearAuthToken, getRememberMePreference, setRememberMePreference } from "../services/api";
 
 /* ─────── types ─────── */
-type Section = "profile" | "account" | "notifications" | "appearance" | "security" | "privacy";
+type Section = "profile" | "account" | "notifications" | "appearance" | "security" | "privacy" | "developer";
 
 interface Toggle {
   label: string;
@@ -86,7 +86,101 @@ const NAV_ITEMS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "appearance",    label: "Appearance",     icon: Palette   },
   { id: "security",      label: "Security",       icon: Shield    },
   { id: "privacy",       label: "Privacy",        icon: Globe     },
+  { id: "developer" as Section, label: "Developer", icon: Wrench },
 ];
+
+/* ═══════════════════════════════════════════════
+   Developer tools reset panel
+═══════════════════════════════════════════════ */
+type ResetTarget = "mongo" | "sqlite" | "all";
+
+function DevResetPanel() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [includeUsers, setIncludeUsers] = useState(false);
+
+  async function handleReset(target: ResetTarget) {
+    const labels: Record<ResetTarget, string> = {
+      mongo:  "MongoDB collections",
+      sqlite: "SQLite tables",
+      all:    "BOTH databases",
+    };
+    const confirmed = window.confirm(
+      `⚠️ This will permanently delete all data in ${labels[target]}${includeUsers ? " including all user accounts" : ""}.\n\nContinue?`
+    );
+    if (!confirmed) return;
+
+    setLoading(true);
+    setError("");
+    try {
+      const endpoint =
+        target === "mongo"  ? "/api/dev/reset-mongo" :
+        target === "sqlite" ? `/api/dev/reset-sqlite?users=${includeUsers}` :
+                              `/api/dev/reset-all?users=${includeUsers}`;
+      await api.post<{ message?: string }>(endpoint);
+      clearAuthToken();
+      localStorage.removeItem("taskflow_saved_accounts");
+      navigate("/login");
+    } catch (err: unknown) {
+      setLoading(false);
+      setError(err instanceof Error ? err.message : "Request failed.");
+    }
+  }
+
+  return (
+    <SectionCard
+      title={
+        <span className="flex items-center gap-2 text-amber-700">
+          <Wrench className="size-4" />
+          Developer Tools
+        </span>
+      }
+    >
+      <p className="text-sm text-gray-600 mb-2">
+        Wipe data from one or both databases for a clean testing slate.
+        Actions are <span className="font-semibold text-red-600">irreversible</span>.
+      </p>
+
+      <label className="flex items-center gap-2 text-sm text-gray-700 mb-5 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={includeUsers}
+          onChange={(e) => setIncludeUsers(e.target.checked)}
+          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        />
+        Also delete all user accounts
+      </label>
+
+      <div className="flex flex-wrap gap-3">
+        <button
+          disabled={loading}
+          onClick={() => handleReset("mongo")}
+          className="px-4 py-2 text-sm rounded-lg border border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 transition-colors"
+        >
+          Clear MongoDB
+        </button>
+        <button
+          disabled={loading}
+          onClick={() => handleReset("sqlite")}
+          className="px-4 py-2 text-sm rounded-lg border border-orange-400 text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 transition-colors"
+        >
+          Clear SQLite
+        </button>
+        <button
+          disabled={loading}
+          onClick={() => handleReset("all")}
+          className="px-4 py-2 text-sm rounded-lg border border-red-400 text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50 transition-colors"
+        >
+          Clear Everything
+        </button>
+      </div>
+
+      {loading && <p className="mt-3 text-sm text-gray-500">Resetting…</p>}
+      {error   && <p className="mt-3 text-sm text-red-600">✗ {error}</p>}
+    </SectionCard>
+  );
+}
 
 /* ═══════════════════════════════════════════════
    Main component
@@ -556,6 +650,11 @@ export default function Settings() {
                       </button>
                     </SectionCard>
                   </>
+                )}
+
+                {/* ══════════ DEV TOOLS ══════════ */}
+                {activeSection === "developer" && (
+                  <DevResetPanel />
                 )}
 
               </div>{/* /right content */}
