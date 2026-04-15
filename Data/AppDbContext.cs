@@ -36,6 +36,11 @@ namespace taskflow.Data
         public DbSet<LocalInvitation> LocalInvitations => Set<LocalInvitation>();
         public DbSet<LocalTeamMember> LocalTeamMembers => Set<LocalTeamMember>();
 
+        // ── Group Chats ───────────────────────────────────────────────────────
+        public DbSet<GroupChat> GroupChats => Set<GroupChat>();
+        public DbSet<GroupChatMember> GroupChatMembers => Set<GroupChatMember>();
+        public DbSet<GroupMessage> GroupMessages => Set<GroupMessage>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -317,6 +322,52 @@ namespace taskflow.Data
             {
                 e.HasIndex(x => new { x.TeamId, x.OwnerEmail, x.UserEmail }).IsUnique();
                 e.HasIndex(x => x.OwnerEmail);
+            });
+
+            // ── GroupChat ─────────────────────────────────────────────────────
+            modelBuilder.Entity<GroupChat>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+
+                entity.HasOne(g => g.CreatedBy)
+                      .WithMany()
+                      .HasForeignKey(g => g.CreatedByUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── GroupChatMember (composite PK) ────────────────────────────────
+            modelBuilder.Entity<GroupChatMember>(entity =>
+            {
+                entity.HasKey(m => new { m.GroupChatId, m.UserId });
+
+                entity.HasOne(m => m.GroupChat)
+                      .WithMany(g => g.Members)
+                      .HasForeignKey(m => m.GroupChatId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(m => m.User)
+                      .WithMany()
+                      .HasForeignKey(m => m.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ── GroupMessage ──────────────────────────────────────────────────
+            modelBuilder.Entity<GroupMessage>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => new { e.GroupChatId, e.SentAt });
+
+                entity.HasOne(m => m.GroupChat)
+                      .WithMany(g => g.Messages)
+                      .HasForeignKey(m => m.GroupChatId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(m => m.Sender)
+                      .WithMany()
+                      .HasForeignKey(m => m.SenderId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

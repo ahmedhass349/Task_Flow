@@ -8,5 +8,8 @@ namespace taskflow.Repositories.Interfaces
     {
         Task<IEnumerable<Message>> GetConversationAsync(int userId, int contactId);
         Task<IEnumerable<AppUser>> GetContactsAsync(int userId);
+        Task MarkConversationAsReadAsync(int userId, int contactId);
+        Task MarkAllAsReadAsync(int userId);
+        Task DeleteConversationAsync(int userId, int contactId, string senderFullName);
     }
 }

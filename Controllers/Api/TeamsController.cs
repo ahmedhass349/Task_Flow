@@ -460,6 +460,8 @@ namespace taskflow.Controllers.Api
 
         /// <summary>
         /// Returns all shared (MongoDB) team members across all teams owned by the current user.
+        /// Also includes the owners of any teams the current user has been invited into,
+        /// so the Messages "Start Conversation" modal can find all reachable contacts.
         /// </summary>
         [HttpGet("members-shared/all")]
         public async Task<IActionResult> GetAllSharedTeamMembers()
@@ -468,6 +470,40 @@ namespace taskflow.Controllers.Api
             {
                 var email = GetUserEmail();
                 var members = await _mongoService.GetAllTeamMembersAsync(email);
+
+                // Also add owners of teams the current user joined as a member.
+                try
+                {
+                    var myMemberships = await _mongoService.GetMembershipsByUserAsync(email);
+                    var ownerEmailsToAdd = myMemberships
+                        .Select(m => m.OwnerEmail)
+                        .Where(oe => !string.IsNullOrEmpty(oe) && oe != email)
+                        .Distinct()
+                        .Where(oe => !members.Any(m => m.UserEmail == oe))
+                        .ToList();
+
+                    foreach (var ownerEmail in ownerEmailsToAdd)
+                    {
+                        var owner = await _userRepository.GetByEmailAsync(ownerEmail);
+                        if (owner == null) continue;
+                        var teamInfo = myMemberships.First(m => m.OwnerEmail == ownerEmail);
+                        members.Add(new MongoTeamMemberDto
+                        {
+                            Id = $"owner-{ownerEmail}",
+                            TeamId = teamInfo.TeamId,
+                            TeamName = teamInfo.TeamName,
+                            UserEmail = ownerEmail,
+                            UserFullName = owner.FullName,
+                            AvatarUrl = owner.AvatarUrl ?? string.Empty,
+                            Role = "Owner",
+                            OwnerEmail = ownerEmail,
+                            JoinedAt = teamInfo.JoinedAt,
+                            IsActive = true,
+                        });
+                    }
+                }
+                catch { /* memberships unavailable — fall back to owned-team members only */ }
+
                 return Ok(ApiResponse<List<MongoTeamMemberDto>>.Ok(members, "All shared team members retrieved"));
             }
             catch (Exception ex) when (ex is not UnauthorizedAccessException)
@@ -559,6 +595,56 @@ namespace taskflow.Controllers.Api
             }
         }
 
+        /// <summary>
+        /// Sends an announcement notification to all members of a team owned by the current user.
+        /// </summary>
+        [HttpPost("{teamId}/announce")]
+        public async Task<IActionResult> AnnounceToTeam(string teamId, [FromBody] AnnounceRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Message))
+                return BadRequest(ApiResponse<string>.Fail("Announcement message is required."));
+
+            try
+            {
+                var ownerEmail = GetUserEmail();
+                var ownerName = GetUserFullName();
+
+                // Verify the caller owns (or is a member of) this team via MongoDB records
+                var members = await _mongoService.GetTeamMembersAsync(teamId, ownerEmail);
+                if (members == null || members.Count == 0)
+                    return NotFound(ApiResponse<string>.Fail("Team not found or no members to notify."));
+
+                var title = string.IsNullOrWhiteSpace(request.Title) ? "Team Announcement" : request.Title.Trim();
+                var teamName = members[0].TeamName;
+                var body = $"[{teamName}] {ownerName}: {request.Message.Trim()}";
+
+                int notified = 0;
+                foreach (var member in members)
+                {
+                    if (string.Equals(member.UserEmail, ownerEmail, StringComparison.OrdinalIgnoreCase))
+                        continue; // owners don't need to notify themselves
+
+                    var user = await _userRepository.GetByEmailAsync(member.UserEmail);
+                    if (user == null) continue;
+
+                    await _notificationService.CreateAsync(
+                        user.Id,
+                        title,
+                        body,
+                        NotificationType.SystemAnnouncement,
+                        NotificationPriority.High,
+                        actionUrl: "/teams");
+                    notified++;
+                }
+
+                return Ok(ApiResponse<string>.Ok($"Announcement sent to {notified} member(s).", "Announcement sent"));
+            }
+            catch (Exception ex) when (ex is not UnauthorizedAccessException)
+            {
+                return StatusCode(503, ApiResponse<string>.Fail($"Could not send announcement: {ex.Message}"));
+            }
+        }
+
         // ── Private helpers ───────────────────────────────────────────────────
 
         private static InvitationResponseDto MapToDto(taskflow.Models.Mongo.TeamInvitation i) => new()
@@ -585,5 +671,12 @@ namespace taskflow.Controllers.Api
     public class DeclineReasonDto
     {
         public string? Reason { get; set; }
+    }
+
+    /// <summary>Body for team announcement.</summary>
+    public class AnnounceRequest
+    {
+        public string Message { get; set; } = string.Empty;
+        public string? Title { get; set; }
     }
 }

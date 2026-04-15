@@ -7,7 +7,12 @@ namespace taskflow.DTOs.Messages
         [Required]
         public int ReceiverId { get; set; }
 
-        [Required]
+        // Body is optional when sending a pure attachment message
         public string Body { get; set; } = string.Empty;
+
+        public string? AttachmentUrl { get; set; }
+        public string? AttachmentName { get; set; }
+        public string? AttachmentType { get; set; }
+        public long? AttachmentSize { get; set; }
     }
 }

@@ -238,6 +238,7 @@ namespace taskflow
             services.AddScoped<IReminderRepository, ReminderRepository>();
             services.AddScoped<IChatbotRepository, ChatbotRepository>();
             services.AddScoped<ITaskCommentRepository, TaskCommentRepository>();
+            services.AddScoped<IGroupChatRepository, GroupChatRepository>();
 
             // ── Services (DI) ────────────────────────────────────────────────
             services.AddScoped<IAuthService, AuthService>();
@@ -253,6 +254,7 @@ namespace taskflow
             services.AddScoped<ISettingsService, SettingsService>();
             services.AddScoped<IChatbotService, ChatbotService>();
             services.AddScoped<ITaskCommentService, TaskCommentService>();
+            services.AddScoped<IGroupChatService, GroupChatService>();
 
             // ── MongoDB relay + offline/online sync ──────────────────────────
             // Register concrete MongoService first so it can be injected directly

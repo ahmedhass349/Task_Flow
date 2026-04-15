@@ -15,6 +15,7 @@ import {
   Users2,
   Pencil,
   LogOut,
+  Megaphone,
 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Footer from "../Components/Footer";
@@ -676,6 +677,102 @@ function MembershipCard({ member, onLeave }: MembershipCardProps) {
 
 // â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+// ── AnnouncementModal ─────────────────────────────────────────────────────
+
+interface AnnouncementModalProps {
+  teamName: string;
+  onClose: () => void;
+  onSend: (message: string, title?: string) => Promise<void>;
+}
+
+function AnnouncementModal({ teamName, onClose, onSend }: AnnouncementModalProps) {
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+
+  const handleSend = async () => {
+    const trimmedMsg = message.trim();
+    if (!trimmedMsg) { setSendError("Announcement message is required"); return; }
+    setSending(true);
+    setSendError(null);
+    try {
+      await onSend(trimmedMsg, title.trim() || undefined);
+      setSent(true);
+      setTimeout(onClose, 1200);
+    } catch (err: unknown) {
+      setSendError(err instanceof Error ? err.message : "Failed to send announcement");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <Megaphone className="size-5 text-orange-500" />
+            <h2 className="text-lg font-bold text-gray-900">Send Announcement</h2>
+          </div>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <X className="size-5" />
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">This will notify all members of <strong>{teamName}</strong>.</p>
+        {sent ? (
+          <div className="flex flex-col items-center justify-center py-6 gap-2">
+            <CheckCircle className="size-10 text-green-500" />
+            <p className="text-sm font-medium text-gray-700">Announcement sent!</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Title <span className="text-gray-400 font-normal">(optional)</span></label>
+              <input
+                type="text"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="e.g. Project update"
+                className="w-full py-2.5 px-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Message<span className="text-red-500 ml-0.5">*</span></label>
+              <textarea
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                rows={4}
+                placeholder="Write your announcement here…"
+                className="w-full py-2.5 px-3 border border-gray-300 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                autoFocus
+              />
+            </div>
+            {sendError && <p className="text-sm text-red-500">{sendError}</p>}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={onClose}
+                className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSend}
+                disabled={sending || !message.trim()}
+                className="flex-1 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {sending ? <span className="size-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Megaphone className="size-4" />}
+                {sending ? "Sending…" : "Send"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Teams() {
   const {
     teams,
@@ -707,6 +804,7 @@ export default function Teams() {
     membershipsByMe,
     membershipsByMeLoading,
     leaveTeam,
+    sendAnnouncement,
   } = useTeams();
 
   const [activeTab, setActiveTab] = useState<Tab>("all-members");
@@ -717,6 +815,7 @@ export default function Teams() {
   const [selectedMembershipId, setSelectedMembershipId] = useState<string | null>(null);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [deletingTeamId, setDeletingTeamId] = useState<string | null>(null);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
 
   // Derived: contacts who have accepted an invitation (bidirectional)
   const acceptedContacts = useMemo<AcceptedContact[]>(() => {
@@ -968,6 +1067,12 @@ export default function Teams() {
                             </h2>
                             <div className="flex items-center gap-2">
                               <button
+                                onClick={() => setShowAnnouncementModal(true)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-medium hover:bg-orange-600 transition-colors"
+                              >
+                                <Megaphone className="size-3.5" /> Announce
+                              </button>
+                              <button
                                 onClick={() => {
                                   const team = teams.find(t => t.id === selectedTeamId);
                                   if (team) { setInviteToTeam({ id: team.id, name: team.name }); setShowInviteModal(true); }
@@ -1134,6 +1239,13 @@ export default function Teams() {
         />
       )}
 
+      {showAnnouncementModal && selectedTeamId && (
+        <AnnouncementModal
+          teamName={teams.find(t => t.id === selectedTeamId)?.name ?? "your team"}
+          onClose={() => setShowAnnouncementModal(false)}
+          onSend={(msg, ttl) => sendAnnouncement(selectedTeamId, msg, ttl)}
+        />
+      )}
 
     </div>
   );

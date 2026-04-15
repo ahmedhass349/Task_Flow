@@ -27,6 +27,7 @@ namespace taskflow.Services
         private readonly ITaskRepository _taskRepository;
         private readonly IMapper _mapper;
         private readonly IMirrorService _mirror;
+        private readonly INotificationService _notificationService;
 
         public TeamService(
             IGenericRepository<Team> teamRepository,
@@ -34,7 +35,8 @@ namespace taskflow.Services
             IUserRepository userRepository,
             ITaskRepository taskRepository,
             IMapper mapper,
-            IMirrorService mirror)
+            IMirrorService mirror,
+            INotificationService notificationService)
         {
             _teamRepository = teamRepository;
             _teamMemberRepository = teamMemberRepository;
@@ -42,6 +44,7 @@ namespace taskflow.Services
             _taskRepository = taskRepository;
             _mapper = mapper;
             _mirror = mirror;
+            _notificationService = notificationService;
         }
 
         public async Task<IEnumerable<TeamDto>> GetUserTeamsAsync(int userId)
@@ -127,6 +130,12 @@ namespace taskflow.Services
             if (team.OwnerId != userId)
                 throw new UnauthorizedAccessException("You do not have permission to delete this team.");
 
+            // Notify all non-owner members before removing them
+            var memberIdsToNotify = team.Members
+                .Where(m => m.UserId != userId)
+                .Select(m => m.UserId)
+                .ToList();
+
             // Remove all members first
             foreach (var member in team.Members.ToList())
             {
@@ -136,6 +145,13 @@ namespace taskflow.Services
             _teamRepository.Remove(team);
             await _teamRepository.SaveChangesAsync();
             _mirror.Erase("teams", teamId);
+
+            // Send notifications after successful delete (fire-and-forget per member)
+            foreach (var memberId in memberIdsToNotify)
+            {
+                try { await _notificationService.NotifyTeamDeletedAsync(memberId, team.Name); }
+                catch { /* Don't fail the delete if a notification fails */ }
+            }
         }
 
         public async Task<IEnumerable<TeamMemberDto>> GetTeamMembersAsync(int teamId)

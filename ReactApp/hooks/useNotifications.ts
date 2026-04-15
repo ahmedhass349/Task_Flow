@@ -48,7 +48,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     try {
       const data = await api.get<Notification[]>("/api/notifications?page=1&pageSize=50");
       if (!cancelled) {
-        setNotifications(data);
+        setNotifications((data ?? []).filter(n => n.type?.toLowerCase() !== "messagereceived"));
       }
     } catch (err) {
       if (!cancelled) {
@@ -154,7 +154,7 @@ export const useNotifications = (): UseNotificationsReturn => {
       const customEvent = event as CustomEvent<Notification>;
       const incoming = customEvent.detail;
 
-      if (!incoming) {
+      if (!incoming || incoming.type?.toLowerCase() === "messagereceived") {
         return;
       }
 

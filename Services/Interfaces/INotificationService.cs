@@ -23,6 +23,8 @@ namespace taskflow.Services.Interfaces
         Task NotifyReminderFiredAsync(int userId, TaskItem task, DateTime fireTime);
         Task NotifyWelcomeAsync(int userId, string firstName);
         Task NotifyProfileUpdatedAsync(int userId);
+        Task NotifyTeamDeletedAsync(int userId, string teamName);
+        Task NotifyMessageReceivedAsync(int receiverId, string senderName, string messagePreview);
 
         // Query
         Task<IEnumerable<NotificationDto>> GetForUserAsync(int userId, int page, int pageSize);

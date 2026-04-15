@@ -118,6 +118,9 @@ export interface UseTeamsReturn {
 
   // User search
   searchUsers: (query: string) => Promise<UserSearchResult[]>;
+
+  // Announcements
+  sendAnnouncement: (teamId: string, message: string, title?: string) => Promise<void>;
 }
 
 // â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -211,14 +214,6 @@ export const useTeams = (): UseTeamsReturn => {
     }
   }, []);
 
-  const acceptInvitation = useCallback(async (id: string) => {
-    await api.post(`/api/teams/invitations/${id}/accept`, {});
-    setIncomingInvitations(prev =>
-      prev.map(inv => (inv.id === id ? { ...inv, status: "Accepted" as const } : inv))
-    );
-    fetchMembershipsByMe();
-  }, [fetchMembershipsByMe]);
-
   const declineInvitation = useCallback(async (id: string, reason?: string) => {
     await api.post(`/api/teams/invitations/${id}/decline`, { reason: reason ?? "" });
     setIncomingInvitations(prev =>
@@ -283,6 +278,15 @@ export const useTeams = (): UseTeamsReturn => {
     setAllSharedMembers(prev => prev.filter(m => m.userEmail !== memberEmail));
   }, []);
 
+  const acceptInvitation = useCallback(async (id: string) => {
+    await api.post(`/api/teams/invitations/${id}/accept`, {});
+    setIncomingInvitations(prev =>
+      prev.map(inv => (inv.id === id ? { ...inv, status: "Accepted" as const } : inv))
+    );
+    fetchMembershipsByMe();
+    fetchAllSharedMembers();
+  }, [fetchMembershipsByMe, fetchAllSharedMembers]);
+
   const addMemberToTeam = useCallback(async (teamId: string, memberEmail: string, memberFullName: string, role: string = "Member"): Promise<SharedMember> => {
     const result = await api.post<SharedMember>(`/api/teams/${teamId}/members-shared/assign`, {
       memberEmail,
@@ -309,6 +313,10 @@ export const useTeams = (): UseTeamsReturn => {
     setMembershipsByMe(prev => prev.filter(m => m.teamId !== teamId));
   }, []);
 
+  const sendAnnouncement = useCallback(async (teamId: string, message: string, title?: string): Promise<void> => {
+    await api.post(`/api/teams/${teamId}/announce`, { message, title });
+  }, []);
+
   const searchUsers = useCallback(async (query: string): Promise<UserSearchResult[]> => {
     if (!query.trim()) return [];
     try {
@@ -332,6 +340,7 @@ export const useTeams = (): UseTeamsReturn => {
   useEffect(() => {
     const refresh = () => {
       if (document.visibilityState === "visible") {
+        fetchData();
         fetchInvitations();
         fetchMembershipsByMe();
         fetchAllSharedMembers();
@@ -343,7 +352,7 @@ export const useTeams = (): UseTeamsReturn => {
       document.removeEventListener("visibilitychange", refresh);
       window.removeEventListener("focus", refresh);
     };
-  }, [fetchInvitations, fetchMembershipsByMe, fetchAllSharedMembers]);
+  }, [fetchData, fetchInvitations, fetchMembershipsByMe, fetchAllSharedMembers]);
 
   // ── Refresh on team-related notifications ─────────────────────────────────
 
@@ -392,6 +401,7 @@ export const useTeams = (): UseTeamsReturn => {
     fetchMembershipsByMe,
     leaveTeam,
     searchUsers,
+    sendAnnouncement,
   };
 };
 

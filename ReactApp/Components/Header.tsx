@@ -172,9 +172,9 @@ function SwitchAccountModal({
 
 /* ═════════════════════════════ */
 export default function Header() {
-  const { notifications, markAllAsRead } = useNotifications();
+  const { notifications, markAllAsRead, markAsRead: markNotifAsRead } = useNotifications();
   const { unreadCount: signalrUnreadCount, isConnected, latestNotification } = useNotificationHub();
-  const { contacts, unreadCount } = useMessages();
+  const { contacts, unreadCount, markConversationAsRead, markAllAsRead: markAllMsgsAsRead } = useMessages();
   const navigate = useNavigate();
   const { user, logout, refreshUser } = useAuth();
 
@@ -241,8 +241,8 @@ export default function Header() {
     return [latestNotification, ...notifications];
   }, [notifications, latestNotification]);
 
-  // Convert backend notifications to UI format
-  const uiNotifications = mergedNotifications.slice(0, 3).map((notification) => ({
+  // Convert backend notifications to UI format — only show unread items
+  const uiNotifications = mergedNotifications.filter(n => !n.isRead).slice(0, 3).map((notification) => ({
     id: notification.id,
     icon: Bell,
     iconBg: "bg-blue-100",
@@ -250,12 +250,13 @@ export default function Header() {
     title: notification.title,
     body: notification.message,
     time: formatRelativeTime(notification.createdAt),
-    unread: !notification.isRead,
+    unread: true,
+    actionUrl: notification.actionUrl,
   }));
 
-  // Convert backend contacts to UI format
-  const uiMessages = contacts.slice(0, 3).map(contact => ({
-    id: parseInt(contact.id),
+  // Convert backend contacts to UI format — only show contacts with unread messages
+  const uiMessages = contacts.filter(c => c.unreadCount > 0).slice(0, 3).map(contact => ({
+    id: contact.id,
     avatar: contact.name.split(' ').map(n => n[0]).join(''),
     name: contact.name,
     preview: contact.lastMessage || "No messages yet",
@@ -327,7 +328,7 @@ export default function Header() {
                 {uiNotifications.map(n => (
                   <DropdownMenu.Item
                     key={n.id}
-                    onSelect={() => {/* Mark as read - would need backend support */}}
+                    onSelect={() => { markNotifAsRead(n.id); navigate(n.actionUrl || '/notifications'); }}
                     className={`flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${n.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`}
                   >
                     <div className={`size-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${n.iconBg}`}>
@@ -375,7 +376,7 @@ export default function Header() {
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <span className="font-semibold text-gray-900 text-sm">Messages</span>
                 {unreadMsgCount > 0 && (
-                  <button onClick={() => {}} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                  <button onClick={markAllMsgsAsRead} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
                     Mark all as read
                   </button>
                 )}
@@ -386,7 +387,7 @@ export default function Header() {
                 {uiMessages.map(m => (
                   <DropdownMenu.Item
                     key={m.id}
-                    onSelect={() => {/* Mark as read - would need backend support */}}
+                    onSelect={() => { markConversationAsRead(m.id); navigate('/message'); }}
                     className={`flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${m.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`}
                   >
                     <div className={`size-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${AVATAR_COLORS[m.avatar] ?? "bg-gray-200 text-gray-600"}`}>
@@ -453,19 +454,19 @@ export default function Header() {
                 </Link>
               </DropdownMenu.Item>
 
-              <DropdownMenu.Item asChild>
-                <Link to="/settings" className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none">
-                  <Settings className="size-4" />
-                  <span className="text-sm">Settings</span>
-                </Link>
-              </DropdownMenu.Item>
-
               <DropdownMenu.Item
                 onSelect={() => setShowSwitchModal(true)}
                 className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none"
               >
                 <UserCircle className="size-4" />
                 <span className="text-sm">Switch account</span>
+              </DropdownMenu.Item>
+
+              <DropdownMenu.Item asChild>
+                <Link to="/settings" className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none">
+                  <Settings className="size-4" />
+                  <span className="text-sm">Settings</span>
+                </Link>
               </DropdownMenu.Item>
 
               <DropdownMenu.Item

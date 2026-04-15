@@ -225,6 +225,41 @@ namespace taskflow.Services
             await CreateAsync(userId, title, message, NotificationType.AccountProfileUpdated, NotificationPriority.Low);
         }
 
+        public async Task NotifyTeamDeletedAsync(int userId, string teamName)
+        {
+            var title = "Team Removed";
+            var message = $"You're no longer a member of \"{teamName}\". The team has been deleted by its owner.";
+
+            await CreateAsync(userId, title, message, NotificationType.TeamDeleted, NotificationPriority.Medium, "/teams");
+        }
+
+        public async Task NotifyMessageReceivedAsync(int receiverId, string senderName, string messagePreview)
+        {
+            var title = $"New message from {senderName}";
+            var preview = messagePreview?.Length > 60
+                ? messagePreview[..60] + "…"
+                : (messagePreview ?? "Sent you a file");
+
+            // Push a transient SignalR-only alert — NOT persisted to the database.
+            // Messages have their own dedicated tab; they must not appear in the notification bell.
+            var dto = new NotificationDto
+            {
+                Id = -1,
+                Title = title,
+                Message = preview,
+                Type = NotificationType.MessageReceived.ToString(),
+                Priority = NotificationPriority.Medium.ToString(),
+                IsRead = false,
+                ActionUrl = "/messages",
+                CreatedAt = DateTime.UtcNow,
+                TimeAgo = "just now",
+            };
+
+            await _hubContext.Clients
+                .User(receiverId.ToString())
+                .SendAsync("ReceiveNotification", dto);
+        }
+
         // Query methods
         public async Task<IEnumerable<NotificationDto>> GetForUserAsync(int userId, int page, int pageSize)
         {
@@ -282,11 +317,18 @@ namespace taskflow.Services
         {
             // Remove all notifications for the user
             var notifications = await _notificationRepository.GetUserNotificationsAsync(userId);
+            var ids = notifications.Select(n => n.Id).ToList();
             foreach (var n in notifications)
             {
                 _notificationRepository.Remove(n);
             }
             await _notificationRepository.SaveChangesAsync();
+
+            // Erase each notification from MongoDB so they don't re-sync on restart
+            foreach (var id in ids)
+            {
+                _mirror.Erase("notifications", id);
+            }
 
             // Update unread count via SignalR
             await _hubContext.Clients

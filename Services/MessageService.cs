@@ -20,15 +20,18 @@ namespace taskflow.Services
         private readonly IMessageRepository _messageRepository;
         private readonly IUserRepository _userRepository;
         private readonly IMirrorService _mirror;
+        private readonly INotificationService _notificationService;
 
         public MessageService(
             IMessageRepository messageRepository,
             IUserRepository userRepository,
-            IMirrorService mirror)
+            IMirrorService mirror,
+            INotificationService notificationService)
         {
             _messageRepository = messageRepository;
             _userRepository = userRepository;
             _mirror = mirror;
+            _notificationService = notificationService;
         }
 
         public async Task<IEnumerable<ContactDto>> GetContactsAsync(int userId)
@@ -41,6 +44,8 @@ namespace taskflow.Services
             var allMessages = await _messageRepository.Query()
                 .Where(m => (m.SenderId == userId && contactIds.Contains(m.ReceiverId)) ||
                             (m.ReceiverId == userId && contactIds.Contains(m.SenderId)))
+                .Where(m => !(m.SenderId == userId && m.IsDeletedBySender) &&
+                            !(m.ReceiverId == userId && m.IsDeletedByReceiver))
                 .OrderByDescending(m => m.SentAt)
                 .ToListAsync();
 
@@ -89,7 +94,12 @@ namespace taskflow.Services
                 ReceiverId = m.ReceiverId,
                 Body = m.Body,
                 IsRead = m.IsRead,
-                SentAt = m.SentAt
+                IsSystemMessage = m.IsSystemMessage,
+                SentAt = m.SentAt,
+                AttachmentUrl = m.AttachmentUrl,
+                AttachmentName = m.AttachmentName,
+                AttachmentType = m.AttachmentType,
+                AttachmentSize = m.AttachmentSize
             }).OrderBy(m => m.SentAt);
         }
 
@@ -109,12 +119,20 @@ namespace taskflow.Services
                 ReceiverId = request.ReceiverId,
                 Body = request.Body,
                 IsRead = false,
-                SentAt = DateTime.UtcNow
+                SentAt = DateTime.UtcNow,
+                AttachmentUrl = request.AttachmentUrl,
+                AttachmentName = request.AttachmentName,
+                AttachmentType = request.AttachmentType,
+                AttachmentSize = request.AttachmentSize
             };
 
             await _messageRepository.AddAsync(message);
             await _messageRepository.SaveChangesAsync();
             _mirror.Mirror("messages", message.Id, message);
+
+            // Notify the receiver via SignalR (they'll see it in real-time)
+            try { await _notificationService.NotifyMessageReceivedAsync(request.ReceiverId, sender.FullName, request.Body ?? ""); }
+            catch { /* Don't fail the send if notification fails */ }
 
             return new MessageDto
             {
@@ -124,7 +142,49 @@ namespace taskflow.Services
                 ReceiverId = message.ReceiverId,
                 Body = message.Body,
                 IsRead = message.IsRead,
-                SentAt = message.SentAt
+                IsSystemMessage = message.IsSystemMessage,
+                SentAt = message.SentAt,
+                AttachmentUrl = message.AttachmentUrl,
+                AttachmentName = message.AttachmentName,
+                AttachmentType = message.AttachmentType,
+                AttachmentSize = message.AttachmentSize
+            };
+        }
+
+        public Task MarkConversationAsReadAsync(int userId, int contactId)
+            => _messageRepository.MarkConversationAsReadAsync(userId, contactId);
+
+        public Task MarkAllAsReadAsync(int userId)
+            => _messageRepository.MarkAllAsReadAsync(userId);
+
+        public async Task DeleteConversationAsync(int userId, int contactId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            string fullName = user?.FullName ?? "Someone";
+            await _messageRepository.DeleteConversationAsync(userId, contactId, fullName);
+        }
+
+        public async Task<ContactDto?> ResolveContactAsync(int requestingUserId, string email)
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user == null || user.Id == requestingUserId)
+                return null;
+
+            var nameParts = (user.FullName ?? "").Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            string initials = nameParts.Length >= 2
+                ? $"{nameParts[0][0]}{nameParts[^1][0]}".ToUpperInvariant()
+                : nameParts.Length == 1 ? nameParts[0][0].ToString().ToUpperInvariant() : "?";
+
+            return new ContactDto
+            {
+                Id = user.Id,
+                Name = user.FullName ?? string.Empty,
+                Initials = initials,
+                AvatarUrl = user.AvatarUrl,
+                LastMessage = string.Empty,
+                LastMessageTime = System.DateTime.MinValue,
+                UnreadCount = 0,
+                IsStarred = false
             };
         }
     }

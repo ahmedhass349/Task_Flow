@@ -140,6 +140,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     connection.onclose(() => dispatch({ type: "SET_CONNECTION_STATUS", payload: false }));
 
     connection.on("ReceiveNotification", (notification: NotificationType) => {
+      // Message-received alerts are transient (not persisted) and belong only in the
+      // Messages tab — skip adding them to the notification bell/store/toast.
+      // Still fire the custom event so useMessages can refresh contacts in real time.
+      if (notification.type?.toLowerCase() === "messagereceived") {
+        window.dispatchEvent(new CustomEvent("taskflow:notification-received", { detail: notification }));
+        return;
+      }
+
       dispatch({ type: "ADD_NOTIFICATION", payload: notification });
       dispatch({ type: "SET_LATEST_NOTIFICATION", payload: notification });
       window.dispatchEvent(new CustomEvent("taskflow:notification-received", { detail: notification }));

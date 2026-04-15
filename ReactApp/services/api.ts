@@ -205,4 +205,31 @@ export const api = {
   delete<T>(endpoint: string, signal?: AbortSignal): Promise<T> {
     return request<T>(endpoint, { method: "DELETE", signal });
   },
+
+  /** Upload FormData (multipart) — does NOT set Content-Type so the browser adds the boundary. */
+  postForm<T>(endpoint: string, formData: FormData, signal?: AbortSignal): Promise<T> {
+    const baseUrl = getApiBaseUrl() || (import.meta as any).env?.VITE_API_BASE_URL || "";
+    const url = `${baseUrl}${endpoint}`;
+    const token = getAuthToken();
+    const headers: HeadersInit = {};
+    if (token) (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+
+    return fetch(url, { method: "POST", headers, body: formData, signal })
+      .then(async (response) => {
+        if (response.status === 204) return undefined as T;
+        const data: unknown = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new ApiRequestError({
+            message: (data as any)?.message || `Upload failed with status ${response.status}`,
+            status: response.status,
+          });
+        }
+        const maybe = data as any;
+        if (maybe && "success" in maybe) {
+          if (!maybe.success) throw new ApiRequestError({ message: maybe.message || "Upload failed", status: response.status });
+          return (maybe.data ?? null) as T;
+        }
+        return data as T;
+      });
+  },
 };

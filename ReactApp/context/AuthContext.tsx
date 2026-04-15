@@ -10,8 +10,10 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { User, AuthResponse, LoginRequest, SignupRequest } from "../types";
-import { api, setAuthToken, getAuthToken, clearAuthToken, ApiRequestError } from "../services/api";
+import { api, setAuthToken, getAuthToken, clearAuthToken, getRememberMePreference, ApiRequestError } from "../services/api";
 import { saveAccount } from "../hooks/useAccountSwitcher";
+
+const USER_CACHE_KEY = "taskflow_cached_user";
 
 interface AuthContextValue {
   user: User | null;
@@ -42,6 +44,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // If rememberMe is active, immediately restore the cached user to prevent
+    // a redirect to /login while the backend validation request is in-flight
+    // (e.g. when Electron restarts and the backend hasn't responded yet).
+    if (getRememberMePreference()) {
+      try {
+        const raw = localStorage.getItem(USER_CACHE_KEY);
+        if (raw) setUser(JSON.parse(raw) as User);
+      } catch { /* ignore corrupt cache */ }
+    }
+
     // Validate the stored token by fetching the current user
     let cancelled = false;
     api
@@ -49,6 +61,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((userData) => {
         if (!cancelled) {
           setUser(userData);
+          // Keep cache up to date for next startup
+          if (getRememberMePreference()) {
+            localStorage.setItem(USER_CACHE_KEY, JSON.stringify(userData));
+          }
         }
       })
       .catch((err) => {
@@ -56,8 +72,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Network/transient server errors should not log the user out.
         if (!cancelled && err instanceof ApiRequestError && (err.status === 401 || err.status === 403)) {
           clearAuthToken();
+          localStorage.removeItem(USER_CACHE_KEY);
           setUser(null);
         }
+        // For network/server errors, keep the cached user so the session survives a slow startup.
       })
       .finally(() => {
         if (!cancelled) {
@@ -78,7 +96,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const user = (response as any).user ?? (response as any).User ?? null;
       setAuthToken(token, rememberMe);
       setUser(user);
-      if (token && user) saveAccount(user.email, user.fullName, token, user.avatarUrl ?? undefined);
+      if (token && user) {
+        saveAccount(user.email, user.fullName, token, user.avatarUrl ?? undefined);
+        if (rememberMe) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+      }
       return user;
     } catch (err) {
       const message =
@@ -111,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     clearAuthToken();
+    localStorage.removeItem(USER_CACHE_KEY);
     setUser(null);
     setError(null);
   }, []);
@@ -131,6 +153,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateUser = useCallback((updatedUser: User, newToken: string) => {
     setAuthToken(newToken);
     setUser(updatedUser);
+    if (getRememberMePreference()) {
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(updatedUser));
+    }
   }, []);
 
   const value: AuthContextValue = {
