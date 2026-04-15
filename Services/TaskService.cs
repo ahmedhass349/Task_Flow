@@ -250,7 +250,8 @@ namespace taskflow.Services
 
             _taskRepository.Remove(task);
             await _taskRepository.SaveChangesAsync();
-            _mirror.Erase("tasks", taskId);
+            // Phase 2: use SyncId as MongoDB _id
+            _mirror.EraseSync("tasks", task.SyncId);
         }
 
         public async Task<TaskDto> ToggleStarAsync(int userId, int taskId)

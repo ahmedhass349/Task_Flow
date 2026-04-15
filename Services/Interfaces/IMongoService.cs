@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using taskflow.DTOs.Mongo;
 using taskflow.Models.Mongo;
@@ -7,6 +8,9 @@ namespace taskflow.Services.Interfaces
 {
     public interface IMongoService
     {
+        // FILE: Services/Interfaces/IMongoService.cs  PHASE: 1  CHANGE: added PingAsync
+        Task<bool> PingAsync(CancellationToken ct = default);
+
         // ── Presence ──────────────────────────────────────────────────────────
         Task UpsertPresenceAsync(string email, string fullName, string avatarUrl);
         Task<List<UserSearchResultDto>> SearchUsersAsync(string query, string excludeEmail);

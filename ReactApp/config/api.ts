@@ -160,8 +160,17 @@ const createEndpoints = () => ({
   },
 });
 
-// Export ENDPOINTS - this will be updated once API is initialized
+// Export ENDPOINTS - reassigned by refreshEndpoints() after async init resolves
 export let ENDPOINTS = createEndpoints();
+
+/**
+ * Phase 3 fix: re-builds ENDPOINTS with the resolved API_BASE_URL.
+ * Must be called after initializeApi() resolves (before root.render) so that
+ * Electron desktop apps get the correct localhost:PORT prefix on all URLs.
+ */
+export const refreshEndpoints = (): void => {
+  ENDPOINTS = createEndpoints();
+};
 
 // Export function to get current base URL
 export const getApiBaseUrl = (): string => API_BASE_URL;

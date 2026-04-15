@@ -1,3 +1,4 @@
+// FILE: Data/Entities/TaskItem.cs  PHASE: 2  CHANGE: implements ISyncableEntity — adds SyncId, UpdatedAt, IsSynced, LastModifiedBy
 using System;
 using System.Collections.Generic;
 
@@ -13,7 +14,7 @@ namespace taskflow.Data.Entities
         Overdue = 4
     }
 
-    public class TaskItem
+    public class TaskItem : ISyncableEntity
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
@@ -25,6 +26,13 @@ namespace taskflow.Data.Entities
         public DateTime? DueDate { get; set; }
         public bool IsStarred { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // ── ISyncableEntity (Phase 2) ─────────────────────────────────────
+        public Guid SyncId { get; set; } = Guid.NewGuid();
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public bool IsSynced { get; set; } = false;
+        /// <summary>Email of the user who last modified this task (denormalised for MongoDB queries).</summary>
+        public string? LastModifiedBy { get; set; }
 
         // Navigation
         public Project? Project { get; set; }

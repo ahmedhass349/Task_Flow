@@ -1,3 +1,4 @@
+// FILE: Services/MirrorService.cs  PHASE: 2  CHANGE: uses SyncId as MongoDB _id for ISyncableEntity; adds EraseSync
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -54,34 +55,57 @@ namespace taskflow.Services
         {
             _ = Task.Run(() => EraseAsync(collection, id));
         }
-
+        public void EraseSync(string collection, Guid syncId)
+        {
+            _ = Task.Run(() => EraseSyncAsync(collection, syncId));
+        }
         // ── Internals ────────────────────────────────────────────────────────
 
         private async Task MirrorAsync<T>(string collection, int id, T entity) where T : class
         {
             try
             {
-                if (_connectivity.IsEffectivelyOnline)
+                if (entity is ISyncableEntity syncable)
                 {
-                    var doc = ToSafeBsonDocument(entity, id);
-                    await _mongo.UpsertDocumentAsync(collection, id, doc);
+                    // Phase 2: use SyncId as MongoDB _id to prevent int-key collisions across devices
+                    var syncId = syncable.SyncId == Guid.Empty ? Guid.NewGuid() : syncable.SyncId;
+                    if (_connectivity.IsEffectivelyOnline)
+                    {
+                        var doc = ToSafeBsonDocumentSyncable(entity, syncId, id);
+                        await _mongo.UpsertDocumentBySyncIdAsync(collection, syncId.ToString(), id, doc);
+                    }
+                    else
+                    {
+                        var doc = ToSafeBsonDocumentSyncable(entity, syncId, id);
+                        await QueueOutboxAsync("MirrorUpsert", JsonSerializer.Serialize(new
+                        {
+                            collection,
+                            id,
+                            extJson = doc.ToJson(),
+                            syncId = syncId.ToString(),
+                        }));
+                        _connectivity.IncrementPending();
+                    }
                 }
                 else
                 {
-                    // Serialize entity via System.Text.Json (ignores cycles/nulls)
-                    var entityJson = JsonSerializer.Serialize(entity, _jsonOpts);
-                    // Store as extended-JSON round-trip by building the BsonDocument first
-                    var doc = ToSafeBsonDocument(entity, id);
-                    var extJson = doc.ToJson();
-
-                    await QueueOutboxAsync("MirrorUpsert", JsonSerializer.Serialize(new
+                    if (_connectivity.IsEffectivelyOnline)
                     {
-                        collection,
-                        id,
-                        extJson,
-                    }));
-
-                    _connectivity.IncrementPending();
+                        var doc = ToSafeBsonDocument(entity, id);
+                        await _mongo.UpsertDocumentAsync(collection, id, doc);
+                    }
+                    else
+                    {
+                        var doc = ToSafeBsonDocument(entity, id);
+                        await QueueOutboxAsync("MirrorUpsert", JsonSerializer.Serialize(new
+                        {
+                            collection,
+                            id,
+                            extJson = doc.ToJson(),
+                            syncId = (string?)null,
+                        }));
+                        _connectivity.IncrementPending();
+                    }
                 }
             }
             catch (Exception ex)
@@ -100,7 +124,7 @@ namespace taskflow.Services
                 }
                 else
                 {
-                    await QueueOutboxAsync("MirrorDelete", JsonSerializer.Serialize(new { collection, id }));
+                    await QueueOutboxAsync("MirrorDelete", JsonSerializer.Serialize(new { collection, id, syncId = (string?)null }));
                     _connectivity.IncrementPending();
                 }
             }
@@ -109,6 +133,31 @@ namespace taskflow.Services
                 _logger.LogWarning(ex, "MirrorService.EraseAsync failed: col={Col} id={Id}", collection, id);
             }
         }
+
+        private async Task EraseSyncAsync(string collection, Guid syncId)
+        {
+            try
+            {
+                if (_connectivity.IsEffectivelyOnline)
+                {
+                    await _mongo.DeleteDocumentBySyncIdAsync(collection, syncId.ToString());
+                }
+                else
+                {
+                    await QueueOutboxAsync("MirrorDelete", JsonSerializer.Serialize(new
+                    {
+                        collection,
+                        id = 0,
+                        syncId = syncId.ToString(),
+                    }));
+                    _connectivity.IncrementPending();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MirrorService.EraseSyncAsync failed: col={Col} syncId={SyncId}", collection, syncId);
+            }
+}
 
         private static BsonDocument ToSafeBsonDocument<T>(T entity, int id) where T : class
         {
@@ -139,6 +188,33 @@ namespace taskflow.Services
             {
                 // Fallback: minimal document with just the id
                 return new BsonDocument { ["_id"] = id };
+            }
+        }
+
+        /// <summary>Phase 2: builds a BsonDocument with _id = syncId (string) and intId = SQLite int PK.</summary>
+        private static BsonDocument ToSafeBsonDocumentSyncable<T>(T entity, Guid syncId, int intId) where T : class
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(entity, _jsonOpts);
+                var bson = new BsonDocument();
+                bson["_id"] = syncId.ToString();
+                bson["intId"] = intId;
+
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    if (prop.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
+                        continue; // replaced by intId
+
+                    bson[prop.Name] = JsonElementToBsonValue(prop.Value);
+                }
+
+                return bson;
+            }
+            catch
+            {
+                return new BsonDocument { ["_id"] = syncId.ToString(), ["intId"] = intId };
             }
         }
 

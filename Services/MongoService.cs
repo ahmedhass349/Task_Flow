@@ -16,8 +16,9 @@ namespace taskflow.Services
     /// </summary>
     public class MongoService : IMongoService
     {
+        // FILE: Services/MongoService.cs  PHASE: 1  CHANGE: corrected connection string (appName), driver settings
         private const string ConnectionString =
-            "mongodb://ahmedabdelbarr2003_db_user:buYRySH3L2hIS5Fm@ac-omzibpf-shard-00-00.zmsrng7.mongodb.net:27017,ac-omzibpf-shard-00-01.zmsrng7.mongodb.net:27017,ac-omzibpf-shard-00-02.zmsrng7.mongodb.net:27017/?ssl=true&replicaSet=atlas-k8r7te-shard-0&authSource=admin";
+            "mongodb://ahmedabdelbarr2003_db_user:buYRySH3L2hIS5Fm@ac-omzibpf-shard-00-00.zmsrng7.mongodb.net:27017,ac-omzibpf-shard-00-01.zmsrng7.mongodb.net:27017,ac-omzibpf-shard-00-02.zmsrng7.mongodb.net:27017/?ssl=true&replicaSet=atlas-k8r7te-shard-0&authSource=admin&appName=Cluster";
         private const string DatabaseName = "TaskFlow";
 
         private readonly IMongoCollection<UserPresence>? _presenceCollection;
@@ -33,8 +34,15 @@ namespace taskflow.Services
             try
             {
                 var settings = MongoClientSettings.FromConnectionString(ConnectionString);
-                settings.ServerSelectionTimeout = TimeSpan.FromSeconds(10);
-                settings.ConnectTimeout = TimeSpan.FromSeconds(10);
+                settings.ServerSelectionTimeout = TimeSpan.FromSeconds(8);
+                settings.ConnectTimeout = TimeSpan.FromSeconds(8);
+                settings.SocketTimeout = TimeSpan.FromSeconds(15);
+                settings.HeartbeatInterval = TimeSpan.FromSeconds(10);
+                settings.RetryWrites = true;
+                settings.RetryReads = true;
+                settings.MaxConnectionPoolSize = 10;
+                settings.MinConnectionPoolSize = 1;
+                settings.MaxConnectionIdleTime = TimeSpan.FromMinutes(5);
 
                 _client = new MongoClient(settings);
                 var db = _client.GetDatabase(DatabaseName);
@@ -129,13 +137,76 @@ namespace taskflow.Services
             }
         }
 
+        // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: SyncId-keyed upsert/delete + generic find for cross-device sync
+
+        /// <summary>
+        /// Upserts a document using a GUID SyncId as <c>_id</c> (string).
+        /// The original SQLite int id is stored as the <c>intId</c> field for legacy reference.
+        /// </summary>
+        internal async Task UpsertDocumentBySyncIdAsync(
+            string collectionName, string syncId, int intId, MongoDB.Bson.BsonDocument doc)
+        {
+            if (_db == null) return;
+            try
+            {
+                doc["_id"] = syncId;
+                doc["intId"] = intId;
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>(collectionName);
+                var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", syncId);
+                await collection.ReplaceOneAsync(filter, doc,
+                    new MongoDB.Driver.ReplaceOptions { IsUpsert = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "UpsertDocumentBySyncIdAsync failed: col={Col} syncId={SyncId}", collectionName, syncId);
+            }
+        }
+
+        /// <summary>
+        /// Deletes a document whose <c>_id</c> is the given GUID string.
+        /// </summary>
+        internal async Task DeleteDocumentBySyncIdAsync(string collectionName, string syncId)
+        {
+            if (_db == null) return;
+            try
+            {
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>(collectionName);
+                var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", syncId);
+                await collection.DeleteOneAsync(filter);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "DeleteDocumentBySyncIdAsync failed: col={Col} syncId={SyncId}", collectionName, syncId);
+            }
+        }
+
+        /// <summary>
+        /// Returns all documents in the named collection matching the given filter.
+        /// Returns an empty list when MongoDB is unreachable.
+        /// </summary>
+        internal async Task<List<MongoDB.Bson.BsonDocument>> FindDocumentsAsync(
+            string collectionName, MongoDB.Bson.BsonDocument filter, CancellationToken ct = default)
+        {
+            if (_db == null) return new List<MongoDB.Bson.BsonDocument>();
+            try
+            {
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>(collectionName);
+                return await collection.Find(filter).ToListAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "FindDocumentsAsync failed: col={Col}", collectionName);
+                return new List<MongoDB.Bson.BsonDocument>();
+            }
+        }
+
         // ── Connectivity ping ─────────────────────────────────────────────────
 
         /// <summary>
         /// Pings the MongoDB admin database with a 5-second timeout.
         /// Returns true when MongoDB is reachable.
         /// </summary>
-        internal async Task<bool> PingAsync(CancellationToken ct = default)
+        public async Task<bool> PingAsync(CancellationToken ct = default)
         {
             if (_client == null) return false;
             try
@@ -226,9 +297,10 @@ namespace taskflow.Services
                 throw new InvalidOperationException("MongoDB is unavailable.");
 
             // Expire any pre-existing pending invitation from the same sender to the same recipient for the same team
+            var normalizedRecipient = request.RecipientEmail.Trim().ToLowerInvariant();
             var expireFilter = Builders<TeamInvitation>.Filter.And(
                 Builders<TeamInvitation>.Filter.Eq(i => i.SenderEmail, senderEmail),
-                Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, request.RecipientEmail),
+                Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, normalizedRecipient),
                 Builders<TeamInvitation>.Filter.Eq(i => i.TeamId, request.TeamId),
                 Builders<TeamInvitation>.Filter.Eq(i => i.Status, InvitationStatus.Pending)
             );
@@ -241,7 +313,7 @@ namespace taskflow.Services
                 SenderEmail = senderEmail,
                 SenderFullName = senderFullName,
                 SenderAvatarUrl = senderAvatarUrl ?? string.Empty,
-                RecipientEmail = request.RecipientEmail.Trim().ToLowerInvariant(),
+                RecipientEmail = normalizedRecipient,
                 TeamId = request.TeamId,
                 TeamName = request.TeamName,
                 Message = request.Message ?? string.Empty,
@@ -284,7 +356,7 @@ namespace taskflow.Services
             {
                 var now = DateTime.UtcNow;
                 var filter = Builders<TeamInvitation>.Filter.And(
-                    Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, recipientEmail),
+                    Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, recipientEmail.Trim().ToLowerInvariant()),
                     Builders<TeamInvitation>.Filter.In(i => i.Status,
                         new[] { InvitationStatus.Pending, InvitationStatus.Accepted, InvitationStatus.Declined })
                 );
@@ -337,7 +409,7 @@ namespace taskflow.Services
 
             var filter = Builders<TeamInvitation>.Filter.And(
                 Builders<TeamInvitation>.Filter.Eq(i => i.Id, invitationId),
-                Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, recipientEmail),
+                Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, recipientEmail.Trim().ToLowerInvariant()),
                 Builders<TeamInvitation>.Filter.Eq(i => i.Status, InvitationStatus.Pending)
             );
 
@@ -351,6 +423,24 @@ namespace taskflow.Services
             if (invitation == null)
                 throw new KeyNotFoundException("Invitation not found or already responded to.");
 
+            // Resolve recipient's display name: stored RecipientFullName was empty when invitation was sent,
+            // so fall back to a presence lookup, then to the email itself.
+            string recipientFullName = invitation.RecipientFullName;
+            if (string.IsNullOrEmpty(recipientFullName) && _presenceCollection != null)
+            {
+                try
+                {
+                    var pres = await _presenceCollection
+                        .Find(Builders<UserPresence>.Filter.Eq(u => u.Email, recipientEmail.Trim().ToLowerInvariant()))
+                        .FirstOrDefaultAsync();
+                    if (pres != null && !string.IsNullOrEmpty(pres.FullName))
+                        recipientFullName = pres.FullName;
+                }
+                catch { /* non-critical */ }
+            }
+            if (string.IsNullOrEmpty(recipientFullName))
+                recipientFullName = recipientEmail;
+
             // Only add recipient to team_members when the invitation is for a specific team
             if (!string.IsNullOrEmpty(invitation.TeamId))
             {
@@ -363,7 +453,7 @@ namespace taskflow.Services
                     .Set(m => m.TeamId, invitation.TeamId ?? string.Empty)
                     .Set(m => m.TeamName, invitation.TeamName ?? string.Empty)
                     .Set(m => m.UserEmail, recipientEmail)
-                    .Set(m => m.UserFullName, invitation.RecipientFullName)
+                    .Set(m => m.UserFullName, recipientFullName)
                     .Set(m => m.Role, invitation.Role)
                     .Set(m => m.OwnerEmail, invitation.SenderEmail)
                     .Set(m => m.IsActive, true)
@@ -383,7 +473,7 @@ namespace taskflow.Services
 
             var filter = Builders<TeamInvitation>.Filter.And(
                 Builders<TeamInvitation>.Filter.Eq(i => i.Id, invitationId),
-                Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, recipientEmail),
+                Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, recipientEmail.Trim().ToLowerInvariant()),
                 Builders<TeamInvitation>.Filter.Eq(i => i.Status, InvitationStatus.Pending)
             );
 

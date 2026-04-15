@@ -32,7 +32,8 @@ namespace taskflow.BackgroundServices
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<OfflineSyncService> _logger;
 
-        private const int PingIntervalSeconds = 30;
+        // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 1  CHANGE: reduced ping interval from 30s to 10s
+        private const int PingIntervalSeconds = 10;
 
         private static readonly JsonSerializerOptions _json =
             new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -251,16 +252,30 @@ namespace taskflow.BackgroundServices
                 }
                 case "MirrorUpsert":
                 {
+                    // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 2  CHANGE: routes to SyncId-keyed upsert when syncId is present
                     var x = Deserialize<MirrorUpsertPayload>(p);
                     var doc = MongoDB.Bson.BsonDocument.Parse(x.ExtJson);
-                    doc["_id"] = x.Id;
-                    await _mongoService.UpsertDocumentAsync(x.Collection, x.Id, doc);
+                    if (!string.IsNullOrEmpty(x.SyncId))
+                    {
+                        doc["_id"] = x.SyncId;
+                        doc["intId"] = x.Id;
+                        await _mongoService.UpsertDocumentBySyncIdAsync(x.Collection, x.SyncId, x.Id, doc);
+                    }
+                    else
+                    {
+                        doc["_id"] = x.Id;
+                        await _mongoService.UpsertDocumentAsync(x.Collection, x.Id, doc);
+                    }
                     break;
                 }
                 case "MirrorDelete":
                 {
+                    // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 2  CHANGE: routes to SyncId-keyed delete when syncId is present
                     var x = Deserialize<MirrorDeletePayload>(p);
-                    await _mongoService.DeleteDocumentAsync(x.Collection, x.Id);
+                    if (!string.IsNullOrEmpty(x.SyncId))
+                        await _mongoService.DeleteDocumentBySyncIdAsync(x.Collection, x.SyncId);
+                    else
+                        await _mongoService.DeleteDocumentAsync(x.Collection, x.Id);
                     break;
                 }
                 default:
@@ -336,8 +351,8 @@ namespace taskflow.BackgroundServices
             string OwnerEmail, string MemberEmail, string MemberFullName,
             string TargetTeamId, string TargetTeamName, string? Role);
 
-        private record MirrorUpsertPayload(string Collection, int Id, string ExtJson);
+        private record MirrorUpsertPayload(string Collection, int Id, string ExtJson, string? SyncId = null);
 
-        private record MirrorDeletePayload(string Collection, int Id);
+        private record MirrorDeletePayload(string Collection, int Id, string? SyncId = null);
     }
 }

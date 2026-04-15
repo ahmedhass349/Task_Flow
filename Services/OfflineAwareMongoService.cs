@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +41,12 @@ namespace taskflow.Services
             _scopeFactory = scopeFactory;
             _logger = logger;
         }
+
+        // ── Connectivity ping ─────────────────────────────────────────────────
+        // FILE: Services/OfflineAwareMongoService.cs  PHASE: 1  CHANGE: implement PingAsync from IMongoService
+
+        public Task<bool> PingAsync(CancellationToken ct = default)
+            => _mongo.PingAsync(ct);
 
         // ── Presence ──────────────────────────────────────────────────────────
 

@@ -4,10 +4,12 @@
 // - If auth is still loading, shows a loading spinner
 // - If user is not authenticated, redirects to /login
 // - Otherwise renders the child route via <Outlet />
+// Phase 3: also mounts <ConnectivityBar> once for all protected pages
 
 import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useAuth } from "../context/AuthContext";
+import ConnectivityBar from "./ConnectivityBar";
 
 export default function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -29,5 +31,11 @@ export default function ProtectedRoute() {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      {/* Phase 3: offline/syncing status bar — only visible when not effectively online or syncing */}
+      <ConnectivityBar />
+      <Outlet />
+    </>
+  );
 }

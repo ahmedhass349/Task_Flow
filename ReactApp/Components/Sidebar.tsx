@@ -1,8 +1,9 @@
-import { LayoutDashboard, FolderKanban, MessageSquare, ClipboardList, Bell, User, Settings, Bot, LogOut, FileText } from "lucide-react";
+import { LayoutDashboard, FolderKanban, MessageSquare, ClipboardList, Bell, User, Settings, Bot, LogOut, FileText, WifiOff } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { useState } from "react";
 import { TaskFlowLogo } from "./TaskFlowLogo";
 import { useAuth } from "../context/AuthContext";
+import { useConnectivity } from "../hooks/useConnectivity";
 
 interface NavItem {
   icon: React.ReactNode;
@@ -15,6 +16,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const { isEffectivelyOnline } = useConnectivity();
 
   const navItems: NavItem[] = [
     { icon: <LayoutDashboard className="size-5 shrink-0" />, label: "Dashboard",     path: "/" },
@@ -84,6 +86,23 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Offline indicator */}
+      {!isEffectivelyOnline && (
+        <div
+          title="Offline — changes will sync when reconnected"
+          className={`flex items-center gap-4 px-4 py-2 mx-2 rounded-[8px] text-amber-500 ${
+            isCollapsed ? "justify-center" : ""
+          }`}
+        >
+          <WifiOff className="size-4 shrink-0" />
+          {!isCollapsed && (
+            <span className="text-xs font-medium whitespace-nowrap" style={{ fontFamily: 'Inter, sans-serif' }}>
+              Offline
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Log Out */}
       <div className="py-2 border-t border-gray-200">

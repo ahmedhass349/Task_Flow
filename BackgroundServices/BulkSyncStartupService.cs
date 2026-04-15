@@ -1,3 +1,4 @@
+// FILE: BackgroundServices/BulkSyncStartupService.cs  PHASE: 2  CHANGE: uses SyncId as _id for ISyncableEntity collections; added ToBsonDocumentSyncable helper
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -71,11 +72,11 @@ namespace taskflow.BackgroundServices
                 await SyncAsync(db.AppUsers.AsNoTracking(), "users",
                     u => u.Id, u => u, stoppingToken);
 
-                await SyncAsync(db.Projects.AsNoTracking(), "projects",
-                    p => p.Id, p => p, stoppingToken);
+                await SyncSyncableAsync(db.Projects.AsNoTracking(), "projects",
+                    p => p.Id, stoppingToken);
 
-                await SyncAsync(db.TaskItems.AsNoTracking(), "tasks",
-                    t => t.Id, t => t, stoppingToken);
+                await SyncSyncableAsync(db.TaskItems.AsNoTracking(), "tasks",
+                    t => t.Id, stoppingToken);
 
                 await SyncAsync(db.TaskComments.AsNoTracking(), "task_comments",
                     c => c.Id, c => c, stoppingToken);
@@ -86,11 +87,11 @@ namespace taskflow.BackgroundServices
                 await SyncAsync(db.Messages.AsNoTracking(), "messages",
                     m => m.Id, m => m, stoppingToken);
 
-                await SyncAsync(db.Notifications.AsNoTracking(), "notifications",
-                    n => n.Id, n => n, stoppingToken);
+                await SyncSyncableAsync(db.Notifications.AsNoTracking(), "notifications",
+                    n => n.Id, stoppingToken);
 
-                await SyncAsync(db.Reminders.AsNoTracking(), "reminders",
-                    r => r.Id, r => r, stoppingToken);
+                await SyncSyncableAsync(db.Reminders.AsNoTracking(), "reminders",
+                    r => r.Id, stoppingToken);
 
                 await SyncAsync(db.CalendarEvents.AsNoTracking(), "calendar_events",
                     e => e.Id, e => e, stoppingToken);
@@ -143,6 +144,34 @@ namespace taskflow.BackgroundServices
             }
         }
 
+        /// <summary>Phase 2: syncs entities that implement ISyncableEntity using SyncId as MongoDB _id.</summary>
+        private async Task SyncSyncableAsync<T>(
+            IQueryable<T> query,
+            string collectionName,
+            Func<T, int> idSelector,
+            CancellationToken ct) where T : class, ISyncableEntity
+        {
+            try
+            {
+                var entities = await query.ToListAsync(ct);
+                int count = 0;
+                foreach (var entity in entities)
+                {
+                    if (ct.IsCancellationRequested) break;
+                    int intId = idSelector(entity);
+                    var syncId = entity.SyncId == Guid.Empty ? Guid.NewGuid() : entity.SyncId;
+                    var doc = ToBsonDocumentSyncable(entity, syncId, intId);
+                    await _mongo.UpsertDocumentBySyncIdAsync(collectionName, syncId.ToString(), intId, doc);
+                    count++;
+                }
+                _logger.LogInformation("BulkSync (SyncId): {Col} → {N} documents upserted", collectionName, count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "BulkSync: failed for collection {Col}", collectionName);
+            }
+}
+
         private static BsonDocument ToBsonDocument(object entity, int id)
         {
             try
@@ -162,6 +191,27 @@ namespace taskflow.BackgroundServices
                 return new BsonDocument { ["_id"] = id };
             }
         }
+
+        /// <summary>Phase 2: serialises an ISyncableEntity with _id = syncId (string) and intId = int PK.</summary>
+        private static BsonDocument ToBsonDocumentSyncable(object entity, Guid syncId, int intId)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(entity, JsonOpts);
+                var bson = new BsonDocument { ["_id"] = syncId.ToString(), ["intId"] = intId };
+                using var doc = JsonDocument.Parse(json);
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    if (prop.Name.Equals("id", StringComparison.OrdinalIgnoreCase)) continue;
+                    bson[prop.Name] = ToBsonValue(prop.Value);
+                }
+                return bson;
+            }
+            catch
+            {
+                return new BsonDocument { ["_id"] = syncId.ToString(), ["intId"] = intId };
+            }
+}
 
         private static BsonValue ToBsonValue(JsonElement el)
         {

@@ -1,11 +1,14 @@
 /*
       FILE: Data/AppDbContext.cs
-      PHASE: Phase 1
+      PHASE: Phase 2
       PURPOSE: Defines EF Core model and applies SQLite-safe enum and DateTime conversions.
-      CHANGED FROM: DbContext model configuration without global DateTime value converters and without Notification enum string conversions.
+      CHANGED FROM: Phase 1 version — added SaveChangesAsync override to auto-stamp ISyncableEntity.UpdatedAt / SyncId;
+                    added unique SyncId indexes on TaskItem, Project, Notification, Reminder.
 */
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using taskflow.Data.Entities;
@@ -15,6 +18,26 @@ namespace taskflow.Data
     public class AppDbContext : DbContext
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+        // ── Phase 2: auto-stamp ISyncableEntity on every save ──────────────────────
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            foreach (var entry in ChangeTracker.Entries<ISyncableEntity>())
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    if (entry.Entity.SyncId == Guid.Empty)
+                        entry.Entity.SyncId = Guid.NewGuid();
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    entry.Entity.IsSynced = false;
+                }
+            }
+            return base.SaveChangesAsync(cancellationToken);
+        }
 
         // ── DbSets ────────────────────────────────────────────────────────────
         public DbSet<AppUser> AppUsers => Set<AppUser>();
@@ -66,8 +89,7 @@ namespace taskflow.Data
             modelBuilder.Entity<Project>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
-                entity.Property(e => e.Color).HasMaxLength(20);
+                entity.Property(e => e.Name).HasMaxLength(200).IsRequired();                entity.HasIndex(e => e.SyncId).IsUnique(); // Phase 2: cross-device dedup                entity.Property(e => e.Color).HasMaxLength(20);
 
                 entity.HasOne(p => p.Owner)
                       .WithMany(u => u.OwnedProjects)
@@ -99,8 +121,7 @@ namespace taskflow.Data
             modelBuilder.Entity<TaskItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Title).HasMaxLength(500).IsRequired();
-
+                entity.Property(e => e.Title).HasMaxLength(500).IsRequired();                entity.HasIndex(e => e.SyncId).IsUnique(); // Phase 2: cross-device dedup
                 entity.Property(e => e.Priority)
                       .HasConversion<string>()
                       .HasMaxLength(50);
@@ -204,8 +225,7 @@ namespace taskflow.Data
                       .HasMaxLength(50);
 
                 // Indexes for performance
-                entity.HasIndex(e => new { e.UserId, e.IsRead });
-                entity.HasIndex(e => new { e.UserId, e.CreatedAt });
+                entity.HasIndex(e => new { e.UserId, e.IsRead });                entity.HasIndex(e => e.SyncId).IsUnique(); // Phase 2: cross-device dedup                entity.HasIndex(e => new { e.UserId, e.CreatedAt });
 
                 entity.HasOne(n => n.User)
                       .WithMany(u => u.Notifications)
@@ -224,8 +244,7 @@ namespace taskflow.Data
                 entity.HasKey(e => e.Id);
 
                 // Indexes for performance
-                entity.HasIndex(e => new { e.FireAt, e.HasFired });
-                entity.HasIndex(e => e.TaskId);
+                entity.HasIndex(e => new { e.FireAt, e.HasFired });                entity.HasIndex(e => e.SyncId).IsUnique(); // Phase 2: cross-device dedup                entity.HasIndex(e => e.TaskId);
 
                 entity.HasOne(r => r.Task)
                       .WithMany()

@@ -23,11 +23,13 @@ namespace taskflow.Controllers.Api
     {
         private readonly IAuthService _authService;
         private readonly IMongoService _mongoService;
+        private readonly IUserDataSyncService _userDataSync;
 
-        public AuthController(IAuthService authService, IMongoService mongoService)
+        public AuthController(IAuthService authService, IMongoService mongoService, IUserDataSyncService userDataSync)
         {
-            _authService = authService;
+            _authService  = authService;
             _mongoService = mongoService;
+            _userDataSync = userDataSync;
         }
 
         /// <summary>
@@ -55,6 +57,13 @@ namespace taskflow.Controllers.Api
             _ = Task.Run(async () =>
             {
                 try { await _mongoService.UpsertPresenceAsync(result.User.Email, result.User.FullName, result.User.AvatarUrl ?? string.Empty); }
+                catch { /* intentionally swallowed */ }
+            });
+
+            // Phase 2: pull down cross-device data for this user (fire-and-forget)
+            _ = Task.Run(async () =>
+            {
+                try { await _userDataSync.PullForUserAsync(result.User.Id); }
                 catch { /* intentionally swallowed */ }
             });
 

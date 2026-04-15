@@ -265,6 +265,8 @@ namespace taskflow
             services.AddSingleton<IMongoService, OfflineAwareMongoService>();
             // MirrorService mirrors every SQLite write to MongoDB (fire-and-forget)
             services.AddSingleton<IMirrorService, MirrorService>();
+            // Phase 2: pull-down service for cross-device sync on login
+            services.AddSingleton<IUserDataSyncService, UserDataSyncService>();
 
             // ── SignalR ─────────────────────────────────────────────────────
             services.AddSignalR();

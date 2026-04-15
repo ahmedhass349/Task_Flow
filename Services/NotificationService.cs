@@ -303,8 +303,16 @@ namespace taskflow.Services
 
         public async Task DeleteAsync(int notificationId, int userId)
         {
+            // Phase 2: load first to capture SyncId before deletion
+            var notification = await _notificationRepository.FirstOrDefaultAsync(
+                n => n.Id == notificationId && n.UserId == userId);
+
             await _notificationRepository.DeleteAsync(notificationId, userId);
-            _mirror.Erase("notifications", notificationId);
+
+            if (notification != null)
+                _mirror.EraseSync("notifications", notification.SyncId);
+            else
+                _mirror.Erase("notifications", notificationId);
 
             // Update unread count via SignalR
             var newCount = await _notificationRepository.GetUnreadCountAsync(userId);
@@ -325,9 +333,10 @@ namespace taskflow.Services
             await _notificationRepository.SaveChangesAsync();
 
             // Erase each notification from MongoDB so they don't re-sync on restart
-            foreach (var id in ids)
+            // Phase 2: use SyncId as MongoDB _id
+            foreach (var n in notifications)
             {
-                _mirror.Erase("notifications", id);
+                _mirror.EraseSync("notifications", n.SyncId);
             }
 
             // Update unread count via SignalR
