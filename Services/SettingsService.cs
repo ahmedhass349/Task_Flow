@@ -20,12 +20,14 @@ namespace taskflow.Services
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly JwtHelper _jwtHelper;
+        private readonly IMongoService _mongoService;
 
-        public SettingsService(IUserRepository userRepository, IMapper mapper, JwtHelper jwtHelper)
+        public SettingsService(IUserRepository userRepository, IMapper mapper, JwtHelper jwtHelper, IMongoService mongoService)
         {
             _userRepository = userRepository;
             _mapper = mapper;
             _jwtHelper = jwtHelper;
+            _mongoService = mongoService;
         }
 
         public async Task<ProfileDto> GetProfileAsync(int userId)
@@ -98,6 +100,10 @@ namespace taskflow.Services
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
                 throw new KeyNotFoundException("User not found.");
+
+            // Clean up all MongoDB data for this user before removing the SQLite record
+            // (D2: presence, team memberships, pending invitations)
+            await _mongoService.DeleteUserDataAsync(user.Email);
 
             _userRepository.Remove(user);
             await _userRepository.SaveChangesAsync();

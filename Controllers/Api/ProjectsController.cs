@@ -54,7 +54,8 @@ namespace taskflow.Controllers.Api
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProjectById(int id)
         {
-            var project = await _projectService.GetProjectByIdAsync(id);
+            var userId = GetUserId();
+            var project = await _projectService.GetProjectByIdAsync(userId, id);
             return Ok(ApiResponse<ProjectDto>.Ok(project));
         }
 

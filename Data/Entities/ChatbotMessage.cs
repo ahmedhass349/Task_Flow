@@ -8,6 +8,7 @@ namespace taskflow.Data.Entities
         public int ConversationId { get; set; }
         public string Role { get; set; } = string.Empty;   // "user" or "assistant"
         public string Text { get; set; } = string.Empty;
+        public bool IsEdited { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation

@@ -108,10 +108,12 @@ namespace taskflow.Controllers.Api
             var mongoMembers = await _mongoService.GetTeamMembersAsync(id.ToString(), ownerEmail);
             string teamName = mongoMembers.FirstOrDefault()?.TeamName ?? "a team";
 
-            await _teamService.DeleteTeamAsync(userId, id);
-
-            // Hard-delete all MongoDB team_member records for this team
+            // Soft-delete MongoDB members BEFORE the SQLite team is removed so that
+            // if the SQLite delete succeeds but MongoDB is unreachable the outbox
+            // entry already exists and will be replayed (D4 atomicity fix).
             await _mongoService.DeleteTeamMembersAsync(id.ToString());
+
+            await _teamService.DeleteTeamAsync(userId, id);
 
             // Notify every member (excluding the owner) that the team was deleted
             foreach (var member in mongoMembers)

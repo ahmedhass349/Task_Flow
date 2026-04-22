@@ -272,6 +272,17 @@ ipcMain.handle('get-startup-status', () => {
   };
 });
 
+ipcMain.handle('read-reset-code', () => {
+  const tmpPath = path.join(require('os').tmpdir(), 'taskflow_reset_pending.tmp');
+  try {
+    const code = fs.readFileSync(tmpPath, 'utf8').trim();
+    fs.unlinkSync(tmpPath);
+    return code;
+  } catch {
+    return null;
+  }
+});
+
 // ── Application Event Handlers ────────────────────────────────────────────
 app.on('ready', async () => {
   log('Electron app ready');

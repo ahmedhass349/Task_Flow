@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using taskflow.DTOs.Mongo;
@@ -17,8 +19,6 @@ namespace taskflow.Services
     public class MongoService : IMongoService
     {
         // FILE: Services/MongoService.cs  PHASE: 1  CHANGE: corrected connection string (appName), driver settings
-        private const string ConnectionString =
-            "mongodb://ahmedabdelbarr2003_db_user:buYRySH3L2hIS5Fm@ac-omzibpf-shard-00-00.zmsrng7.mongodb.net:27017,ac-omzibpf-shard-00-01.zmsrng7.mongodb.net:27017,ac-omzibpf-shard-00-02.zmsrng7.mongodb.net:27017/?ssl=true&replicaSet=atlas-k8r7te-shard-0&authSource=admin&appName=Cluster";
         private const string DatabaseName = "TaskFlow";
 
         private readonly IMongoCollection<UserPresence>? _presenceCollection;
@@ -28,12 +28,17 @@ namespace taskflow.Services
         private IMongoClient? _client;
         private IMongoDatabase? _db;
 
-        public MongoService(ILogger<MongoService> logger)
+        public MongoService(ILogger<MongoService> logger, IConfiguration configuration)
         {
             _logger = logger;
+            // Connection string read from env var first (never checked into source),
+            // then falls back to appsettings MongoDB:ConnectionString.
+            var connectionString = Environment.GetEnvironmentVariable("TASKFLOW_MONGO_URI")
+                                   ?? configuration["MongoDB:ConnectionString"]
+                                   ?? string.Empty;
             try
             {
-                var settings = MongoClientSettings.FromConnectionString(ConnectionString);
+                var settings = MongoClientSettings.FromConnectionString(connectionString);
                 settings.ServerSelectionTimeout = TimeSpan.FromSeconds(8);
                 settings.ConnectTimeout = TimeSpan.FromSeconds(8);
                 settings.SocketTimeout = TimeSpan.FromSeconds(15);
@@ -265,9 +270,9 @@ namespace taskflow.Services
                     Builders<UserPresence>.Filter.Eq(u => u.AcceptsInvitations, true),
                     Builders<UserPresence>.Filter.Or(
                         Builders<UserPresence>.Filter.Regex(u => u.Email,
-                            new MongoDB.Bson.BsonRegularExpression(normalizedQuery, "i")),
+                            new MongoDB.Bson.BsonRegularExpression(Regex.Escape(normalizedQuery), "i")),
                         Builders<UserPresence>.Filter.Regex(u => u.FullName,
-                            new MongoDB.Bson.BsonRegularExpression(normalizedQuery, "i"))
+                            new MongoDB.Bson.BsonRegularExpression(Regex.Escape(normalizedQuery), "i"))
                     )
                 );
 
@@ -663,7 +668,10 @@ namespace taskflow.Services
             var filter = Builders<MongoTeamMember>.Filter.Eq(m => m.TeamId, teamId);
             var members = await _membersCollection.Find(filter).ToListAsync();
             if (members.Count > 0)
-                await _membersCollection.DeleteManyAsync(filter);
+                // Soft delete — consistent with RemoveTeamMemberAsync, RemoveAllMemberRecordsAsync,
+                // and LeaveTeamAsync which all set IsActive=false rather than deleting documents (D3 fix).
+                await _membersCollection.UpdateManyAsync(filter,
+                    Builders<MongoTeamMember>.Update.Set(m => m.IsActive, false));
             return members.ConvertAll(m => new MongoTeamMemberDto
             {
                 Id = m.Id ?? string.Empty,
@@ -769,6 +777,51 @@ namespace taskflow.Services
             ExpiresAt = i.ExpiresAt,
             DeclineReason = i.DeclineReason,
         };
+
+        // ── Account lifecycle ─────────────────────────────────────────────────
+
+        /// <summary>
+        /// Cleans up all MongoDB data for a deleted user:
+        /// removes their presence record, soft-deactivates all team membership
+        /// records (as both member and owner), and cancels any pending invitations.
+        /// </summary>
+        public async Task DeleteUserDataAsync(string userEmail)
+        {
+            try
+            {
+                if (_presenceCollection != null)
+                    await _presenceCollection.DeleteOneAsync(
+                        Builders<UserPresence>.Filter.Eq(u => u.Email, userEmail));
+
+                if (_membersCollection != null)
+                {
+                    // Deactivate records where the user is a member of someone else's team
+                    await _membersCollection.UpdateManyAsync(
+                        Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, userEmail),
+                        Builders<MongoTeamMember>.Update.Set(m => m.IsActive, false));
+
+                    // Deactivate records for teams the user owned
+                    await _membersCollection.UpdateManyAsync(
+                        Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, userEmail),
+                        Builders<MongoTeamMember>.Update.Set(m => m.IsActive, false));
+                }
+
+                if (_invitationsCollection != null)
+                {
+                    await _invitationsCollection.UpdateManyAsync(
+                        Builders<TeamInvitation>.Filter.And(
+                            Builders<TeamInvitation>.Filter.Eq(i => i.Status, InvitationStatus.Pending),
+                            Builders<TeamInvitation>.Filter.Or(
+                                Builders<TeamInvitation>.Filter.Eq(i => i.SenderEmail, userEmail),
+                                Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, userEmail))),
+                        Builders<TeamInvitation>.Update.Set(i => i.Status, InvitationStatus.Cancelled));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MongoService.DeleteUserDataAsync failed for {Email}", userEmail);
+            }
+        }
 
         // ── Dev / testing ─────────────────────────────────────────────────────
 

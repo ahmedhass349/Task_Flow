@@ -68,9 +68,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((err) => {
-        // Only clear persisted auth on explicit auth failures.
+        // Clear auth on explicit auth failures or when the account no longer exists.
         // Network/transient server errors should not log the user out.
-        if (!cancelled && err instanceof ApiRequestError && (err.status === 401 || err.status === 403)) {
+        if (!cancelled && err instanceof ApiRequestError && (err.status === 401 || err.status === 403 || err.status === 404)) {
           clearAuthToken();
           localStorage.removeItem(USER_CACHE_KEY);
           setUser(null);

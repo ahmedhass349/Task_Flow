@@ -17,6 +17,7 @@ namespace taskflow.Repositories
         public async Task<IEnumerable<ChatbotConversation>> GetUserConversationsAsync(int userId)
         {
             return await _dbSet
+                .Include(c => c.Messages)
                 .Where(c => c.UserId == userId)
                 .OrderByDescending(c => c.UpdatedAt)
                 .ToListAsync();

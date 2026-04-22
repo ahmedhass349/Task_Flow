@@ -105,7 +105,11 @@ interface RequestOptions {
 
 async function request<T>(endpoint: string, options: RequestOptions): Promise<T> {
   const baseUrl = getApiBaseUrl() || (import.meta as any).env?.VITE_API_BASE_URL || "";
-  const url = `${baseUrl}${endpoint}`;
+  // If endpoint is already an absolute URL (e.g. built by ENDPOINTS via buildUrl),
+  // use it directly to avoid double-prepending the base URL.
+  const url = endpoint.startsWith("http://") || endpoint.startsWith("https://")
+    ? endpoint
+    : `${baseUrl}${endpoint}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

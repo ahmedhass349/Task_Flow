@@ -87,15 +87,25 @@ namespace taskflow
             services.AddAutoMapper(_ => { }, typeof(MappingProfile).Assembly);
 
             // ── JWT Authentication ───────────────────────────────────────────
-            var jwtKey = Configuration["Jwt:Key"]!;
-            var jwtIssuer = Configuration["Jwt:Issuer"]!;
-            var jwtAudience = Configuration["Jwt:Audience"]!;
+            // Read JWT key from env var (set by Electron before spawning backend),
+            // fall back to appsettings, and if still absent auto-generate a random key
+            // that is valid only for the lifetime of this process.
+            var jwtKey = System.Environment.GetEnvironmentVariable("TASKFLOW_JWT_KEY")
+                         ?? Configuration["Jwt:Key"]
+                         ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
             {
-                throw new InvalidOperationException(
-                    "Invalid JWT signing key. Configure Jwt:Key with at least 32 UTF-8 bytes for HS256.");
+                // Auto-generate a cryptographically-random key (64 hex chars = 32 bytes)
+                jwtKey = Convert.ToHexString(
+                    System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
             }
+
+            // Write the resolved key back so JwtHelper (which reads IConfiguration) sees it.
+            ((IConfigurationRoot)Configuration)["Jwt:Key"] = jwtKey;
+
+            var jwtIssuer = Configuration["Jwt:Issuer"]!;
+            var jwtAudience = Configuration["Jwt:Audience"]!;
 
             services.AddAuthentication(options =>
             {
@@ -191,7 +201,9 @@ namespace taskflow
             services.AddFluentValidationClientsideAdapters();
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
-            // ── Swagger ──────────────────────────────────────────────────────
+            // ── Swagger (Development-only) ────────────────────────────────
+            if (Environment.IsDevelopment())
+            {
             services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo
@@ -226,7 +238,8 @@ namespace taskflow
                         System.Array.Empty<string>()
                     }
                 });
-            });
+            }); // AddSwaggerGen
+            } // if (IsDevelopment)
 
             // ── Repositories (DI) ────────────────────────────────────────────
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -255,6 +268,7 @@ namespace taskflow
             services.AddScoped<IChatbotService, ChatbotService>();
             services.AddScoped<ITaskCommentService, TaskCommentService>();
             services.AddScoped<IGroupChatService, GroupChatService>();
+            services.AddScoped<IMistralChatService, MistralChatService>();
 
             // ── MongoDB relay + offline/online sync ──────────────────────────
             // Register concrete MongoService first so it can be injected directly
@@ -267,6 +281,19 @@ namespace taskflow
             services.AddSingleton<IMirrorService, MirrorService>();
             // Phase 2: pull-down service for cross-device sync on login
             services.AddSingleton<IUserDataSyncService, UserDataSyncService>();
+
+            // ── HTTP Client for Mistral API ──────────────────────────────────
+            services.AddHttpClient("MistralClient", client =>
+            {
+                client.BaseAddress = new System.Uri("https://api.mistral.ai/");
+                client.Timeout = System.TimeSpan.FromMinutes(5);
+            });
+
+            // ── File upload limit (50 MB) ────────────────────────────────────
+            services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>
+            {
+                o.MultipartBodyLengthLimit = 52_428_800;
+            });
 
             // ── SignalR ─────────────────────────────────────────────────────
             services.AddSignalR();
@@ -346,13 +373,16 @@ namespace taskflow
             // ── Global Exception Handling ─────────────────────────────────
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-            // ── Swagger (available in all environments) ──────────────────────
-            app.UseSwagger();
-            app.UseSwaggerUI(options =>
+            // ── Swagger (Development-only) ─────────────────────────────────
+            if (env.IsDevelopment())
             {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "TaskFlow API v1");
-                options.RoutePrefix = "swagger";
-            });
+                app.UseSwagger();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "TaskFlow API v1");
+                    options.RoutePrefix = "swagger";
+                });
+            }
 
             app.UseDefaultFiles();
             app.UseStaticFiles();

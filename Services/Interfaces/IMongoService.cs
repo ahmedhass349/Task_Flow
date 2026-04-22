@@ -40,6 +40,9 @@ namespace taskflow.Services.Interfaces
         Task<List<MongoTeamMemberDto>> GetMembershipsByUserAsync(string userEmail);
         Task LeaveTeamAsync(string teamId, string userEmail);
 
+        // ── Account lifecycle ─────────────────────────────────────────────────
+        Task DeleteUserDataAsync(string userEmail);
+
         // ── Dev / testing ─────────────────────────────────────────────────────
         Task ClearAllAsync();
     }

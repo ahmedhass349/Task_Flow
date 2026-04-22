@@ -96,8 +96,8 @@ namespace taskflow.Controllers.Api
         [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
-            var code = await _authService.ForgotPasswordAsync(request);
-            return Ok(ApiResponse<string>.Ok(code, "Recovery code generated"));
+            await _authService.ForgotPasswordAsync(request);
+            return Ok(ApiResponse<string>.Ok("", "Recovery code generated. Please check the app window."));
         }
 
         /// <summary>

@@ -36,11 +36,14 @@ namespace taskflow.Services
             return _mapper.Map<IEnumerable<ProjectDto>>(projects);
         }
 
-        public async Task<ProjectDto> GetProjectByIdAsync(int projectId)
+        public async Task<ProjectDto> GetProjectByIdAsync(int userId, int projectId)
         {
             var project = await _projectRepository.GetProjectWithDetailsAsync(projectId);
             if (project == null)
                 throw new KeyNotFoundException($"Project with ID {projectId} not found.");
+
+            if (project.OwnerId != userId && !project.Members.Any(m => m.UserId == userId))
+                throw new UnauthorizedAccessException("You do not have permission to view this project.");
 
             return _mapper.Map<ProjectDto>(project);
         }

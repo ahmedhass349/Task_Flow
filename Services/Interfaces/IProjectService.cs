@@ -7,7 +7,7 @@ namespace taskflow.Services.Interfaces
     public interface IProjectService
     {
         Task<IEnumerable<ProjectDto>> GetUserProjectsAsync(int userId);
-        Task<ProjectDto> GetProjectByIdAsync(int projectId);
+        Task<ProjectDto> GetProjectByIdAsync(int userId, int projectId);
         Task<ProjectDto> CreateProjectAsync(int userId, CreateProjectRequest request);
         Task<ProjectDto> UpdateProjectAsync(int userId, int projectId, UpdateProjectRequest request);
         Task DeleteProjectAsync(int userId, int projectId);

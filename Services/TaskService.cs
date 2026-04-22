@@ -88,7 +88,7 @@ namespace taskflow.Services
             return _mapper.Map<IEnumerable<TaskDto>>(tasks);
         }
 
-        public async Task<TaskDto> GetTaskByIdAsync(int taskId)
+        public async Task<TaskDto> GetTaskByIdAsync(int userId, int taskId)
         {
             var task = await _taskRepository.Query()
                 .Include(t => t.Project)
@@ -97,6 +97,9 @@ namespace taskflow.Services
 
             if (task == null)
                 throw new KeyNotFoundException($"Task with ID {taskId} not found.");
+
+            if (task.AssigneeId != userId)
+                throw new UnauthorizedAccessException("You do not have permission to view this task.");
 
             return _mapper.Map<TaskDto>(task);
         }
@@ -155,7 +158,7 @@ namespace taskflow.Services
                 // Don't fail task creation if notification fails
             }
 
-            return await GetTaskByIdAsync(task.Id);
+            return await GetTaskByIdAsync(userId, task.Id);
         }
 
         public async Task<TaskDto> UpdateTaskAsync(int userId, int taskId, UpdateTaskRequest request)
@@ -235,7 +238,7 @@ namespace taskflow.Services
                 _logger.LogError(ex, "Failed to send update notification for task {Id}", task.Id);
             }
 
-            return await GetTaskByIdAsync(task.Id);
+            return await GetTaskByIdAsync(userId, task.Id);
         }
 
         public async Task DeleteTaskAsync(int userId, int taskId)
@@ -248,10 +251,11 @@ namespace taskflow.Services
             if (task.AssigneeId != userId)
                 throw new UnauthorizedAccessException("You do not have permission to delete this task.");
 
+            // Queue MongoDB erase before SQLite remove so the outbox entry exists
+            // if the app crashes between the two operations (D1 atomicity fix).
+            _mirror.EraseSync("tasks", task.SyncId);
             _taskRepository.Remove(task);
             await _taskRepository.SaveChangesAsync();
-            // Phase 2: use SyncId as MongoDB _id
-            _mirror.EraseSync("tasks", task.SyncId);
         }
 
         public async Task<TaskDto> ToggleStarAsync(int userId, int taskId)
@@ -270,7 +274,7 @@ namespace taskflow.Services
             await _taskRepository.SaveChangesAsync();
             _mirror.Mirror("tasks", task.Id, task);
 
-            return await GetTaskByIdAsync(task.Id);
+            return await GetTaskByIdAsync(userId, task.Id);
         }
 
         public async Task<TaskDto> UpdateStatusAsync(int userId, int taskId, string status)
@@ -292,7 +296,7 @@ namespace taskflow.Services
             await _taskRepository.SaveChangesAsync();
             _mirror.Mirror("tasks", task.Id, task);
 
-            return await GetTaskByIdAsync(task.Id);
+            return await GetTaskByIdAsync(userId, task.Id);
         }
     }
 }

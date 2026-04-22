@@ -278,6 +278,12 @@ namespace taskflow.BackgroundServices
                         await _mongoService.DeleteDocumentAsync(x.Collection, x.Id);
                     break;
                 }
+                case "DeleteUserData":
+                {
+                    var x = Deserialize<UserDataPayload>(p);
+                    await _mongoService.DeleteUserDataAsync(x.UserEmail);
+                    break;
+                }
                 default:
                     _logger.LogWarning("Unknown outbox operation: {Op}", entry.OperationName);
                     throw new InvalidOperationException($"Unknown operation: {entry.OperationName}");
@@ -354,5 +360,7 @@ namespace taskflow.BackgroundServices
         private record MirrorUpsertPayload(string Collection, int Id, string ExtJson, string? SyncId = null);
 
         private record MirrorDeletePayload(string Collection, int Id, string? SyncId = null);
+
+        private record UserDataPayload(string UserEmail);
     }
 }

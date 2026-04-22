@@ -686,5 +686,16 @@ namespace taskflow.Services
         // ── Dev / testing ─────────────────────────────────────────────────────
 
         public Task ClearAllAsync() => _mongo.ClearAllAsync();
+
+        public async Task DeleteUserDataAsync(string userEmail)
+        {
+            if (_connectivity.IsEffectivelyOnline)
+            {
+                await _mongo.DeleteUserDataAsync(userEmail);
+                return;
+            }
+            QueueOutbox("DeleteUserData", new { userEmail });
+            _connectivity.IncrementPending();
+        }
     }
 }

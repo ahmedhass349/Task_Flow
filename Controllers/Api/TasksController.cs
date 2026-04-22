@@ -58,7 +58,8 @@ namespace taskflow.Controllers.Api
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTaskById(int id)
         {
-            var task = await _taskService.GetTaskByIdAsync(id);
+            var userId = GetUserId();
+            var task = await _taskService.GetTaskByIdAsync(userId, id);
             return Ok(ApiResponse<TaskDto>.Ok(task));
         }
 

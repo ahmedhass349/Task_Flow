@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -84,7 +85,22 @@ namespace taskflow.Services
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
-            _mirror.Mirror("users", user.Id, user);
+            // Mirror a safe projection — explicitly exclude PasswordHash, ResetToken, ResetTokenExpiry
+            // and all navigation collections to avoid storing credentials in MongoDB.
+            _mirror.Mirror("users", user.Id, new {
+                user.Id,
+                user.FullName,
+                user.FirstName,
+                user.LastName,
+                user.Email,
+                user.AvatarUrl,
+                user.Company,
+                user.Country,
+                user.Phone,
+                user.Timezone,
+                user.CreatedAt,
+                user.LastLoginAt
+            });
 
             var token = _jwtHelper.GenerateToken(user);
             var userDto = _mapper.Map<UserDto>(user);
@@ -112,7 +128,7 @@ namespace taskflow.Services
             return $"{new string(part1)}-{new string(part2)}";
         }
 
-        public async Task<string> ForgotPasswordAsync(ForgotPasswordRequest request)
+        public async Task ForgotPasswordAsync(ForgotPasswordRequest request)
         {
             var user = await _userRepository.GetByEmailAsync(request.Email);
             if (user == null)
@@ -125,7 +141,11 @@ namespace taskflow.Services
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
 
-            return code;
+            // Write code to a local temp file; the Electron main process reads it via
+            // IPC ('read-reset-code') and deletes it. The code is never returned in
+            // the HTTP response body.
+            var tmpPath = Path.Combine(Path.GetTempPath(), "taskflow_reset_pending.tmp");
+            await File.WriteAllTextAsync(tmpPath, code);
         }
 
         public async Task ResetPasswordAsync(ResetPasswordRequest request)

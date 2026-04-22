@@ -158,6 +158,7 @@ const createEndpoints = () => ({
     sendMessage: (id: number) => buildUrl(`/api/chatbot/conversations/${id}/messages`),
     deleteConversation: (id: number) => buildUrl(`/api/chatbot/conversations/${id}`),
   },
+
 });
 
 // Export ENDPOINTS - reassigned by refreshEndpoints() after async init resolves

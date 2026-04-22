@@ -7,7 +7,7 @@ namespace taskflow.Services.Interfaces
     public interface ITaskService
     {
         Task<IEnumerable<TaskDto>> GetTasksAsync(int userId, TaskFilterRequest filter);
-        Task<TaskDto> GetTaskByIdAsync(int taskId);
+        Task<TaskDto> GetTaskByIdAsync(int userId, int taskId);
         Task<TaskDto> CreateTaskAsync(int userId, CreateTaskRequest request);
         Task<TaskDto> UpdateTaskAsync(int userId, int taskId, UpdateTaskRequest request);
         Task DeleteTaskAsync(int userId, int taskId);

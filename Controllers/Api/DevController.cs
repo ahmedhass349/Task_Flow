@@ -18,7 +18,7 @@ namespace taskflow.Controllers.Api
     /// </summary>
     [ApiController]
     [Route("api/dev")]
-    [AllowAnonymous]
+    [Authorize]
     public class DevController : ControllerBase
     {
         private readonly IWebHostEnvironment _env;
