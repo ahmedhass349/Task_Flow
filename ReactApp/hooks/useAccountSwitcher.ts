@@ -5,7 +5,7 @@
 // Used by the "Switch account" feature in the Header profile dropdown.
 
 import { useState, useCallback } from "react";
-import { setAuthToken } from "../services/api";
+import { setAuthToken, getAuthToken, clearAuthToken, getRememberMePreference } from "../services/api";
 
 const ACCOUNTS_KEY = "taskflow_saved_accounts";
 
@@ -81,11 +81,19 @@ export function useAccountSwitcher(currentEmail: string | undefined) {
       refreshUser: () => Promise<void>,
       onError: (msg: string) => void
     ): Promise<boolean> => {
+      // Save the current token so we can restore it if the switch fails
+      const previousToken = getAuthToken();
       setAuthToken(account.token, true);
       try {
         await refreshUser();
         return true;
       } catch {
+        // Restore the previous session so the current user stays logged in
+        if (previousToken) {
+          setAuthToken(previousToken, getRememberMePreference());
+        } else {
+          clearAuthToken();
+        }
         // Token expired — remove stale entry
         removeAccount(account.email);
         setAccounts(loadAccounts());

@@ -288,7 +288,6 @@ function InviteModal({ onClose, onSend, searchUsers, preselectedTeam }: InviteMo
   const [results, setResults] = useState<UserSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<UserSearchResult | null>(null);
-  const [role, setRole] = useState("Member");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [sentOk, setSentOk] = useState(false);
@@ -318,7 +317,6 @@ function InviteModal({ onClose, onSend, searchUsers, preselectedTeam }: InviteMo
         teamId: preselectedTeam?.id || undefined,
         teamName: preselectedTeam?.name || undefined,
         message,
-        role,
       });
       setSentOk(true);
     } catch (err: unknown) {
@@ -420,19 +418,6 @@ function InviteModal({ onClose, onSend, searchUsers, preselectedTeam }: InviteMo
             )}
           </div>
 
-          {/* Role */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-            <select
-              value={role}
-              onChange={e => setRole(e.target.value)}
-              className="w-full py-2.5 px-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="Member">Member</option>
-              <option value="Admin">Admin</option>
-            </select>
-          </div>
-
           {/* Message */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Message (optional)</label>
@@ -507,7 +492,7 @@ function IncomingCard({ inv, onAccept, onDecline }: IncomingCardProps) {
           </span>
         </div>
         <p className="text-sm text-gray-700 mt-1">
-          Inviting you to <strong>{inv.teamName}</strong> as <span className="font-medium">{inv.role}</span>
+          Inviting you to join <strong>{inv.teamName}</strong>
         </p>
         {inv.message && <p className="text-sm text-gray-500 italic mt-0.5">"{inv.message}"</p>}
         <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
@@ -564,7 +549,7 @@ function OutgoingCard({ inv, onCancel, onDelete }: OutgoingCardProps) {
           </span>
         </div>
         <p className="text-sm text-gray-700 mt-1">
-          {inv.teamName && <>Team: <strong>{inv.teamName}</strong> &middot; </>}Role: <span className="font-medium">{inv.role}</span>
+          {inv.teamName && <>Team: <strong>{inv.teamName}</strong></>}
         </p>
         {inv.message && <p className="text-sm text-gray-500 italic mt-0.5">&quot;{inv.message}&quot;</p>}
         <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
@@ -864,7 +849,7 @@ export default function Teams() {
   };
 
   const tabs = [
-    { id: "all-members" as Tab, label: "Members", icon: Users2 },
+    { id: "all-members" as Tab, label: "Contacts", icon: Users2 },
     { id: "members" as Tab, label: "My Team", icon: Users },
     { id: "incoming" as Tab, label: "Incoming", icon: Inbox, badge: pendingIn },
     { id: "outgoing" as Tab, label: "Sent", icon: Send, badge: pendingOut },

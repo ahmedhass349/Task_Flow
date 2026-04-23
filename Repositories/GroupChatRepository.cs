@@ -51,12 +51,14 @@ namespace taskflow.Repositories
 
         public async Task<List<GroupMessage>> GetMessagesAsync(int groupChatId, int take = 100)
         {
-            return await _db.GroupMessages
+            var messages = await _db.GroupMessages
                 .Where(m => m.GroupChatId == groupChatId)
                 .Include(m => m.Sender)
-                .OrderBy(m => m.SentAt)
-                .TakeLast(take)
+                .OrderByDescending(m => m.SentAt)
+                .Take(take)
                 .ToListAsync();
+            messages.Reverse();
+            return messages;
         }
 
         public async Task<GroupMessage> AddMessageAsync(GroupMessage message)

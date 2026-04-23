@@ -110,7 +110,7 @@ interface NotificationProviderProps {
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(notificationReducer, initialState);
   const { token, isLoading } = useAuth();
-  const { addToast } = useToast();
+  const { addToast, clearAllToasts } = useToast();
   const connectionRef = useRef<HubConnection | null>(null);
 
   useEffect(() => {
@@ -121,6 +121,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
     if (!token || isLoading) {
       dispatch({ type: "SET_CONNECTION_STATUS", payload: false });
+      if (!token) {
+        dispatch({ type: "SET_NOTIFICATIONS", payload: [] });
+        dispatch({ type: "SET_UNREAD_COUNT", payload: 0 });
+        dispatch({ type: "SET_LATEST_NOTIFICATION", payload: null });
+        clearAllToasts();
+      }
       return;
     }
 
@@ -205,6 +211,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
             const pending = (unread ?? []).filter(n => !n.isRead).slice(0, 7);
             pending.forEach((notif, idx) => {
               setTimeout(() => {
+                // Don't show startup toasts on auth pages
+                const path = window.location.pathname;
+                if (path === "/login" || path === "/signup" || path === "/forgot-password") return;
                 const priority = notif.priority.toLowerCase();
                 addToast({
                   title: notif.title,

@@ -328,7 +328,7 @@ export default function Header() {
                 {uiNotifications.map(n => (
                   <DropdownMenu.Item
                     key={n.id}
-                    onSelect={() => { markNotifAsRead(n.id); navigate(n.actionUrl || '/notifications'); }}
+                    onSelect={() => { markNotifAsRead(n.id); }}
                     className={`flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${n.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`}
                   >
                     <div className={`size-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${n.iconBg}`}>
@@ -387,7 +387,7 @@ export default function Header() {
                 {uiMessages.map(m => (
                   <DropdownMenu.Item
                     key={m.id}
-                    onSelect={() => { markConversationAsRead(m.id); navigate('/message'); }}
+                    onSelect={() => { markConversationAsRead(m.id); }}
                     className={`flex items-start gap-3 px-4 py-3 cursor-pointer outline-none border-b border-gray-50 last:border-0 transition-colors ${m.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`}
                   >
                     <div className={`size-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${AVATAR_COLORS[m.avatar] ?? "bg-gray-200 text-gray-600"}`}>

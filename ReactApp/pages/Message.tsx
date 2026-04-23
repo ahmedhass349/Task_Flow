@@ -93,7 +93,7 @@ function groupMessagesByDate(messages: any[]) {
 
 const EMOJI_LIST = [
   "😀","😂","😍","🥰","😎","🤓","😅","🙏","😢","😡",
-  "👍","👎","👏","🙌","🤝","🙏","💪","🎉","🔥","💯",
+  "👍","👎","👏","🙌","🤝","🫶","💪","🎉","🔥","💯",
   "❤️","💙","💚","💛","🧡","💜","🖤","🤍","💔","💕",
   "😮","😲","🥳","🤩","🥲","😬","🤐","🤫","🤭","😏",
 ];
@@ -115,9 +115,9 @@ function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onC
       className="absolute bottom-full mb-2 left-0 z-50 bg-white border border-gray-200 rounded-2xl shadow-xl p-3 w-72"
     >
       <div className="grid grid-cols-8 gap-1">
-        {EMOJI_LIST.map(e => (
+        {EMOJI_LIST.map((e, i) => (
           <button
-            key={e}
+            key={i}
             onClick={() => { onSelect(e); }}
             className="text-xl hover:bg-gray-100 rounded-lg p-1 transition-colors leading-none"
             type="button"
@@ -241,24 +241,26 @@ function Avatar({ name, avatarUrl, size = "md" }: { name: string; avatarUrl?: st
 interface StartConversationModalProps {
   allSharedMembers: SharedMember[];
   existingContactIds: Set<number>;
+  currentUserEmail: string;
   onStart: (email: string) => Promise<void>;
   onClose: () => void;
 }
 
-function StartConversationModal({ allSharedMembers, existingContactIds, onStart, onClose }: StartConversationModalProps) {
+function StartConversationModal({ allSharedMembers, existingContactIds, currentUserEmail, onStart, onClose }: StartConversationModalProps) {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Deduplicate members by email, exclude ones already in contacts
+  // Deduplicate members by email, exclude ones already in contacts, exclude self
   const members = useMemo(() => {
     const seen = new Set<string>();
     return allSharedMembers.filter(m => {
+      if (m.userEmail === currentUserEmail) return false;
       if (seen.has(m.userEmail)) return false;
       seen.add(m.userEmail);
       return true;
     });
-  }, [allSharedMembers]);
+  }, [allSharedMembers, currentUserEmail]);
 
   const filtered = search
     ? members.filter(m =>
@@ -330,7 +332,7 @@ function StartConversationModal({ allSharedMembers, existingContactIds, onStart,
                 <Avatar name={m.userFullName || m.userEmail} avatarUrl={m.avatarUrl} size="sm" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{m.userFullName || m.userEmail}</p>
-                  <p className="text-xs text-gray-400 truncate">{m.userEmail} Â· {m.teamName}</p>
+                  <p className="text-xs text-gray-400 truncate">{m.userEmail}</p>
                 </div>
                 {existingContactIds.has(0) && (
                   <span className="text-xs text-blue-500 flex-shrink-0">Chat</span>
@@ -356,26 +358,27 @@ function StartConversationModal({ allSharedMembers, existingContactIds, onStart,
 interface CreateGroupModalProps {
   allSharedMembers: SharedMember[];
   currentUserId: number;
+  currentUserEmail: string;
   onCreate: (name: string, memberEmails: string[]) => Promise<void>;
   onClose: () => void;
 }
 
-function CreateGroupModal({ allSharedMembers, currentUserId, onCreate, onClose }: CreateGroupModalProps) {
+function CreateGroupModal({ allSharedMembers, currentUserId, currentUserEmail, onCreate, onClose }: CreateGroupModalProps) {
   const [groupName, setGroupName] = useState("");
   const [search, setSearch] = useState("");
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Deduplicate members by email, exclude self (we don't have userId here, rely on server to exclude)
+  // Deduplicate members by email, exclude self
   const members = useMemo(() => {
     const seen = new Set<string>();
     return allSharedMembers.filter(m => {
-      if (!m.userEmail || seen.has(m.userEmail)) return false;
+      if (!m.userEmail || m.userEmail === currentUserEmail || seen.has(m.userEmail)) return false;
       seen.add(m.userEmail);
       return true;
     });
-  }, [allSharedMembers]);
+  }, [allSharedMembers, currentUserEmail]);
 
   const filtered = search
     ? members.filter(m =>
@@ -831,7 +834,7 @@ export default function Message() {
             </div>
 
             {/* Contacts */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="overflow-y-auto max-h-[60%]">
               {filteredContacts.length === 0 ? (
                 <div className="px-4 py-10 text-center">
                   <MessageCircle className="size-10 text-gray-300 mx-auto mb-2" />
@@ -852,6 +855,7 @@ export default function Message() {
                   <button
                     key={c.id}
                     onClick={() => {
+                      setActiveGroupId(null);
                       setActiveContactId(c.id);
                       setShowContacts(false);
                       if (c.unreadCount > 0) markConversationAsRead(c.id);
@@ -1327,6 +1331,7 @@ export default function Message() {
         <StartConversationModal
           allSharedMembers={allSharedMembers}
           existingContactIds={existingContactIds}
+          currentUserEmail={user?.email ?? ""}
           onStart={handleStartConversation}
           onClose={() => setShowStartModal(false)}
         />
@@ -1337,6 +1342,7 @@ export default function Message() {
         <CreateGroupModal
           allSharedMembers={allSharedMembers}
           currentUserId={currentUserId}
+          currentUserEmail={user?.email ?? ""}
           onCreate={async (name, memberUserIds) => {
             const g = await createGroup(name, memberUserIds);
             setActiveGroupId(g.id);

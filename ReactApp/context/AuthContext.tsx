@@ -142,12 +142,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshUser = useCallback(async () => {
-    try {
-      const userData = await api.get<User>("/api/auth/me");
-      setUser(userData);
-    } catch (err) {
-      // Don't clear token on refresh failure, error will be handled by caller
-    }
+    const userData = await api.get<User>("/api/auth/me");
+    setUser(userData);
   }, []);
 
   const updateUser = useCallback((updatedUser: User, newToken: string) => {
