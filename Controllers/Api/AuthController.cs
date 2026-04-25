@@ -4,6 +4,7 @@
 //          added fire-and-forget presence upsert to MongoDB relay on login/register (Phase 2)
 
 using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -119,8 +120,18 @@ namespace taskflow.Controllers.Api
         public async Task<IActionResult> GetCurrentUser()
         {
             var userId = GetUserId();
-            var user = await _authService.GetCurrentUserAsync(userId);
-            return Ok(ApiResponse<UserDto>.Ok(user));
+            try
+            {
+                var user = await _authService.GetCurrentUserAsync(userId);
+                return Ok(ApiResponse<UserDto>.Ok(user));
+            }
+            catch (KeyNotFoundException)
+            {
+                // The JWT was structurally valid but the account no longer exists in the DB
+                // (e.g. DB was reset). Treat this as an auth failure so the client clears
+                // the stale token rather than getting an ambiguous 404.
+                return Unauthorized(ApiResponse<string>.Fail("Your session is no longer valid. Please log in again."));
+            }
         }
 
         /// <summary>

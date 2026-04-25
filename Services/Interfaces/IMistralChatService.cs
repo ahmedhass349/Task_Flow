@@ -18,5 +18,11 @@ namespace taskflow.Services.Interfaces
 
         /// <summary>Generate a short (≤5 word) conversation title from the first user message.</summary>
         Task<string> GenerateTitleAsync(string firstUserMessage, CancellationToken ct = default);
+
+        /// <summary>
+        /// Send a single prompt with an optional file attachment and receive a complete (non-streaming) response.
+        /// Images are sent multimodally; PDFs are OCR-extracted first.
+        /// </summary>
+        Task<string> ChatWithFileAsync(string userPrompt, string? fileBase64 = null, string? fileMimeType = null, string? systemPrompt = null, CancellationToken ct = default);
     }
 }

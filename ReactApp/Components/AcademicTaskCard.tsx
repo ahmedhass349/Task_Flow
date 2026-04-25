@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useCallback } from "react";
 import {
   X, ListTodo, AlignLeft, Flag, Calendar, User,
   ChevronDown, Plus, Trash2, Bell, Clock, Mail,
-  BellRing, CheckSquare, Square,
+  BellRing, CheckSquare, Square, Sparkles, UploadCloud,
+  Loader2, CheckCircle2, AlertCircle,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
+import { api } from "../services/api";
 
 export interface TaskPayload {
   title: string;
@@ -257,6 +259,97 @@ function ReminderRow({
 export default function AcademicTaskCard({ onClose, onSuccess, initialData }: AcademicTaskCardProps) {
   const { addToast } = useToast();
   const isEditMode = Boolean(initialData?.id);
+
+  // ── Smart Auto Fill state ───────────────────────────────────────────────
+  const [smartFillOpen, setSmartFillOpen] = useState(false);
+  const [smartFillLoading, setSmartFillLoading] = useState(false);
+  const [smartFillError, setSmartFillError] = useState<string | null>(null);
+  const [smartFillCount, setSmartFillCount] = useState<number | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const smartFillInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSmartFillFile = useCallback(async (file: File) => {
+    const allowed = file.type.startsWith("image/") || file.type === "application/pdf";
+    if (!allowed) {
+      setSmartFillError("Only images (PNG, JPG, WEBP) and PDF files are supported.");
+      return;
+    }
+    setSmartFillError(null);
+    setSmartFillCount(null);
+    setSmartFillLoading(true);
+
+    try {
+      const fileBase64: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const result = ev.target?.result as string;
+          const commaIdx = result.indexOf(",");
+          resolve(commaIdx >= 0 ? result.slice(commaIdx + 1) : result);
+        };
+        reader.onerror = () => reject(new Error("File read failed"));
+        reader.readAsDataURL(file);
+      });
+
+      const fields = await api.post<{ title?: string; description?: string; priority?: string; dueDate?: string; assignee?: string; subtasks?: string[] }>(
+        "/api/tasks/smart-fill",
+        { fileBase64, mimeType: file.type }
+      ) ?? {};
+      let filled = 0;
+
+      if (fields.title?.trim()) { setTitle(fields.title.trim()); setErrors(p => ({ ...p, title: "" })); filled++; }
+      if (fields.description?.trim()) { setDescription(fields.description.trim()); filled++; }
+      if (fields.priority) {
+        const p = fields.priority as Priority;
+        if (["Low", "Medium", "High", "Urgent"].includes(p)) { setPriority(p); setErrors(p2 => ({ ...p2, priority: "" })); filled++; }
+      }
+      if (fields.dueDate?.trim()) {
+        const converted = toDateTimeLocalInputValue(fields.dueDate.trim());
+        if (converted) { setDue(converted); filled++; }
+      }
+      if (fields.assignee?.trim()) { setAssignee(fields.assignee.trim()); filled++; }
+      if (Array.isArray(fields.subtasks) && fields.subtasks.length > 0) {
+        const newSubtasks = fields.subtasks
+          .map(t => t?.trim())
+          .filter((t): t is string => !!t)
+          .map(text => ({ id: `st-${Date.now()}-${Math.random()}`, text, done: false }));
+        if (newSubtasks.length > 0) { setSubtasks(prev => [...prev, ...newSubtasks]); filled++; }
+      }
+
+      setSmartFillCount(filled);
+      if (filled === 0) {
+        setSmartFillError("No task details could be extracted from this file. Try a different document.");
+      }
+    } catch {
+      setSmartFillError("Scanning failed. Please check your connection and try again.");
+    } finally {
+      setSmartFillLoading(false);
+    }
+  }, []);
+
+  const handleSmartFillInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleSmartFillFile(file);
+    e.target.value = "";
+  }, [handleSmartFillFile]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleSmartFillFile(file);
+  }, [handleSmartFillFile]);
+  // ── End Smart Auto Fill state ─────────────────────────────────────────
+
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState(initialData?.notes || "");
   const [priority, setPriority] = useState<Priority>(() => {
@@ -461,6 +554,134 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData }: Ac
         className="flex flex-col overflow-y-auto"
       >
         <div className="px-7 py-6 flex flex-col gap-5">
+
+          {/* ── Smart Auto Fill Zone ─────────────────────────────────── */}
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => { setSmartFillOpen(o => !o); setSmartFillError(null); setSmartFillCount(null); }}
+              className="flex items-center gap-2.5 px-4 py-2.5 rounded-[12px] border border-dashed transition-all w-full text-left group"
+              style={{
+                borderColor: smartFillOpen ? "#10b981" : "#a7f3d0",
+                background: smartFillOpen ? "linear-gradient(135deg,#ecfdf5,#f0fdf4)" : "#f9fef9",
+              }}
+            >
+              <span
+                className="size-7 rounded-[8px] flex items-center justify-center shrink-0 transition-colors"
+                style={{ background: smartFillOpen ? "#10b981" : "#d1fae5" }}
+              >
+                <Sparkles className="size-3.5" style={{ color: smartFillOpen ? "#fff" : "#10b981" }} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-emerald-800">Smart Auto Fill</p>
+                <p className="text-[11px] text-emerald-600 leading-tight">AI-powered · scan a document or image to auto-fill fields</p>
+              </div>
+              <ChevronDown
+                className="size-4 text-emerald-500 shrink-0 transition-transform"
+                style={{ transform: smartFillOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+              />
+            </button>
+
+            {smartFillOpen && (
+              <div
+                className="rounded-[12px] overflow-hidden"
+                style={{ border: "1.5px solid #a7f3d0", background: "linear-gradient(180deg,#f0fdf4 0%,#fff 100%)" }}
+              >
+                {/* Hidden file input */}
+                <input
+                  ref={smartFillInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={handleSmartFillInputChange}
+                />
+
+                {/* Drop zone */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => !smartFillLoading && smartFillInputRef.current?.click()}
+                  className="m-3 rounded-[10px] flex flex-col items-center justify-center gap-3 py-7 cursor-pointer transition-all"
+                  style={{
+                    border: isDragOver
+                      ? "2px dashed #10b981"
+                      : "2px dashed #6ee7b7",
+                    background: isDragOver ? "rgba(16,185,129,0.07)" : "rgba(236,253,245,0.6)",
+                    cursor: smartFillLoading ? "not-allowed" : "pointer",
+                    opacity: smartFillLoading ? 0.7 : 1,
+                  }}
+                >
+                  {smartFillLoading ? (
+                    <>
+                      <Loader2 className="size-8 text-emerald-500 animate-spin" />
+                      <div className="text-center">
+                        <p className="text-[13px] font-semibold text-emerald-700">Analyzing with AI Scanner…</p>
+                        <p className="text-[11px] text-emerald-500 mt-0.5">Extracting task details from your document</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className="size-12 rounded-full flex items-center justify-center"
+                        style={{ background: isDragOver ? "rgba(16,185,129,0.15)" : "#d1fae5" }}
+                      >
+                        <UploadCloud className="size-6" style={{ color: isDragOver ? "#059669" : "#10b981" }} />
+                      </div>
+                      <div className="text-center px-4">
+                        <p className="text-[13px] font-semibold text-emerald-800">
+                          {isDragOver ? "Drop to scan" : "Drop a file or click to browse"}
+                        </p>
+                        <p className="text-[11px] text-emerald-600 mt-0.5">
+                          Supports PDF &amp; images · Fields are filled automatically
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Success banner */}
+                {smartFillCount !== null && smartFillCount > 0 && !smartFillLoading && (
+                  <div
+                    className="mx-3 mb-3 px-4 py-2.5 rounded-[8px] flex items-center gap-2.5"
+                    style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}
+                  >
+                    <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
+                    <p className="text-[12px] text-emerald-700 font-medium">
+                      {smartFillCount} field{smartFillCount !== 1 ? "s" : ""} auto-filled from your document
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSmartFillCount(null)}
+                      className="ml-auto text-emerald-400 hover:text-emerald-600 transition-colors"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Error banner */}
+                {smartFillError && !smartFillLoading && (
+                  <div
+                    className="mx-3 mb-3 px-4 py-2.5 rounded-[8px] flex items-center gap-2.5"
+                    style={{ background: "#fef2f2", border: "1px solid #fecaca" }}
+                  >
+                    <AlertCircle className="size-4 text-red-400 shrink-0" />
+                    <p className="text-[12px] text-red-600">{smartFillError}</p>
+                    <button
+                      type="button"
+                      onClick={() => setSmartFillError(null)}
+                      className="ml-auto text-red-300 hover:text-red-500 transition-colors"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {/* ── End Smart Auto Fill Zone ──────────────────────────────── */}
+
           <div className="flex flex-col gap-1.5">
             <label className="text-[13px] text-gray-700" style={{ fontWeight: 500 }}>
               Task Title <span className="text-red-500">*</span>

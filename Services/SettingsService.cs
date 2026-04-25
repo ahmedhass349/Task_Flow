@@ -4,8 +4,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using taskflow.Data;
 using taskflow.Data.Entities;
 using taskflow.DTOs.Settings;
 using taskflow.DTOs.Auth;
@@ -21,13 +24,15 @@ namespace taskflow.Services
         private readonly IMapper _mapper;
         private readonly JwtHelper _jwtHelper;
         private readonly IMongoService _mongoService;
+        private readonly AppDbContext _context;
 
-        public SettingsService(IUserRepository userRepository, IMapper mapper, JwtHelper jwtHelper, IMongoService mongoService)
+        public SettingsService(IUserRepository userRepository, IMapper mapper, JwtHelper jwtHelper, IMongoService mongoService, AppDbContext context)
         {
             _userRepository = userRepository;
             _mapper = mapper;
             _jwtHelper = jwtHelper;
             _mongoService = mongoService;
+            _context = context;
         }
 
         public async Task<ProfileDto> GetProfileAsync(int userId)
@@ -101,10 +106,47 @@ namespace taskflow.Services
             if (user == null)
                 throw new KeyNotFoundException("User not found.");
 
-            // Clean up all MongoDB data for this user before removing the SQLite record
-            // (D2: presence, team memberships, pending invitations)
+            // 1. Delete direct messages (Restrict on SenderId and ReceiverId)
+            var messages = await _context.Messages
+                .Where(m => m.SenderId == userId || m.ReceiverId == userId)
+                .ToListAsync();
+            _context.Messages.RemoveRange(messages);
+
+            // 2. Delete task comments authored by this user (Restrict on AuthorId)
+            var comments = await _context.TaskComments
+                .Where(c => c.AuthorId == userId)
+                .ToListAsync();
+            _context.TaskComments.RemoveRange(comments);
+
+            // 3. Delete group messages sent by this user in any group chat (Restrict on SenderId)
+            var groupMessages = await _context.GroupMessages
+                .Where(gm => gm.SenderId == userId)
+                .ToListAsync();
+            _context.GroupMessages.RemoveRange(groupMessages);
+
+            // 4. Delete group chats created by this user (cascades members + remaining messages)
+            var groupChats = await _context.GroupChats
+                .Where(g => g.CreatedByUserId == userId)
+                .ToListAsync();
+            _context.GroupChats.RemoveRange(groupChats);
+
+            // 5. Delete projects owned by this user (cascades project members; sets null on tasks)
+            var projects = await _context.Projects
+                .Where(p => p.OwnerId == userId)
+                .ToListAsync();
+            _context.Projects.RemoveRange(projects);
+
+            // 6. Delete teams owned by this user (cascades team members)
+            var teams = await _context.Teams
+                .Where(t => t.OwnerId == userId)
+                .ToListAsync();
+            _context.Teams.RemoveRange(teams);
+
+            // 7. Clean up all MongoDB data for this user
             await _mongoService.DeleteUserDataAsync(user.Email);
 
+            // 8. Remove the user — remaining EF cascades handle notifications, reminders,
+            //    calendar events, chatbot conversations, and all remaining memberships.
             _userRepository.Remove(user);
             await _userRepository.SaveChangesAsync();
         }

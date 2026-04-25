@@ -251,6 +251,64 @@ namespace taskflow.Services
             }
         }
 
+        private async Task<string?> ExtractImageTextViaOcrAsync(string base64Image, string mimeType, CancellationToken ct)
+        {
+            try
+            {
+                using var client = _httpFactory.CreateClient("MistralClient");
+                client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+
+                var payload = new
+                {
+                    model = _ocrModel,
+                    document = new
+                    {
+                        type = "image_url",
+                        image_url = $"data:{mimeType};base64,{base64Image}"
+                    }
+                };
+
+                var json = JsonSerializer.Serialize(payload);
+                using var request = new HttpRequestMessage(HttpMethod.Post, "v1/ocr")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                var response = await client.SendAsync(request, ct);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync(ct);
+                    _logger.LogError("Mistral OCR (image) request failed with {Status}. Body: {Body}", response.StatusCode, errorBody);
+                    return null;
+                }
+
+                using var doc = await JsonDocument.ParseAsync(
+                    await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
+
+                if (!doc.RootElement.TryGetProperty("pages", out var pages))
+                    return null;
+
+                var sb = new StringBuilder();
+                foreach (var page in pages.EnumerateArray())
+                {
+                    if (page.TryGetProperty("markdown", out var md))
+                    {
+                        var text = md.GetString();
+                        if (!string.IsNullOrWhiteSpace(text))
+                            sb.AppendLine(text);
+                    }
+                }
+
+                return sb.Length > 0 ? sb.ToString().Trim() : null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Image OCR extraction failed.");
+                return null;
+            }
+        }
+
         private async Task<string?> ExtractPdfTextViaOcrAsync(string base64Pdf, CancellationToken ct)
         {
             try
@@ -328,6 +386,72 @@ namespace taskflow.Services
             {
                 return "New Conversation";
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<string> ChatWithFileAsync(
+            string userPrompt,
+            string? fileBase64 = null,
+            string? fileMimeType = null,
+            string? systemPrompt = null,
+            CancellationToken ct = default)
+        {
+            using var client = _httpFactory.CreateClient("MistralClient");
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+
+            bool hasImage = !string.IsNullOrEmpty(fileBase64) &&
+                            !string.IsNullOrEmpty(fileMimeType) &&
+                            fileMimeType!.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+
+            bool hasPdf = !string.IsNullOrEmpty(fileBase64) &&
+                          string.Equals(fileMimeType, "application/pdf", StringComparison.OrdinalIgnoreCase);
+
+            // Use mistral-ocr-latest to extract text from both images and PDFs
+            string? extractedText = null;
+            if (hasImage)
+                extractedText = await ExtractImageTextViaOcrAsync(fileBase64!, fileMimeType!, ct);
+            else if (hasPdf)
+                extractedText = await ExtractPdfTextViaOcrAsync(fileBase64!, ct);
+
+            object userContent;
+            if (!string.IsNullOrWhiteSpace(extractedText))
+            {
+                userContent = $"{userPrompt}\n\n[Extracted content from attached file:]\n{extractedText}";
+            }
+            else
+            {
+                userContent = userPrompt;
+            }
+
+            var allMessages = new List<object>
+            {
+                new { role = "system", content = systemPrompt ?? "You are a helpful assistant." },
+                new { role = "user", content = userContent }
+            };
+
+            var payload = new
+            {
+                model = _chatModel,
+                messages = allMessages,
+                temperature = 0.1
+            };
+
+            var json = JsonSerializer.Serialize(payload);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "v1/chat/completions")
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+
+            var response = await client.SendAsync(httpRequest, ct);
+            response.EnsureSuccessStatusCode();
+
+            var chatResponse = await response.Content.ReadFromJsonAsync<MistralChatResponse>(cancellationToken: ct)
+                               ?? throw new InvalidOperationException("Mistral returned null.");
+
+            return chatResponse.Choices.Count > 0
+                ? chatResponse.Choices[0].Message.Content.Trim()
+                : "{}";
         }
     }
 }

@@ -104,5 +104,31 @@ export function useAccountSwitcher(currentEmail: string | undefined) {
     []
   );
 
-  return { otherAccounts, reload, switchTo };
+  /**
+   * Validate all non-current accounts by probing /api/auth/me with each token.
+   * Removes any account whose token is no longer accepted (401/403).
+   */
+  const validateAccounts = useCallback(async () => {
+    const stored = loadAccounts();
+    const others = stored.filter((a) => a.email !== currentEmail);
+    if (others.length === 0) return;
+
+    await Promise.allSettled(
+      others.map(async (acc) => {
+        try {
+          const res = await fetch("/api/auth/me", {
+            headers: { Authorization: `Bearer ${acc.token}` },
+          });
+          if (res.status === 401 || res.status === 403) {
+            removeAccount(acc.email);
+          }
+        } catch {
+          // Network error — keep the account
+        }
+      })
+    );
+    setAccounts(loadAccounts());
+  }, [currentEmail]);
+
+  return { otherAccounts, reload, switchTo, validateAccounts };
 }

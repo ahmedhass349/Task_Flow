@@ -1,4 +1,4 @@
-import { useState, useEffect, useId } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { useNavigate } from "react-router";
 import {
   User, Bell, Shield, Palette, Globe, Key, Trash2, Camera,
@@ -10,6 +10,7 @@ import Footer from "../Components/Footer";
 import { useSettings } from "../hooks/useSettings";
 import { useAuth } from "../context/AuthContext";
 import { api, clearAuthToken, getRememberMePreference, setRememberMePreference } from "../services/api";
+import { removeAccount } from "../hooks/useAccountSwitcher";
 
 /* ─────── types ─────── */
 type Section = "profile" | "account" | "notifications" | "appearance" | "security" | "privacy" | "developer";
@@ -187,8 +188,8 @@ function DevResetPanel() {
 ═══════════════════════════════════════════════ */
 export default function Settings() {
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
-  const { profile, isLoading, error, updateProfile } = useSettings();
+  const { refreshUser, logout } = useAuth();
+  const { profile, isLoading, error, updateProfile, changePassword, deleteAccount } = useSettings();
 
   // Refresh user data on mount
   useEffect(() => {
@@ -247,25 +248,38 @@ export default function Settings() {
   };
 
   /* ── Notifications state ── */
-  const [notifs, setNotifs] = useState<Record<string, boolean>>({
-    emailTaskAssigned:   true,
-    emailTaskCompleted:  false,
-    emailWeeklyDigest:   true,
-    emailProjectUpdates: true,
-    pushTaskAssigned:    true,
-    pushMentions:        true,
-    pushDeadlines:       true,
-    pushNewMessages:     false,
-    inAppAll:            true,
-    inAppSounds:         false,
+  const [notifs, setNotifs] = useState<Record<string, boolean>>(() => {
+    const defaults: Record<string, boolean> = {
+      emailTaskAssigned:   true,
+      emailTaskCompleted:  false,
+      emailWeeklyDigest:   true,
+      emailProjectUpdates: true,
+      pushTaskAssigned:    true,
+      pushMentions:        true,
+      pushDeadlines:       true,
+      pushNewMessages:     false,
+      inAppAll:            true,
+      inAppSounds:         false,
+    };
+    try {
+      const raw = localStorage.getItem("taskflow_notif_prefs");
+      if (raw) return { ...defaults, ...(JSON.parse(raw) as Record<string, boolean>) };
+    } catch { /* ignore */ }
+    return defaults;
   });
   const toggleNotif = (key: string) =>
     setNotifs((n) => ({ ...n, [key]: !n[key] }));
 
   /* ── Appearance state ── */
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("light");
-  const [accentColor, setAccentColor] = useState("#155EEF");
-  const [density, setDensity] = useState<"compact" | "comfortable" | "spacious">("comfortable");
+  const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
+    const s = localStorage.getItem("taskflow_theme");
+    return (s === "light" || s === "dark" || s === "system") ? s : "light";
+  });
+  const [accentColor, setAccentColor] = useState(() => localStorage.getItem("taskflow_accent") || "#155EEF");
+  const [density, setDensity] = useState<"compact" | "comfortable" | "spacious">(() => {
+    const s = localStorage.getItem("taskflow_density");
+    return (s === "compact" || s === "comfortable" || s === "spacious") ? s : "comfortable";
+  });
 
   /* ── Security state ── */
   const [twoFA, setTwoFA] = useState(false);
@@ -276,17 +290,135 @@ export default function Settings() {
   ]);
 
   /* ── Privacy state ── */
-  const [privacy, setPrivacy] = useState<Record<string, boolean>>({
-    showOnlineStatus:    true,
-    showProfileToTeam:   true,
-    allowDataAnalytics:  true,
-    shareActivityFeed:   false,
+  const [privacy, setPrivacy] = useState<Record<string, boolean>>(() => {
+    const defaults: Record<string, boolean> = {
+      showOnlineStatus:    true,
+      showProfileToTeam:   true,
+      allowDataAnalytics:  true,
+      shareActivityFeed:   false,
+    };
+    try {
+      const raw = localStorage.getItem("taskflow_privacy_prefs");
+      if (raw) return { ...defaults, ...(JSON.parse(raw) as Record<string, boolean>) };
+    } catch { /* ignore */ }
+    return defaults;
   });
   const togglePrivacy = (key: string) =>
     setPrivacy((p) => ({ ...p, [key]: !p[key] }));
 
   /* ── Password change state ── */
   const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
+
+  /* ── Avatar upload state ── */
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  /* ── Password / delete feedback state ── */
+  const [passwordStatus, setPasswordStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [pwdSubmitting, setPwdSubmitting] = useState(false);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  /* ── Persist preferences to localStorage ── */
+  useEffect(() => { localStorage.setItem("taskflow_notif_prefs", JSON.stringify(notifs)); }, [notifs]);
+  useEffect(() => { localStorage.setItem("taskflow_theme", theme); }, [theme]);
+  useEffect(() => { localStorage.setItem("taskflow_accent", accentColor); }, [accentColor]);
+  useEffect(() => { localStorage.setItem("taskflow_density", density); }, [density]);
+  useEffect(() => { localStorage.setItem("taskflow_privacy_prefs", JSON.stringify(privacy)); }, [privacy]);
+
+  /* ── Avatar handlers ── */
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert("Image must be smaller than 5 MB."); return; }
+    setAvatarUploading(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
+      await updateProfile({
+        firstName: profileForm.firstName || profile?.firstName || "",
+        lastName:  profileForm.lastName  || profile?.lastName  || "",
+        email:     profileForm.email     || profile?.email     || "",
+        avatarUrl: dataUrl,
+        company:   profileForm.company   || profile?.company,
+        country:   profileForm.country   || profile?.country,
+        phone:     profileForm.phone     || profile?.phone,
+        timezone:  profileForm.timezone  || profile?.timezone,
+      });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to upload photo.");
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      await updateProfile({
+        firstName: profileForm.firstName || profile?.firstName || "",
+        lastName:  profileForm.lastName  || profile?.lastName  || "",
+        email:     profileForm.email     || profile?.email     || "",
+        avatarUrl: undefined,
+        company:   profileForm.company   || profile?.company,
+        country:   profileForm.country   || profile?.country,
+        phone:     profileForm.phone     || profile?.phone,
+        timezone:  profileForm.timezone  || profile?.timezone,
+      });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to remove photo.");
+    }
+  };
+
+  /* ── Password change handler ── */
+  const handleChangePassword = async () => {
+    if (!passwords.current || !passwords.next || !passwords.confirm) {
+      setPasswordStatus({ type: "error", msg: "All fields are required." });
+      return;
+    }
+    if (passwords.next !== passwords.confirm) {
+      setPasswordStatus({ type: "error", msg: "New passwords do not match." });
+      return;
+    }
+    if (passwords.next.length < 8) {
+      setPasswordStatus({ type: "error", msg: "New password must be at least 8 characters." });
+      return;
+    }
+    setPwdSubmitting(true);
+    setPasswordStatus(null);
+    try {
+      await changePassword({ currentPassword: passwords.current, newPassword: passwords.next, confirmPassword: passwords.confirm });
+      setPasswordStatus({ type: "success", msg: "Password updated successfully." });
+      setPasswords({ current: "", next: "", confirm: "" });
+    } catch (err) {
+      setPasswordStatus({ type: "error", msg: err instanceof Error ? err.message : "Failed to update password." });
+    } finally {
+      setPwdSubmitting(false);
+    }
+  };
+
+  /* ── Delete account handler ── */
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently delete your account?\nAll your data will be deleted. This cannot be undone."
+    );
+    if (!confirmed) return;
+    setDeleteSubmitting(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount();
+      if (profile?.email) removeAccount(profile.email);
+      logout();
+      navigate("/login");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete account.");
+      setDeleteSubmitting(false);
+    }
+  };
 
   /* ════════════ render ════════════ */
   return (
@@ -331,20 +463,53 @@ export default function Settings() {
                   <>
                     <SectionCard title="Profile Picture">
                       <div className="flex items-center gap-6">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/gif,image/webp"
+                          className="hidden"
+                          onChange={handleAvatarUpload}
+                        />
                         <div className="relative">
-                          <div className="size-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold select-none">
-                            AA
-                          </div>
-                          <button aria-label="Change profile picture" className="absolute bottom-0 right-0 size-7 bg-blue-600 rounded-full flex items-center justify-center shadow hover:bg-blue-700 transition-colors">
+                          {profile?.avatarUrl ? (
+                            <img
+                              src={profile.avatarUrl}
+                              alt={profile.fullName}
+                              className="size-20 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="size-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold select-none">
+                              {profile
+                                ? `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase()
+                                : "??"}
+                            </div>
+                          )}
+                          <button
+                            aria-label="Change profile picture"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute bottom-0 right-0 size-7 bg-blue-600 rounded-full flex items-center justify-center shadow hover:bg-blue-700 transition-colors"
+                          >
                             <Camera className="size-3.5 text-white" />
                           </button>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">Demo User</p>
+                          <p className="text-sm font-medium text-gray-900">{profile?.fullName ?? "—"}</p>
                           <p className="text-xs text-gray-500 mt-0.5">JPG, PNG or GIF · max 5 MB</p>
                           <div className="flex gap-2 mt-3">
-                            <button className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors">Upload photo</button>
-                            <button className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs rounded-lg hover:bg-gray-50 transition-colors">Remove</button>
+                            <button
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={avatarUploading}
+                              className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            >
+                              {avatarUploading ? "Uploading…" : "Upload photo"}
+                            </button>
+                            <button
+                              onClick={handleRemoveAvatar}
+                              disabled={avatarUploading || !profile?.avatarUrl}
+                              className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            >
+                              Remove
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -414,9 +579,18 @@ export default function Settings() {
                             </p>
                           </div>
                         )}
+                        {passwordStatus && (
+                          <p className={`text-xs px-3 py-2 rounded-lg ${passwordStatus.type === "success" ? "text-green-700 bg-green-50" : "text-red-600 bg-red-50"}`}>
+                            {passwordStatus.msg}
+                          </p>
+                        )}
                         <div className="flex justify-end">
-                          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
-                            <Key className="size-4" /> Update password
+                          <button
+                            onClick={handleChangePassword}
+                            disabled={pwdSubmitting}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                          >
+                            <Key className="size-4" /> {pwdSubmitting ? "Updating…" : "Update password"}
                           </button>
                         </div>
                       </div>
@@ -437,10 +611,17 @@ export default function Settings() {
                           <p className="text-sm font-semibold text-red-700">Delete account</p>
                           <p className="text-xs text-red-600 mt-0.5">Permanently delete your account and all data. This cannot be undone.</p>
                         </div>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors ml-4 shrink-0">
-                          <Trash2 className="size-4" /> Delete account
+                        <button
+                          onClick={handleDeleteAccount}
+                          disabled={deleteSubmitting}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors ml-4 shrink-0 disabled:opacity-50"
+                        >
+                          <Trash2 className="size-4" /> {deleteSubmitting ? "Deleting…" : "Delete account"}
                         </button>
                       </div>
+                      {deleteError && (
+                        <p className="text-xs text-red-600 mt-2">{deleteError}</p>
+                      )}
                     </SectionCard>
                   </>
                 )}

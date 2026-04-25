@@ -68,14 +68,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((err) => {
-        // Clear auth on explicit auth failures or when the account no longer exists.
-        // Network/transient server errors should not log the user out.
-        if (!cancelled && err instanceof ApiRequestError && (err.status === 401 || err.status === 403 || err.status === 404)) {
+        // Clear auth on explicit auth failures (401/403).
+        // 404 is intentionally excluded: a genuine route-not-found should not log the user out,
+        // and the backend now returns 401 when the account no longer exists.
+        // Network/transient server errors also keep the cached user so the session
+        // survives a slow startup.
+        if (!cancelled && err instanceof ApiRequestError && (err.status === 401 || err.status === 403)) {
           clearAuthToken();
           localStorage.removeItem(USER_CACHE_KEY);
           setUser(null);
         }
-        // For network/server errors, keep the cached user so the session survives a slow startup.
       })
       .finally(() => {
         if (!cancelled) {

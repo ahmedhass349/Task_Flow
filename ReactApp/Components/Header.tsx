@@ -182,7 +182,7 @@ export default function Header() {
   const { isEffectivelyOnline, toggleManualOffline, isManualOffline } = useConnectivity();
 
   // ── Account switcher ──────────────────────────────────────────────────
-  const { otherAccounts, switchTo } = useAccountSwitcher(user?.email);
+  const { otherAccounts, switchTo, validateAccounts } = useAccountSwitcher(user?.email);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [switchError, setSwitchError]         = useState<string | null>(null);
   const [switching, setSwitching]             = useState(false);
@@ -455,7 +455,7 @@ export default function Header() {
               </DropdownMenu.Item>
 
               <DropdownMenu.Item
-                onSelect={() => setShowSwitchModal(true)}
+                onSelect={() => { setShowSwitchModal(true); void validateAccounts(); }}
                 className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer outline-none"
               >
                 <UserCircle className="size-4" />
