@@ -17,6 +17,8 @@
     ],
     "exclude": [
         "./ReactApp/Containers/**/*",
-        "./ReactApp/scss/**/*"
+        "./ReactApp/scss/**/*",
+        "./bin/**/*",
+        "./obj/**/*"
     ]
 }
