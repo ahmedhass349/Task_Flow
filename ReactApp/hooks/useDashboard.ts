@@ -4,6 +4,7 @@
 // Provides loading, error, data, and refetch states.
 
 import { useState, useEffect, useCallback } from "react";
+import { CheckSquare, FileText, Users } from "lucide-react";
 import { api, ApiRequestError } from "../services/api";
 
 // Dashboard stats from backend DTO
@@ -86,17 +87,18 @@ function mapStats(dto: DashboardStatsDto): DashboardStats {
 function mapActivity(items: ActivityItemDto[]): ActivityItem[] {
   return items.map((item) => {
     // Default icon mapping - can be enhanced
-    let icon = require("lucide-react").CheckSquare;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let icon: any = CheckSquare;
     let iconBg = "bg-green-100";
     let iconColor = "text-green-600";
 
     const text = item.description.toLowerCase();
     if (text.includes("project")) {
-      icon = require("lucide-react").FileText;
+      icon = FileText;
       iconBg = "bg-blue-100";
       iconColor = "text-blue-600";
     } else if (text.includes("joined") || text.includes("member")) {
-      icon = require("lucide-react").Users;
+      icon = Users;
       iconBg = "bg-purple-100";
       iconColor = "text-purple-600";
     }

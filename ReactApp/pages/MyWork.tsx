@@ -75,7 +75,7 @@ export default function MyWork() {
           customType: "",
           course: "",
           dueDateLabel: task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date",
-          dueDate: task.dueDate || null,
+          dueDate: task.dueDate || undefined,
           semester: "Spring 2025",
           priority: mapPriority(task.priority),
           reminderMap: {},
