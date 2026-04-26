@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { useNavigate } from "react-router";
-import { Github, Twitter, Linkedin } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 
 const COLUMNS = [
   {
@@ -149,13 +149,13 @@ export default function Footer() {
         {/* Right: social icons */}
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
           <a href="https://github.com" target="_blank" rel="noreferrer" aria-label="GitHub" style={{ color: "#222222", display: "flex" }}>
-            <Github size={18} />
+            <ExternalLink size={18} />
           </a>
           <a href="https://twitter.com" target="_blank" rel="noreferrer" aria-label="Twitter" style={{ color: "#222222", display: "flex" }}>
-            <Twitter size={18} />
+            <ExternalLink size={18} />
           </a>
           <a href="https://linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn" style={{ color: "#222222", display: "flex" }}>
-            <Linkedin size={18} />
+            <ExternalLink size={18} />
           </a>
         </div>
       </div>

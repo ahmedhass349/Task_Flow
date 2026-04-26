@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useCallback } from "react";
+import { useMemo, useState, useRef, useCallback, type ReactElement } from "react";
 import {
   X, ListTodo, AlignLeft, Flag, Calendar, User,
   ChevronDown, Plus, Trash2, Bell, Clock, Mail,
@@ -66,7 +66,7 @@ const STATUS_COLORS: Record<Status, { bg: string; text: string }> = {
   "Done": { bg: "#f0fdf4", text: "#16a34a" },
 };
 
-const VIA_OPTIONS: { id: ReminderVia; label: string; icon: JSX.Element }[] = [
+const VIA_OPTIONS: { id: ReminderVia; label: string; icon: ReactElement }[] = [
   { id: "email", label: "Email", icon: <Mail className="size-3.5" /> },
   { id: "notification", label: "Notification", icon: <BellRing className="size-3.5" /> },
   { id: "both", label: "Both", icon: <Bell className="size-3.5" /> },
@@ -99,11 +99,11 @@ function DropdownField<T extends string>({
   label, icon, value, options, placeholder, renderOption, onSelect, error, required,
 }: {
   label: string;
-  icon: JSX.Element;
+  icon: ReactElement;
   value: T | "";
   options: readonly T[];
   placeholder: string;
-  renderOption?: (o: T) => JSX.Element;
+  renderOption?: (o: T) => ReactElement;
   onSelect: (v: T) => void;
   error?: string;
   required?: boolean;
