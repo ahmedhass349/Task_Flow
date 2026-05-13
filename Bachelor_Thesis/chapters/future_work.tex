@@ -1,2 +1,130 @@
-\chapter{Future Work}\label{chap:todo}
+﻿\chapter{Future Work}\label{chap:todo}
 
+The delivered system meets all stated objectives and is fully functional as a
+cross-platform desktop application.
+Nevertheless, a number of directions for improvement and extension were identified
+during development.
+These are grouped into short-term improvements that address known gaps in the current
+implementation and longer-term enhancements that would expand the scope of the system.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Short-Term Improvements}\label{sec:fw_shortterm}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\paragraph{Sub-task backend implementation.}
+The Table View renders a placeholder sub-task row for each task, but no corresponding
+backend exists.
+Implementing sub-tasks would require adding a \texttt{SubTask} entity with a foreign
+key to \texttt{TaskItem}, a database migration, a \texttt{SubTasksController}, and a
+\texttt{SubTaskRepository}.
+The \texttt{ISyncableEntity} interface would then be applied to \texttt{SubTask} so
+that sub-tasks participate in the offline synchronisation pipeline automatically.
+The UI work --- expanding the Table View row and exposing CRUD controls --- is largely
+already scaffolded.
+This is the highest-priority item because it is the largest gap between the stated
+scope and the delivered system.
+
+\paragraph{Mistral API key security.}
+As noted in Section~\ref{sec:concl_limitations}, the Mistral API key is currently a
+compile-time constant.
+The immediate remedy is to read the key from an environment variable
+(\texttt{TASKFLOW\_MISTRAL\_KEY}) at startup, falling back to the
+\texttt{appsettings.json} configuration value, and ultimately defaulting to the
+embedded constant only as a last resort.
+In a production distribution the key should be provisioned by the installer or entered
+by the user on first launch and stored in the operating system's credential store
+(\texttt{Windows Credential Manager}, macOS \texttt{Keychain}, or \texttt{libsecret}
+on Linux).
+
+\paragraph{Automated test suite.}
+The absence of automated tests is the most significant quality risk in the codebase.
+A practical test suite would consist of three layers:
+\begin{enumerate}
+  \item \textbf{Unit tests} (xUnit) for pure service methods and the sync engine logic,
+        using mocked repository interfaces.
+  \item \textbf{API integration tests} using \texttt{WebApplicationFactory<Program>} to
+        spin up an in-memory ASP.NET Core server backed by an in-memory SQLite database,
+        covering all controller endpoints.
+  \item \textbf{End-to-end tests} using Playwright to exercise the packaged Electron
+        application, verifying that key user journeys (login, create task, go offline,
+        create task, go online, confirm sync) complete correctly.
+\end{enumerate}
+Adding this suite would allow regressions to be detected automatically and would
+provide the confidence required to accelerate future feature development.
+
+\paragraph{Per-field conflict resolution.}
+The current last-write-wins strategy resolves sync conflicts at the document level:
+the document with the later \texttt{UpdatedAt} timestamp overwrites the earlier one
+entirely.
+A more granular approach would track a per-field version vector, merging non-conflicting
+field changes and presenting a conflict dialogue only when the same field was edited
+concurrently.
+This would be a meaningful improvement for multi-device users who edit different
+properties of the same task on different machines while offline.
+
+\paragraph{macOS notarisation.}
+Submitting the macOS distribution to Apple's notarisation service would eliminate the
+Gatekeeper manual-override step described in Section~\ref{sec:res_distribution}.
+Notarisation requires an Apple Developer Programme membership and a CI pipeline step
+that submits the signed DMG to Apple and waits for approval, but the result is a
+significantly smoother first-launch experience for macOS users.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Long-Term Enhancements}\label{sec:fw_longterm}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\paragraph{Mobile companion application.}
+A React Native application sharing the MongoDB relay layer would allow users to view
+and update tasks on iOS and Android devices.
+Because the MongoDB layer already stores a current snapshot of every syncable entity,
+the mobile client would not require an additional backend service: it could connect
+directly to MongoDB (via Atlas Data API or a lightweight proxy) and write changes that
+the desktop client would pick up on its next sync cycle.
+
+\paragraph{AI-powered task creation from natural language.}
+The existing Mistral integration could be extended to accept a free-text description
+such as \emph{``Set up a team meeting next Thursday at 10 AM to review the sprint''}
+and return a structured \texttt{CreateTaskDto} or \texttt{CreateCalendarEventDto}
+payload that is immediately submitted to the appropriate API endpoint.
+This would reduce the number of form fields a user must complete for routine task
+creation and leverage the AI assistant for a workflow-acceleration purpose beyond
+question answering.
+
+\paragraph{CRDT-based synchronisation.}
+Replacing last-write-wins with a Conflict-free Replicated Data Type (CRDT) would allow
+concurrent edits from multiple devices to be merged deterministically without data
+loss.
+A suitable approach for the task entity would be to model each editable field as a
+Last-Write-Wins Register (LWW-Register) with a logical clock, producing merge results
+that are commutative, associative, and idempotent.
+This would require replacing the current \texttt{UpdatedAt}-based merge in
+\texttt{UserDataSyncService} with a per-field CRDT merge function, and storing the
+logical clock alongside each field in the MongoDB document.
+
+\paragraph{Analytics and reporting dashboard.}
+The current dashboard provides aggregate counts and a seven-day task trend.
+A richer analytics view would include burndown charts, task completion velocity per
+team member, average task age by priority, and project-level progress bars.
+These metrics could be computed with MongoDB aggregation pipelines over the relay
+collection, avoiding additional load on the local SQLite database.
+
+\paragraph{Third-party integration plugins.}
+A plugin API that allows third-party integrations to be registered as background
+services would extend the application's reach.
+High-value initial integrations would include bidirectional synchronisation with
+GitHub Issues (mapping issues to tasks), Google Calendar (mapping CalendarEvents to
+Google Calendar entries), and Slack (posting task assignment and due-date notifications
+to a channel).
+Each plugin would implement a common \texttt{IIntegrationPlugin} interface, keeping
+the core application decoupled from external service details.
+
+\paragraph{Cloud-hosted multi-tenant mode.}
+The current architecture is single-user and desktop-only.
+A future SaaS variant would replace the embedded Electron shell with a web-hosted
+frontend, the per-user SQLite database with a per-organisation PostgreSQL instance
+managed by Entity Framework Core, and the MongoDB relay with a shared cluster.
+The ASP.NET Core service layer would require minimal changes because its business logic
+is already decoupled from the storage layer via repository interfaces;
+the main effort would be in the authentication layer (multi-tenant JWT issuance,
+organisation scoping on all queries) and the deployment pipeline (containerisation,
+orchestration, secrets management).

@@ -1,10 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.27)  28 APR 2026 01:01
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.27)  1 MAY 2026 16:35
 entering extended mode
  restricted \write18 enabled.
- file:line:error style messages enabled.
  %&-line parsing enabled.
-**d:/Github/Task_Flow/Bachelor_Thesis/GUC_Thesis
-(d:/Github/Task_Flow/Bachelor_Thesis/GUC_Thesis.tex
+**GUC_Thesis.tex
+(./GUC_Thesis.tex
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-03-20>
 (c:/texlive/2026/texmf-dist/tex/latex/base/book.cls
@@ -26,16 +25,21 @@ File: bk12.clo 2025/01/22 v1.4n Standard LaTeX file (size option)
 \bibindent=\dimen150
 )
 
-LaTeX Warning: \include should only be used after \begin{document} on input line 7.
+LaTeX Warning: \include should only be used after \begin{document} on input lin
+e 7.
 
-(./Sections/01_class_and_packages.tex (c:/texlive/2026/texmf-dist/tex/latex/geometry/geometry.sty
+(./Sections/01_class_and_packages.tex
+(c:/texlive/2026/texmf-dist/tex/latex/geometry/geometry.sty
 Package: geometry 2026/03/07 v6.0 Page Geometry
- (c:/texlive/2026/texmf-dist/tex/latex/graphics/keyval.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/graphics/keyval.sty
 Package: keyval 2022/05/29 v1.15 key=value parser (DPC)
 \KV@toks@=\toks17
-) (c:/texlive/2026/texmf-dist/tex/generic/iftex/ifvtex.sty
+)
+(c:/texlive/2026/texmf-dist/tex/generic/iftex/ifvtex.sty
 Package: ifvtex 2019/10/25 v1.7 ifvtex legacy package. Use iftex instead.
- (c:/texlive/2026/texmf-dist/tex/generic/iftex/iftex.sty
+
+(c:/texlive/2026/texmf-dist/tex/generic/iftex/iftex.sty
 Package: iftex 2024/12/12 v1.0g TeX engine tests
 ))
 \Gm@cnth=\count284
@@ -50,34 +54,43 @@ Package: iftex 2024/12/12 v1.0g TeX engine tests
 \Gm@layouthoffset=\dimen157
 \Gm@layoutvoffset=\dimen158
 \Gm@dimlist=\toks18
-) (c:/texlive/2026/texmf-dist/tex/latex/preprint/fullpage.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/preprint/fullpage.sty
 Package: fullpage 1999/02/23 1.1 (PWD)
 \FP@margin=\skip51
-) (c:/texlive/2026/texmf-dist/tex/latex/setspace/setspace.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/setspace/setspace.sty
 Package: setspace 2022/12/04 v6.7b set line spacing
-) (c:/texlive/2026/texmf-dist/tex/latex/graphics/graphicx.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/graphics/graphicx.sty
 Package: graphicx 2024/12/31 v1.2e Enhanced LaTeX Graphics (DPC,SPQR)
- (c:/texlive/2026/texmf-dist/tex/latex/graphics/graphics.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/graphics/graphics.sty
 Package: graphics 2024/08/06 v1.4g Standard LaTeX Graphics (DPC,SPQR)
- (c:/texlive/2026/texmf-dist/tex/latex/graphics/trig.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/graphics/trig.sty
 Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
-) (c:/texlive/2026/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
+)
+(c:/texlive/2026/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
 File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
 )
 Package graphics Info: Driver file: pdftex.def on input line 106.
- (c:/texlive/2026/texmf-dist/tex/latex/graphics-def/pdftex.def
+
+(c:/texlive/2026/texmf-dist/tex/latex/graphics-def/pdftex.def
 File: pdftex.def 2025/09/29 v1.2d Graphics/color driver for pdftex
 ))
 \Gin@req@height=\dimen159
 \Gin@req@width=\dimen160
-) (c:/texlive/2026/texmf-dist/tex/latex/float/float.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/float/float.sty
 Package: float 2001/11/08 v1.3d Float enhancements (AL)
 \c@float@type=\count287
 \float@exts=\toks19
 \float@box=\box53
 \@float@everytoks=\toks20
 \@floatcapt=\box54
-) (c:/texlive/2026/texmf-dist/tex/latex/tools/array.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/tools/array.sty
 Package: array 2025/09/25 v2.6n Tabular extension package (FMi)
 \col@sep=\dimen161
 \ar@mcellbox=\box55
@@ -86,13 +99,15 @@ Package: array 2025/09/25 v2.6n Tabular extension package (FMi)
 \extratabsurround=\skip52
 \backup@length=\skip53
 \ar@cellbox=\box56
-) (c:/texlive/2026/texmf-dist/tex/latex/multirow/multirow.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/multirow/multirow.sty
 Package: multirow 2024/11/12 v2.9 Span multiple rows of a table
 \multirow@colwidth=\skip54
 \multirow@cntb=\count288
 \multirow@dima=\skip55
 \bigstrutjot=\dimen163
-) (c:/texlive/2026/texmf-dist/tex/latex/booktabs/booktabs.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/booktabs/booktabs.sty
 Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
 \heavyrulewidth=\dimen164
 \lightrulewidth=\dimen165
@@ -111,59 +126,79 @@ Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
 \@thisruleclass=\count291
 \@lastruleclass=\count292
 \@thisrulewidth=\dimen176
-) (c:/texlive/2026/texmf-dist/tex/latex/appendix/appendix.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/appendix/appendix.sty
 Package: appendix 2020/02/08 v1.2c extra appendix facilities
 \c@@pps=\count293
 \c@@ppsavesec=\count294
 \c@@ppsaveapp=\count295
-) (c:/texlive/2026/texmf-dist/tex/latex/hyperref/hyperref.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/hyperref/hyperref.sty
 Package: hyperref 2026-04-24 v7.01q Hypertext links for LaTeX
- (c:/texlive/2026/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty
 Package: kvsetkeys 2022-10-05 v1.19 Key value parser (HO)
-) (c:/texlive/2026/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty
+)
+(c:/texlive/2026/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty
 Package: kvdefinekeys 2019-12-19 v1.6 Define keys (HO)
-) (c:/texlive/2026/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+)
+(c:/texlive/2026/texmf-dist/tex/generic/pdfescape/pdfescape.sty
 Package: pdfescape 2019/12/09 v1.15 Implements pdfTeX's escape features (HO)
- (c:/texlive/2026/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty
+
+(c:/texlive/2026/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty
 Package: ltxcmds 2023-12-04 v1.26 LaTeX kernel commands for general use (HO)
-) (c:/texlive/2026/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
-Package: pdftexcmds 2020-06-27 v0.33 Utility functions of pdfTeX for LuaTeX (HO)
- (c:/texlive/2026/texmf-dist/tex/generic/infwarerr/infwarerr.sty
+)
+(c:/texlive/2026/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+Package: pdftexcmds 2020-06-27 v0.33 Utility functions of pdfTeX for LuaTeX (HO
+)
+
+(c:/texlive/2026/texmf-dist/tex/generic/infwarerr/infwarerr.sty
 Package: infwarerr 2019/12/03 v1.5 Providing info/warning/error messages (HO)
 )
 Package pdftexcmds Info: \pdf@primitive is available.
 Package pdftexcmds Info: \pdf@ifprimitive is available.
 Package pdftexcmds Info: \pdfdraftmode found.
-)) (c:/texlive/2026/texmf-dist/tex/latex/hycolor/hycolor.sty
+))
+(c:/texlive/2026/texmf-dist/tex/latex/hycolor/hycolor.sty
 Package: hycolor 2020-01-27 v1.10 Color options for hyperref/bookmark (HO)
-) (c:/texlive/2026/texmf-dist/tex/latex/hyperref/nameref.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2026-01-29 v2.58 Cross-referencing by name of section
- (c:/texlive/2026/texmf-dist/tex/latex/refcount/refcount.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/refcount/refcount.sty
 Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
-) (c:/texlive/2026/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
+)
+(c:/texlive/2026/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
 Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
- (c:/texlive/2026/texmf-dist/tex/latex/kvoptions/kvoptions.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/kvoptions/kvoptions.sty
 Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
 ))
 \c@section@level=\count296
-) (c:/texlive/2026/texmf-dist/tex/latex/etoolbox/etoolbox.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/etoolbox/etoolbox.sty
 Package: etoolbox 2025/10/02 v2.5m e-TeX tools for LaTeX (JAW)
 \etb@tempcnta=\count297
-) (c:/texlive/2026/texmf-dist/tex/generic/stringenc/stringenc.sty
-Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO)
+)
+(c:/texlive/2026/texmf-dist/tex/generic/stringenc/stringenc.sty
+Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO
+)
 )
 \@linkdim=\dimen177
 \Hy@linkcounter=\count298
 \Hy@pagecounter=\count299
- (c:/texlive/2026/texmf-dist/tex/latex/hyperref/pd1enc.def
+
+(c:/texlive/2026/texmf-dist/tex/latex/hyperref/pd1enc.def
 File: pd1enc.def 2026-04-24 v7.01q Hyperref: PDFDocEncoding definition (HO)
 Now handling font encoding PD1 ...
 ... no UTF-8 mapping file for font encoding PD1
-) (c:/texlive/2026/texmf-dist/tex/generic/intcalc/intcalc.sty
+)
+(c:/texlive/2026/texmf-dist/tex/generic/intcalc/intcalc.sty
 Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
 )
 \Hy@SavedSpaceFactor=\count300
- (c:/texlive/2026/texmf-dist/tex/latex/hyperref/puenc.def
+
+(c:/texlive/2026/texmf-dist/tex/latex/hyperref/puenc.def
 File: puenc.def 2026-04-24 v7.01q Hyperref: PDF Unicode definition (HO)
 Now handling font encoding PU ...
 ... no UTF-8 mapping file for font encoding PU
@@ -177,16 +212,20 @@ Package hyperref Info: Backreferencing OFF on input line 4219.
 Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
 Package hyperref Info: Bookmarks ON on input line 4466.
 \c@Hy@tempcnt=\count301
- (c:/texlive/2026/texmf-dist/tex/latex/url/url.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/url/url.sty
 \Urlmuskip=\muskip17
 Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 )
 LaTeX Info: Redefining \url on input line 4805.
 \XeTeXLinkMargin=\dimen178
- (c:/texlive/2026/texmf-dist/tex/generic/bitset/bitset.sty
+
+(c:/texlive/2026/texmf-dist/tex/generic/bitset/bitset.sty
 Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
- (c:/texlive/2026/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty
-Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO)
+
+(c:/texlive/2026/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty
+Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
+)
 ))
 \Fld@menulength=\count302
 \Field@Width=\dimen179
@@ -203,32 +242,42 @@ Package hyperref Info: PDF/A mode OFF on input line 6121.
 \c@Hfootnote=\count305
 )
 Package hyperref Info: Driver (autodetected): hpdftex.
- (c:/texlive/2026/texmf-dist/tex/latex/hyperref/hpdftex.def
+
+(c:/texlive/2026/texmf-dist/tex/latex/hyperref/hpdftex.def
 File: hpdftex.def 2026-04-24 v7.01q Hyperref driver for pdfTeX
 \Fld@listcount=\count306
 \c@bookmark@seq@number=\count307
- (c:/texlive/2026/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
 Package: rerunfilecheck 2025-06-21 v1.11 Rerun checks for auxiliary files (HO)
- (c:/texlive/2026/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty
+
+(c:/texlive/2026/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty
 Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
 )
-Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 284.
+Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
+84.
 )
 \Hy@SectionHShift=\skip56
-) (c:/texlive/2026/texmf-dist/tex/latex/acronym/acronym.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/acronym/acronym.sty
 Package: acronym 2025/01/17 v1.50 Support for acronyms (Tobias Oetiker)
- (c:/texlive/2026/texmf-dist/tex/latex/bigfoot/suffix.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/bigfoot/suffix.sty
 Package: suffix 2006/07/15 1.5a Variant command support
-) (c:/texlive/2026/texmf-dist/tex/generic/xstring/xstring.sty (c:/texlive/2026/texmf-dist/tex/generic/xstring/xstring.tex
+)
+(c:/texlive/2026/texmf-dist/tex/generic/xstring/xstring.sty
+(c:/texlive/2026/texmf-dist/tex/generic/xstring/xstring.tex
 \xs_counta=\count308
 \xs_countb=\count309
 )
 Package: xstring 2023/08/22 v1.86 String manipulations (CT)
 )
 \AC@clearlist=\toks22
-) (c:/texlive/2026/texmf-dist/tex/latex/algorithms/algorithmic.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/algorithms/algorithmic.sty
 Package: algorithmic 2009/08/24 v0.1 Document Style `algorithmic'
- (c:/texlive/2026/texmf-dist/tex/latex/base/ifthen.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/base/ifthen.sty
 Package: ifthen 2024/03/16 v1.1e Standard LaTeX ifthen package (DPC)
 )
 \c@ALC@unique=\count310
@@ -237,29 +286,37 @@ Package: ifthen 2024/03/16 v1.1e Standard LaTeX ifthen package (DPC)
 \c@ALC@depth=\count313
 \ALC@tlm=\skip57
 \algorithmicindent=\skip58
-) (c:/texlive/2026/texmf-dist/tex/latex/algorithms/algorithm.sty
-Package: algorithm 2009/08/24 v0.1 Document Style `algorithm' - floating environment
+)
+(c:/texlive/2026/texmf-dist/tex/latex/algorithms/algorithm.sty
+Package: algorithm 2009/08/24 v0.1 Document Style `algorithm' - floating enviro
+nment
 \@float@every@algorithm=\toks23
 \c@algorithm=\count314
-) (c:/texlive/2026/texmf-dist/tex/generic/iftex/ifpdf.sty
+)
+(c:/texlive/2026/texmf-dist/tex/generic/iftex/ifpdf.sty
 Package: ifpdf 2019/10/25 v3.4 ifpdf legacy package. Use iftex instead.
-) (c:/texlive/2026/texmf-dist/tex/latex/parskip/parskip.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/parskip/parskip.sty
 Package: parskip 2021-03-14 v2.0h non-zero parskip adjustments
-) (c:/texlive/2026/texmf-dist/tex/latex/amsmath/amsmath.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/amsmath/amsmath.sty
 Package: amsmath 2025/07/09 v2.17z AMS math features
 \@mathmargin=\skip59
 
 For additional information on amsmath, use the `?' option.
 (c:/texlive/2026/texmf-dist/tex/latex/amsmath/amstext.sty
 Package: amstext 2024/11/17 v2.01 AMS text
- (c:/texlive/2026/texmf-dist/tex/latex/amsmath/amsgen.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/amsmath/amsgen.sty
 File: amsgen.sty 1999/11/30 v2.0 generic functions
 \@emptytoks=\toks24
 \ex@=\dimen181
-)) (c:/texlive/2026/texmf-dist/tex/latex/amsmath/amsbsy.sty
+))
+(c:/texlive/2026/texmf-dist/tex/latex/amsmath/amsbsy.sty
 Package: amsbsy 1999/11/29 v1.2d Bold Symbols
 \pmbraise@=\dimen182
-) (c:/texlive/2026/texmf-dist/tex/latex/amsmath/amsopn.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/amsmath/amsopn.sty
 Package: amsopn 2022/04/08 v2.04 operator names
 )
 \inf@bad=\count315
@@ -309,16 +366,34 @@ LaTeX Info: Redefining \Relbar on input line 970.
 \mathdisplay@stack=\toks28
 LaTeX Info: Redefining \[ on input line 2950.
 LaTeX Info: Redefining \] on input line 2951.
-) (c:/texlive/2026/texmf-dist/tex/latex/tools/verbatim.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/amsfonts/amssymb.sty
+Package: amssymb 2013/01/14 v3.01 AMS font symbols
+
+(c:/texlive/2026/texmf-dist/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
+\symAMSa=\mathgroup4
+\symAMSb=\mathgroup5
+LaTeX Font Info:    Redeclaring math symbol \hbar on input line 98.
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
+))
+(c:/texlive/2026/texmf-dist/tex/latex/base/textcomp.sty
+Package: textcomp 2024/04/24 v2.1b Standard LaTeX package
+)
+(c:/texlive/2026/texmf-dist/tex/latex/tools/verbatim.sty
 Package: verbatim 2024-01-22 v1.5x LaTeX2e package for verbatim enhancements
 \every@verbatim=\toks29
 \verbatim@line=\toks30
 \verbatim@in@stream=\read2
-) (c:/texlive/2026/texmf-dist/tex/latex/caption/subcaption.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/caption/subcaption.sty
 Package: subcaption 2023/07/28 v1.6b Sub-captions (AR)
- (c:/texlive/2026/texmf-dist/tex/latex/caption/caption.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/caption/caption.sty
 Package: caption 2023/08/05 v3.6o Customizing captions (AR)
- (c:/texlive/2026/texmf-dist/tex/latex/caption/caption3.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/caption/caption3.sty
 Package: caption3 2023/07/31 v2.4d caption3 kernel (AR)
 \caption@tempdima=\dimen190
 \captionmargin=\dimen191
@@ -339,37 +414,55 @@ Package caption Info: New subtype `subfigure' on input line 238.
 \c@subfigure=\count329
 Package caption Info: New subtype `subtable' on input line 238.
 \c@subtable=\count330
-) (c:/texlive/2026/texmf-dist/tex/latex/psnfss/times.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/psnfss/times.sty
 Package: times 2020/03/25 PSNFSS-v9.3 (SPQR) 
-) (c:/texlive/2026/texmf-dist/tex/latex/pdflscape/pdflscape.sty
+)
+(c:/texlive/2026/texmf-dist/tex/latex/pdflscape/pdflscape.sty
 Package: pdflscape 2025-06-23 v0.14 Display of landscape pages in PDF
- (c:/texlive/2026/texmf-dist/tex/latex/pdflscape/pdflscape-nometadata.sty
-Package: pdflscape-nometadata 2025-06-23 v0.14 Display of landscape pages in PDF (HO)
- (c:/texlive/2026/texmf-dist/tex/latex/graphics/lscape.sty
+
+(c:/texlive/2026/texmf-dist/tex/latex/pdflscape/pdflscape-nometadata.sty
+Package: pdflscape-nometadata 2025-06-23 v0.14 Display of landscape pages in PD
+F (HO)
+
+(c:/texlive/2026/texmf-dist/tex/latex/graphics/lscape.sty
 Package: lscape 2020/05/28 v3.02 Landscape Pages (DPC)
 )
 Package pdflscape Info: Auto-detected driver: pdftex on input line 81.
-)) (c:/texlive/2026/texmf-dist/tex/latex/tools/afterpage.sty
+))
+(c:/texlive/2026/texmf-dist/tex/latex/tools/afterpage.sty
 Package: afterpage 2023/07/04 v1.08 After-Page Package (DPC)
 \AP@output=\toks31
 \AP@partial=\box59
 \AP@footins=\box60
 ))
 
-LaTeX Warning: \include should only be used after \begin{document} on input line 8.
+LaTeX Warning: \include should only be used after \begin{document} on input lin
+e 8.
 
 (./Sections/02_new_commands.tex)
 
-LaTeX Warning: \include should only be used after \begin{document} on input line 9.
+LaTeX Warning: \include should only be used after \begin{document} on input lin
+e 9.
 
 (./Sections/03_Authors_info.tex)
-LaTeX Font Info:    Trying to load font information for OT1+ptm on input line 11.
- (c:/texlive/2026/texmf-dist/tex/latex/psnfss/ot1ptm.fd
+LaTeX Font Info:    Trying to load font information for OT1+ptm on input line 1
+1.
+
+(c:/texlive/2026/texmf-dist/tex/latex/psnfss/ot1ptm.fd
 File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
-) (c:/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
+)
+(c:/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2026-02-18 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count331
-) (./GUC_Thesis.aux (./Sections/04_titlepage.aux) (./Sections/07_declaration.aux) (./Sections/08_acknowledgments.aux) (./Sections/05_list_publications.aux) (./Sections/09_abstract.aux) (./Sections/10_toc_figures_tables.aux) (./chapters/introduction.aux) (./chapters/background.aux) (./chapters/Methodology.aux) (./chapters/results.aux) (./chapters/conclusion.aux) (./chapters/future_work.aux) (./chapters/appendix.aux) (./chapters/bibliography.aux))
+)
+(./GUC_Thesis.aux (./Sections/04_titlepage.aux) (./Sections/07_declaration.aux)
+(./Sections/08_acknowledgments.aux) (./Sections/05_list_publications.aux)
+(./Sections/09_abstract.aux) (./Sections/10_toc_figures_tables.aux)
+(./chapters/introduction.aux) (./chapters/background.aux)
+(./chapters/Methodology.aux) (./chapters/results.aux)
+(./chapters/conclusion.aux) (./chapters/future_work.aux)
+(./chapters/appendix.aux) (./chapters/bibliography.aux))
 \openout1 = `GUC_Thesis.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 11.
@@ -440,18 +533,25 @@ LaTeX Font Info:    ... okay on input line 11.
 \everyMPtoPDFconversion=\toks33
 ) (c:/texlive/2026/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
-Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
- (c:/texlive/2026/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
-File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
-)) (c:/texlive/2026/texmf-dist/tex/latex/graphics/color.sty
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
+85.
+
+(c:/texlive/2026/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
+e
+))
+(c:/texlive/2026/texmf-dist/tex/latex/graphics/color.sty
 Package: color 2025/01/14 v1.3e Standard LaTeX Color (DPC)
- (c:/texlive/2026/texmf-dist/tex/latex/graphics-cfg/color.cfg
+
+(c:/texlive/2026/texmf-dist/tex/latex/graphics-cfg/color.cfg
 File: color.cfg 2016/01/02 v1.6 sample color configuration
 )
 Package color Info: Driver file: pdftex.def on input line 149.
- (c:/texlive/2026/texmf-dist/tex/latex/graphics/mathcolor.ltx))
+
+(c:/texlive/2026/texmf-dist/tex/latex/graphics/mathcolor.ltx))
 Package hyperref Info: Link coloring ON on input line 11.
- (./GUC_Thesis.out) (./GUC_Thesis.out)
+
+(./GUC_Thesis.out) (./GUC_Thesis.out)
 \@outlinefile=\write3
 \openout3 = `GUC_Thesis.out'.
 
@@ -460,7 +560,7 @@ Package caption Info: End \AtBeginDocument code.
 \openout2 = `Sections/04_titlepage.aux'.
 
  (./Sections/04_titlepage.tex
-<Figures/GUC_logo.png, id=60, 170.13562pt x 73.02281pt>
+<Figures/GUC_logo.png, id=261, 170.13562pt x 73.02281pt>
 File: Figures/GUC_logo.png Graphic file (type png)
 <use Figures/GUC_logo.png>
 Package pdftex.def Info: Figures/GUC_logo.png  used on input line 11.
@@ -468,17 +568,20 @@ Package pdftex.def Info: Figures/GUC_logo.png  used on input line 11.
  [1
 
 
-{c:/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/texlive/2026/texmf-dist/fonts/enc/dvips/base/8r.enc} <./Figures/GUC_logo.png>]
-pdfTeX warning (ext4): destination with the same identifier (name{page.i}) has been already used, duplicate ignored
+{c:/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/texlive/2026/
+texmf-dist/fonts/enc/dvips/base/8r.enc} <./Figures/GUC_logo.png>]
+pdfTeX warning (ext4): destination with the same identifier (name{page.i}) has 
+been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.49 \thispagestyle{empty}\ \clearpage
+l.47 \thispagestyle{empty}\ \clearpage
                                        [1
 
 ])
 \openout2 = `Sections/07_declaration.aux'.
 
- (./Sections/07_declaration.tex [2
+ (./Sections/07_declaration.tex
+[2
 
 
 
@@ -494,11 +597,8 @@ l.49 \thispagestyle{empty}\ \clearpage
 ]
 \openout2 = `Sections/05_list_publications.aux'.
 
- (./Sections/05_list_publications.tex
-LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 14.
- (c:/texlive/2026/texmf-dist/tex/latex/psnfss/ts1ptm.fd
-File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
-) [4
+
+(./Sections/05_list_publications.tex [4
 
 
 
@@ -511,138 +611,890 @@ File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 
 
 ]
+[6]
 \openout2 = `Sections/10_toc_figures_tables.aux'.
 
- (./Sections/10_toc_figures_tables.tex (./GUC_Thesis.toc)
+ (./Sections/10_toc_figures_tables.tex (./GUC_Thesis.toc
+LaTeX Font Info:    Trying to load font information for U+msa on input line 7.
+
+(c:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Trying to load font information for U+msb on input line 7.
+
+(c:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
+Overfull \hbox (3.4076pt too wide) detected at line 13
+ []\OT1/ptm/m/n/12 xviii
+ []
+
+
+Overfull \hbox (2.43584pt too wide) detected at line 19
+ []\OT1/ptm/m/n/12 xxiv
+ []
+
+
+Overfull \hbox (6.07172pt too wide) detected at line 23
+ []\OT1/ptm/m/n/12 xxvii
+ []
+
+
+Overfull \hbox (2.73584pt too wide) detected at line 24
+ []\OT1/ptm/m/n/12 xxix
+ []
+
+[7
+
+
+
+]
+Overfull \hbox (2.73584pt too wide) detected at line 26
+ []\OT1/ptm/m/n/12 xxxi
+ []
+
+
+Overfull \hbox (2.73584pt too wide) detected at line 27
+ []\OT1/ptm/m/n/12 xxxi
+ []
+
+
+Overfull \hbox (2.73584pt too wide) detected at line 28
+ []\OT1/ptm/m/n/12 xxxi
+ []
+
+
+Overfull \hbox (6.07172pt too wide) detected at line 29
+ []\OT1/ptm/m/n/12 xxxii
+ []
+
+
+Overfull \hbox (6.07172pt too wide) detected at line 30
+ []\OT1/ptm/m/n/12 xxxii
+ []
+
+
+Overfull \hbox (9.4076pt too wide) detected at line 31
+ []\OT1/ptm/m/n/12 xxxiii
+ []
+
+
+Overfull \hbox (8.43584pt too wide) detected at line 32
+ []\OT1/ptm/m/n/12 xxxiv
+ []
+
+
+Overfull \hbox (8.43584pt too wide) detected at line 33
+ []\OT1/ptm/m/n/12 xxxiv
+ []
+
+
+Overfull \hbox (8.43584pt too wide) detected at line 34
+ []\OT1/ptm/m/n/12 xxxiv
+ []
+
+
+Overfull \hbox (5.39996pt too wide) detected at line 35
+ []\OT1/ptm/m/n/12 xxxv
+ []
+
+
+Overfull \hbox (8.73584pt too wide) detected at line 36
+ []\OT1/ptm/m/n/12 xxxvi
+ []
+
+
+Overfull \hbox (8.73584pt too wide) detected at line 37
+ []\OT1/ptm/m/n/12 xxxvi
+ []
+
+
+Overfull \hbox (8.73584pt too wide) detected at line 38
+ []\OT1/ptm/m/n/12 xxxvi
+ []
+
+
+Overfull \hbox (12.07172pt too wide) detected at line 39
+ []\OT1/ptm/m/n/12 xxxvii
+ []
+
+
+Overfull \hbox (8.73584pt too wide) detected at line 41
+ []\OT1/ptm/m/n/12 xxxix
+ []
+
+
+Overfull \hbox (0.74347pt too wide) detected at line 46
+ []\OT1/ptm/m/n/12 xliii
+ []
+
+
+Overfull \hbox (3.4076pt too wide) detected at line 51
+ []\OT1/ptm/m/n/12 xlvii
+ []
+
+
+Overfull \hbox (6.74347pt too wide) detected at line 53
+ []\OT1/ptm/m/n/12 xlviii
+ []
+
+[8])
 \tf@toc=\write4
 \openout4 = `GUC_Thesis.toc'.
 
- [6
-
-
-
-] [7
+ [9] [10
 
 ] (./GUC_Thesis.lof)
 \tf@lof=\write5
 \openout5 = `GUC_Thesis.lof'.
 
- [8
+ [11
 
-] (./GUC_Thesis.lot)
+] (./GUC_Thesis.lot
+Overfull \hbox (2.73584pt too wide) detected at line 5
+ []\OT1/ptm/m/n/12 xxxi
+ []
+
+
+Overfull \hbox (3.4076pt too wide) detected at line 8
+ []\OT1/ptm/m/n/12 xlvii
+ []
+
+LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 1
+7.
+(c:/texlive/2026/texmf-dist/tex/latex/psnfss/ot1pcr.fd
+File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
+)
+Overfull \hbox (0.74347pt too wide) detected at line 19
+ []\OT1/ptm/m/n/12 lxiii
+ []
+
+)
 \tf@lot=\write6
 \openout6 = `GUC_Thesis.lot'.
 
- [9
+ [12
 
 ])
 \openout2 = `chapters/introduction.aux'.
 
  (./chapters/introduction.tex
 Chapter 1.
-Package acronym Info: Label `acro:uav' newly defined as it shall be overridden
-although it is yet undefined on input line 5.
-
-LaTeX Warning: Citation `citeKey1' on page x undefined on input line 5.
-
-
-LaTeX Warning: Citation `citeKey2' on page x undefined on input line 5.
-
-Package acronym Info: Label `acro:ugv' newly defined as it shall be overridden
-although it is yet undefined on input line 5.
-Package acronym Info: Label `acro:MRS' newly defined as it shall be overridden
-although it is yet undefined on input line 8.
-File: Figures/GUC_logo.png Graphic file (type png)
-<use Figures/GUC_logo.png>
-Package pdftex.def Info: Figures/GUC_logo.png  used on input line 13.
-(pdftex.def)             Requested size: 226.48395pt x 97.21268pt.
-) [10
+[13
 
 
 
 
-]
+] [14]
+LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 1
+35.
+ (c:/texlive/2026/texmf-dist/tex/latex/psnfss/ts1ptm.fd
+File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
+) [15]
+Overfull \hbox (25.5979pt too wide) in paragraph at lines 164--168
+\OT1/ptm/m/n/12 strat-egy. Col-lab-o-ra-tive real-time edit-ing with Conflict-f
+ree Repli-cated Data Types (CRDTs) [[]]
+ []
+
+[16]) [17]
 \openout2 = `chapters/background.aux'.
 
  (./chapters/background.tex
 Chapter 2.
-) [11
+
+Overfull \hbox (3.31625pt too wide) in paragraph at lines 22--31
+[]\OT1/ptm/b/n/12 Trello \OT1/ptm/m/n/12 im-ple-ments the Kan-ban paradigm [[]]
+ us-ing cards on boards with user-defined columns.
+ []
+
+[18
 
 
 
 ]
+Overfull \hbox (1.51578pt too wide) in paragraph at lines 68--72
+[]\OT1/ptm/b/n/12 Native frame-works \OT1/ptm/m/n/12 such as Win-Forms, WPF (Wi
+n-dows), Co-coa (ma-cOS), and GTK (Linux)
+ []
+
+LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 8
+8.
+(c:/texlive/2026/texmf-dist/tex/latex/psnfss/omspcr.fd
+File: omspcr.fd 
+)
+LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <12> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 88.
+ [19] [20]
+Overfull \hbox (10.68332pt too wide) in paragraph at lines 175--183
+\OT1/ptm/m/n/12 same ap-pli-ca-tion code to tar-get SQLite in de-vel-op-ment an
+d test-ing and Post-greSQL or SQL Server
+ []
+
+
+Overfull \hbox (75.88129pt too wide) in paragraph at lines 175--183
+\OT1/ptm/m/n/12 in pro-duc-tion de-ploy-ment with-out code changes---a prop-ert
+y ex-ploited via the \OT1/pcr/m/n/12 DatabaseProviderConfig
+ []
+
+[21] [22] [23] [24] [25]) [26]
 \openout2 = `chapters/Methodology.aux'.
 
  (./chapters/Methodology.tex
 Chapter 3.
-) [12
+[27
 
 
 
-]
+] [28]
+Overfull \hbox (128.16364pt too wide) in paragraph at lines 140--150
+\OT1/ptm/m/n/12 SQLite. If the op-er-a-tion mu-tates a syn-ca-ble en-tity, the 
+ser-vice ad-di-tion-ally calls \OT1/pcr/m/n/12 IMirrorService.MirrorAsync()\OT1
+/ptm/m/n/12 ,
+ []
+
+[29]
+Overfull \hbox (15.37831pt too wide) in paragraph at lines 172--177
+[]\OT1/ptm/m/n/12 The \OT1/pcr/m/n/12 AppDbContext.SaveChangesAsync() \OT1/ptm/
+m/n/12 over-ride au-to-mat-i-cally stamps \OT1/pcr/m/n/12 UpdatedAt
+ []
+
+
+Overfull \hbox (13.49184pt too wide) in paragraph at lines 196--201
+\OT1/ptm/m/n/12 Re-minder) pre-vent du-pli-cate in-serts if the ap-pli-ca-tion 
+is restarted mid-sync. \OT1/pcr/m/n/12 LocalInvitation
+ []
+
+[30]
+Overfull \hbox (162.38826pt too wide) in paragraph at lines 236--249
+\OT1/ptm/m/n/12 32-byte ran-dom hex string if nei-ther is present). A fire-and-
+forget call to \OT1/pcr/m/n/12 UserDataSyncService.PullForUserAsync()
+ []
+
+[31]
+Overfull \hbox (39.06451pt too wide) in paragraph at lines 267--276
+\OT1/ptm/m/n/12 fetched en-tity against the \OT1/pcr/m/n/12 userId \OT1/ptm/m/n
+/12 ex-tracted from the JWT claim \OT1/pcr/m/n/12 ClaimTypes.NameIdentifier\OT1
+/ptm/m/n/12 ,
+ []
+
+
+Overfull \hbox (71.05792pt too wide) in paragraph at lines 277--283
+[]\OT1/ptm/m/n/12 After any cre-ate or up-date op-er-a-tion, the ser-vice in-vo
+kes \OT1/pcr/m/n/12 IMirrorService.MirrorAsync(entity,
+ []
+
+
+Overfull \hbox (69.25948pt too wide) in paragraph at lines 277--283
+\OT1/pcr/m/n/12 operationName)\OT1/ptm/m/n/12 . \OT1/pcr/m/n/12 MirrorService \
+OT1/ptm/m/n/12 checks \OT1/pcr/m/n/12 ConnectivityService.IsEffectivelyOnline\O
+T1/ptm/m/n/12 :
+ []
+
+
+Overfull \hbox (29.20186pt too wide) in paragraph at lines 316--328
+\OT1/ptm/m/n/12 and sep-a-rate soft-delete flags for each party (\OT1/pcr/m/n/1
+2 IsDeletedBySender\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 IsDeletedByReceiver\OT1/pt
+m/m/n/12 ).
+ []
+
+[32]
+Overfull \hbox (15.77423pt too wide) in paragraph at lines 341--349
+\OT1/ptm/m/n/12 (user-toggled flag from the UI), and the de-rived \OT1/pcr/m/n/
+12 IsEffectivelyOnline \OT1/ptm/m/n/12 prop-erty (\OT1/pcr/m/n/12 IsOnline
+ []
+
+
+Overfull \hbox (36.31902pt too wide) in paragraph at lines 341--349
+\OT1/pcr/m/n/12 && !IsManualOffline\OT1/ptm/m/n/12 ). It also ex-poses \OT1/pcr
+/m/n/12 PendingSyncCount \OT1/ptm/m/n/12 (count of \OT1/pcr/m/n/12 SyncOutboxEn
+try
+ []
+
+
+Overfull \hbox (128.95805pt too wide) in paragraph at lines 350--363
+\OT1/ptm/m/n/12 ping loop: on each tick it calls \OT1/pcr/m/n/12 MongoService.P
+ingAsync() \OT1/ptm/m/n/12 and up-dates \OT1/pcr/m/n/12 ConnectivityService.IsO
+nline\OT1/ptm/m/n/12 .
+ []
+
+
+Overfull \hbox (86.78716pt too wide) in paragraph at lines 350--363
+\OT1/ptm/m/n/12 line, it waits 1500 ms (al-low-ing the Mon-goDB con-nec-tion to
+ sta-bilise) and then calls \OT1/pcr/m/n/12 ReplayOutboxAsync()\OT1/ptm/m/n/12 
+.
+ []
+
+[33]
+Overfull \hbox (97.59024pt too wide) in paragraph at lines 392--402
+\OT1/pcr/m/n/12 true \OT1/ptm/m/n/12 in the re-quest body and reads the re-spon
+se us-ing \OT1/pcr/m/n/12 HttpCompletionOption.ResponseHeadersRead\OT1/ptm/m/n/
+12 ,
+ []
+
+
+Overfull \hbox (33.01518pt too wide) in paragraph at lines 392--402
+\OT1/ptm/m/n/12 writ-ten im-me-di-ately to the ASP.NET Core SSE re-sponse strea
+m us-ing \OT1/pcr/m/n/12 Response.WriteAsync()\OT1/ptm/m/n/12 .
+ []
+
+
+Overfull \hbox (49.52888pt too wide) in paragraph at lines 410--415
+[]\OT1/ptm/b/n/12 Title gen-er-a-tion. \OT1/ptm/m/n/12 When a new con-ver-sa-ti
+on is started, a follow-up call to \OT1/pcr/m/n/12 GenerateTitleAsync()
+ []
+
+
+Overfull \hbox (4.02406pt too wide) in paragraph at lines 422--428
+\OT1/ptm/m/n/12 man-ages client-side nav-i-ga-tion with a route ta-ble of sev-e
+n-teen pages. All routes ex-cept \OT1/pcr/m/n/12 /login\OT1/ptm/m/n/12 ,
+ []
+
+
+Overfull \hbox (18.31949pt too wide) in paragraph at lines 422--428
+\OT1/pcr/m/n/12 /signup\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 /forgot-password\OT1/p
+tm/m/n/12 , and \OT1/pcr/m/n/12 /reset-password \OT1/ptm/m/n/12 are wrapped in 
+an \OT1/pcr/m/n/12 <AuthGuard>
+ []
+
+[34]
+Overfull \hbox (4.44456pt too wide) in paragraph at lines 484--489
+\OT1/ptm/m/n/12 lay-out. It sub-scribes to real-time Sig-nalR events (\OT1/pcr/
+m/n/12 ConnectivityChanged\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 SyncStarted\OT1/ptm
+/m/n/12 ,
+ []
+
+[35]
+Overfull \hbox (107.33273pt too wide) in paragraph at lines 529--539
+\OT1/ptm/m/n/12 ing its stan-dard out-put. The main pro-cess watches for the li
+ne match-ing \OT1/pcr/m/n/12 TASKFLOW[]BACKEND[]READY:\OMS/cmsy/m/n/12 f\OT1/pc
+r/m/n/12 address\OMS/cmsy/m/n/12 g
+ []
+
+[36]
+Overfull \hbox (26.97853pt too wide) in paragraph at lines 565--567
+[]\OT1/ptm/b/n/12 Linux \OT1/ptm/m/n/12 --- Ap-pIm-age (portable, no in-stal-la
+-tion re-quired) and DEB pack-age (for Debian/Ubuntu-
+ []
+
+[37]
+Overfull \hbox (67.85205pt too wide) in paragraph at lines 594--603
+[]\OT1/ptm/b/n/12 Offline syn-chro-ni-sa-tion test-ing. \OT1/ptm/m/n/12 The of-
+fline sync pipeline was val-i-dated us-ing the \OT1/pcr/m/n/12 ConnectivityBar\
+OT1/ptm/m/n/12 's
+ []
+
+) [38]
 \openout2 = `chapters/results.aux'.
 
  (./chapters/results.tex
 Chapter 4.
-) [13
+[39
 
 
 
 ]
+Overfull \hbox (68.58347pt too wide) in paragraph at lines 38--46
+\OT1/ptm/m/n/12 cu-rity): the Mis-tral API key is cur-rently stored as a hard-c
+oded con-stant in-side \OT1/pcr/m/n/12 MistralChatService.cs
+ []
+
+[40]
+Overfull \hbox (48.71309pt too wide) in paragraph at lines 66--71
+\OT1/ptm/m/n/12 end-point gen-er-ates a URL-safe ran-dom to-ken, stores it with
+ a 1-hour ex-piry in \OT1/pcr/m/n/12 AppUser.ResetToken\OT1/ptm/m/n/12 ,
+ []
+
+
+Overfull \hbox (84.3528pt too wide) in paragraph at lines 88--92
+[]\OT1/ptm/m/n/12 Tasks may be as-signed to one of three pri-or-ity lev-els and
+ five sta-tus val-ues. The \OT1/pcr/m/n/12 DueDateWarningService
+ []
+
+
+Overfull \hbox (3.66454pt too wide) in paragraph at lines 93--100
+\OT1/ptm/m/n/12 owner can in-vite col-lab-o-ra-tors by email; the in-vi-ta-tion
+ is pub-lished to the \OT1/pcr/m/n/12 team[]invitations
+ []
+
+[41]
+Overfull \hbox (2.13902pt too wide) in paragraph at lines 148--156
+[]\OT1/ptm/b/n/12 Calendar View. \OT1/ptm/m/n/12 A weekly time-grid cov-er-ing 
+7:00 AM to 8:00 PM dis-plays both \OT1/pcr/m/n/12 TaskItem
+ []
+
+
+Overfull \hbox (52.36046pt too wide) in paragraph at lines 175--184
+\OT1/ptm/m/n/12 The di-rect mes-sag-ing sys-tem sup-ports full-duplex real-time
+ text ex-change. The \OT1/pcr/m/n/12 MessagesController
+ []
+
+[42] [43] [44]
+Overfull \hbox (106.49196pt too wide) in paragraph at lines 282--287
+\OT1/ptm/m/n/12 AI-generated ti-tles were ver-i-fied: the first mes-sage of eac
+h new con-ver-sa-tion trig-gered a \OT1/pcr/m/n/12 GenerateTitleAsync()
+ []
+
+[45] [46]) [47]
 \openout2 = `chapters/conclusion.aux'.
 
  (./chapters/conclusion.tex
 Chapter 5.
-) [14
+
+Overfull \hbox (4.81439pt too wide) in paragraph at lines 24--31
+[]\OT1/ptm/b/n/12 Cross-platform desk-top ap-pli-ca-tion. \OT1/ptm/m/n/12 An El
+ec-tron 41 shell em-beds the ASP.NET Core 10
+ []
+
+
+Overfull \hbox (33.62943pt too wide) in paragraph at lines 32--40
+\OT1/ptm/m/n/12 SQLite record and a \OT1/pcr/m/n/12 SyncOutboxEntry \OT1/ptm/m/
+n/12 in the out-box queue. The \OT1/pcr/m/n/12 OfflineSyncService
+ []
+
+[48
 
 
 
 ]
+Overfull \hbox (20.03387pt too wide) in paragraph at lines 82--90
+\OT1/ptm/m/n/12 con-text. The \OT1/pcr/m/n/12 ConnectivityService \OT1/ptm/m/n/
+12 acts as the cir-cuit breaker; the \OT1/pcr/m/n/12 OfflineSyncService
+ []
+
+
+Overfull \hbox (20.41638pt too wide) in paragraph at lines 92--100
+\OT1/ptm/m/n/12 goDB) as a re-lay layer is an un-com-mon de-sign for a desk-top
+ ap-pli-ca-tion. The \OT1/pcr/m/n/12 ISyncableEntity
+ []
+
+[49]
+Overfull \hbox (1.07137pt too wide) in paragraph at lines 102--108
+ []\OT1/ptm/b/n/12 SSE-streamed multi-modal AI chat-bot in a desk-top con-text.
+[] \OT1/ptm/m/n/12 In-te-grat-ing a stream-ing HTTP
+ []
+
+
+Overfull \hbox (75.62961pt too wide) in paragraph at lines 139--147
+\OT1/ptm/m/n/12 nec-tion to a group named af-ter the user's ID (\OT1/pcr/m/n/12
+ Groups.AddToGroupAsync(Context.ConnectionId,
+ []
+
+
+Overfull \hbox (193.22829pt too wide) in paragraph at lines 139--147
+\OT1/pcr/m/n/12 userId)\OT1/ptm/m/n/12 ) meant that no-ti-fi-ca-tions could be 
+dis-patched to any ser-vice class by call-ing []\OT1/pcr/m/n/12 hubContext.Clie
+nts.Group(userId)\OT1/ptm/m/n/12 ,
+ []
+
+[50]) [51]
 \openout2 = `chapters/future_work.aux'.
 
  (./chapters/future_work.tex
 Chapter 6.
-) [15
+
+Overfull \hbox (34.9379pt too wide) in paragraph at lines 15--26
+\OT1/pcr/m/n/12 SubTask \OT1/ptm/m/n/12 en-tity with a for-eign key to \OT1/pcr
+/m/n/12 TaskItem\OT1/ptm/m/n/12 , a database mi-gra-tion, a \OT1/pcr/m/n/12 Sub
+TasksController\OT1/ptm/m/n/12 ,
+ []
+
+
+Overfull \hbox (1.05833pt too wide) in paragraph at lines 28--38
+ []\OT1/ptm/b/n/12 Mistral API key se-cu-rity.[] \OT1/ptm/m/n/12 As noted in Se
+c-tion [][]5.4[][], the Mis-tral API key is cur-rently a compile-
+ []
+
+
+Overfull \hbox (98.8962pt too wide) in paragraph at lines 28--38
+\OT1/ptm/m/n/12 time con-stant. The im-me-di-ate rem-edy is to read the key fro
+m an en-vi-ron-ment vari-able (\OT1/pcr/m/n/12 TASKFLOW[]MISTRAL[]KEY\OT1/ptm/m
+/n/12 )
+ []
+
+[52
 
 
 
 ]
+Overfull \hbox (7.526pt too wide) in paragraph at lines 66--71
+ []\OT1/ptm/b/n/12 macOS no-tari-sa-tion.[] \OT1/ptm/m/n/12 Sub-mit-ting the ma
+-cOS dis-tri-bu-tion to Ap-ple's no-tari-sa-tion ser-vice would
+ []
+
+
+Overfull \hbox (40.60124pt too wide) in paragraph at lines 85--92
+\OT1/ptm/m/it/12 AM to re-view the sprint'' \OT1/ptm/m/n/12 and re-turn a struc
+-tured \OT1/pcr/m/n/12 CreateTaskDto \OT1/ptm/m/n/12 or \OT1/pcr/m/n/12 CreateC
+alendarEventDto
+ []
+
+[53]) [54]
 \openout2 = `chapters/appendix.aux'.
 
- (./chapters/appendix.tex [16
+ (./chapters/appendix.tex [55
 
 
 
-])
+]
+Appendix A.
+
+Underfull \hbox (badness 1789) in paragraph at lines 27--29
+\OT1/ptm/m/n/12 POST \OT1/pcr/m/n/12 /forgot-password\OT1/ptm/m/n/12 , POST
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 32--37
+\OT1/pcr/m/n/12 /\OMS/cmsy/m/n/12 f\OT1/pcr/m/n/12 id\OMS/cmsy/m/n/12 g\OT1/ptm
+/m/n/12 , PATCH \OT1/pcr/m/n/12 /\OMS/cmsy/m/n/12 f\OT1/pcr/m/n/12 id\OMS/cmsy/
+m/n/12 g\OT1/pcr/m/n/12 /status\OT1/ptm/m/n/12 ,
+ []
+
+
+Overfull \hbox (4.93794pt too wide) in paragraph at lines 52--53
+[]|\OT1/ptm/m/n/12 MessagesController| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 54--58
+[]|\OT1/ptm/m/n/12 GET \OT1/pcr/m/n/12 /conversations\OT1/ptm/m/n/12 , GET
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 54--58
+\OT1/pcr/m/n/12 /\OMS/cmsy/m/n/12 f\OT1/pcr/m/n/12 userId\OMS/cmsy/m/n/12 g\OT1
+/ptm/m/n/12 , POST \OT1/pcr/m/n/12 /\OT1/ptm/m/n/12 , DELETE
+ []
+
+
+Overfull \hbox (16.27815pt too wide) in paragraph at lines 59--60
+[]|\OT1/ptm/m/n/12 GroupChatsController| 
+ []
+
+
+Overfull \hbox (8.41531pt too wide) in paragraph at lines 60--61
+[]|\OT1/pcr/m/n/12 /api/groupchats| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 61--65
+\OT1/pcr/m/n/12 /\OMS/cmsy/m/n/12 f\OT1/pcr/m/n/12 id\OMS/cmsy/m/n/12 g\OT1/ptm
+/m/n/12 , POST \OT1/pcr/m/n/12 /\OMS/cmsy/m/n/12 f\OT1/pcr/m/n/12 id\OMS/cmsy/m
+/n/12 g\OT1/pcr/m/n/12 /members\OT1/ptm/m/n/12 ,
+ []
+
+
+Overfull \hbox (20.28577pt too wide) in paragraph at lines 66--67
+[]|\OT1/ptm/m/n/12 NotificationsController| 
+ []
+
+
+Overfull \hbox (30.0153pt too wide) in paragraph at lines 67--68
+[]|\OT1/pcr/m/n/12 /api/notifications| 
+ []
+
+
+Underfull \hbox (badness 5091) in paragraph at lines 68--72
+[]|\OT1/ptm/m/n/12 GET \OT1/pcr/m/n/12 /\OT1/ptm/m/n/12 , PUT \OT1/pcr/m/n/12 /
+\OMS/cmsy/m/n/12 f\OT1/pcr/m/n/12 id\OMS/cmsy/m/n/12 g\OT1/pcr/m/n/12 /read\OT1
+/ptm/m/n/12 , PUT
+ []
+
+
+Overfull \hbox (34.08595pt too wide) in paragraph at lines 73--74
+[]|\OT1/ptm/m/n/12 CalendarEventsController| 
+ []
+
+
+Overfull \hbox (37.2153pt too wide) in paragraph at lines 74--75
+[]|\OT1/pcr/m/n/12 /api/calendarevents| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 80--85
+[]|\OT1/ptm/m/n/12 GET \OT1/pcr/m/n/12 /conversations\OT1/ptm/m/n/12 , POST
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 80--85
+\OT1/pcr/m/n/12 /conversations\OT1/ptm/m/n/12 , GET
+ []
+
+
+Overfull \hbox (8.72113pt too wide) in paragraph at lines 80--85
+\OT1/pcr/m/n/12 /conversations/\OMS/cmsy/m/n/12 f\OT1/pcr/m/n/12 id\OMS/cmsy/m/
+n/12 g\OT1/pcr/m/n/12 /messages\OT1/ptm/m/n/12 ,
+ []
+
+
+Overfull \hbox (40.34023pt too wide) in paragraph at lines 80--85
+\OT1/ptm/m/n/12 POST \OT1/pcr/m/n/12 /conversations/\OMS/cmsy/m/n/12 f\OT1/pcr/
+m/n/12 id\OMS/cmsy/m/n/12 g\OT1/pcr/m/n/12 /messages\OT1/ptm/m/n/12 ,
+ []
+
+
+Overfull \hbox (10.2663pt too wide) in paragraph at lines 86--87
+[]|\OT1/ptm/m/n/12 DashboardController| 
+ []
+
+
+Overfull \hbox (1.21532pt too wide) in paragraph at lines 87--88
+[]|\OT1/pcr/m/n/12 /api/dashboard| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 88--91
+[]|\OT1/ptm/m/n/12 GET \OT1/pcr/m/n/12 /stats\OT1/ptm/m/n/12 , GET
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 88--91
+\OT1/pcr/m/n/12 /due-this-week\OT1/ptm/m/n/12 , GET
+ []
+
+
+Overfull \hbox (32.65785pt too wide) in paragraph at lines 92--93
+[]|\OT1/ptm/m/n/12 TaskCommentsController| 
+ []
+
+
+Overfull \hbox (99.61531pt too wide) in paragraph at lines 93--94
+[]|\OT1/pcr/m/n/12 /api/tasks/\OMS/cmsy/m/n/12 f\OT1/pcr/m/n/12 taskId\OMS/cmsy
+/m/n/12 g\OT1/pcr/m/n/12 /comments| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 99--101
+[]|\OT1/ptm/m/n/12 GET, PUT \OT1/pcr/m/n/12 /profile\OT1/ptm/m/n/12 , PUT
+ []
+
+
+Overfull \hbox (19.98592pt too wide) in paragraph at lines 102--103
+[]|\OT1/ptm/m/n/12 ConnectivityController| 
+ []
+
+
+Overfull \hbox (22.8153pt too wide) in paragraph at lines 103--104
+[]|\OT1/pcr/m/n/12 /api/connectivity| 
+ []
+
+[56]
+Overfull \vbox (65.71155pt too high) has occurred while \output is active []
+
+
+[57]
+Appendix B.
+
+Overfull \hbox (8.2417pt too wide) in paragraph at lines 148--149
+[]|\OT1/pcr/m/n/12 ProjectMember| 
+ []
+
+
+Underfull \hbox (badness 2142) in paragraph at lines 167--170
+[]|\OT1/ptm/m/n/12 Name, Cre-at-ed-ByUserId, Cre-ate-dAt; child:
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 167--170
+\OT1/ptm/m/n/12 Joine-dAt); child: \OT1/pcr/m/n/12 GroupChatMessage
+ []
+
+
+Overfull \hbox (1.0417pt too wide) in paragraph at lines 171--172
+[]|\OT1/pcr/m/n/12 Notification| 
+ []
+
+
+Overfull \hbox (8.2417pt too wide) in paragraph at lines 176--177
+[]|\OT1/pcr/m/n/12 CalendarEvent| 
+ []
+
+
+Overfull \hbox (51.44168pt too wide) in paragraph at lines 181--182
+[]|\OT1/pcr/m/n/12 ChatbotConversation| 
+ []
+
+
+Overfull \hbox (15.4417pt too wide) in paragraph at lines 185--186
+[]|\OT1/pcr/m/n/12 ChatbotMessage| 
+ []
+
+
+Overfull \hbox (22.6417pt too wide) in paragraph at lines 194--195
+[]|\OT1/pcr/m/n/12 SyncOutboxEntry| 
+ []
+
+
+Underfull \hbox (badness 6575) in paragraph at lines 196--198
+[]|\OT1/ptm/m/n/12 OperationId, Op-er-a-tionName, Pay-load-J-son,
+ []
+
+
+Overfull \hbox (22.6417pt too wide) in paragraph at lines 203--204
+[]|\OT1/pcr/m/n/12 LocalInvitation| 
+ []
+
+
+Overfull \hbox (22.6417pt too wide) in paragraph at lines 207--208
+[]|\OT1/pcr/m/n/12 LocalTeamMember| 
+ []
+
+
+Overfull \hbox (22.6417pt too wide) in paragraph at lines 211--212
+[]|\OT1/pcr/m/n/12 ISyncableEntity| 
+ []
+
+[58]
+Overfull \vbox (105.16133pt too high) has occurred while \output is active []
+
+
+[59]
+Overfull \hbox (12.73532pt too wide) in paragraph at lines 240--241
+[]|\OT1/pcr/m/n/12 team[]invitations| 
+ []
+
+Appendix C.
+
+Overfull \hbox (95.67052pt too wide) in paragraph at lines 260--263
+\OT1/ptm/m/n/12 The ap-pli-ca-tion is con-fig-ured via \OT1/pcr/m/n/12 appsetti
+ngs.json \OT1/ptm/m/n/12 (over-rid-den by \OT1/pcr/m/n/12 appsettings.Developme
+nt.json
+ []
+
+
+Overfull \hbox (7.0794pt too wide) in paragraph at lines 272--273
+[]|\OT1/pcr/m/n/12 DatabaseProvider| 
+ []
+
+
+Overfull \hbox (143.87935pt too wide) in paragraph at lines 276--277
+[]|\OT1/pcr/m/n/12 ConnectionStrings.DefaultConnection| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 277--279
+[]|\OT1/ptm/m/n/12 SQLite con-nec-tion string, e.g. \OT1/pcr/m/n/12 Data
+ []
+
+
+Underfull \hbox (badness 1043) in paragraph at lines 277--279
+\OT1/pcr/m/n/12 Source=taskflow.db\OT1/ptm/m/n/12 . Rel-a-tive paths are re-
+ []
+
+
+Overfull \hbox (64.67938pt too wide) in paragraph at lines 280--281
+[]|\OT1/pcr/m/n/12 MongoDB.ConnectionString| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 290--291
+[]|\OT1/pcr/m/n/12 Jwt.Issuer \OT1/ptm/m/n/12 /
+ []
+
+
+Underfull \hbox (badness 6094) in paragraph at lines 291--293
+[]|\OT1/ptm/m/n/12 Token is-suer and au-di-ence strings. De-faults:
+ []
+
+
+Overfull \hbox (35.8794pt too wide) in paragraph at lines 294--295
+[]|\OT1/pcr/m/n/12 Jwt.ExpiresInMinutes| 
+ []
+
+
+Overfull \hbox (21.4794pt too wide) in paragraph at lines 301--302
+[]|\OT1/pcr/m/n/12 Mistral.CoderModel| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 302--304
+[]|\OT1/ptm/m/n/12 Model ID for the Coder mode. De-fault:
+ []
+
+
+Overfull \hbox (7.0794pt too wide) in paragraph at lines 305--306
+[]|\OT1/pcr/m/n/12 Mistral.OcrModel| 
+ []
+
+
+Overfull \hbox (43.07939pt too wide) in paragraph at lines 309--310
+[]|\OT1/pcr/m/n/12 Mistral.HistoryWindow| 
+ []
+
+
+Overfull \hbox (79.07938pt too wide) in paragraph at lines 318--319
+[]|\OT1/pcr/m/n/12 Kestrel.Endpoints.Http.Url| 
+ []
+
+[60]
+Underfull \hbox (badness 10000) in paragraph at lines 340--344
+[]|\OT1/ptm/m/n/12 Overrides \OT1/pcr/m/n/12 Jwt:Key \OT1/ptm/m/n/12 in
+ []
+
+
+Underfull \hbox (badness 1142) in paragraph at lines 340--344
+\OT1/pcr/m/n/12 appsettings.json\OT1/ptm/m/n/12 . Must be at least
+ []
+
+
+Underfull \hbox (badness 1194) in paragraph at lines 340--344
+\OT1/ptm/m/n/12 32 char-ac-ters. Set by the Elec-tron main
+ []
+
+
+Overfull \hbox (7.5657pt too wide) in paragraph at lines 345--346
+[]|\OT1/pcr/m/n/12 ASPNETCORE[]ENVIRONMENT| 
+ []
+
+[61]
+Overfull \hbox (79.07938pt too wide) in paragraph at lines 373--373
+[]|\OT1/pcr/m/n/12 nsis.createDesktopShortcut| 
+ []
+
+
+Overfull \hbox (93.47937pt too wide) in paragraph at lines 374--374
+[]|\OT1/pcr/m/n/12 nsis.createStartMenuShortcut| 
+ []
+
+) [62] [63]
 \openout2 = `chapters/bibliography.aux'.
 
- (./chapters/bibliography.tex
-No file GUC_Thesis.bbl.
-) (./GUC_Thesis.aux (./Sections/04_titlepage.aux) (./Sections/07_declaration.aux) (./Sections/08_acknowledgments.aux) (./Sections/05_list_publications.aux) (./Sections/09_abstract.aux) (./Sections/10_toc_figures_tables.aux) (./chapters/introduction.aux) (./chapters/background.aux) (./chapters/Methodology.aux) (./chapters/results.aux) (./chapters/conclusion.aux) (./chapters/future_work.aux) (./chapters/appendix.aux) (./chapters/bibliography.aux))
+ (./chapters/bibliography.tex (./GUC_Thesis.bbl [64
+
+
+
+])) [65]
+(./GUC_Thesis.aux (./Sections/04_titlepage.aux) (./Sections/07_declaration.aux)
+(./Sections/08_acknowledgments.aux) (./Sections/05_list_publications.aux)
+(./Sections/09_abstract.aux) (./Sections/10_toc_figures_tables.aux)
+(./chapters/introduction.aux) (./chapters/background.aux)
+(./chapters/Methodology.aux) (./chapters/results.aux)
+(./chapters/conclusion.aux) (./chapters/future_work.aux)
+(./chapters/appendix.aux) (./chapters/bibliography.aux))
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-03-20>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
 Package rerunfilecheck Info: File `GUC_Thesis.out' has not changed.
-(rerunfilecheck)             Checksum: BDDB0DBBF587D08C71C45A694F85B066;1613.
+(rerunfilecheck)             Checksum: 839E7A465027464E91C73133E3BA0C3E;10465.
  ) 
 Here is how much of TeX's memory you used:
- 13208 strings out of 467349
- 217567 string characters out of 5419862
- 634173 words of memory out of 5000000
- 41941 multiletter control sequences out of 15000+600000
- 643817 words of font info for 69 fonts, out of 8000000 for 9000
+ 14169 strings out of 467349
+ 229659 string characters out of 5419862
+ 648169 words of memory out of 5000000
+ 42654 multiletter control sequences out of 15000+600000
+ 645567 words of font info for 77 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 82i,8n,84p,596b,515s stack positions out of 10000i,1000n,20000p,200000b,200000s
-<c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/times/utmb8a.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/times/utmr8a.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on GUC_Thesis.pdf (17 pages, 127656 bytes).
+ 82i,11n,84p,651b,628s stack positions out of 10000i,1000n,20000p,200000b,200000s
+<c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><c:/tex
+live/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/texlive/2026
+/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb><c:/texlive/2026/tex
+mf-dist/fonts/type1/urw/courier/ucrr8a.pfb><c:/texlive/2026/texmf-dist/fonts/ty
+pe1/urw/times/utmb8a.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/times/utmr
+8a.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on GUC_Thesis.pdf (66 pages, 259141 bytes).
 PDF statistics:
- 232 PDF objects out of 1000 (max. 8388607)
- 194 compressed objects within 2 object streams
- 45 named destinations out of 1000 (max. 500000)
- 118 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 926 PDF objects out of 1000 (max. 8388607)
+ 834 compressed objects within 9 object streams
+ 263 named destinations out of 1000 (max. 500000)
+ 518 words of extra memory for PDF output out of 10000 (max. 10000000)
 

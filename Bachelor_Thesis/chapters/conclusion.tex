@@ -1,6 +1,199 @@
-\chapter{Conclusion}\label{chap:concl}
+﻿\chapter{Conclusion}\label{chap:concl}
 
+This chapter summarises the work carried out, evaluates the extent to which the
+original objectives were achieved, reflects on the technical decisions made during
+the project, and acknowledges the limitations of the delivered system.
 
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary of Work}\label{sec:concl_summary}
+% ─────────────────────────────────────────────────────────────────────────────
 
+Task~Flow was conceived in response to a concrete problem: existing task management
+tools are web-first services that become inaccessible or functionally degraded when
+network connectivity is lost, yet mobile or remote workers routinely face exactly those
+conditions.
+The objective was to build a self-contained desktop application that delivers the full
+feature set of a modern task management platform while remaining fully operational
+without an internet connection and automatically synchronising data when connectivity
+is restored.
+
+The six objectives established in Section~\ref{sec:intro_aims} were all met:
+
+\begin{enumerate}
+
+  \item \textbf{Cross-platform desktop application.}
+        An Electron~41 shell embeds the ASP.NET Core~10 backend and the React~19 frontend
+        in a single redistributable package.
+        Installers were produced and tested for Windows (NSIS), macOS (DMG), and
+        Linux (AppImage and DEB).
+        No prior installation of Node.js, .NET, or any other runtime is required on the
+        target machine (Section~\ref{sec:res_distribution}).
+
+  \item \textbf{Offline-first task management.}
+        Every write operation produces both an immediate SQLite record and a
+        \texttt{SyncOutboxEntry} in the outbox queue.
+        The \texttt{OfflineSyncService} replays the queue when connectivity is restored
+        and \texttt{BulkSyncStartupService} handles the case in which the user was offline
+        during the preceding session.
+        Twenty-entry offline-then-sync scenarios were verified without data loss
+        (Section~\ref{sec:res_sync}).
+
+  \item \textbf{Multiple task visualisation modes.}
+        Five views --- Default, Kanban, Table, Gantt, and Calendar --- each present the
+        task dataset through a different organisational lens.
+        The Kanban drag-and-drop, the Gantt year timeline, and the Calendar weekly
+        time-grid were all implemented and tested on at least two operating systems
+        (Section~\ref{sec:res_views}).
+
+  \item \textbf{Team collaboration and real-time communication.}
+        Project and team invitations flow through MongoDB as a relay layer.
+        Direct messages and group chats are persisted in SQLite and delivered in real time
+        via a SignalR hub.
+        File attachments up to 50~MB are supported.
+        Notification delivery was verified for all fifteen event types
+        (Sections~\ref{sec:res_teams} and~\ref{sec:res_settings}).
+
+  \item \textbf{Integrated AI assistant.}
+        The chatbot integrates the Mistral API in three modes: general productivity
+        guidance, code generation and explanation, and document OCR and summarisation.
+        Responses are streamed token-by-token over Server-Sent Events with a median
+        first-token latency of approximately 400~ms in the general mode
+        (Section~\ref{sec:res_ai}).
+
+  \item \textbf{Maintainable, extensible codebase.}
+        The backend follows a layered architecture (Controllers, Services, Repositories,
+        Data) enforced by constructor injection via the ASP.NET Core DI container.
+        The \texttt{ISyncableEntity} abstraction decouples the sync engine from
+        individual entity types, allowing new syncable entities to be added by
+        implementing the interface and registering a corresponding repository.
+        AutoMapper profiles and FluentValidation validators are co-located with their
+        respective DTOs and entities.
+
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Technical Contributions}\label{sec:concl_contributions}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The project produced four technical contributions that go beyond assembling existing
+libraries.
+
+\paragraph{Outbox-pattern offline sync engine for a desktop .NET application.}
+While the transactional outbox pattern is well documented in distributed-systems
+literature, applying it within a single-user SQLite-backed desktop application required
+adapting the pattern to a process-local context.
+The \texttt{ConnectivityService} acts as the circuit breaker; the
+\texttt{OfflineSyncService} provides the consumer loop; and the \texttt{ISyncableEntity}
+interface defines the contract that entities must satisfy to participate in sync.
+The result is a lightweight, dependency-free sync engine that requires no message broker
+and adds less than one millisecond of overhead per write operation on the test machine.
+
+\paragraph{Dual-database architecture with a shared entity abstraction.}
+Combining an embedded relational database (SQLite) as the primary store with a
+cloud-hosted document database (MongoDB) as a relay layer is an uncommon design for a
+desktop application.
+The \texttt{ISyncableEntity} interface exposes a \texttt{ToMongoDocument()} method that
+produces a BSON-compatible dictionary, keeping the transformation logic on the entity
+itself rather than scattered across service classes.
+This design made it straightforward to add or modify syncable entities throughout
+development without changing the sync engine.
+
+\paragraph{SSE-streamed multi-modal AI chatbot in a desktop context.}
+Integrating a streaming HTTP response (SSE) inside an Electron-hosted application
+required ensuring that the Electron main process did not buffer or terminate the
+long-lived HTTP connection before all tokens were delivered.
+The solution --- issuing the SSE request directly from the React renderer process to
+the local ASP.NET Core server --- bypassed the main process entirely and delivered
+correct streaming behaviour without any special Electron configuration.
+
+\paragraph{Self-contained cross-platform packaging with embedded runtime.}
+Bundling an ASP.NET Core server, a React frontend, and an Electron shell into a single
+installer that starts all three processes transparently on Windows, macOS, and Linux
+required careful orchestration of the Electron main process.
+The stdout-signal protocol (\texttt{TASKFLOW\_BACKEND\_READY:\{address\}}) decouples
+the frontend load from the backend start time, allowing the UI to display a splash
+state until the server is confirmed ready regardless of machine speed.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Lessons Learned}\label{sec:concl_lessons}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Several broader lessons emerged from the design and implementation process.
+
+\textbf{Offline-first requires deliberate UI design, not just backend changes.}
+It is not sufficient to enqueue writes; users need visible confirmation that their
+actions have been recorded and will eventually reach the server.
+The \texttt{ConnectivityBar} with its pending-count badge, colour-coded connectivity
+states, and animated sync progress bar was as important to the user experience as the
+outbox queue itself.
+Implementing this required defining a clear contract between the sync service and the
+React component so that both could react to the same state transitions.
+
+\textbf{Choosing the right conflict resolution strategy early saves significant rework.}
+The decision to use last-write-wins based on \texttt{UpdatedAt} was made early and
+shaped the entity interface, the outbox entry schema, and the MongoDB upsert logic.
+Had this decision been deferred, adding a timestamp field and revision counter to every
+entity late in the project would have required a database migration on potentially live
+data.
+
+\textbf{SignalR group-per-user is a reliable notification pattern.}
+Joining each authenticated connection to a group named after the user's ID
+(\texttt{Groups.AddToGroupAsync(Context.ConnectionId, userId)}) meant that
+notifications could be dispatched to any service class by calling
+\texttt{\_hubContext.Clients.Group(userId)}, without needing to track connection IDs.
+This pattern handled reconnection transparently: a reconnecting client re-joined its
+group and received any notifications dispatched after reconnection without any
+server-side state changes.
+
+\textbf{Electron child-process IPC via stdout is reliable but fragile.}
+The stdout-signal approach works well in production builds but can be disrupted during
+development when the backend writes diagnostic output before the ready signal.
+Filtering the stdout stream with a prefix (\texttt{TASKFLOW\_BACKEND\_READY:}) rather
+than reading the first line proved more robust, but a dedicated named-pipe or socket
+protocol would be a more principled solution.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Limitations}\label{sec:concl_limitations}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The following limitations were identified during development and testing.
+
+\textbf{Last-write-wins conflict resolution.}
+The synchronisation engine uses a simple last-write-wins strategy based on the
+\texttt{UpdatedAt} timestamp.
+In scenarios where two users edit the same shared task concurrently while offline, the
+later sync will silently overwrite the earlier one.
+No merge dialogue or conflict notification is presented to the user.
+For the single-user scenario (one user across multiple devices) this is acceptable;
+for multi-user collaborative editing it may result in lost updates.
+
+\textbf{Sub-task backend not implemented.}
+The Table View renders a placeholder sub-task row beneath each task, and the task
+entity schema includes a comment referring to sub-tasks.
+However, no \texttt{SubTask} entity, migration, service, or API endpoint was created.
+The feature exists at the UI layer only and is not persisted.
+This is the largest gap between the stated scope and the delivered system.
+
+\textbf{Mistral API key is hardcoded.}
+The API key used to authenticate requests to the Mistral API is stored as a
+compile-time constant in \texttt{MistralChatService.cs}.
+This violates the principle of separating secrets from source code and means that
+rotating the key requires a recompile and redistribution of the application.
+The recommended remedy --- reading the key from the \texttt{TASKFLOW\_MISTRAL\_KEY}
+environment variable at startup and falling back to a configuration value --- was
+identified but not implemented within the project timeline.
+
+\textbf{No automated end-to-end test suite.}
+Testing was performed manually as described in Section~\ref{sec:meth_testing}.
+While the architecture is amenable to unit testing (stateless services, injected
+repositories), no unit tests, integration tests, or end-to-end tests were written.
+The absence of an automated regression suite means that confidence in correctness relies
+entirely on manual verification.
+
+\textbf{macOS Gatekeeper requires a manual override on first launch.}
+Because the macOS distribution was not submitted to Apple for notarisation, users on
+macOS are required to right-click and select \emph{Open} on the first launch.
+This is a distribution-process limitation rather than a functional defect but
+represents a friction point for non-technical users.
 
 %\let\cleardoublepage\clearpage

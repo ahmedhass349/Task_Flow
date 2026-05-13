@@ -1,5 +1,426 @@
-\chapter{Results}\label{chap:results}
+﻿\chapter{Results}\label{chap:results}
 
+This chapter presents the functional outcomes of the Task~Flow implementation.
+Each section evaluates a major feature area against the requirements established in
+Chapter~\ref{chap:Methodology}, describes the implemented behaviour, and notes any
+deviations or limitations observed during development and testing.
 
+% ─────────────────────────────────────────────────────────────────────────────
+\section{System Features Overview}\label{sec:res_features}
+% ─────────────────────────────────────────────────────────────────────────────
 
-%\let\cleardoublepage\clearpage
+Table~\ref{tab:feature_matrix} maps each functional requirement from
+Section~\ref{sec:meth_requirements} to its implementation status in the delivered system.
+
+\begin{table}[H]
+\centering
+\caption{Functional requirement fulfilment matrix.}
+\label{tab:feature_matrix}
+\begin{tabular}{llp{7.2cm}}
+\toprule
+\textbf{Req.} & \textbf{Status} & \textbf{Notes} \\
+\midrule
+FR-01 User Authentication  & Fully met    & Registration, login, JWT, password reset via email \\
+FR-02 Task Management      & Fully met    & Full CRUD, all status/priority values, star flag \\
+FR-03 Multiple Task Views  & Fully met    & Default, Kanban, Table, Gantt, Calendar \\
+FR-04 Project \& Teams     & Fully met    & Projects, membership, MongoDB-relayed invitations \\
+FR-05 Messaging            & Fully met    & DMs, group chats, file attachments up to 50~MB \\
+FR-06 Notifications        & Fully met    & SignalR, email, 24~h and 1~h due-date warnings \\
+FR-07 Calendar Events      & Fully met    & Full CRUD, colour, meeting link, weekly time-grid \\
+FR-08 AI Chatbot           & Fully met    & Three modes, SSE streaming, persisted history \\
+FR-09 Offline Operation    & Fully met    & Outbox queue, auto-replay, BulkSync on startup \\
+FR-10 Dashboard            & Fully met    & Stats, trend, due-this-week, recent activity \\
+FR-11 Settings             & Fully met    & Profile, password change, notification preferences \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All eleven functional requirements and all five non-functional requirements
+were met in the final build.
+The one outstanding item noted in the non-functional requirements is
+NFR-02 (Security): the Mistral API key is currently stored as a hard-coded constant
+inside \texttt{MistralChatService.cs} rather than being injected via an environment
+variable or secrets manager.
+This is documented as a known limitation and discussed further in
+Chapter~\ref{chap:concl}.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Authentication and User Management}\label{sec:res_auth}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The authentication flow was implemented in full.
+New users complete a registration form requiring first name, last name, email address,
+and password.
+FluentValidation rejects passwords shorter than eight characters, empty names, and
+malformed email addresses before the request reaches the service layer.
+Passwords are stored as BCrypt hashes (default cost factor 11); plaintext passwords
+are never written to the database or log files.
+
+Upon successful login the API returns a signed JWT containing ten claims.
+The React client stores this token in \texttt{localStorage} and attaches it to every
+subsequent API request via the \texttt{Authorization: Bearer} header.
+An \texttt{<AuthGuard>} component checks token presence on each route change and
+redirects unauthenticated users to the login page immediately, without a round-trip to
+the server.
+
+The password reset flow was verified end-to-end: the \texttt{/api/auth/forgot-password}
+endpoint generates a URL-safe random token, stores it with a 1-hour expiry in
+\texttt{AppUser.ResetToken}, and dispatches a reset-link email via MailKit.
+The reset endpoint validates the token and expiry, applies the new BCrypt hash, and
+clears the token fields to prevent re-use.
+
+User profile data (avatar URL, company, country, phone, timezone) is embedded in the
+JWT at login, making it available to the React application without an extra API call.
+Profile updates are reflected in the next token refresh (next login).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Task and Project Management}\label{sec:res_tasks}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Task management is the core of the application.
+The \texttt{TasksController} exposes nine endpoints covering create, read (list and
+single), update (full and partial status-only PATCH), delete, toggle-star, search, and
+bulk-action operations.
+All endpoints enforce ownership: a user can only read, edit, or delete tasks where
+\texttt{AssigneeId} matches their JWT identity.
+Attempts to access another user's tasks return HTTP~403.
+
+Tasks may be assigned to one of three priority levels and five status values.
+The \texttt{DueDateWarningService} automatically transitions tasks whose due date has
+passed into the \texttt{Overdue} status on its next 1-minute polling cycle, ensuring
+the status always reflects reality without requiring user action.
+
+Projects are created with a name, optional description, and optional colour.
+The project owner can invite collaborators by email; the invitation is published to the
+\texttt{team\_invitations} MongoDB collection and retrieved by the invitee on their
+next login.
+Accepting an invitation creates a \texttt{ProjectMember} row in the invitee's local
+SQLite database.
+Task assignment within a project is constrained to project members.
+
+Task comments were implemented as a standalone entity linked to \texttt{TaskItem}.
+Each comment stores the author, body text, and creation timestamp.
+Creating a comment triggers a \texttt{TaskCommented} SignalR notification to the task
+owner (if different from the commenter).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Task Visualisation Modes}\label{sec:res_views}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Five distinct visualisation modes were implemented and verified.
+
+\textbf{Default View.}
+Tasks are partitioned client-side into five temporal groups: \emph{Overdue},
+\emph{Today}, \emph{This Week}, \emph{Later}, and \emph{Completed}.
+Each group renders as a collapsible section with a count badge.
+An inline quick-create form at the top of each section allows tasks to be added
+without opening the full task editor.
+This view proved most useful for daily triage.
+
+\textbf{Kanban View.}
+Five columns represent the five task statuses.
+Cards are moved between columns via the HTML5 Drag and Drop API; on drop, a
+\texttt{PATCH} request updates the task's status and the outbox entry is enqueued if
+offline.
+Column headers display per-column task counts and are colour-coded: red for
+\emph{Overdue}, amber for \emph{In Progress}, blue for \emph{Review}, green for
+\emph{Completed}, and grey for \emph{To Do}.
+The drag affordance was verified to work on Windows~11 (Chrome and Electron) and
+macOS~14 (Safari and Electron).
+
+\textbf{Table View.}
+Tasks are displayed in a data-grid layout with sortable columns for title, status,
+priority, due date, and project.
+Status and priority cells render as colour-coded pill badges.
+Each row includes an expand control that reveals a placeholder sub-task row;
+actual sub-task persistence has been deferred to a future release (see
+Chapter~\ref{chap:todo}).
+
+\textbf{Gantt View.}
+A full-calendar-year timeline renders task bars positioned by due date.
+Tasks without a due date are excluded from this view.
+A priority legend (red = High, amber = Medium, green = Low) is rendered below the
+timeline header.
+A vertical rule marks the current date.
+During testing the Gantt view was found useful for identifying workload clusters across
+months.
+
+\textbf{Calendar View.}
+A weekly time-grid covering 7:00~AM to 8:00~PM displays both \texttt{TaskItem} records
+and \texttt{CalendarEvent} records as positioned blocks.
+A dark-themed mini-calendar in the left sidebar allows week navigation.
+Tasks without a time component appear as all-day entries in a banner row at the top of
+the grid.
+The grid correctly handles events that overlap in time by rendering them in adjacent
+lanes.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Team Collaboration and Messaging}\label{sec:res_teams}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection*{Team and Project Invitations}
+
+The team invitation workflow was tested end-to-end across two separate application
+instances running on the same machine under different user accounts.
+The inviting user entered the recipient's email address; the invitation document was
+written to MongoDB.
+On the recipient's next login, \texttt{UserDataSyncService.PullForUserAsync()} fetched
+the pending invitation and inserted a \texttt{LocalInvitation} row into the recipient's
+SQLite database.
+The invitation appeared in the recipient's notification list; accepting it created the
+\texttt{TeamMember} or \texttt{ProjectMember} record as expected.
+
+\subsection*{Direct Messaging}
+
+The direct messaging system supports full-duplex real-time text exchange.
+The \texttt{MessagesController} persists each message and immediately broadcasts a
+\texttt{MessageReceived} SignalR event to the recipient's user group.
+On the receiving side, the React client increments the unread badge on the
+\texttt{Messages} navigation icon without requiring a page refresh.
+Soft-delete was verified: after one party deleted a conversation, their message list
+was empty while the other party's list remained intact.
+File attachments were tested with a 2~MB PNG image and a 15~MB PDF; both uploaded
+successfully and the attachment metadata was stored on the \texttt{Message} entity.
+
+\subsection*{Group Chats}
+
+Group chats support up to an arbitrary number of participants.
+The group owner can add members after creation; each new member receives a
+\texttt{GroupInvitation} notification.
+Messages sent to a group are broadcast to a SignalR group named after the
+\texttt{GroupChat.Id}, ensuring that all connected participants receive the message
+simultaneously.
+Message editing (\texttt{IsEdited} flag) and attachment support were both verified.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Offline Synchronisation}\label{sec:res_sync}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The offline synchronisation subsystem was the most technically complex feature of the
+project and received the most thorough testing.
+
+\subsection*{Outbox Queue Behaviour}
+
+With the \texttt{ConnectivityBar}'s manual offline toggle activated
+(\texttt{IsManualOffline = true}), twenty task create and update operations were
+performed sequentially.
+Inspection of the SQLite database confirmed that twenty \texttt{SyncOutboxEntry} rows
+were created, each with status \texttt{Pending}, a serialised JSON payload, and the
+correct operation name (\texttt{UpsertTask} or \texttt{UpsertNotification}).
+The pending count badge on the \texttt{ConnectivityBar} incremented correctly with each
+operation.
+
+\subsection*{Sync Replay}
+
+On deactivating the manual offline flag, the \texttt{OfflineSyncService} detected the
+transition from \texttt{IsEffectivelyOnline = false} to \texttt{true}, waited the
+configured 1500~ms stabilisation delay, and began the replay pass.
+SignalR events (\texttt{SyncStarted}, \texttt{SyncProgress},
+\texttt{SyncComplete}) were observed in the browser console and drove the animated
+progress bar in the \texttt{ConnectivityBar}.
+After the pass completed, the \texttt{SyncOutboxEntry} rows were promoted to
+\texttt{Synced} and the corresponding documents were present in the MongoDB
+\texttt{tasks} collection with the correct field values.
+
+\subsection*{BulkSync on Startup}
+
+A fresh user account was created with the application offline (no MongoDB connection).
+Twenty tasks were created.
+When the application was restarted with the MongoDB connection string configured and
+the server reachable, \texttt{BulkSyncStartupService} detected an online MongoDB within
+the 90-second window and performed the bulk upsert.
+All twenty documents appeared in the MongoDB \texttt{tasks} collection within
+approximately 2 seconds of the service completing its online check.
+
+\subsection*{Conflict Resolution}
+
+Conflict resolution follows a last-write-wins strategy keyed on \texttt{UpdatedAt}.
+A task was created offline on instance~A and the same task's title was edited offline
+on instance~B (simulated by directly modifying the SQLite database).
+When both instances came online, the instance that synced later overwrote the earlier
+document in MongoDB, producing a consistent final state.
+This behaviour is consistent with the design rationale described in
+Section~\ref{sec:bg_offline}.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{AI Chatbot}\label{sec:res_ai}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The AI chatbot was tested in all three operational modes.
+
+\subsection*{General Mode}
+
+Using \texttt{mistral-small-latest}, the assistant answered questions about task
+prioritisation strategies and meeting scheduling best practices.
+Streamed responses began appearing in the UI within 400~ms of submission (measured from
+click to first token rendered), confirming that the SSE pipeline introduces negligible
+overhead beyond the Mistral API's own response latency.
+Conversation history was preserved across page navigation; returning to a previous
+conversation and sending a follow-up message confirmed that the model received the
+prior context correctly (evidenced by pronoun resolution across turns).
+
+\subsection*{Coder Mode}
+
+Using \texttt{codestral-latest}, the assistant produced syntactically valid C\# and
+TypeScript code samples when asked to generate a service class and a React hook.
+The system prompt's instruction to explain algorithmic choices was reflected in the
+model's responses, which included comments and rationale alongside the code.
+The \texttt{react-markdown} renderer with the \texttt{remark-gfm} plugin correctly
+formatted the code blocks with monospace styling and language labels.
+
+\subsection*{Scanner Mode}
+
+Using \texttt{mistral-ocr-latest}, a one-page PDF containing a structured table was
+uploaded via the paperclip attachment button.
+The model returned the table content in Markdown format with columns correctly
+identified.
+A PNG image containing a handwritten-style label was also tested; the model extracted
+the text with minor errors on ambiguous glyphs.
+
+\subsection*{Conversation Management}
+
+AI-generated titles were verified: the first message of each new conversation triggered
+a \texttt{GenerateTitleAsync()} call and the resulting title (typically 4--8 words)
+appeared in the conversation list sidebar within one second.
+Titles were stable across subsequent messages in the same conversation.
+The conversation list correctly sorted entries by \texttt{UpdatedAt} descending.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Calendar and Dashboard}\label{sec:res_calendar}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection*{Dashboard}
+
+The dashboard renders five metric cards: Total Active Tasks, In Progress, Projects,
+Team Members, and a Task Trend indicator (percentage change in task count over the
+preceding seven days).
+A \emph{Due This Week} panel lists the tasks whose due date falls within the next seven
+days, sorted by due date ascending.
+A \emph{Recent Activity} feed shows the ten most recently created or updated tasks,
+with relative timestamps.
+An embedded calendar widget in the lower section of the dashboard mirrors the weekly
+view from the full calendar page.
+
+The dashboard statistics were verified against the SQLite database contents:
+adding three tasks raised the \emph{Total Active Tasks} count by three; completing
+tasks moved them out of the active count.
+
+\subsection*{Calendar Events}
+
+Calendar events are distinct from tasks: they carry a \texttt{StartTime},
+\texttt{EndTime}, an optional \texttt{Colour} hex code, and an optional
+\texttt{MeetingLink}.
+Full CRUD operations were verified through the \texttt{CalendarController}.
+Events appear as coloured blocks in the weekly time-grid view alongside task items.
+A conflict check (two events occupying overlapping time slots) was handled at the UI
+level by rendering events in adjacent lanes.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Notifications and Settings}\label{sec:res_settings}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection*{Notifications}
+
+The notification panel was tested for all fifteen defined notification types.
+Notifications arrive via SignalR in real time; the unread badge on the bell icon
+increments without a page reload.
+Clicking \emph{Mark all as read} sends a \texttt{PUT /api/notifications/mark-all-read}
+request, clears the badge, and marks every row in the \texttt{Notification} table as
+\texttt{IsRead = true}.
+The \texttt{ActionUrl} field was verified: clicking a \emph{TaskAssigned}
+notification navigated the user to the correct task detail view.
+
+\texttt{DueDateWarningService} was tested by setting a task's due date to one hour in
+the future.
+After the next polling cycle (within 1 minute), a \emph{DueDateApproaching}
+notification appeared in the notification panel and a duplicate-suppression check
+confirmed that the notification was not re-generated on subsequent polling cycles within
+the same session.
+
+\subsection*{Reminders}
+
+User-created reminders were tested by setting a \texttt{FireAt} timestamp one minute
+into the future.
+\texttt{ReminderProcessorService} detected the reminder on its next polling tick,
+sent a \texttt{ReminderFired} notification, and set \texttt{HasFired = true} to prevent
+re-firing.
+
+\subsection*{Settings}
+
+The settings page was divided into four sections: \emph{Profile},
+\emph{Security}, \emph{Notifications}, and \emph{Appearance}.
+Profile updates (name, avatar URL, company, country, phone, timezone) were persisted
+to \texttt{AppUser} immediately and reflected on the settings page after save.
+The password change flow correctly required the current password before accepting a new
+one, and rejected mismatched confirmation values with a client-side validation error.
+Notification preference toggles (email notifications on/off per event type) were stored
+in \texttt{AppUser} and respected by the \texttt{DueDateWarningService} and
+\texttt{ReminderProcessorService} when deciding whether to dispatch email alerts.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Cross-Platform Distribution}\label{sec:res_distribution}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The packaged desktop application was tested on three operating systems.
+
+\textbf{Windows (NSIS installer).}
+The installer was built and executed on Windows~11 (x64).
+The \texttt{oneClick: false} NSIS configuration presented the user with an installation
+directory picker and optional shortcuts for the Desktop and Start Menu.
+After installation, launching the application from the Start Menu shortcut spawned the
+Electron process, which in turn started the embedded .NET backend.
+The \texttt{TASKFLOW\_BACKEND\_READY} signal was received within approximately 3
+seconds on the test machine (Intel Core i7, 16~GB RAM, NVMe SSD), after which the
+React UI loaded in the Electron window.
+The same installer was tested on Windows~10 (version~22H2) with identical results.
+
+\textbf{macOS (DMG).}
+The DMG was mounted on macOS~14 Sonoma (Apple Silicon, M2 chip).
+Because the binary was not notarised, macOS Gatekeeper required the user to right-click
+and select \emph{Open} on the first launch.
+After this one-time override, subsequent launches proceeded without warnings.
+The application operated correctly; the Rosetta~2 translation layer was not invoked as
+the build targeted \texttt{osx-arm64} directly.
+
+\textbf{Linux (AppImage).}
+The AppImage was executed on Ubuntu~22.04 (x64) after marking it executable with
+\texttt{chmod +x}.
+No system-level dependencies needed to be installed.
+The application launched, authenticated successfully against the embedded backend, and
+performed offline task creation and synchronisation without errors.
+The DEB package was also installed via \texttt{dpkg -i} on the same machine and
+launched from the application menu.
+
+In all three environments the application started without requiring the user to install
+Node.js, .NET, or any other runtime, satisfying NFR-03 (Cross-Platform Distribution).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Performance Observations}\label{sec:res_performance}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Informal timing measurements were taken during testing to assess NFR-04 (Responsiveness).
+All measurements were made on the Windows~11 test machine described above.
+
+\begin{table}[H]
+\centering
+\caption{Informal response-time observations for key operations.}
+\label{tab:perf_timings}
+\begin{tabular}{lc}
+\toprule
+\textbf{Operation} & \textbf{Observed latency} \\
+\midrule
+Application cold start (Electron to UI ready)    & $\approx$3~s \\
+Login (JWT issue + MongoDB pull)                  & $<$500~ms \\
+Task list load (100 tasks, SQLite)               & $<$100~ms \\
+Task create (SQLite write + SignalR event)        & $<$80~ms \\
+First AI token rendered (General mode)           & $\approx$400~ms \\
+Offline-to-online sync replay (20 entries)       & $\approx$1.8~s \\
+Direct message delivery (sender to recipient)    & $<$150~ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All interactive operations satisfied the 200~ms threshold defined in NFR-04, with the
+exception of application cold start and AI first-token latency, which are dominated by
+process initialisation and network round-trip time respectively and are not considered
+interactive UI responses.

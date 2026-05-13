@@ -34,9 +34,10 @@ if (!gotSingleInstanceLock) {
 function log(message) {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] ${message}`;
-  console.log(logMessage);
-  
-  // Also write to file for production debugging
+  // Phase 6: console output is dev-only; production logging goes to file only.
+  if (IS_DEV) {
+    console.log(logMessage);
+  }
   if (isProd) {
     const logDir = path.join(app.getPath('userData'), 'logs');
     if (!fs.existsSync(logDir)) {
@@ -103,7 +104,10 @@ function spawnBackend() {
     const env = {
       ...process.env,
       ASPNETCORE_ENVIRONMENT: IS_DEV ? 'Development' : 'Production',
-      ASPNETCORE_URLS: IS_DEV ? 'http://127.0.0.1:5000' : process.env.ASPNETCORE_URLS
+      // S-04: always specify the URL explicitly; never inherit undefined from the OS env.
+      ASPNETCORE_URLS: IS_DEV ? 'http://127.0.0.1:5000' : 'http://127.0.0.1:0',
+      // P-04: route the SQLite DB to the user's AppData/Roaming folder, not the read-only install dir.
+      TASKFLOW_DB_PATH: IS_DEV ? '' : app.getPath('userData')
     };
 
     log(`Backend command: ${backendPath} ${args.join(' ')}`);

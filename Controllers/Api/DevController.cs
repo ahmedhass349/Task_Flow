@@ -19,6 +19,8 @@ namespace taskflow.Controllers.Api
     [ApiController]
     [Route("api/dev")]
     [Authorize]
+    // D-03: hidden from API explorer/Swagger; every action returns 404 outside Development.
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class DevController : ControllerBase
     {
         private readonly IWebHostEnvironment _env;
@@ -32,12 +34,7 @@ namespace taskflow.Controllers.Api
             _mongo = mongo;
         }
 
-        private IActionResult DevOnly()
-        {
-            if (!_env.IsDevelopment())
-                return NotFound();
-            return null!; // caller checks
-        }
+        // D-10: DevOnly() removed — it was dead code (never called; each action guards itself).
 
         /// <summary>
         /// Clears the MongoDB relay (user_presence, team_invitations, team_members).

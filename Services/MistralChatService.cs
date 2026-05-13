@@ -219,7 +219,8 @@ namespace taskflow.Services
 
             if (earlyError != null)
             {
-                yield return $"[Error: {earlyError}]";
+                // S-01: never expose raw exception details to the frontend via SSE tokens.
+                yield return "[Error: AI service is currently unavailable. Please try again.]";
                 yield break;
             }
 

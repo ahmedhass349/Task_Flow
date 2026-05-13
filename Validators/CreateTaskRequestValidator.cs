@@ -1,3 +1,6 @@
+// FILE: Validators/CreateTaskRequestValidator.cs
+// PHASE: Phase 5
+// CHANGES: S-05 — added MaximumLength(4000) on Description to bound optional free-text input.
 using FluentValidation;
 using taskflow.DTOs.Tasks;
 using taskflow.Data.Entities;
@@ -11,6 +14,10 @@ namespace taskflow.Validators
             RuleFor(x => x.Title)
                 .NotEmpty().WithMessage("Title is required.")
                 .MaximumLength(200).WithMessage("Title must not exceed 200 characters.");
+
+            RuleFor(x => x.Description)
+                .MaximumLength(4000).WithMessage("Description must not exceed 4000 characters.")
+                .When(x => x.Description != null);
 
             RuleFor(x => x.ProjectId)
                 .GreaterThan(0).WithMessage("A valid project ID is required.");

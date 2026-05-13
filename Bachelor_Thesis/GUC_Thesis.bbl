@@ -1,0 +1,135 @@
+\begin{thebibliography}{10}
+
+\bibitem{allen2001gtd}
+David Allen.
+\newblock {\em {Getting Things Done: The Art of Stress-Free Productivity}}.
+\newblock Penguin Books, 2001.
+
+\bibitem{jiang2023mistral}
+Albert~Q. Jiang, Alexandre Sablayrolles, Arthur Mensch, Chris Bamford,
+  Devendra~Singh Chaplot, Diego de~las Casas, Florian Bressand, Gianna Lengyel,
+  Guillaume Lample, Lucile Saulnier, et~al.
+\newblock {Mistral 7B}.
+\newblock arXiv preprint arXiv:2310.06825, 2023.
+\newblock Available: \url{https://arxiv.org/abs/2310.06825}.
+
+\bibitem{shapiro2011crdt}
+Marc Shapiro, Nuno Pregui{\c{c}}a, Carlos Baquero, and Marek Zawirski.
+\newblock {Conflict-Free Replicated Data Types}.
+\newblock In {\em Proceedings of the 13th International Symposium on
+  Stabilization, Safety, and Security of Distributed Systems (SSS)}, pages
+  386--400. Springer, 2011.
+
+\bibitem{anderson2010kanban}
+David~J. Anderson.
+\newblock {\em {Kanban: Successful Evolutionary Change for Your Technology
+  Business}}.
+\newblock Blue Hole Press, 2010.
+
+\bibitem{electrondocs2024}
+{Electron Contributors}.
+\newblock {Electron Documentation}.
+\newblock \url{https://www.electronjs.org/docs}, 2024.
+\newblock Accessed 2024.
+
+\bibitem{kleppmann2017designing}
+Martin Kleppmann.
+\newblock {\em {Designing Data-Intensive Applications}}.
+\newblock O'Reilly Media, 2017.
+
+\bibitem{brewer2012cap}
+Eric Brewer.
+\newblock {CAP Twelve Years Later: How the ``Rules'' Have Changed}.
+\newblock {\em Computer}, 45(2):23--29, 2012.
+
+\bibitem{fowler2002patterns}
+Martin Fowler.
+\newblock {\em {Patterns of Enterprise Application Architecture}}.
+\newblock Addison-Wesley, 2002.
+
+\bibitem{kleppmann2019crdt}
+Martin Kleppmann and Alastair~R. Beresford.
+\newblock {A Conflict-Free Replicated JSON Datatype}.
+\newblock {\em IEEE Transactions on Parallel and Distributed Systems},
+  28(10):2733--2746, 2017.
+
+\bibitem{hipp2022sqlite}
+Kevin~P. Gaffney, Martin Prammer, Larry Brasfield, D.~Richard Hipp, Dan
+  Kennedy, and Jignesh~M. Patel.
+\newblock {SQLite: Past, Present, and Future}.
+\newblock {\em Proceedings of the VLDB Endowment}, 15(12):3535--3547, 2022.
+
+\bibitem{chodorow2013mongodb}
+Kristina Chodorow.
+\newblock {\em {MongoDB: The Definitive Guide}}.
+\newblock O'Reilly Media, 2nd edition, 2013.
+
+\bibitem{efcoredocs2024}
+{Microsoft}.
+\newblock {Entity Framework Core Documentation}.
+\newblock \url{https://docs.microsoft.com/en-us/ef/core}, 2024.
+\newblock Accessed 2024.
+
+\bibitem{rfc6455}
+I.~Fette and A.~Melnikov.
+\newblock {The WebSocket Protocol}.
+\newblock RFC 6455, Internet Engineering Task Force, December 2011.
+\newblock Available: \url{https://www.rfc-editor.org/rfc/rfc6455}.
+
+\bibitem{signalrdocs2024}
+{Microsoft}.
+\newblock {ASP.NET Core SignalR Documentation}.
+\newblock \url{https://docs.microsoft.com/en-us/aspnet/core/signalr}, 2024.
+\newblock Accessed 2024.
+
+\bibitem{rfc7519}
+M.~Jones, J.~Bradley, and N.~Sakimura.
+\newblock {JSON Web Token (JWT)}.
+\newblock RFC 7519, Internet Engineering Task Force, May 2015.
+\newblock ISSN 2070-1721. Available:
+  \url{https://www.rfc-editor.org/rfc/rfc7519}.
+
+\bibitem{provos1999bcrypt}
+Niels Provos and David Mazi\`{e}res.
+\newblock {A Future-Adaptable Password Scheme}.
+\newblock In {\em Proceedings of the 1999 USENIX Annual Technical Conference},
+  pages 32--32. USENIX Association, 1999.
+
+\bibitem{owasp2021}
+{OWASP Foundation}.
+\newblock {OWASP Top 10 Application Security Risks -- 2021}.
+\newblock \url{https://owasp.org/Top10/}, 2021.
+\newblock Accessed 2024.
+
+\bibitem{sandhu1996rbac}
+Ravi~S. Sandhu, Edward~J. Coyne, Hal~L. Feinstein, and Charles~E. Youman.
+\newblock {Role-Based Access Control Models}.
+\newblock {\em Computer}, 29(2):38--47, 1996.
+
+\bibitem{vaswani2017attention}
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
+  Aidan~N. Gomez, {\L}ukasz Kaiser, and Illia Polosukhin.
+\newblock {Attention Is All You Need}.
+\newblock {\em Advances in Neural Information Processing Systems}, 30, 2017.
+
+\bibitem{brown2020gpt3}
+Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, Prafulla
+  Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell,
+  et~al.
+\newblock {Language Models are Few-Shot Learners}.
+\newblock {\em Advances in Neural Information Processing Systems},
+  33:1877--1901, 2020.
+
+\bibitem{wilson2003gantt}
+James~M. Wilson.
+\newblock {Gantt Charts: A Centenary Appreciation}.
+\newblock {\em European Journal of Operational Research}, 149(2):430--437,
+  2003.
+
+\bibitem{aspnetcore2024}
+{Microsoft}.
+\newblock {ASP.NET Core Documentation}.
+\newblock \url{https://docs.microsoft.com/en-us/aspnet/core}, 2024.
+\newblock Accessed 2024.
+
+\end{thebibliography}

@@ -47,6 +47,15 @@ namespace taskflow.Data
             string? connectionString,
             IConfiguration configuration)
         {
+            // P-04: Electron sets TASKFLOW_DB_PATH to app.getPath('userData') in production
+            // so the SQLite database is written to the user's profile, not the read-only install dir.
+            var envDbPath = Environment.GetEnvironmentVariable("TASKFLOW_DB_PATH");
+            if (!string.IsNullOrWhiteSpace(envDbPath))
+            {
+                Directory.CreateDirectory(envDbPath);
+                return Path.Combine(envDbPath, "taskflow.db");
+            }
+
             if (!string.IsNullOrWhiteSpace(connectionString)
                 && connectionString.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
             {

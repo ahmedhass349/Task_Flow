@@ -1,4 +1,394 @@
 \chapter{Literature Review}\label{chap:background}
 
+This chapter surveys the academic literature and technical background that underpins the
+design decisions made in Task~Flow.
+The review spans seven areas: existing task-management tools and their limitations,
+desktop application frameworks, offline-first architecture patterns, hybrid database
+designs, real-time communication protocols, authentication and security, and the
+evolution of Large Language Models (LLMs) as productivity aids.
+It concludes with a brief treatment of project-visualisation paradigms.
 
-%\let\cleardoublepage\clearpage
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Task Management and Productivity Software}\label{sec:bg_tasktools}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Task management software encompasses a broad spectrum of tools---from simple personal
+to-do lists to enterprise project-management suites.
+The most widely cited personal productivity framework is David Allen's
+\emph{Getting Things Done}~(GTD)~\cite{allen2001gtd}, which argues that externalising
+tasks into a trusted system frees cognitive resources for execution rather than recall.
+Modern software tools attempt to operationalise this principle in varying ways.
+
+\textbf{Trello} implements the Kanban paradigm~\cite{anderson2010kanban} using cards
+on boards with user-defined columns.
+Its simplicity has made it popular for personal and small-team use, but it provides
+no offline capability; every drag-and-drop operation requires an active connection.
+\textbf{Asana} and \textbf{Jira} extend the model with structured project hierarchies,
+sprint planning, and reporting dashboards, but both are unambiguously cloud-first and
+offer only read-only offline caching at best.
+\textbf{Notion} introduces a flexible block-based editor that unifies notes, databases,
+and tasks in one surface, yet it shares the same connectivity dependency.
+
+Table~\ref{tab:tool_comparison} summarises the key feature dimensions of these
+tools relative to Task~Flow.
+
+\begin{table}[H]
+\centering
+\caption{Feature comparison of popular task-management tools vs.\ Task~Flow.}
+\label{tab:tool_comparison}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Feature} & \textbf{Trello} & \textbf{Asana} & \textbf{Jira} & \textbf{Notion} & \textbf{Task~Flow} \\
+\midrule
+Offline operation      & \texttimes & \texttimes & \texttimes & \texttimes & \checkmark \\
+Local persistence      & \texttimes & \texttimes & \texttimes & Limited    & \checkmark \\
+Transparent sync       & \texttimes & \texttimes & \texttimes & \texttimes & \checkmark \\
+Embedded AI assistant  & Limited    & Limited    & Limited    & Limited    & \checkmark \\
+Desktop installer      & \texttimes & \texttimes & \texttimes & \checkmark & \checkmark \\
+Kanban view            & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+Gantt / timeline view  & \texttimes & \checkmark & \checkmark & \texttimes & \checkmark \\
+Calendar view          & \texttimes & \checkmark & \checkmark & \checkmark & \checkmark \\
+Integrated messaging   & \texttimes & \texttimes & \texttimes & \texttimes & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The pattern that emerges from this survey is consistent: each tool excels in one or two
+dimensions but requires multiple third-party integrations to achieve a comparable feature
+breadth to Task~Flow, and none treats offline reliability as a design priority.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Desktop Application Frameworks}\label{sec:bg_desktop}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The choice of desktop application framework has long-term implications for developer
+productivity, binary size, platform reach, and the ability to reuse existing web
+technology investments.
+
+\textbf{Native frameworks} such as WinForms, WPF (Windows), Cocoa (macOS), and GTK
+(Linux) offer tight OS integration and the best runtime performance but impose a
+per-platform development effort and cannot reuse the React/TypeScript frontend code
+already written for Task~Flow.
+
+\textbf{Tauri}~\cite{electrondocs2024} is a newer alternative to Electron that renders
+web content in the system's native WebView and uses Rust for the application shell,
+resulting in significantly smaller binaries.
+However, its Rust back-end integration would require a full rewrite of the .NET server
+component, and its ecosystem maturity is substantially lower than Electron's.
+
+\textbf{Electron}~\cite{electrondocs2024}, developed by GitHub and now maintained by
+the OpenJS Foundation, embeds a Chromium browser and a Node.js runtime in a single
+cross-platform binary.
+The web content layer communicates with the Node.js main process via inter-process
+communication (IPC).
+This architecture allows the complete React~+~TypeScript frontend to be reused without
+modification.
+For Task~Flow, the .NET backend is launched as a child process by the Electron main
+process, with port negotiation performed via a token on standard output
+(\texttt{TASKFLOW\_BACKEND\_READY:\{address\}}).
+The resulting installer sizes are larger than Tauri equivalents but remain well within
+acceptable bounds for a desktop application.
+Electron's comprehensive documentation, wide community adoption, and first-class support
+in \texttt{electron-builder}~\cite{electrondocs2024} made it the optimal choice for
+this project.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Offline-First Architecture}\label{sec:bg_offline}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The term \emph{offline-first} was popularised in the context of progressive web
+applications and mobile clients, but the underlying principle applies equally to
+desktop software: \emph{design the system to function fully without network access,
+and treat synchronisation as an enhancement rather than a prerequisite}.
+
+Kleppmann's \emph{Designing Data-Intensive Applications}~\cite{kleppmann2017designing}
+provides a thorough treatment of the trade-offs involved.
+In the context of the CAP theorem~\cite{brewer2012cap}, an offline-first system
+prioritises \emph{Availability} and \emph{Partition Tolerance} over strict
+\emph{Consistency}: local writes are always accepted, and consistency is restored
+asynchronously when connectivity returns.
+
+\subsection*{The Transactional Outbox Pattern}
+
+A key challenge in offline-first systems is ensuring that locally committed changes are
+eventually propagated to the remote store without duplication or loss.
+The \emph{transactional outbox pattern}~\cite{fowler2002patterns} addresses this by
+writing both the business entity change and a corresponding outbox entry in the same
+local database transaction.
+A background worker polls the outbox and replays pending entries to the remote system,
+advancing each entry through a state machine: \texttt{Pending} $\to$
+\texttt{Processing} $\to$ \texttt{Synced} (or \texttt{Failed} after exhausting retries).
+This design guarantees at-least-once delivery while keeping the application logic
+decoupled from network availability.
+
+\subsection*{Conflict Resolution}
+
+When multiple clients modify the same entity while offline, the system must resolve
+divergent versions upon reconnection.
+Conflict-free Replicated Data Types (CRDTs)~\cite{shapiro2011crdt,kleppmann2019crdt}
+provide a mathematically principled approach: data structures are designed so that
+any two states can be merged without coordination.
+Implementing CRDTs in a production system adds significant complexity; the current
+Task~Flow implementation adopts a simpler \emph{last-write-wins} strategy (using the
+\texttt{UpdatedAt} timestamp as the arbitration key), with CRDTs noted as a long-term
+enhancement.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Hybrid Database Architectures}\label{sec:bg_databases}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection*{SQLite as a Local Store}
+
+SQLite~\cite{hipp2022sqlite} is a self-contained, serverless, zero-configuration,
+transactional SQL database engine embedded as a library in the host application.
+It writes to a single file on disk, requires no background daemon process, and
+supports full ACID transactions.
+These properties make it the natural choice for a local persistence layer: the database
+travels with the application, survives process restarts, and performs all reads and
+writes without network round-trips.
+At the time of writing, SQLite is the most widely deployed database engine in the world,
+present in mobile operating systems, browsers, and billions of embedded devices.
+
+In Task~Flow, SQLite is the \emph{single source of truth}.
+All application features read from and write to SQLite first; MongoDB involvement is
+entirely asynchronous and does not block the user-visible operation path.
+
+\subsection*{MongoDB as a Cloud Relay}
+
+MongoDB~\cite{chodorow2013mongodb} is a document-oriented database that stores data as
+BSON documents grouped in collections.
+Its flexible schema accommodates evolving data shapes without migration overhead and
+its horizontal scaling capabilities make it suitable for cloud deployment.
+
+In Task~Flow, MongoDB serves as a \emph{synchronisation relay} for the subset of data
+that must be visible across devices or shared among team members: mirrored tasks,
+notifications, team invitations, and user-presence indicators.
+The document \texttt{\_id} for each mirrored document is the entity's \texttt{SyncId}
+(a UUID generated at creation time), ensuring idempotent upserts and stable cross-device
+identity.
+This dual-database pattern---ACID-safe local SQLite as primary, schemaless MongoDB as
+asynchronous relay---is a pragmatic alternative to full CRDT-based synchronisation when
+conflict probability is low and eventual consistency is acceptable.
+
+\subsection*{Entity Framework Core}
+
+Entity Framework Core~\cite{efcoredocs2024} is the official Object-Relational Mapper
+(ORM) for .NET.
+It provides a LINQ-based query API, change tracking, and migration tooling that
+translates strongly typed C\# entity classes into SQL DDL and DML statements.
+Its provider model allows the same application code to target SQLite in development and
+testing and PostgreSQL or SQL~Server in production deployment without code changes---a
+property exploited via the \texttt{DatabaseProviderConfig} switch in Task~Flow's
+\texttt{Startup.cs}.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Real-Time Communication Patterns}\label{sec:bg_realtime}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Modern collaborative applications require the server to \emph{push} state changes to
+connected clients rather than waiting for clients to poll.
+Three primary mechanisms are relevant to Task~Flow.
+
+\subsection*{WebSockets}
+
+The WebSocket protocol~\cite{rfc6455} establishes a persistent, full-duplex TCP
+connection between a client and server after an HTTP upgrade handshake.
+Both parties may send frames at any time without the overhead of repeated HTTP headers.
+WebSockets are well-suited for low-latency bidirectional communication such as chat
+messages and live presence indicators.
+
+\subsection*{SignalR}
+
+ASP.NET Core SignalR~\cite{signalrdocs2024} is a higher-level abstraction over
+WebSockets, Server-Sent Events, and long polling.
+It provides a hub-based RPC model in which the server can invoke named methods on
+connected clients, and clients can invoke methods on the server.
+SignalR automatically negotiates the best available transport and handles reconnection.
+Task~Flow uses SignalR's \texttt{NotificationHub} to broadcast real-time events:
+connectivity-state changes, synchronisation progress, task reminders, and new
+notification payloads are all delivered to the React client via a single hub connection.
+
+\subsection*{Server-Sent Events}
+
+Server-Sent Events (SSE) is a unidirectional streaming protocol built on standard
+HTTP: the server holds the response connection open and writes \texttt{text/event-stream}
+chunks as data becomes available~\cite{signalrdocs2024}.
+SSE is the appropriate choice for AI response streaming because the communication is
+inherently one-directional (server to client) and does not require the connection upgrade
+ceremony of WebSockets.
+Task~Flow's \texttt{ChatbotController} exposes a \texttt{POST
+/api/chatbot/conversations/\{id\}/messages/stream} endpoint that writes Mistral API
+response chunks directly to the SSE response as they arrive, enabling the React
+frontend to render the AI reply token by token.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Authentication and Security}\label{sec:bg_security}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection*{JSON Web Tokens}
+
+JSON Web Tokens (JWT)~\cite{rfc7519} are a compact, URL-safe means of representing
+claims between two parties.
+A JWT consists of three Base64URL-encoded sections---header, payload, and
+signature---concatenated with dots.
+The signature, computed using HMAC-SHA256 (HS256) over the header and payload,
+allows the receiving party to verify the token's integrity without querying a
+central session store.
+This stateless verification model is particularly valuable in a desktop application
+context where the backend is a local process: there is no shared session infrastructure
+between restarts.
+Task~Flow issues JWTs with a 24-hour expiry; the signing key is injected at runtime
+via the \texttt{TASKFLOW\_JWT\_KEY} environment variable, falling back to a random
+32-byte hex key generated at startup if none is provided.
+
+\subsection*{Password Hashing with bcrypt}
+
+Storing passwords as plaintext or with reversible encryption is a critical security
+failure.
+The bcrypt algorithm~\cite{provos1999bcrypt} applies an adaptive key-derivation function
+with a configurable cost factor, deliberately making hash computation slow.
+As hardware performance improves, the cost factor can be increased to maintain the same
+brute-force resistance.
+Task~Flow uses BCrypt.Net-Next with the default cost factor to hash passwords at
+registration and verify them at login, ensuring that even a full database compromise
+does not directly expose user credentials.
+
+\subsection*{OWASP Top 10 Considerations}
+
+The Open Web Application Security Project (OWASP) publishes an annually updated list of
+the ten most critical web application security risks~\cite{owasp2021}.
+The most relevant to Task~Flow are:
+\emph{Broken Access Control}---mitigated by validating the JWT \texttt{sub} claim on
+every protected endpoint and checking entity ownership before returning or modifying
+data;
+\emph{Cryptographic Failures}---addressed by bcrypt hashing and HS256 JWT signing;
+\emph{Injection}---mitigated by EF Core's parameterised queries which eliminate raw SQL
+string concatenation; and
+\emph{Security Misconfiguration}---acknowledged in the context of the Mistral API key,
+which should be supplied via an environment variable rather than embedded in source code.
+
+\subsection*{Role-Based Access Control}
+
+Ferraiolo and Kuhn's foundational work on role-based access
+control~(RBAC)~\cite{sandhu1996rbac} defines a model in which permissions are assigned
+to roles and roles are assigned to users, rather than assigning permissions directly to
+users.
+Task~Flow implements a lightweight RBAC model for team membership: each
+\texttt{TeamMember} record carries a \texttt{Role} field, and the Teams controller
+enforces that only the team owner may perform administrative operations such as removing
+members or disbanding the team.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Large Language Models and AI-Assisted Productivity}\label{sec:bg_ai}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection*{The Transformer Architecture}
+
+The transformer architecture, introduced by Vaswani et~al.~\cite{vaswani2017attention}
+in the seminal paper \textit{Attention Is All You Need}, replaced recurrent
+sequence-to-sequence models with a purely attention-based mechanism.
+The self-attention operation allows each token in a sequence to attend to every other
+token in parallel, enabling efficient training on large corpora and strong performance
+on a wide range of language tasks.
+This architecture became the foundation for all major LLMs in subsequent years.
+
+\subsection*{GPT-3 and the Emergence of Instruction Following}
+
+Brown et~al.'s GPT-3~\cite{brown2020gpt3} demonstrated that scaling transformer models
+to 175 billion parameters produced qualitatively new capabilities, including few-shot
+task completion from natural-language prompts.
+The subsequent development of instruction-tuned variants established the prompt-response
+interaction model that underpins modern conversational AI assistants.
+
+\subsection*{Mistral Models}
+
+Jiang et~al.~\cite{jiang2023mistral} introduced Mistral~7B, a 7-billion-parameter
+open-weight model that outperformed LLaMA~2~13B on several benchmarks despite being
+half the size, achieved through grouped-query attention and sliding-window attention
+mechanisms.
+Task~Flow integrates the Mistral API at three model tiers:
+\texttt{mistral-small-latest} for general conversational use;
+\texttt{codestral-latest} for the code-generation mode, a model fine-tuned on a large
+corpus of programming languages; and
+\texttt{mistral-ocr-latest} for the document-scanner mode, which accepts base64-encoded
+images and PDF files and returns extracted and structured text.
+The 20-message conversation history window provides conversational context while
+bounding the per-request token count.
+
+\subsection*{AI-Assisted Productivity Research}
+
+Recent studies examining AI coding assistants report productivity gains of 26--55\%
+on specific programming tasks, with larger gains on routine boilerplate generation
+and smaller gains on complex architectural reasoning.
+The integration of an AI assistant directly within the task-management interface---rather
+than requiring the user to switch to a separate tool---reduces context-switching overhead
+and allows the assistant to be consulted in the flow of work.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Project Visualisation Paradigms}\label{sec:bg_viz}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Different users hold different mental models of their work, and no single visualisation
+paradigm suits all cognitive styles or project types.
+A mature task-management tool should offer multiple views over the same underlying data.
+
+\textbf{Kanban boards} originated in Toyota's production system as physical cards
+(\emph{kanban} = ``signal card'' in Japanese) that controlled the flow of work between
+manufacturing stages~\cite{anderson2010kanban}.
+Their digital equivalent presents tasks as cards in columns representing workflow stages,
+giving teams an immediate visual signal of bottlenecks (columns with too many cards)
+and idle capacity.
+Drag-and-drop interaction directly maps the physical act of moving a card from one column
+to the next.
+
+\textbf{Gantt charts} were developed by Henry Gantt in the early twentieth century as
+project-schedule representations that map tasks onto a horizontal time axis~\cite{wilson2003gantt}.
+They are particularly effective for deadline-sensitive planning because the chart
+immediately communicates which tasks are in progress, which are complete, and which are
+overdue relative to a calendar.
+
+\textbf{Calendar views} represent tasks as events on a time grid, a mental model
+familiar to users from personal calendars.
+A weekly or monthly grid makes it easy to reason about task density and identify
+overloaded days.
+
+\textbf{Tabular views} surface all task attributes as a structured grid, enabling rapid
+scanning, sorting, and filtering without the spatial metaphor of Kanban columns or
+timeline bars.
+This view is preferred by users who think in terms of data rather than process flow.
+
+Task~Flow provides all four of these paradigms plus a smart-grouped default list
+(grouping tasks by temporal proximity: Overdue, Today, This Week, Later, Completed),
+giving each user the freedom to work in the style that best fits their workflow at any
+given moment.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}\label{sec:bg_summary}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The literature review reveals a clear pattern of unmet needs in the current landscape of
+task-management software.
+Existing tools are built on cloud-first assumptions that render them fragile in
+low-connectivity environments.
+The offline-first literature, particularly the transactional outbox pattern described
+by Fowler~\cite{fowler2002patterns} and the data-intensive application principles
+formalised by Kleppmann~\cite{kleppmann2017designing}, provides the theoretical basis
+for a reliable local-first persistence and synchronisation subsystem.
+The dual-database architecture combining SQLite and MongoDB is a pragmatic application
+of these principles that avoids the complexity of full CRDT-based conflict resolution
+while still enabling cross-device data relay.
+
+In the domain of AI integration, the Mistral family of models~\cite{jiang2023mistral}
+offers an open-weight, commercially accessible set of capabilities---general language,
+code generation, and OCR---that align precisely with the three modes required by the
+system.
+Server-Sent Events provide the appropriate transport mechanism for streaming AI
+responses to the client with minimal protocol overhead.
+
+Electron's maturity and React-reuse properties make it the most pragmatic desktop
+packaging choice, while JWT and bcrypt together provide a well-understood and
+academically grounded authentication and security foundation.
+
+The following chapter translates these theoretical foundations into a concrete system
+design, detailing the architecture, data model, and implementation of each subsystem
+in Task~Flow.

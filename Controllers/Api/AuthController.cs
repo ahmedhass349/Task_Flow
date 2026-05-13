@@ -1,7 +1,8 @@
 // FILE: Controllers/Api/AuthController.cs
 // STATUS: MODIFIED
 // CHANGES: Fixed GetUserId() to return 401 (#3), removed try-catch blocks (#15), cleaned usings (#17),
-//          added fire-and-forget presence upsert to MongoDB relay on login/register (Phase 2)
+//          added fire-and-forget presence upsert to MongoDB relay on login/register (Phase 2);
+//          S-09 (Phase 5): [EnableRateLimiting("auth")] on all four anonymous auth actions.
 
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using taskflow.DTOs.Auth;
 using taskflow.Helpers;
 using taskflow.Services.Interfaces;
@@ -50,6 +52,7 @@ namespace taskflow.Controllers.Api
         /// </summary>
         [HttpPost("login")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var result = await _authService.LoginAsync(request);
@@ -76,6 +79,7 @@ namespace taskflow.Controllers.Api
         /// </summary>
         [HttpPost("register")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(request);
@@ -95,6 +99,7 @@ namespace taskflow.Controllers.Api
         /// </summary>
         [HttpPost("forgot-password")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
             await _authService.ForgotPasswordAsync(request);
@@ -106,6 +111,7 @@ namespace taskflow.Controllers.Api
         /// </summary>
         [HttpPost("reset-password")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
             await _authService.ResetPasswordAsync(request);

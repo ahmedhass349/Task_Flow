@@ -19,9 +19,6 @@ namespace taskflow.BackgroundServices
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<DueDateWarningService> _logger;
         private readonly TimeSpan _interval = TimeSpan.FromMinutes(1);
-        // map notification key -> time sent, used for dedup and cleanup
-        private readonly Dictionary<string, DateTime> _sentNotifications = new Dictionary<string, DateTime>();
-        private readonly object _sentNotificationsLock = new object();
 
         public DueDateWarningService(IServiceProvider serviceProvider, ILogger<DueDateWarningService> logger)
         {
@@ -54,6 +51,8 @@ namespace taskflow.BackgroundServices
             _logger.LogInformation("Due date warning service stopped");
         }
 
+        // B-03: Dedup is now DB-backed (Notifications table) so it survives restarts.
+        // Notification title format: "Task Due 24 hours" / "Task Due 1 hour" (set by NotificationService).
         private async Task ProcessDueDateWarnings(AppDbContext dbContext, INotificationService notificationService)
         {
             var now = DateTime.UtcNow;
@@ -70,18 +69,8 @@ namespace taskflow.BackgroundServices
 
             foreach (var task in tasksDueIn24Hours)
             {
-                var notificationKey = $"24h-{task.Id}-{task.AssigneeId}";
-                var shouldSend = false;
-                lock (_sentNotificationsLock)
-                {
-                    if (!_sentNotifications.ContainsKey(notificationKey))
-                    {
-                        _sentNotifications[notificationKey] = DateTime.UtcNow;
-                        shouldSend = true;
-                    }
-                }
-
-                if (shouldSend)
+                if (!await AlreadyNotifiedAsync(dbContext, task.AssigneeId!.Value, task.Id,
+                        NotificationType.TaskDueSoon, "24 hours", TimeSpan.FromHours(23)))
                 {
                     await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "24 hours");
                     _logger.LogInformation("Sent 24-hour due warning for task {TaskId}", task.Id);
@@ -100,18 +89,8 @@ namespace taskflow.BackgroundServices
 
             foreach (var task in tasksDueIn1Hour)
             {
-                var notificationKey = $"1h-{task.Id}-{task.AssigneeId}";
-                var shouldSend = false;
-                lock (_sentNotificationsLock)
-                {
-                    if (!_sentNotifications.ContainsKey(notificationKey))
-                    {
-                        _sentNotifications[notificationKey] = DateTime.UtcNow;
-                        shouldSend = true;
-                    }
-                }
-
-                if (shouldSend)
+                if (!await AlreadyNotifiedAsync(dbContext, task.AssigneeId!.Value, task.Id,
+                        NotificationType.TaskDueSoon, "1 hour", TimeSpan.FromMinutes(55)))
                 {
                     await notificationService.NotifyTaskDueSoonAsync(task.AssigneeId!.Value, task, "1 hour");
                     _logger.LogInformation("Sent 1-hour due warning for task {TaskId}", task.Id);
@@ -130,22 +109,10 @@ namespace taskflow.BackgroundServices
             foreach (var task in overdueTasks)
             {
                 if (task.Status != TaskStatus.Overdue)
-                {
                     task.Status = TaskStatus.Overdue;
-                }
 
-                var notificationKey = $"overdue-{task.Id}-{task.AssigneeId}";
-                var shouldSend = false;
-                lock (_sentNotificationsLock)
-                {
-                    if (!_sentNotifications.ContainsKey(notificationKey))
-                    {
-                        _sentNotifications[notificationKey] = DateTime.UtcNow;
-                        shouldSend = true;
-                    }
-                }
-
-                if (shouldSend)
+                if (!await AlreadyNotifiedAsync(dbContext, task.AssigneeId!.Value, task.Id,
+                        NotificationType.TaskOverdue, null, TimeSpan.FromHours(23)))
                 {
                     await notificationService.NotifyTaskOverdueAsync(task.AssigneeId!.Value, task);
                     _logger.LogInformation("Sent overdue notification for task {TaskId}", task.Id);
@@ -153,24 +120,24 @@ namespace taskflow.BackgroundServices
             }
 
             if (overdueTasks.Count > 0)
-            {
                 await dbContext.SaveChangesAsync();
-            }
+        }
 
-            // Clean old notifications (older than 7 days)
-            var cutoffDate = now.AddDays(-7);
-            List<string> oldKeys;
-            lock (_sentNotificationsLock)
-            {
-                oldKeys = _sentNotifications.Where(kvp => kvp.Value < cutoffDate)
-                                            .Select(kvp => kvp.Key)
-                                            .ToList();
-
-                foreach (var oldKey in oldKeys)
-                {
-                    _sentNotifications.Remove(oldKey);
-                }
-            }
+        // Checks whether a notification of the given type+title already exists within `window`.
+        // Using the Notifications table means the dedup state survives process restarts.
+        private static async Task<bool> AlreadyNotifiedAsync(
+            AppDbContext db, int userId, int taskId,
+            NotificationType type, string? titlePart, TimeSpan window)
+        {
+            var cutoff = DateTime.UtcNow - window;
+            IQueryable<Notification> query = db.Notifications.AsNoTracking()
+                .Where(n => n.UserId == userId
+                         && n.RelatedTaskId == taskId
+                         && n.Type == type
+                         && n.CreatedAt > cutoff);
+            if (titlePart != null)
+                query = query.Where(n => n.Title.Contains(titlePart));
+            return await query.AnyAsync();
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)

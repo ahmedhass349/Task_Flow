@@ -19,8 +19,20 @@ namespace taskflow.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        // ── Phase 2: auto-stamp ISyncableEntity on every save ──────────────────────
+        // ── B-01: auto-stamp ISyncableEntity on both sync and async save paths ──────
+        public override int SaveChanges()
+        {
+            StampSyncableEntities();
+            return base.SaveChanges();
+        }
+
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            StampSyncableEntities();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void StampSyncableEntities()
         {
             foreach (var entry in ChangeTracker.Entries<ISyncableEntity>())
             {
@@ -36,7 +48,6 @@ namespace taskflow.Data
                     entry.Entity.IsSynced = false;
                 }
             }
-            return base.SaveChangesAsync(cancellationToken);
         }
 
         // ── DbSets ────────────────────────────────────────────────────────────

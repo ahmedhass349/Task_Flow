@@ -1,0 +1,60 @@
+This is BibTeX, Version 0.99e (TeX Live 2026)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: GUC_Thesis.aux
+A level-1 auxiliary file: Sections/04_titlepage.aux
+A level-1 auxiliary file: Sections/07_declaration.aux
+A level-1 auxiliary file: Sections/08_acknowledgments.aux
+A level-1 auxiliary file: Sections/05_list_publications.aux
+A level-1 auxiliary file: Sections/09_abstract.aux
+A level-1 auxiliary file: Sections/10_toc_figures_tables.aux
+A level-1 auxiliary file: chapters/introduction.aux
+A level-1 auxiliary file: chapters/background.aux
+A level-1 auxiliary file: chapters/Methodology.aux
+A level-1 auxiliary file: chapters/results.aux
+A level-1 auxiliary file: chapters/conclusion.aux
+A level-1 auxiliary file: chapters/future_work.aux
+A level-1 auxiliary file: chapters/appendix.aux
+A level-1 auxiliary file: chapters/bibliography.aux
+The style file: unsrt.bst
+Database file #1: References/myref.bib
+You've used 22 entries,
+            1791 wiz_defined-function locations,
+            587 strings with 7297 characters,
+and the built_in function-call counts, 4619 in all, are:
+= -- 405
+> -- 227
+< -- 4
++ -- 87
+- -- 65
+* -- 263
+:= -- 756
+add.period$ -- 76
+call.type$ -- 22
+change.case$ -- 18
+chr.to.int$ -- 0
+cite$ -- 22
+duplicate$ -- 196
+empty$ -- 460
+format.name$ -- 65
+if$ -- 1032
+int.to.chr$ -- 0
+int.to.str$ -- 22
+missing$ -- 19
+newline$ -- 121
+num.names$ -- 22
+pop$ -- 89
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 75
+stack$ -- 0
+substring$ -- 212
+swap$ -- 40
+text.length$ -- 4
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 0
+while$ -- 40
+width$ -- 24
+write$ -- 252

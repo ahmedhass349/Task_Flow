@@ -57,7 +57,12 @@ namespace taskflow.Services
                 _invitationsCollection = db.GetCollection<TeamInvitation>("team_invitations");
                 _membersCollection = db.GetCollection<MongoTeamMember>("team_members");
 
-                EnsureIndexesAsync().GetAwaiter().GetResult();
+                // B-02: fire-and-forget index creation — never block the DI constructor thread.
+                _ = Task.Run(async () =>
+                {
+                    try { await EnsureIndexesAsync(); }
+                    catch (Exception ex) { _logger.LogWarning(ex, "MongoService: index creation failed (non-critical)."); }
+                });
             }
             catch (Exception ex)
             {
@@ -89,6 +94,12 @@ namespace taskflow.Services
                     .Ascending(i => i.Status);
                 await _invitationsCollection.Indexes.CreateOneAsync(
                     new CreateIndexModel<TeamInvitation>(senderIdx, new CreateIndexOptions { Name = "sender_status" }));
+
+                // DB-07: TTL index — MongoDB auto-deletes invitation documents once ExpiresAt is reached.
+                var ttlKey = Builders<TeamInvitation>.IndexKeys.Ascending(i => i.ExpiresAt);
+                await _invitationsCollection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<TeamInvitation>(ttlKey,
+                        new CreateIndexOptions { Name = "expires_ttl", ExpireAfter = TimeSpan.Zero }));
             }
 
             // Index on team members for fast team lookups

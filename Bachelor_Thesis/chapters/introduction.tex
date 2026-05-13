@@ -1,17 +1,206 @@
 \chapter{Introduction}\label{chap:intro}
 
+\section{Background and Motivation}\label{sec:intro_background}
 
-\section{Section Name} \label{sec:s1}
-Some sample text with an \ac{uav}, some citation \cite{citeKey1,citeKey2}, and some more \ac{ugv}.
+The way people organise their work has changed fundamentally over the last decade.
+The proliferation of distributed teams, freelance arrangements, and hybrid work models
+has driven enormous growth in the market for digital task-management and project-collaboration
+software~\cite{allen2001gtd}.
+Tools such as Trello, Asana, Jira, and Notion have become everyday staples in software
+development teams, enabling members to track progress, share context, and coordinate
+across time zones without the overhead of physical meetings.
 
-\section{Another Section}
-Reference to Section \ref{sec:s1}, and reuse of \ac{ugv} nad \ac{uav} with also full use of \acf{MRS}. Reference to figure \ref{fig:logo}.
+Despite this progress, the dominant generation of collaboration tools shares a critical
+architectural assumption: \emph{a reliable, always-available internet connection}.
+Every create, read, update, and delete operation is routed through a remote cloud server.
+When connectivity degrades---as it does on mobile hotspots, in aeroplanes, in rural areas,
+or during network maintenance---these applications either display error banners or silently
+discard user input.
+For a professional whose productivity depends on continuous access to their task list,
+such fragility is unacceptable.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.5\textwidth]{Figures/GUC_logo.png}
-\caption{GUC Logo}
-\label{fig:logo}
-\end{figure}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+A second limitation is the growing gap between the capabilities of modern Large Language
+Models (LLMs) and the AI integrations available in mainstream productivity tools.
+Although several task managers have begun experimenting with AI-generated summaries,
+none provides a fully embedded, context-aware AI assistant that understands the user's
+current project state and can assist with both natural-language planning and technical
+code generation within the same interface~\cite{jiang2023mistral}.
+
+These two observations---the unreliability of purely cloud-centric architectures and the
+absence of deep AI integration---form the motivation for \textit{Task~Flow}: a
+\emph{Smart Task \& Quality Management System} designed from the ground up as an
+offline-first desktop application with an embedded multi-mode AI assistant.
+
+\section{Problem Statement}\label{sec:intro_problem}
+
+The central problem addressed by this project can be stated as follows:
+
+\begin{quote}
+\textit{Existing task-management tools treat internet connectivity as a prerequisite
+rather than an enhancement.
+They provide no graceful degradation path, no local data store, and no mechanism to
+synchronise divergent offline edits once connectivity is restored.
+Furthermore, their AI capabilities, where present, are superficial and disconnected
+from the user's live project data.}
+\end{quote}
+
+More concretely, a review of widely-used tools reveals the following gaps.
+
+\begin{enumerate}
+    \item \textbf{No offline persistence.}
+          Cloud-first tools store all state remotely. A user working without connectivity
+          cannot create tasks, update statuses, or leave comments; changes attempted offline
+          are either silently lost or surfaced as errors.
+
+    \item \textbf{No transparent synchronisation.}
+          Even tools that offer limited offline caching typically give users no visibility into
+          which changes are pending, in progress, or confirmed. The sync lifecycle is a
+          black box, eroding trust in the accuracy of the displayed data.
+
+    \item \textbf{Fragmented toolchains.}
+          Developers and project managers routinely switch between a task manager, a code
+          assistant, a calendar, a messaging client, and a notification centre.
+          There is no single, cohesive desktop application that integrates all of these
+          capabilities into one consistent experience.
+
+    \item \textbf{Shallow AI integration.}
+          AI features in existing tools are limited to simple text generation (e.g.,
+          auto-writing a task description). None provides a conversational assistant
+          capable of code generation, document analysis, or multimodal input---all
+          within the context of the user's own project data.
+\end{enumerate}
+
+\section{Aims and Objectives}\label{sec:intro_aims}
+
+The primary aim of this project is to design, implement, and evaluate a cross-platform
+desktop task-management application that operates reliably regardless of network
+availability, while embedding a powerful AI assistant and a full suite of collaboration
+features.
+
+The following specific objectives guide the work:
+
+\begin{enumerate}
+    \item \textbf{Offline-first operation.}
+          Every core feature---task creation and editing, project management, calendar
+          events, notifications, and messaging---must function fully without an active
+          internet connection.
+          Data must be persisted locally in a SQLite database that serves as the single
+          source of truth for all user interactions.
+
+    \item \textbf{Reliable, transparent synchronisation.}
+          When connectivity is available, locally generated changes must be propagated to
+          a MongoDB relay database using a transactional outbox pattern that guarantees
+          at-least-once delivery.
+          The user must be able to see the current connectivity status, the count of
+          pending operations, and the real-time progress of any active sync pass through
+          a dedicated UI indicator.
+
+    \item \textbf{Integrated multi-mode AI assistant.}
+          A conversational AI assistant backed by the Mistral API must be embedded
+          directly in the application.
+          It must support three operational modes: a general-purpose chat mode, a
+          code-generation mode powered by Codestral, and a document-analysis mode
+          capable of processing uploaded images and PDF files via optical character
+          recognition (OCR).
+          Responses must be streamed to the UI via Server-Sent Events (SSE) to provide
+          a responsive, real-time interaction feel.
+
+    \item \textbf{Five complementary task visualisation views.}
+          The task module must offer five distinct views catering to different cognitive
+          styles and workflows: a smart-grouped default list, a Kanban board with
+          drag-and-drop, a tabular data-grid, a Gantt-style timeline, and a calendar
+          time-grid.
+
+    \item \textbf{Cross-platform desktop distribution.}
+          The completed application must be packaged as a native installer for Windows
+          (NSIS), macOS (DMG), and Linux (AppImage/DEB) using Electron and
+          electron-builder, bundling both the .NET backend and the React frontend into a
+          single self-contained executable that requires no external runtime installation
+          by the end user.
+
+    \item \textbf{Comprehensive collaboration feature set.}
+          The system must include team management, one-to-one and group messaging with
+          file attachments, real-time notifications via SignalR, calendar events,
+          a dashboard with productivity statistics, and user-profile settings including
+          security and preference controls.
+\end{enumerate}
+
+\section{Scope and Limitations}\label{sec:intro_scope}
+
+\subsection*{In Scope}
+
+The following capabilities were designed and implemented as part of this project:
+
+\begin{itemize}
+    \item Full user authentication with JWT, bcrypt password hashing, and email-based
+          password reset via MailKit.
+    \item Task management with priority levels (Low, Medium, High), status workflow
+          (To Do, In Progress, Review, Completed, Overdue), due-date tracking, starring,
+          and assignment.
+    \item Five task visualisation views: Default, Kanban, Table, Gantt, and Calendar.
+    \item Project and team management with role-based membership and team invitations
+          synchronised through MongoDB.
+    \item One-to-one direct messaging and group chats, both supporting file attachments
+          and soft-delete.
+    \item In-application and email reminders triggered by configurable fire-at times.
+    \item Automated due-date warnings fired 24~hours and 1~hour before deadline.
+    \item Real-time push notifications delivered over SignalR.
+    \item An AI chatbot with three modes, SSE streaming, and conversation history.
+    \item Calendar events with a weekly time-grid view.
+    \item A dashboard with live statistics, activity feeds, and a calendar widget.
+    \item Offline-first SQLite persistence and an outbox-based MongoDB synchronisation
+          subsystem.
+    \item Cross-platform desktop packaging using Electron.
+\end{itemize}
+
+\subsection*{Out of Scope}
+
+The following items were explicitly excluded from the current implementation:
+
+\begin{itemize}
+    \item \textbf{Mobile clients.}
+          iOS and Android applications were not developed; the system targets desktop
+          platforms only.
+    \item \textbf{Multi-user conflict resolution.}
+          The synchronisation subsystem uses a last-write-wins strategy.
+          Collaborative real-time editing with Conflict-free Replicated Data Types
+          (CRDTs)~\cite{shapiro2011crdt} is a known future enhancement.
+    \item \textbf{Hierarchical sub-tasks.}
+          A sub-task UI scaffold is present in the Table view but the backend persistence
+          layer for sub-tasks was not implemented in this iteration.
+    \item \textbf{SaaS deployment and billing.}
+          The application is designed for single-user or small-team use on a local machine;
+          multi-tenant cloud hosting and subscription management are out of scope.
+    \item \textbf{Externally managed AI credentials.}
+          The Mistral API key is currently supplied at build time.
+          Secure external key management (e.g., system keychain or environment-variable
+          injection) is identified as a known improvement area in
+          Chapter~\ref{chap:concl}.
+\end{itemize}
+
+\section{Thesis Overview}\label{sec:intro_overview}
+
+The remainder of this thesis is structured as follows.
+
+\textbf{Chapter~\ref{chap:background} --- Literature Review and Background} surveys
+the academic and technical context of the work, covering task-management paradigms,
+offline-first architecture, hybrid database design, real-time communication protocols,
+authentication, and the state of LLM-based AI assistants.
+
+\textbf{Chapter~\ref{chap:Methodology} --- Methodology and System Design} presents the
+full system architecture, the rationale behind key design decisions, the data model, and
+a detailed walkthrough of the backend, frontend, and desktop-packaging implementations.
+
+\textbf{Chapter~\ref{chap:results} --- Results and System Evaluation} demonstrates the
+implemented features through functional descriptions and user-interface walkthroughs,
+assessing the system against each objective stated in Section~\ref{sec:intro_aims}.
+
+\textbf{Chapter~\ref{chap:concl} --- Conclusion} reflects on the outcomes of the
+project, summarises its technical contributions, and acknowledges known limitations.
+
+\textbf{Chapter~\ref{chap:todo} --- Future Work} outlines a prioritised roadmap of
+short-term improvements and long-term enhancements that could extend the system.
+
+\textbf{Appendices} provide supplementary technical reference material including the
+REST API endpoint catalogue, the complete database schema, and the application
+configuration reference.

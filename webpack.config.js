@@ -51,7 +51,9 @@ module.exports = (env) => {
         output: {
             path: path.join(__dirname, 'wwwroot', 'dist'),
             filename: '[name].js',
-            publicPath: '/dist/'
+            // Phase 7: relative publicPath so webpack chunks resolve correctly
+            // under both http:// (dev server) and file:// (Electron production).
+            publicPath: './dist/'
         },
         optimization: {
             splitChunks: {

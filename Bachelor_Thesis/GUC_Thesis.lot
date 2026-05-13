@@ -1,6 +1,19 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {2.1}{\ignorespaces Feature comparison of popular task-management tools vs.\ Task~Flow.}}{xix}{table.caption.14}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {3.1}{\ignorespaces MongoDB collections and their purpose.}}{xxxi}{table.caption.36}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {4.1}{\ignorespaces Functional requirement fulfilment matrix.}}{xl}{table.caption.37}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Informal response-time observations for key operations.}}{xlvii}{table.caption.54}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {A.1}{\ignorespaces REST API controllers and primary endpoints.}}{lvii}{table.caption.71}%
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {B.1}{\ignorespaces SQLite entity summary.}}{lix}{table.caption.73}%
+\contentsline {table}{\numberline {B.2}{\ignorespaces MongoDB collection descriptions.}}{lx}{table.caption.75}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {C.1}{\ignorespaces \texttt {appsettings.json} section reference.}}{lxi}{table.caption.77}%
+\contentsline {table}{\numberline {C.2}{\ignorespaces Supported environment variables.}}{lxii}{table.caption.79}%
+\contentsline {table}{\numberline {C.3}{\ignorespaces Key \texttt {electron-builder.json} configuration.}}{lxiii}{table.caption.81}%

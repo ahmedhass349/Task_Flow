@@ -18,6 +18,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -56,14 +58,18 @@ namespace taskflow
             Directory.CreateDirectory(logDirectory);
             var logFilePath = Path.Combine(logDirectory, "log-.txt");
 
-            Log.Logger = new LoggerConfiguration()
+            // D-01: Console sink is dev-only — production output goes to the rolling log file only.
+            var logConfig = new LoggerConfiguration()
               .Enrich.FromLogContext()
-              .WriteTo.Console()
               .WriteTo.File(logFilePath,
                   rollingInterval: RollingInterval.Day,
                   fileSizeLimitBytes: 536870912,
-                  retainedFileCountLimit: 7)
-              .CreateLogger();
+                  retainedFileCountLimit: 7);
+
+            if (env.IsDevelopment())
+                logConfig = logConfig.WriteTo.Console();
+
+            Log.Logger = logConfig.CreateLogger();
         }
 
         public IConfiguration Configuration { get; }
@@ -122,7 +128,9 @@ namespace taskflow
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = jwtIssuer,
                     ValidAudience = jwtAudience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                    // S-07: explicitly zero the default 5-minute skew so tokens expire at the exact time.
+                    ClockSkew = TimeSpan.Zero
                 };
 
                 // Return JSON for auth failures instead of default plain text
@@ -298,11 +306,26 @@ namespace taskflow
             // ── SignalR ─────────────────────────────────────────────────────
             services.AddSignalR();
 
+            // S-09: Fixed-window rate limiter — caps anonymous auth endpoints at 10 requests/minute
+            // per client IP to mitigate brute-force and credential-stuffing attacks.
+            services.AddRateLimiter(options =>
+            {
+                options.AddFixedWindowLimiter("auth", o =>
+                {
+                    o.PermitLimit = 10;
+                    o.Window = TimeSpan.FromMinutes(1);
+                    o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    o.QueueLimit = 0;
+                });
+                options.RejectionStatusCode = 429;
+            });
+
             // ── Background Services ───────────────────────────────────────────
             services.AddHostedService<BackgroundServices.ReminderProcessorService>();
             services.AddHostedService<BackgroundServices.DueDateWarningService>();
             services.AddHostedService<BackgroundServices.OfflineSyncService>();
             services.AddHostedService<BackgroundServices.BulkSyncStartupService>();
+            services.AddHostedService<BackgroundServices.DatabaseCleanupService>();
 
             // ── Helpers (DI) ─────────────────────────────────────────────────
             services.AddScoped<JwtHelper>();
@@ -352,8 +375,10 @@ namespace taskflow
                     {
                         db.Database.EnsureCreated();
                     }
-                    catch
+                    catch (Exception ensureEx)
                     {
+                        // S-08: log rather than silently swallow.
+                        Log.Error(ensureEx, "Database EnsureCreated fallback also failed.");
                     }
                 }
             }
@@ -393,6 +418,9 @@ namespace taskflow
 
             // ── CORS ─────────────────────────────────────────────────────────
             app.UseCors("AllowConfigured");
+
+            // S-09: Rate limiter must sit after routing so endpoint metadata is resolved.
+            app.UseRateLimiter();
 
             // ── Auth middleware (order matters: after routing, before endpoints)
             app.UseAuthentication();

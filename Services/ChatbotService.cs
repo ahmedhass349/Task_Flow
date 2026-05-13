@@ -161,9 +161,10 @@ namespace taskflow.Services
                 var systemPrompt = await BuildSystemPromptAsync(userId);
                 replyText = await _mistral.ChatAsync(windowedHistory, systemPrompt);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                replyText = $"I'm sorry, I encountered an error while processing your request. Please try again. ({ex.Message})";
+                // B-08: do not expose raw exception message to the user.
+                replyText = "I'm sorry, I encountered an error while processing your request. Please try again.";
             }
 
             var botMessage = new ChatbotMessage

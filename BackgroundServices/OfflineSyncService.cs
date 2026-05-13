@@ -35,6 +35,10 @@ namespace taskflow.BackgroundServices
         // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 1  CHANGE: reduced ping interval from 30s to 10s
         private const int PingIntervalSeconds = 10;
 
+        // B-05: prevents concurrent replay when both the timer loop and the connectivity-changed
+        // event handler call ReplayOutboxAsync at the same time.
+        private int _replayRunning = 0;
+
         private static readonly JsonSerializerOptions _json =
             new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
@@ -112,45 +116,58 @@ namespace taskflow.BackgroundServices
 
         private async Task ReplayOutboxAsync(CancellationToken cancellationToken)
         {
-            List<SyncOutboxEntry> pending;
-
-            using (var scope = _scopeFactory.CreateScope())
+            if (Interlocked.CompareExchange(ref _replayRunning, 1, 0) != 0)
             {
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                pending = await db.SyncOutboxEntries
-                    .Where(e => e.Status == "Pending")
-                    .OrderBy(e => e.CreatedAt)
-                    .ToListAsync(cancellationToken);
+                _logger.LogDebug("OfflineSyncService: replay already in progress — skipping concurrent call.");
+                return;
             }
 
-            if (pending.Count == 0) return;
-
-            _logger.LogInformation("OfflineSyncService: replaying {Count} outbox entries", pending.Count);
-            await _hub.Clients.All.SendAsync("SyncStarted", pending.Count, cancellationToken);
-
-            int synced = 0, failed = 0;
-
-            foreach (var entry in pending)
+            try
             {
-                if (cancellationToken.IsCancellationRequested) break;
-                if (!_connectivity.IsEffectivelyOnline) break;
+                List<SyncOutboxEntry> pending;
 
-                bool ok = await ReplayEntryAsync(entry, cancellationToken);
+                using (var scope = _scopeFactory.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    pending = await db.SyncOutboxEntries
+                        .Where(e => e.Status == "Pending")
+                        .OrderBy(e => e.CreatedAt)
+                        .ToListAsync(cancellationToken);
+                }
 
-                if (ok) synced++;
-                else failed++;
+                if (pending.Count == 0) return;
 
-                _connectivity.AdjustPending(-1);
+                _logger.LogInformation("OfflineSyncService: replaying {Count} outbox entries", pending.Count);
+                await _hub.Clients.All.SendAsync("SyncStarted", pending.Count, cancellationToken);
 
-                await _hub.Clients.All.SendAsync("SyncProgress",
-                    synced + failed, pending.Count, cancellationToken);
+                int synced = 0, failed = 0;
+
+                foreach (var entry in pending)
+                {
+                    if (cancellationToken.IsCancellationRequested) break;
+                    if (!_connectivity.IsEffectivelyOnline) break;
+
+                    bool ok = await ReplayEntryAsync(entry, cancellationToken);
+
+                    if (ok) synced++;
+                    else failed++;
+
+                    _connectivity.AdjustPending(-1);
+
+                    await _hub.Clients.All.SendAsync("SyncProgress",
+                        synced + failed, pending.Count, cancellationToken);
+                }
+
+                _logger.LogInformation(
+                    "OfflineSyncService: sync complete — synced={Synced}, failed={Failed}",
+                    synced, failed);
+
+                await _hub.Clients.All.SendAsync("SyncCompleted", synced, failed, cancellationToken);
             }
-
-            _logger.LogInformation(
-                "OfflineSyncService: sync complete — synced={Synced}, failed={Failed}",
-                synced, failed);
-
-            await _hub.Clients.All.SendAsync("SyncCompleted", synced, failed, cancellationToken);
+            finally
+            {
+                Interlocked.Exchange(ref _replayRunning, 0);
+            }
         }
 
         private async Task<bool> ReplayEntryAsync(

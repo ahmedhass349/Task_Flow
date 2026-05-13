@@ -1,11 +1,383 @@
-\appendix
+﻿\appendix
 \renewcommand{\appendixtocname}{Appendix}
 \renewcommand{\appendixpagename}{\appendixtocname}
 \addappheadtotoc
-\setboolean{@twoside}{false}
 \appendixpage
 
+% ═════════════════════════════════════════════════════════════════════════════
+\chapter{API Reference}\label{app:api}
+% ═════════════════════════════════════════════════════════════════════════════
 
+Table~\ref{tab:api_controllers} lists all REST API controllers, their base routes,
+and the primary endpoints they expose.
+All routes are prefixed with \texttt{/api}.
+Every endpoint except the authentication endpoints and the connectivity check requires
+a valid JWT Bearer token in the \texttt{Authorization} header.
 
+\begin{table}[H]
+\centering
+\caption{REST API controllers and primary endpoints.}
+\label{tab:api_controllers}
+\begin{tabular}{p{3.2cm}p{3.5cm}p{6.8cm}}
+\toprule
+\textbf{Controller} & \textbf{Base route} & \textbf{Key endpoints} \\
+\midrule
+AuthController
+  & \texttt{/api/auth}
+  & POST \texttt{/register}, POST \texttt{/login},
+    POST \texttt{/forgot-password}, POST \texttt{/reset-password} \\
+\addlinespace
+TasksController
+  & \texttt{/api/tasks}
+  & GET, POST \texttt{/},
+    GET, PUT, DELETE \texttt{/\{id\}},
+    PATCH \texttt{/\{id\}/status},
+    PATCH \texttt{/\{id\}/star},
+    GET \texttt{/search} \\
+\addlinespace
+ProjectsController
+  & \texttt{/api/projects}
+  & GET, POST \texttt{/},
+    GET, PUT, DELETE \texttt{/\{id\}},
+    POST \texttt{/\{id\}/invite},
+    GET \texttt{/\{id\}/members} \\
+\addlinespace
+TeamsController
+  & \texttt{/api/teams}
+  & GET, POST \texttt{/},
+    GET, PUT, DELETE \texttt{/\{id\}},
+    POST \texttt{/\{id\}/invite},
+    POST \texttt{/invitations/\{id\}/accept} \\
+\addlinespace
+MessagesController
+  & \texttt{/api/messages}
+  & GET \texttt{/conversations},
+    GET \texttt{/\{userId\}},
+    POST \texttt{/},
+    DELETE \texttt{/conversation/\{userId\}} \\
+\addlinespace
+GroupChatsController
+  & \texttt{/api/groupchats}
+  & GET, POST \texttt{/},
+    GET, PUT, DELETE \texttt{/\{id\}},
+    POST \texttt{/\{id\}/members},
+    POST \texttt{/\{id\}/messages} \\
+\addlinespace
+NotificationsController
+  & \texttt{/api/notifications}
+  & GET \texttt{/},
+    PUT \texttt{/\{id\}/read},
+    PUT \texttt{/mark-all-read},
+    DELETE \texttt{/\{id\}} \\
+\addlinespace
+CalendarEventsController
+  & \texttt{/api/calendarevents}
+  & GET, POST \texttt{/},
+    GET, PUT, DELETE \texttt{/\{id\}} \\
+\addlinespace
+ChatbotController
+  & \texttt{/api/chatbot}
+  & GET \texttt{/conversations},
+    POST \texttt{/conversations},
+    GET \texttt{/conversations/\{id\}/messages},
+    POST \texttt{/conversations/\{id\}/messages},
+    POST \texttt{/scan} \\
+\addlinespace
+DashboardController
+  & \texttt{/api/dashboard}
+  & GET \texttt{/stats},
+    GET \texttt{/due-this-week},
+    GET \texttt{/recent-activity} \\
+\addlinespace
+TaskCommentsController
+  & \texttt{/api/tasks/\{taskId\}/comments}
+  & GET, POST \texttt{/},
+    DELETE \texttt{/\{id\}} \\
+\addlinespace
+SettingsController
+  & \texttt{/api/settings}
+  & GET, PUT \texttt{/profile},
+    PUT \texttt{/password} \\
+\addlinespace
+ConnectivityController
+  & \texttt{/api/connectivity}
+  & GET \texttt{/ping},
+    POST \texttt{/bulk-sync} \\
+\addlinespace
+DevController
+  & \texttt{/api/dev}
+  & GET \texttt{/db-info}
+    (development environment only) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-%Add all other equations or figures or as you wish here...
+% ═════════════════════════════════════════════════════════════════════════════
+\chapter{Database Schema}\label{app:schema}
+% ═════════════════════════════════════════════════════════════════════════════
+
+\section*{SQLite Entities}
+
+Table~\ref{tab:sqlite_entities} lists all eighteen SQLite entities managed by Entity
+Framework Core, together with their primary key type, key fields, and any sync
+participation.
+
+\begin{table}[H]
+\centering
+\caption{SQLite entity summary.}
+\label{tab:sqlite_entities}
+\begin{tabular}{p{3.0cm}lp{8.0cm}}
+\toprule
+\textbf{Entity} & \textbf{PK} & \textbf{Key fields} \\
+\midrule
+\texttt{AppUser}
+  & \texttt{int Id}
+  & FirstName, LastName, Email, PasswordHash, AvatarUrl, Company,
+    Country, Phone, Timezone, ResetToken, ResetTokenExpiry \\
+\addlinespace
+\texttt{TaskItem}
+  & \texttt{int Id}
+  & Title, Description, Status, Priority, DueDate, IsStarred,
+    ProjectId, AssigneeId, SyncId, UpdatedAt, IsSynced \\
+\addlinespace
+\texttt{Project}
+  & \texttt{int Id}
+  & Name, Description, Color, OwnerId, IsStarred,
+    SyncId, UpdatedAt, IsSynced \\
+\addlinespace
+\texttt{ProjectMember}
+  & \texttt{int Id}
+  & ProjectId, UserId, Role, JoinedAt \\
+\addlinespace
+\texttt{Team}
+  & \texttt{int Id}
+  & Name, Description, OwnerId, CreatedAt \\
+\addlinespace
+\texttt{TeamMember}
+  & \texttt{int Id}
+  & TeamId, UserId, Role, JoinedAt \\
+\addlinespace
+\texttt{Message}
+  & \texttt{int Id}
+  & SenderId, ReceiverId, Body, IsRead, SentAt,
+    AttachmentUrl, IsDeletedBySender, IsDeletedByReceiver, IsEdited \\
+\addlinespace
+\texttt{GroupChat}
+  & \texttt{int Id}
+  & Name, CreatedByUserId, CreatedAt;
+    child: \texttt{GroupChatMember} (GroupChatId, UserId, JoinedAt);
+    child: \texttt{GroupChatMessage} (GroupChatId, SenderId, Body) \\
+\addlinespace
+\texttt{Notification}
+  & \texttt{int Id}
+  & UserId, Title, Message, NotificationType, IsRead,
+    ActionUrl, RelatedTaskId, SyncId, UpdatedAt \\
+\addlinespace
+\texttt{CalendarEvent}
+  & \texttt{int Id}
+  & OwnerId, Title, Description, StartAt, EndAt,
+    Color, MeetingLink \\
+\addlinespace
+\texttt{ChatbotConversation}
+  & \texttt{int Id}
+  & UserId, Title, Mode, CreatedAt, UpdatedAt \\
+\addlinespace
+\texttt{ChatbotMessage}
+  & \texttt{int Id}
+  & ConversationId, Role, Content, CreatedAt \\
+\addlinespace
+\texttt{Reminder}
+  & \texttt{int Id}
+  & TaskId, UserId, FireAt, NotifyEmail, NotifyInApp,
+    HasFired, FiredAt, SyncId \\
+\addlinespace
+\texttt{SyncOutboxEntry}
+  & \texttt{int Id}
+  & OperationId, OperationName, PayloadJson, Status
+    (Pending/Processing/Synced/Failed), Attempts, LastAttemptAt, ErrorMessage \\
+\addlinespace
+\texttt{TaskComment}
+  & \texttt{int Id}
+  & TaskId, AuthorId, Body, CreatedAt \\
+\addlinespace
+\texttt{LocalInvitation}
+  & \texttt{int Id}
+  & InviteeId, InviterId, TeamId or ProjectId, Status, CreatedAt \\
+\addlinespace
+\texttt{LocalTeamMember}
+  & \texttt{int Id}
+  & TeamId, UserId, Role, JoinedAt (local mirror of MongoDB record) \\
+\addlinespace
+\texttt{ISyncableEntity}
+  & ---
+  & Interface only: SyncId, UpdatedAt, IsSynced, ToMongoDocument() \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{MongoDB Collections}
+
+Table~\ref{tab:mongo_appendix} lists the five MongoDB collections used as the relay
+layer.
+
+\begin{table}[H]
+\centering
+\caption{MongoDB collection descriptions.}
+\label{tab:mongo_appendix}
+\begin{tabular}{p{3.5cm}p{9.5cm}}
+\toprule
+\textbf{Collection} & \textbf{Description and key fields} \\
+\midrule
+\texttt{tasks}
+  & Mirror of \texttt{TaskItem}. Documents keyed by \texttt{syncId} (GUID).
+    Fields: syncId, title, description, status, priority, dueDate, ownerId,
+    projectId, isStarred, updatedAt. \\
+\addlinespace
+\texttt{notifications}
+  & Mirror of \texttt{Notification}. Fields: syncId, userId, title, message,
+    notificationType, isRead, actionUrl, relatedTaskId, updatedAt. \\
+\addlinespace
+\texttt{team\_invitations}
+  & Cross-device invitation relay. Fields: inviterEmail, inviteeEmail,
+    teamId, projectId, teamName, status (Pending/Accepted/Declined), createdAt. \\
+\addlinespace
+\texttt{team\_members}
+  & Mirror of accepted team memberships. Fields: teamId, userId,
+    userEmail, role, joinedAt. \\
+\addlinespace
+\texttt{user\_presence}
+  & Optional online-status documents. Fields: userId, lastSeenAt, isOnline. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ═════════════════════════════════════════════════════════════════════════════
+\chapter{Configuration Reference}\label{app:config}
+% ═════════════════════════════════════════════════════════════════════════════
+
+\section*{appsettings.json Structure}
+
+The application is configured via \texttt{appsettings.json}
+(overridden by \texttt{appsettings.Development.json} in development).
+Table~\ref{tab:appsettings} describes each configuration section.
+
+\begin{table}[H]
+\centering
+\caption{\texttt{appsettings.json} section reference.}
+\label{tab:appsettings}
+\begin{tabular}{p{3.8cm}p{9.2cm}}
+\toprule
+\textbf{Section / key} & \textbf{Description} \\
+\midrule
+\texttt{DatabaseProvider}
+  & \texttt{"SQLite"} (default) or \texttt{"SqlServer"}.
+    Selects the EF Core provider at startup. \\
+\addlinespace
+\texttt{ConnectionStrings.DefaultConnection}
+  & SQLite connection string, e.g.\ \texttt{Data Source=taskflow.db}.
+    Relative paths are resolved against the executable directory. \\
+\addlinespace
+\texttt{MongoDB.ConnectionString}
+  & Full MongoDB connection string including credentials.
+    Leave empty to run in SQLite-only mode without sync. \\
+\addlinespace
+\texttt{Jwt.Key}
+  & HMAC-SHA256 signing key (minimum 32 characters).
+    If empty, the application generates a random 32-byte key at startup
+    (stored only in memory; invalidated on restart).
+    Set \texttt{TASKFLOW\_JWT\_KEY} environment variable to override. \\
+\addlinespace
+\texttt{Jwt.Issuer} / \texttt{.Audience}
+  & Token issuer and audience strings.
+    Defaults: \texttt{TaskFlow} / \texttt{TaskFlowApp}. \\
+\addlinespace
+\texttt{Jwt.ExpiresInMinutes}
+  & Token lifetime in minutes. Default: 1440 (24 hours). \\
+\addlinespace
+\texttt{Mistral.Model}
+  & Model ID for the General chatbot mode.
+    Default: \texttt{mistral-small-latest}. \\
+\addlinespace
+\texttt{Mistral.CoderModel}
+  & Model ID for the Coder mode.
+    Default: \texttt{codestral-latest}. \\
+\addlinespace
+\texttt{Mistral.OcrModel}
+  & Model ID for the Scanner (OCR) mode.
+    Default: \texttt{mistral-ocr-latest}. \\
+\addlinespace
+\texttt{Mistral.HistoryWindow}
+  & Number of prior messages included in the Mistral context.
+    Default: 20. \\
+\addlinespace
+\texttt{EmailSettings.*}
+  & SMTP configuration for MailKit.
+    SmtpHost, SmtpPort (587), UseSsl (false for STARTTLS),
+    SenderEmail, SenderName, Username, Password. \\
+\addlinespace
+\texttt{Kestrel.Endpoints.Http.Url}
+  & \texttt{http://127.0.0.1:0} — binds to a random available port.
+    The chosen port is printed to stdout as
+    \texttt{TASKFLOW\_BACKEND\_READY:\{address\}}. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Environment Variables}
+
+Table~\ref{tab:env_vars} lists the environment variables recognised by the application
+at startup.
+
+\begin{table}[H]
+\centering
+\caption{Supported environment variables.}
+\label{tab:env_vars}
+\begin{tabular}{p{5.2cm}p{7.8cm}}
+\toprule
+\textbf{Variable} & \textbf{Effect} \\
+\midrule
+\texttt{TASKFLOW\_JWT\_KEY}
+  & Overrides \texttt{Jwt:Key} in \texttt{appsettings.json}.
+    Must be at least 32 characters.
+    Set by the Electron main process to a randomly generated 32-byte
+    hex value on each launch. \\
+\addlinespace
+\texttt{ASPNETCORE\_ENVIRONMENT}
+  & Standard ASP.NET Core environment selector.
+    Set to \texttt{Development} to enable Swagger UI and verbose logging. \\
+\addlinespace
+\texttt{ASPNETCORE\_URLS}
+  & Overrides Kestrel endpoint binding when set.
+    Normally not set; the \texttt{Kestrel} config section is used instead. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{electron-builder.json Summary}
+
+Table~\ref{tab:electron_builder} summarises the key \texttt{electron-builder.json}
+settings used to produce the cross-platform installers.
+
+\begin{table}[H]
+\centering
+\caption{Key \texttt{electron-builder.json} configuration.}
+\label{tab:electron_builder}
+\begin{tabular}{p{3.8cm}p{9.2cm}}
+\toprule
+\textbf{Key} & \textbf{Value / description} \\
+\midrule
+\texttt{appId}          & \texttt{com.taskflow.desktop} \\
+\texttt{productName}    & \texttt{Task Flow} \\
+\texttt{win.target}     & NSIS (Windows installer) \\
+\texttt{nsis.oneClick}  & \texttt{false} — user selects installation directory \\
+\texttt{nsis.createDesktopShortcut} & \texttt{true} \\
+\texttt{nsis.createStartMenuShortcut} & \texttt{true} \\
+\texttt{mac.target}     & DMG + ZIP \\
+\texttt{linux.target}   & AppImage + DEB \\
+\texttt{files}          & Bundled assets include \texttt{public/}, \texttt{wwwroot/},
+                          the compiled .NET binary under \texttt{bin/Release/},
+                          and \texttt{node\_modules/} \\
+\texttt{extraResources} & .NET self-contained runtime and backend binary \\
+\bottomrule
+\end{tabular}
+\end{table}

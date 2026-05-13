@@ -17,7 +17,11 @@ export default function ForgotPassword() {
 
     try {
       await api.post<string>("/api/auth/forgot-password", { email });
-      const code = await (window as any).electronAPI.invoke('read-reset-code');
+      const code: string | null = await (window as any).electronAPI.invoke('read-reset-code');
+      if (!code) {
+        setError("Recovery code could not be retrieved. Please try again.");
+        return;
+      }
       navigate("/reset-password-sent", { state: { email, code } });
     } catch (err: unknown) {
       const message =

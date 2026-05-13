@@ -12,6 +12,19 @@ echo   2. Publish .NET backend  (self-contained win-x64)
 echo   3. Package Electron app  (NSIS installer + portable)
 echo.
 
+:: ── 0. Clean previous build output ────────────────────────────────────
+echo [0/3] Cleaning previous dist\ output...
+if exist dist (
+    rd /s /q dist
+    if %ERRORLEVEL% NEQ 0 (
+        echo.
+        echo  ERROR: Failed to remove dist\ folder. Check if files are locked.
+        exit /b 1
+    )
+)
+echo        dist\ cleaned.
+echo.
+
 :: ── 1. Frontend ─────────────────────────────────────────────────────────
 echo [1/3] Building React frontend...
 call npm run build

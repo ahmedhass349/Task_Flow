@@ -73,14 +73,14 @@ export default function ResetPasswordEmailMessage() {
             <span className="font-medium">{email}</span>
           </p>
 
-          {/* Code hint — visible in dev/demo since no real SMS/email is wired */}
+          {/* Recovery code display */}
           {receivedCode && (
             <div className="flex items-center gap-[8px] bg-[#F5F5F5] border border-[rgba(0,0,0,0.12)] rounded-[4px] px-[14px] py-[10px] mb-[32px]">
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="rgba(0,0,0,0.38)" />
               </svg>
               <span className="text-[13px] text-muted-foreground">
-                Your code:&nbsp;
+                Recovery code:&nbsp;
                 <span className="font-mono font-bold tracking-[2px] text-foreground">
                   {receivedCode}
                 </span>
