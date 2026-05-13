@@ -24,20 +24,61 @@ namespace taskflow.Services
         private readonly JwtHelper _jwtHelper;
         private readonly IMapper _mapper;
         private readonly IMirrorService _mirror;
+        private readonly IMongoService _mongo;
+        private readonly IAccountRestorationService _restoration;
 
-        public AuthService(IUserRepository userRepository, JwtHelper jwtHelper, IMapper mapper, IMirrorService mirror)
+        // SEC-03: Pre-computed BCrypt hash used solely for constant-time dummy verification.
+        // When no MongoDB backup exists the login path would otherwise return immediately (fast),
+        // letting an attacker enumerate registered e-mails by measuring response time.
+        // BCrypt.Verify against this hash normalises the ~100 ms wall-clock cost to match the
+        // "backup found, wrong password" path.  The plaintext that produced this hash is irrelevant.
+        private static readonly string _dummyPasswordHash =
+            BCrypt.Net.BCrypt.HashPassword("__taskflow_noop__", workFactor: 11);
+
+        public AuthService(
+            IUserRepository userRepository,
+            JwtHelper jwtHelper,
+            IMapper mapper,
+            IMirrorService mirror,
+            IMongoService mongo,
+            IAccountRestorationService restoration)
         {
             _userRepository = userRepository;
             _jwtHelper = jwtHelper;
             _mapper = mapper;
             _mirror = mirror;
+            _mongo = mongo;
+            _restoration = restoration;
         }
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
             var user = await _userRepository.GetByEmailAsync(request.Email);
+
             if (user == null)
-                throw new UnauthorizedAccessException("Invalid email or password.");
+            {
+                // User not found locally — may be a fresh install or database wipe.
+                // Attempt to restore credentials from the MongoDB backup.
+                // TryRestoreAsync: returns null if no backup found (offline or unknown user),
+                //                  throws UnauthorizedAccessException on password mismatch.
+                user = await _restoration.TryRestoreAsync(request.Email, request.Password);
+                if (user == null)
+                {
+                    // SEC-03: dummy check to normalise timing — prevents email enumeration
+                    // via response-time difference between "unknown email" and "wrong password".
+                    BCrypt.Net.BCrypt.Verify(request.Password, _dummyPasswordHash);
+                    throw new UnauthorizedAccessException("Invalid email or password.");
+                }
+
+                // Password already verified inside TryRestoreAsync — generate token directly.
+                user.LastLoginAt = DateTime.UtcNow;
+                _userRepository.Update(user);
+                await _userRepository.SaveChangesAsync();
+
+                var restoredToken = _jwtHelper.GenerateToken(user);
+                var restoredDto = _mapper.Map<UserDto>(user);
+                return new AuthResponse { Token = restoredToken, User = restoredDto, IsRestored = true };
+            }
 
             bool validPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!validPassword)
@@ -85,6 +126,22 @@ namespace taskflow.Services
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
+
+            // Back up BCrypt credentials to MongoDB so the account can be restored after reinstall.
+            // This is best-effort: if offline the backup is queued; BulkSyncStartupService retries
+            // any record where IsBackedUpToMongo is still false.
+            try
+            {
+                await _mongo.BackupUserAccountAsync(user.Email, user.PasswordHash, user.Id);
+                user.IsBackedUpToMongo = true;
+                _userRepository.Update(user);
+                await _userRepository.SaveChangesAsync();
+            }
+            catch
+            {
+                // Swallow — registration must not fail because of a MongoDB backup failure.
+            }
+
             // Mirror a safe projection — explicitly exclude PasswordHash, ResetToken, ResetTokenExpiry
             // and all navigation collections to avoid storing credentials in MongoDB.
             _mirror.Mirror("users", user.Id, new {
@@ -169,6 +226,17 @@ namespace taskflow.Services
 
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
+
+            // Update the MongoDB credential backup with the new BCrypt hash so that
+            // cross-device login (after reinstall) works with the updated password.
+            try
+            {
+                await _mongo.BackupUserAccountAsync(user.Email, user.PasswordHash, user.Id);
+            }
+            catch
+            {
+                // Best-effort — password reset must succeed even if MongoDB is unreachable.
+            }
         }
 
         public async Task<UserDto> GetCurrentUserAsync(int userId)

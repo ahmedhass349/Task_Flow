@@ -109,11 +109,65 @@ namespace taskflow.BackgroundServices
                 await SyncAsync(db.TeamMembers.AsNoTracking(), "team_member_records",
                     tm => tm.TeamId * 1_000_000 + tm.UserId, tm => tm, stoppingToken);
 
+                // Retry credential backups for users that registered while offline.
+                // Any AppUser where IsBackedUpToMongo is false means the BackupUserAccountAsync
+                // call silently queued to the outbox (or threw) — we push it directly here now
+                // that we are confirmed online.
+                await BackupUnbackedUsersAsync(db, stoppingToken);
+
                 _logger.LogInformation("BulkSyncStartupService: bulk sync complete.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "BulkSyncStartupService: bulk sync failed.");
+            }
+        }
+
+        /// <summary>
+        /// Pushes BCrypt credentials to MongoDB for any AppUser that was created while offline
+        /// (i.e. <c>IsBackedUpToMongo == false</c>). Called once at startup after connectivity
+        /// is confirmed, so reinstall-login works for those accounts from this point forward.
+        /// </summary>
+        private async Task BackupUnbackedUsersAsync(AppDbContext db, CancellationToken ct)
+        {
+            try
+            {
+                var unsynced = await db.AppUsers
+                    .Where(u => !u.IsBackedUpToMongo)
+                    .AsNoTracking()
+                    .ToListAsync(ct);
+
+                if (unsynced.Count == 0) return;
+
+                _logger.LogInformation(
+                    "BulkSync: found {N} user(s) not yet backed up to MongoDB — retrying now.", unsynced.Count);
+
+                foreach (var u in unsynced)
+                {
+                    if (ct.IsCancellationRequested) break;
+                    try
+                    {
+                        await _mongo.BackupUserAccountAsync(u.Email, u.PasswordHash, u.Id);
+
+                        // Update the flag inside a fresh tracked context
+                        using var scope = _scopeFactory.CreateScope();
+                        var tracked = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        var entity = await tracked.AppUsers.FindAsync(new object[] { u.Id }, ct);
+                        if (entity != null)
+                        {
+                            entity.IsBackedUpToMongo = true;
+                            await tracked.SaveChangesAsync(ct);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "BulkSync: credential backup failed for user {Id}", u.Id);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "BulkSync: BackupUnbackedUsersAsync failed");
             }
         }
 

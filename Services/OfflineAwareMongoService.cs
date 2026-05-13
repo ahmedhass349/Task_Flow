@@ -687,6 +687,49 @@ namespace taskflow.Services
 
         public Task ClearAllAsync() => _mongo.ClearAllAsync();
 
+        // ── Cross-machine notification bus ────────────────────────────────────
+
+        public Task WriteCrossNotificationAsync(CrossNotification notification)
+        {
+            if (!_connectivity.IsEffectivelyOnline) return Task.CompletedTask;
+            return _mongo.WriteCrossNotificationAsync(notification);
+        }
+
+        public Task<List<CrossNotification>> PullAndDeleteCrossNotificationsAsync(string recipientEmail)
+        {
+            if (!_connectivity.IsEffectivelyOnline) return Task.FromResult(new List<CrossNotification>());
+            return _mongo.PullAndDeleteCrossNotificationsAsync(recipientEmail);
+        }
+
+        // ── Credential backup / restoration ───────────────────────────────────
+
+        /// <summary>
+        /// Backs up credentials when online; queues a deferred outbox entry when offline.
+        /// The outbox entry type is "BackupUserAccount" — replayed by OfflineSyncService
+        /// when connectivity is restored.
+        /// </summary>
+        public async Task BackupUserAccountAsync(string email, string passwordHash, int sqliteId)
+        {
+            if (_connectivity.IsEffectivelyOnline)
+            {
+                await _mongo.BackupUserAccountAsync(email, passwordHash, sqliteId);
+                return;
+            }
+            // Queue for replay when back online
+            QueueOutbox("BackupUserAccount", new { email, passwordHash, sqliteId });
+            _connectivity.IncrementPending();
+        }
+
+        /// <summary>
+        /// Account restoration is a read operation required during login.
+        /// Returns null if offline — caller will interpret as "cannot restore right now".
+        /// </summary>
+        public async Task<UserAccount?> FindAccountForRestorationAsync(string email)
+        {
+            if (!_connectivity.IsEffectivelyOnline) return null;
+            return await _mongo.FindAccountForRestorationAsync(email);
+        }
+
         public async Task DeleteUserDataAsync(string userEmail)
         {
             if (_connectivity.IsEffectivelyOnline)

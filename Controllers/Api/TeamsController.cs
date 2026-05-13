@@ -239,6 +239,22 @@ namespace taskflow.Controllers.Api
                             actionUrl: "/teams"
                         );
                     }
+                    else
+                    {
+                        // Recipient is on a different machine — publish to MongoDB cross-notification bus
+                        var teamLabel = string.IsNullOrEmpty(request.TeamName) ? "a team" : $"\"{ request.TeamName}\"";
+                        var roleLabel = string.IsNullOrEmpty(request.Role) ? "Member" : request.Role;
+                        await _mongoService.WriteCrossNotificationAsync(new Models.Mongo.CrossNotification
+                        {
+                            RecipientEmail = request.RecipientEmail.Trim().ToLowerInvariant(),
+                            SenderEmail    = email,
+                            Title          = "Team Invitation",
+                            Message        = $"{fullName} invited you to join {teamLabel} as {roleLabel}.",
+                            Type           = nameof(NotificationType.TeamInvitationReceived),
+                            Priority       = nameof(NotificationPriority.Medium),
+                            ActionUrl      = "/teams"
+                        });
+                    }
                 }
                 catch { /* notification failure must not break the invite */ }
 
@@ -337,6 +353,22 @@ namespace taskflow.Controllers.Api
                             actionUrl: "/teams"
                         );
                     }
+                    else
+                    {
+                        // Sender is on a different machine — publish to MongoDB cross-notification bus
+                        var recipientName = GetUserFullName();
+                        var teamLabel = string.IsNullOrEmpty(invitation.TeamName) ? "your team invitation" : $"your invitation to join \"{invitation.TeamName}\"";
+                        await _mongoService.WriteCrossNotificationAsync(new Models.Mongo.CrossNotification
+                        {
+                            RecipientEmail = invitation.SenderEmail.Trim().ToLowerInvariant(),
+                            SenderEmail    = email,
+                            Title          = "Invitation Accepted",
+                            Message        = $"{(string.IsNullOrEmpty(recipientName) ? email : recipientName)} accepted {teamLabel}.",
+                            Type           = nameof(NotificationType.TeamInvitationAccepted),
+                            Priority       = nameof(NotificationPriority.Medium),
+                            ActionUrl      = "/teams"
+                        });
+                    }
                 }
                 catch { /* notification failure must not break the accept */ }
 
@@ -379,6 +411,22 @@ namespace taskflow.Controllers.Api
                             NotificationPriority.Low,
                             actionUrl: "/teams"
                         );
+                    }
+                    else
+                    {
+                        // Sender is on a different machine — publish to MongoDB cross-notification bus
+                        var recipientName = GetUserFullName();
+                        var teamLabel = string.IsNullOrEmpty(invitation.TeamName) ? "your team invitation" : $"your invitation to join \"{invitation.TeamName}\"";
+                        await _mongoService.WriteCrossNotificationAsync(new Models.Mongo.CrossNotification
+                        {
+                            RecipientEmail = invitation.SenderEmail.Trim().ToLowerInvariant(),
+                            SenderEmail    = email,
+                            Title          = "Invitation Declined",
+                            Message        = $"{(string.IsNullOrEmpty(recipientName) ? email : recipientName)} declined {teamLabel}.",
+                            Type           = nameof(NotificationType.TeamInvitationDeclined),
+                            Priority       = nameof(NotificationPriority.Low),
+                            ActionUrl      = "/teams"
+                        });
                     }
                 }
                 catch { /* notification failure must not break the decline */ }

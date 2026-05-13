@@ -43,6 +43,32 @@ namespace taskflow.Services.Interfaces
         // ── Account lifecycle ─────────────────────────────────────────────────
         Task DeleteUserDataAsync(string userEmail);
 
+        // ── Credential backup / restoration ───────────────────────────────────
+
+        /// <summary>
+        /// Saves (or updates) the BCrypt credential record for <paramref name="email"/>
+        /// in the private <c>user_accounts</c> collection.
+        /// Call after successful register and after every password reset.
+        /// </summary>
+        Task BackupUserAccountAsync(string email, string passwordHash, int sqliteId);
+
+        /// <summary>
+        /// Returns the stored <see cref="UserAccount"/> for <paramref name="email"/>,
+        /// or <c>null</c> when no backup exists or MongoDB is unreachable.
+        /// </summary>
+        Task<UserAccount?> FindAccountForRestorationAsync(string email);
+
+        // ── Cross-machine notification bus ────────────────────────────────────
+
+        /// <summary>Writes a pending notification into MongoDB for a user on a different machine.</summary>
+        Task WriteCrossNotificationAsync(CrossNotification notification);
+
+        /// <summary>
+        /// Returns all pending cross-notifications for <paramref name="recipientEmail"/>
+        /// and atomically deletes them (deliver-once semantics).
+        /// </summary>
+        Task<List<CrossNotification>> PullAndDeleteCrossNotificationsAsync(string recipientEmail);
+
         // ── Dev / testing ─────────────────────────────────────────────────────
         Task ClearAllAsync();
     }

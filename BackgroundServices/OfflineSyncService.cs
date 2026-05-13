@@ -301,6 +301,25 @@ namespace taskflow.BackgroundServices
                     await _mongoService.DeleteUserDataAsync(x.UserEmail);
                     break;
                 }
+                case "BackupUserAccount":
+                {
+                    // Replays a credential backup that was queued while offline.
+                    // After success, mark IsBackedUpToMongo = true in SQLite.
+                    var x = Deserialize<BackupAccountPayload>(p);
+                    await _mongoService.BackupUserAccountAsync(x.Email, x.PasswordHash, x.SqliteId);
+
+                    using (var scope = _scopeFactory.CreateScope())
+                    {
+                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        var user = await db.AppUsers.FindAsync(x.SqliteId);
+                        if (user != null && !user.IsBackedUpToMongo)
+                        {
+                            user.IsBackedUpToMongo = true;
+                            await db.SaveChangesAsync();
+                        }
+                    }
+                    break;
+                }
                 default:
                     _logger.LogWarning("Unknown outbox operation: {Op}", entry.OperationName);
                     throw new InvalidOperationException($"Unknown operation: {entry.OperationName}");
@@ -379,5 +398,7 @@ namespace taskflow.BackgroundServices
         private record MirrorDeletePayload(string Collection, int Id, string? SyncId = null);
 
         private record UserDataPayload(string UserEmail);
+
+        private record BackupAccountPayload(string Email, string PasswordHash, int SqliteId);
     }
 }

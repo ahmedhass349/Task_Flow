@@ -25,6 +25,15 @@ namespace taskflow.Data.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? LastLoginAt { get; set; }
 
+        /// <summary>
+        /// True once this user's BCrypt credentials have been backed up to the
+        /// MongoDB <c>user_accounts</c> collection. False until that background
+        /// task completes (e.g. when the app was offline at registration time).
+        /// The <see cref="BackgroundServices.BulkSyncStartupService"/> retries
+        /// any records where this is still false.
+        /// </summary>
+        public bool IsBackedUpToMongo { get; set; } = false;
+
         // Navigation
         public ICollection<Project> OwnedProjects { get; set; } = new List<Project>();
         public ICollection<ProjectMember> ProjectMemberships { get; set; } = new List<ProjectMember>();

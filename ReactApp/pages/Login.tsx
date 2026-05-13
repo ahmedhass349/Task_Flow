@@ -64,13 +64,21 @@ export default function Login() {
 
     setIsSubmitting(true);
     try {
-      const signedInUser = await login({ email, password }, rememberMe);
+      const { user: signedInUser, isRestored } = await login({ email, password }, rememberMe);
       const firstName = signedInUser?.firstName || signedInUser?.fullName?.split(" ")[0] || "there";
-      addToast({
-        title: "Sign-in successful",
-        message: `Welcome back, ${firstName}.`,
-        type: "success",
-      });
+      if (isRestored) {
+        addToast({
+          title: "Account restored",
+          message: `Your account has been restored from cloud backup. Welcome back, ${firstName}.`,
+          type: "success",
+        });
+      } else {
+        addToast({
+          title: "Sign-in successful",
+          message: `Welcome back, ${firstName}.`,
+          type: "success",
+        });
+      }
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
       navigate(from, { replace: true });
     } catch {

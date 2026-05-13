@@ -10,7 +10,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { User, AuthResponse, LoginRequest, SignupRequest } from "../types";
-import { api, setAuthToken, getAuthToken, clearAuthToken, getRememberMePreference, ApiRequestError } from "../services/api";
+import { api, setAuthToken, getAuthToken, clearAuthToken, getRememberMePreference, setUnauthorizedHandler, clearUnauthorizedHandler, ApiRequestError } from "../services/api";
 import { saveAccount } from "../hooks/useAccountSwitcher";
 
 const USER_CACHE_KEY = "taskflow_cached_user";
@@ -20,7 +20,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   token: string | null;
-  login: (credentials: LoginRequest, rememberMe?: boolean) => Promise<User | null>;
+  login: (credentials: LoginRequest, rememberMe?: boolean) => Promise<{ user: User | null; isRestored: boolean }>;
   signup: (data: SignupRequest) => Promise<void>;
   logout: () => void;
   error: string | null;
@@ -35,6 +35,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Register a global 401 handler so any expired-token response anywhere in the
+  // app immediately clears the session and sends the user back to the login page,
+  // rather than leaving the UI in a broken / partially-loaded state.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      clearAuthToken();
+      localStorage.removeItem(USER_CACHE_KEY);
+      setUser(null);
+    });
+    return () => clearUnauthorizedHandler();
+  }, []);
 
   // On mount, check if we have a stored token and validate it
   useEffect(() => {
@@ -96,13 +108,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await api.post<AuthResponse>("/api/auth/login", credentials);
       const token = (response as any).token ?? (response as any).Token ?? null;
       const user = (response as any).user ?? (response as any).User ?? null;
+      const isRestored: boolean = (response as any).isRestored ?? (response as any).IsRestored ?? false;
       setAuthToken(token, rememberMe);
       setUser(user);
       if (token && user) {
         saveAccount(user.email, user.fullName, token, user.avatarUrl ?? undefined);
         if (rememberMe) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
       }
-      return user;
+      return { user, isRestored };
     } catch (err) {
       const message =
         err instanceof ApiRequestError

@@ -24,6 +24,8 @@ namespace taskflow.Services
         private readonly IMongoCollection<UserPresence>? _presenceCollection;
         private readonly IMongoCollection<TeamInvitation>? _invitationsCollection;
         private readonly IMongoCollection<MongoTeamMember>? _membersCollection;
+        private readonly IMongoCollection<UserAccount>? _accountsCollection;
+        private readonly IMongoCollection<CrossNotification>? _crossNotificationsCollection;
         private readonly ILogger<MongoService> _logger;
         private IMongoClient? _client;
         private IMongoDatabase? _db;
@@ -56,6 +58,8 @@ namespace taskflow.Services
                 _presenceCollection = db.GetCollection<UserPresence>("user_presence");
                 _invitationsCollection = db.GetCollection<TeamInvitation>("team_invitations");
                 _membersCollection = db.GetCollection<MongoTeamMember>("team_members");
+                _accountsCollection = db.GetCollection<UserAccount>("user_accounts");
+                _crossNotificationsCollection = db.GetCollection<CrossNotification>("cross_notifications");
 
                 // B-02: fire-and-forget index creation — never block the DI constructor thread.
                 _ = Task.Run(async () =>
@@ -79,6 +83,15 @@ namespace taskflow.Services
             await _presenceCollection.Indexes.CreateOneAsync(
                 new CreateIndexModel<UserPresence>(presenceEmailIndex,
                     new CreateIndexOptions { Unique = true, Name = "email_unique" }));
+
+            // Unique index on email for user_accounts (credential backup)
+            if (_accountsCollection != null)
+            {
+                var accountEmailIndex = Builders<UserAccount>.IndexKeys.Ascending(u => u.Email);
+                await _accountsCollection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<UserAccount>(accountEmailIndex,
+                        new CreateIndexOptions { Unique = true, Name = "account_email_unique" }));
+            }
 
             // Compound index on invitations for fast lookups
             if (_invitationsCollection != null)
@@ -110,6 +123,19 @@ namespace taskflow.Services
                     .Ascending(m => m.OwnerEmail);
                 await _membersCollection.Indexes.CreateOneAsync(
                     new CreateIndexModel<MongoTeamMember>(teamIdx, new CreateIndexOptions { Name = "team_owner" }));
+            }
+
+            // cross_notifications: index on recipientEmail for fast polling + TTL on expiresAt
+            if (_crossNotificationsCollection != null)
+            {
+                var recipientIdx = Builders<CrossNotification>.IndexKeys.Ascending(n => n.RecipientEmail);
+                await _crossNotificationsCollection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<CrossNotification>(recipientIdx, new CreateIndexOptions { Name = "cross_recipient" }));
+
+                var ttlKey = Builders<CrossNotification>.IndexKeys.Ascending(n => n.ExpiresAt);
+                await _crossNotificationsCollection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<CrossNotification>(ttlKey,
+                        new CreateIndexOptions { Name = "cross_expires_ttl", ExpireAfter = TimeSpan.Zero }));
             }
         }
 
@@ -791,6 +817,48 @@ namespace taskflow.Services
 
         // ── Account lifecycle ─────────────────────────────────────────────────
 
+        // ── Credential backup / restoration ───────────────────────────────────
+
+        public async Task BackupUserAccountAsync(string email, string passwordHash, int sqliteId)
+        {
+            // SEC-01: throw so callers (AuthService.RegisterAsync) know the backup did NOT happen
+            // and leave IsBackedUpToMongo = false, allowing BulkSyncStartupService to retry later.
+            if (_accountsCollection == null)
+                throw new InvalidOperationException("MongoDB credential store is unavailable — cannot write account backup.");
+            try
+            {
+                var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, email.Trim().ToLowerInvariant());
+                var replacement = new UserAccount
+                {
+                    Email = email.Trim().ToLowerInvariant(),
+                    PasswordHash = passwordHash,
+                    SqliteId = sqliteId,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _accountsCollection.ReplaceOneAsync(filter, replacement,
+                    new ReplaceOptions { IsUpsert = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MongoService.BackupUserAccountAsync failed for {Email}", email);
+            }
+        }
+
+        public async Task<UserAccount?> FindAccountForRestorationAsync(string email)
+        {
+            if (_accountsCollection == null) return null;
+            try
+            {
+                var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, email.Trim().ToLowerInvariant());
+                return await _accountsCollection.Find(filter).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MongoService.FindAccountForRestorationAsync failed for {Email}", email);
+                return null;
+            }
+        }
+
         /// <summary>
         /// Cleans up all MongoDB data for a deleted user:
         /// removes their presence record, soft-deactivates all team membership
@@ -800,6 +868,13 @@ namespace taskflow.Services
         {
             try
             {
+                var normalizedEmail = userEmail.Trim().ToLowerInvariant();
+
+                // SEC-02: remove the credential backup so reinstall cannot restore a deleted account.
+                if (_accountsCollection != null)
+                    await _accountsCollection.DeleteOneAsync(
+                        Builders<UserAccount>.Filter.Eq(a => a.Email, normalizedEmail));
+
                 if (_presenceCollection != null)
                     await _presenceCollection.DeleteOneAsync(
                         Builders<UserPresence>.Filter.Eq(u => u.Email, userEmail));
@@ -834,6 +909,49 @@ namespace taskflow.Services
             }
         }
 
+        // ── Cross-machine notification bus ────────────────────────────────────
+
+        /// <summary>
+        /// Writes a pending notification for a user on a different machine.
+        /// The recipient's <see cref="BackgroundServices.CrossNotificationPollerService"/> will
+        /// pick it up within ~30 seconds, deliver it locally, and delete this document.
+        /// </summary>
+        public async Task WriteCrossNotificationAsync(CrossNotification notification)
+        {
+            if (_crossNotificationsCollection == null) return;
+            try
+            {
+                await _crossNotificationsCollection.InsertOneAsync(notification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "WriteCrossNotificationAsync failed for recipient={Email}", notification.RecipientEmail);
+            }
+        }
+
+        /// <summary>
+        /// Returns all pending cross-notifications addressed to <paramref name="recipientEmail"/>
+        /// and atomically deletes them so they are delivered exactly once.
+        /// </summary>
+        public async Task<List<CrossNotification>> PullAndDeleteCrossNotificationsAsync(string recipientEmail)
+        {
+            if (_crossNotificationsCollection == null) return [];
+            try
+            {
+                var filter = Builders<CrossNotification>.Filter.Eq(n => n.RecipientEmail,
+                    recipientEmail.Trim().ToLowerInvariant());
+                var docs = await _crossNotificationsCollection.Find(filter).ToListAsync();
+                if (docs.Count > 0)
+                    await _crossNotificationsCollection.DeleteManyAsync(filter);
+                return docs;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "PullAndDeleteCrossNotificationsAsync failed for {Email}", recipientEmail);
+                return [];
+            }
+        }
+
         // ── Dev / testing ─────────────────────────────────────────────────────
 
         /// <summary>Drops every document from all three MongoDB collections.</summary>
@@ -846,6 +964,8 @@ namespace taskflow.Services
                 await _db!.GetCollection<MongoDB.Bson.BsonDocument>("team_invitations").DeleteManyAsync(empty);
             if (_membersCollection != null)
                 await _db!.GetCollection<MongoDB.Bson.BsonDocument>("team_members").DeleteManyAsync(empty);
+            if (_crossNotificationsCollection != null)
+                await _db!.GetCollection<MongoDB.Bson.BsonDocument>("cross_notifications").DeleteManyAsync(empty);
         }
     }
 }

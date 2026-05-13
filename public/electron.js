@@ -51,6 +51,36 @@ function log(message) {
   }
 }
 
+// ── Persistent JWT Key ────────────────────────────────────────────────────
+// Generated once and stored in the user-data folder so the same key is used
+// on every subsequent launch.  This makes JWT tokens long-lived across app
+// restarts, which is required for the "Remember Me" feature to work.
+function getOrCreateJwtKey() {
+  const keyPath = path.join(app.getPath('userData'), 'jwt.key');
+  try {
+    if (fs.existsSync(keyPath)) {
+      const existing = fs.readFileSync(keyPath, 'utf8').trim();
+      // A valid key is 64 hex chars (32 random bytes)
+      if (existing && existing.length >= 64) {
+        log('Using persisted JWT key');
+        return existing;
+      }
+    }
+  } catch (err) {
+    log(`WARNING: Could not read persisted JWT key: ${err.message}`);
+  }
+
+  const { randomBytes } = require('crypto');
+  const key = randomBytes(32).toString('hex'); // 64 hex chars = 32 bytes
+  try {
+    fs.writeFileSync(keyPath, key, { encoding: 'utf8' });
+    log(`Generated and persisted new JWT key at ${keyPath}`);
+  } catch (err) {
+    log(`WARNING: Could not persist JWT key (will work this session only): ${err.message}`);
+  }
+  return key;
+}
+
 // ── Backend Process Spawner ───────────────────────────────────────────────
 function spawnBackend() {
   return new Promise((resolve, reject) => {
@@ -107,7 +137,9 @@ function spawnBackend() {
       // S-04: always specify the URL explicitly; never inherit undefined from the OS env.
       ASPNETCORE_URLS: IS_DEV ? 'http://127.0.0.1:5000' : 'http://127.0.0.1:0',
       // P-04: route the SQLite DB to the user's AppData/Roaming folder, not the read-only install dir.
-      TASKFLOW_DB_PATH: IS_DEV ? '' : app.getPath('userData')
+      TASKFLOW_DB_PATH: IS_DEV ? '' : app.getPath('userData'),
+      // Stable JWT signing key so tokens survive app restarts (required for Remember Me).
+      TASKFLOW_JWT_KEY: getOrCreateJwtKey(),
     };
 
     log(`Backend command: ${backendPath} ${args.join(' ')}`);

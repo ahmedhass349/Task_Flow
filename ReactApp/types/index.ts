@@ -36,6 +36,8 @@ export interface SignupRequest {
 export interface AuthResponse {
   token: string;
   user: User;
+  /** True when the login succeeded via cloud-backup restoration (first login after reinstall). */
+  isRestored?: boolean;
 }
 
 export interface ForgotPasswordRequest {

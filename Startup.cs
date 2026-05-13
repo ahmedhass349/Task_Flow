@@ -262,6 +262,7 @@ namespace taskflow
             services.AddScoped<IGroupChatRepository, GroupChatRepository>();
 
             // ── Services (DI) ────────────────────────────────────────────────
+            services.AddScoped<IAccountRestorationService, AccountRestorationService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ITaskService, TaskService>();
             services.AddScoped<IProjectService, ProjectService>();
@@ -326,6 +327,7 @@ namespace taskflow
             services.AddHostedService<BackgroundServices.OfflineSyncService>();
             services.AddHostedService<BackgroundServices.BulkSyncStartupService>();
             services.AddHostedService<BackgroundServices.DatabaseCleanupService>();
+            services.AddHostedService<BackgroundServices.CrossNotificationPollerService>();
 
             // ── Helpers (DI) ─────────────────────────────────────────────────
             services.AddScoped<JwtHelper>();

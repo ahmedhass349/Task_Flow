@@ -23,25 +23,30 @@ export function getRememberMePreference(): boolean {
 }
 
 export function setRememberMePreference(rememberMe: boolean): void {
-  localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
+  // Determine the active token from persistent storage or the in-memory var.
+  const activeToken = authToken || localStorage.getItem(TOKEN_KEY) || null;
 
-  const localToken = localStorage.getItem(TOKEN_KEY);
-  const sessionToken = sessionStorage.getItem(SESSION_TOKEN_KEY);
-  const tokenToKeep = localToken || sessionToken;
-
-  if (!tokenToKeep) {
+  if (!activeToken) {
+    if (!rememberMe) {
+      localStorage.removeItem(REMEMBER_ME_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    }
     return;
   }
 
   if (rememberMe) {
-    localStorage.setItem(TOKEN_KEY, tokenToKeep);
+    localStorage.setItem(TOKEN_KEY, activeToken);
+    localStorage.setItem(REMEMBER_ME_KEY, "true");
     sessionStorage.removeItem(SESSION_TOKEN_KEY);
   } else {
-    sessionStorage.setItem(SESSION_TOKEN_KEY, tokenToKeep);
+    // Downgrade to memory-only: remove all persistent copies.
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REMEMBER_ME_KEY);
+    sessionStorage.removeItem(SESSION_TOKEN_KEY);
   }
 
-  authToken = tokenToKeep;
+  authToken = activeToken;
 }
 
 export function setAuthToken(token: string | null, rememberMe = true): void {
@@ -50,11 +55,15 @@ export function setAuthToken(token: string | null, rememberMe = true): void {
     if (rememberMe) {
       localStorage.setItem(TOKEN_KEY, token);
       localStorage.setItem(REMEMBER_ME_KEY, "true");
+      // Clear any non-persistent remnants from previous sessions.
       sessionStorage.removeItem(SESSION_TOKEN_KEY);
     } else {
-      sessionStorage.setItem(SESSION_TOKEN_KEY, token);
-      localStorage.setItem(REMEMBER_ME_KEY, "false");
+      // Keep the token in memory only — do NOT write to sessionStorage.
+      // In Electron, sessionStorage is persisted to disk and survives app
+      // restarts, so storing here would defeat the purpose of "not remembered".
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REMEMBER_ME_KEY);
+      sessionStorage.removeItem(SESSION_TOKEN_KEY);
     }
   } else {
     localStorage.removeItem(TOKEN_KEY);
@@ -65,10 +74,14 @@ export function setAuthToken(token: string | null, rememberMe = true): void {
 
 export function getAuthToken(): string | null {
   if (!authToken) {
-    const rememberMe = localStorage.getItem(REMEMBER_ME_KEY) === "true";
-    authToken = rememberMe
-      ? localStorage.getItem(TOKEN_KEY)
-      : sessionStorage.getItem(SESSION_TOKEN_KEY);
+    // Only restore from persistent storage when the user explicitly opted in.
+    // sessionStorage is intentionally NOT read here: Electron persists it to
+    // disk, so a session-only token stored there would survive app restarts
+    // and behave identically to a remembered token.
+    if (localStorage.getItem(REMEMBER_ME_KEY) === "true") {
+      authToken = localStorage.getItem(TOKEN_KEY);
+    }
+    // Otherwise authToken stays null — user must log in again after restart.
   }
   return authToken;
 }
@@ -81,6 +94,19 @@ export function clearAuthToken(): void {
 }
 
 // ── Error class ──────────────────────────────────────────────────────────
+
+// ── Global session-expiry handler ───────────────────────────────────────
+// AuthContext registers this on mount. Any non-auth 401 response triggers it,
+// clearing the stale token and redirecting the user back to the login page.
+let _unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: () => void): void {
+  _unauthorizedHandler = handler;
+}
+
+export function clearUnauthorizedHandler(): void {
+  _unauthorizedHandler = null;
+}
 
 export class ApiRequestError extends Error {
   status: number;
@@ -150,7 +176,17 @@ async function request<T>(endpoint: string, options: RequestOptions): Promise<T>
     } catch {
       // If we can't parse error body, continue with status-based error
     }
-    
+
+    // Treat a 401 on any non-auth endpoint as a session expiry: clear the token
+    // and trigger a logout so the user is redirected to the login page instead of
+    // seeing broken UI or silent errors throughout the app.
+    if (response.status === 401 && _unauthorizedHandler) {
+      const isAuthEndpoint = url.includes("/api/auth/login") || url.includes("/api/auth/register");
+      if (!isAuthEndpoint) {
+        _unauthorizedHandler();
+      }
+    }
+
     throw new ApiRequestError({
       message: (errorData as any)?.message || `Request failed with status ${response.status}`,
       status: response.status,

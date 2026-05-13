@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createHashRouter } from "react-router";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import ErrorBoundary from "./Components/ErrorBoundary";
 
@@ -26,7 +26,7 @@ import Security from "./pages/Security";
 // ── 404 ──────────────────────────────────────────────────────────────────
 import NotFound from "./pages/NotFound";
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   // ── Public routes (no auth required) ───────────────────────────────────
   {
     path: "/login",
