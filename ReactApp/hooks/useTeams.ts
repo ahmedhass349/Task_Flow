@@ -370,6 +370,17 @@ export const useTeams = (): UseTeamsReturn => {
     return () => window.removeEventListener("taskflow:notification-received", onNotification);
   }, [fetchInvitations, fetchMembershipsByMe, fetchAllSharedMembers]);
 
+  // ── 60-second safety-net polling (fallback when SignalR events are missed) ─
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      fetchInvitations();
+      fetchMembershipsByMe();
+      fetchAllSharedMembers();
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [fetchInvitations, fetchMembershipsByMe, fetchAllSharedMembers]);
+
   return {
     teams,
     isLoading,

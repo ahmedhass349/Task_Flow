@@ -181,7 +181,9 @@ namespace taskflow.Controllers.Api
             {
                 var email = GetUserEmail();
                 var fullName = GetUserFullName();
-                await _mongoService.UpsertPresenceAsync(email, fullName, string.Empty);
+                var currentUser = await _userRepository.GetByEmailAsync(email);
+                var avatarUrl = currentUser?.AvatarUrl ?? string.Empty;
+                await _mongoService.UpsertPresenceAsync(email, fullName, avatarUrl);
                 return Ok(ApiResponse<string>.Ok("Presence updated", "Presence updated"));
             }
             catch (Exception ex) when (ex is not UnauthorizedAccessException)
@@ -219,8 +221,10 @@ namespace taskflow.Controllers.Api
                 var userId = GetUserId();
                 var email = GetUserEmail();
                 var fullName = GetUserFullName();
+                var sender = await _userRepository.GetByIdAsync(userId);
+                var senderAvatarUrl = sender?.AvatarUrl ?? string.Empty;
                 var invitation = await _mongoService.SendInvitationAsync(
-                    userId.ToString(), email, fullName, string.Empty, request);
+                    userId.ToString(), email, fullName, senderAvatarUrl, request);
 
                 // Push real-time notification to recipient
                 try
@@ -484,19 +488,42 @@ namespace taskflow.Controllers.Api
                         .Where(oe => !members.Any(m => m.UserEmail == oe))
                         .ToList();
 
+                    // FILE: Controllers/Api/TeamsController.cs  PHASE: 2  CHANGE: P2-D — cross-machine owner fallback
                     foreach (var ownerEmail in ownerEmailsToAdd)
                     {
-                        var owner = await _userRepository.GetByEmailAsync(ownerEmail);
-                        if (owner == null) continue;
                         var teamInfo = myMemberships.First(m => m.OwnerEmail == ownerEmail);
+                        var owner = await _userRepository.GetByEmailAsync(ownerEmail);
+                        string ownerFullName = owner?.FullName ?? string.Empty;
+                        string ownerAvatarUrl = owner?.AvatarUrl ?? string.Empty;
+
+                        if (owner == null)
+                        {
+                            // Owner is on a different machine — retrieve their info from their Admin
+                            // record in team_members (written by SendInvitationAsync auto-upsert).
+                            try
+                            {
+                                var ownerMembers = await _mongoService.GetTeamMembersAsync(teamInfo.TeamId, ownerEmail);
+                                var ownerSelf = ownerMembers.FirstOrDefault(
+                                    m => m.UserEmail.Equals(ownerEmail, StringComparison.OrdinalIgnoreCase));
+                                if (ownerSelf != null)
+                                {
+                                    ownerFullName = ownerSelf.UserFullName;
+                                    ownerAvatarUrl = ownerSelf.AvatarUrl ?? string.Empty;
+                                }
+                            }
+                            catch { /* non-critical */ }
+                        }
+
+                        if (string.IsNullOrEmpty(ownerFullName)) ownerFullName = ownerEmail;
+
                         members.Add(new MongoTeamMemberDto
                         {
                             Id = $"owner-{ownerEmail}",
                             TeamId = teamInfo.TeamId,
                             TeamName = teamInfo.TeamName,
                             UserEmail = ownerEmail,
-                            UserFullName = owner.FullName,
-                            AvatarUrl = owner.AvatarUrl ?? string.Empty,
+                            UserFullName = ownerFullName,
+                            AvatarUrl = ownerAvatarUrl,
                             Role = "Owner",
                             OwnerEmail = ownerEmail,
                             JoinedAt = teamInfo.JoinedAt,
@@ -627,16 +654,36 @@ namespace taskflow.Controllers.Api
                         continue; // owners don't need to notify themselves
 
                     var user = await _userRepository.GetByEmailAsync(member.UserEmail);
-                    if (user == null) continue;
-
-                    await _notificationService.CreateAsync(
-                        user.Id,
-                        title,
-                        body,
-                        NotificationType.SystemAnnouncement,
-                        NotificationPriority.High,
-                        actionUrl: "/teams");
-                    notified++;
+                    if (user != null)
+                    {
+                        await _notificationService.CreateAsync(
+                            user.Id,
+                            title,
+                            body,
+                            NotificationType.SystemAnnouncement,
+                            NotificationPriority.High,
+                            actionUrl: "/teams");
+                        notified++;
+                    }
+                    else
+                    {
+                        // Member is on a different machine — relay via MongoDB cross-notification bus
+                        try
+                        {
+                            await _mongoService.WriteCrossNotificationAsync(new Models.Mongo.CrossNotification
+                            {
+                                RecipientEmail = member.UserEmail.Trim().ToLowerInvariant(),
+                                SenderEmail    = ownerEmail,
+                                Title          = title,
+                                Message        = body,
+                                Type           = nameof(NotificationType.SystemAnnouncement),
+                                Priority       = nameof(NotificationPriority.High),
+                                ActionUrl      = "/teams"
+                            });
+                            notified++;
+                        }
+                        catch { /* cross-notification failure must not break the announcement */ }
+                    }
                 }
 
                 return Ok(ApiResponse<string>.Ok($"Announcement sent to {notified} member(s).", "Announcement sent"));

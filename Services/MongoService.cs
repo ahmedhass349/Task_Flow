@@ -110,6 +110,13 @@ namespace taskflow.Services
                     .Ascending(m => m.OwnerEmail);
                 await _membersCollection.Indexes.CreateOneAsync(
                     new CreateIndexModel<MongoTeamMember>(teamIdx, new CreateIndexOptions { Name = "team_owner" }));
+
+                // Index on UserEmail — needed for GetMembershipsByUserAsync (prevents full collection scan)
+                var userEmailIdx = Builders<MongoTeamMember>.IndexKeys
+                    .Ascending(m => m.UserEmail)
+                    .Ascending(m => m.IsActive);
+                await _membersCollection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<MongoTeamMember>(userEmailIdx, new CreateIndexOptions { Name = "member_user_email" }));
             }
         }
 
@@ -255,7 +262,7 @@ namespace taskflow.Services
                     .Set(u => u.AvatarUrl, avatarUrl ?? string.Empty)
                     .Set(u => u.LastSeen, DateTime.UtcNow)
                     .SetOnInsert(u => u.RegisteredAt, DateTime.UtcNow)
-                    .SetOnInsert(u => u.AcceptsInvitations, true);
+                    .Set(u => u.AcceptsInvitations, true);
 
                 await _presenceCollection.UpdateOneAsync(filter, update,
                     new UpdateOptions { IsUpsert = true });
@@ -287,7 +294,9 @@ namespace taskflow.Services
                     )
                 );
 
-                var results = await _presenceCollection.Find(filter).Limit(20).ToListAsync();
+                var results = await _presenceCollection.Find(filter)
+                    .SortByDescending(u => u.LastSeen)
+                    .Limit(20).ToListAsync();
                 return results.ConvertAll(u => new UserSearchResultDto
                 {
                     Email = u.Email,
@@ -323,6 +332,21 @@ namespace taskflow.Services
             await _invitationsCollection.UpdateManyAsync(expireFilter,
                 Builders<TeamInvitation>.Update.Set(i => i.Status, InvitationStatus.Expired));
 
+            // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-A — resolve recipient full name from presence at send time
+            string recipientFullName = string.Empty;
+            if (_presenceCollection != null)
+            {
+                try
+                {
+                    var recipPres = await _presenceCollection
+                        .Find(Builders<UserPresence>.Filter.Eq(u => u.Email, normalizedRecipient))
+                        .FirstOrDefaultAsync();
+                    if (recipPres != null && !string.IsNullOrEmpty(recipPres.FullName))
+                        recipientFullName = recipPres.FullName;
+                }
+                catch { /* non-critical */ }
+            }
+
             var invitation = new TeamInvitation
             {
                 SenderUserId = senderUserId,
@@ -330,6 +354,7 @@ namespace taskflow.Services
                 SenderFullName = senderFullName,
                 SenderAvatarUrl = senderAvatarUrl ?? string.Empty,
                 RecipientEmail = normalizedRecipient,
+                RecipientFullName = recipientFullName,
                 TeamId = request.TeamId,
                 TeamName = request.TeamName,
                 Message = request.Message ?? string.Empty,
@@ -349,9 +374,11 @@ namespace taskflow.Services
                     Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, senderEmail),
                     Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, senderEmail)
                 );
+                // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-A — persist sender avatar in team_members
                 var senderUpdate = Builders<MongoTeamMember>.Update
                     .Set(m => m.UserEmail, senderEmail)
                     .Set(m => m.UserFullName, senderFullName)
+                    .Set(m => m.AvatarUrl, senderAvatarUrl ?? string.Empty)
                     .Set(m => m.Role, "Admin")
                     .Set(m => m.TeamId, request.TeamId)
                     .Set(m => m.TeamName, request.TeamName ?? string.Empty)
@@ -439,23 +466,42 @@ namespace taskflow.Services
             if (invitation == null)
                 throw new KeyNotFoundException("Invitation not found or already responded to.");
 
-            // Resolve recipient's display name: stored RecipientFullName was empty when invitation was sent,
-            // so fall back to a presence lookup, then to the email itself.
+            // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-B — also capture avatar URL and back-fill invitation doc
+            // Resolve recipient's display name and avatar from their presence record.
             string recipientFullName = invitation.RecipientFullName;
-            if (string.IsNullOrEmpty(recipientFullName) && _presenceCollection != null)
+            string recipientAvatarUrl = string.Empty;
+            if (_presenceCollection != null)
             {
                 try
                 {
                     var pres = await _presenceCollection
                         .Find(Builders<UserPresence>.Filter.Eq(u => u.Email, recipientEmail.Trim().ToLowerInvariant()))
                         .FirstOrDefaultAsync();
-                    if (pres != null && !string.IsNullOrEmpty(pres.FullName))
-                        recipientFullName = pres.FullName;
+                    if (pres != null)
+                    {
+                        if (string.IsNullOrEmpty(recipientFullName) && !string.IsNullOrEmpty(pres.FullName))
+                            recipientFullName = pres.FullName;
+                        if (!string.IsNullOrEmpty(pres.AvatarUrl))
+                            recipientAvatarUrl = pres.AvatarUrl;
+                    }
                 }
                 catch { /* non-critical */ }
             }
             if (string.IsNullOrEmpty(recipientFullName))
                 recipientFullName = recipientEmail;
+
+            // Back-fill RecipientFullName on the invitation document if it was empty when first sent.
+            if (!string.IsNullOrEmpty(recipientFullName) && string.IsNullOrEmpty(invitation.RecipientFullName))
+            {
+                try
+                {
+                    await _invitationsCollection.UpdateOneAsync(
+                        Builders<TeamInvitation>.Filter.Eq(i => i.Id, invitation.Id),
+                        Builders<TeamInvitation>.Update.Set(i => i.RecipientFullName, recipientFullName));
+                    invitation.RecipientFullName = recipientFullName;
+                }
+                catch { /* non-critical */ }
+            }
 
             // Only add recipient to team_members when the invitation is for a specific team
             if (!string.IsNullOrEmpty(invitation.TeamId))
@@ -465,11 +511,13 @@ namespace taskflow.Services
                     Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, recipientEmail),
                     Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, invitation.SenderEmail)
                 );
+                // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-B — persist recipient avatar in team_members
                 var memberUpdate = Builders<MongoTeamMember>.Update
                     .Set(m => m.TeamId, invitation.TeamId ?? string.Empty)
                     .Set(m => m.TeamName, invitation.TeamName ?? string.Empty)
                     .Set(m => m.UserEmail, recipientEmail)
                     .Set(m => m.UserFullName, recipientFullName)
+                    .Set(m => m.AvatarUrl, recipientAvatarUrl)
                     .Set(m => m.Role, invitation.Role)
                     .Set(m => m.OwnerEmail, invitation.SenderEmail)
                     .Set(m => m.IsActive, true)
@@ -648,7 +696,8 @@ namespace taskflow.Services
                 .Set(m => m.UserFullName, memberFullName)
                 .Set(m => m.OwnerEmail, ownerEmail)
                 .Set(m => m.IsActive, true)
-                .SetOnInsert(m => m.Role, role)
+                // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-C — Set(Role) so re-adds can upgrade role
+                .Set(m => m.Role, role)
                 .SetOnInsert(m => m.JoinedAt, DateTime.UtcNow);
 
             var opts = new FindOneAndUpdateOptions<MongoTeamMember>
@@ -834,6 +883,58 @@ namespace taskflow.Services
             }
         }
 
+<<<<<<< Updated upstream
+=======
+        // ── Cross-machine notification bus ────────────────────────────────────
+
+        /// <summary>
+        /// Writes a pending notification for a user on a different machine.
+        /// The recipient's <see cref="BackgroundServices.CrossNotificationPollerService"/> will
+        /// pick it up within ~15 seconds, deliver it locally, and delete this document.
+        /// </summary>
+        public async Task WriteCrossNotificationAsync(CrossNotification notification)
+        {
+            if (_crossNotificationsCollection == null) return;
+            try
+            {
+                await _crossNotificationsCollection.InsertOneAsync(notification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "WriteCrossNotificationAsync failed for recipient={Email}", notification.RecipientEmail);
+            }
+        }
+
+        /// <summary>
+        /// Returns all pending cross-notifications addressed to <paramref name="recipientEmail"/>
+        /// and atomically deletes them so they are delivered exactly once.
+        /// </summary>
+        public async Task<List<CrossNotification>> PullAndDeleteCrossNotificationsAsync(string recipientEmail)
+        {
+            if (_crossNotificationsCollection == null) return [];
+            try
+            {
+                var filter = Builders<CrossNotification>.Filter.Eq(n => n.RecipientEmail,
+                    recipientEmail.Trim().ToLowerInvariant());
+                var docs = await _crossNotificationsCollection.Find(filter).ToListAsync();
+                if (docs.Count > 0)
+                {
+                    // FILE: Services/MongoService.cs  PHASE: 4  CHANGE: delete by specific IDs (not email filter)
+                    // to avoid silently deleting notifications that arrived between the Find and DeleteMany.
+                    var ids = docs.Select(d => d.Id).ToList();
+                    var idFilter = Builders<CrossNotification>.Filter.In(n => n.Id, ids);
+                    await _crossNotificationsCollection.DeleteManyAsync(idFilter);
+                }
+                return docs;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "PullAndDeleteCrossNotificationsAsync failed for {Email}", recipientEmail);
+                return [];
+            }
+        }
+
+>>>>>>> Stashed changes
         // ── Dev / testing ─────────────────────────────────────────────────────
 
         /// <summary>Drops every document from all three MongoDB collections.</summary>
