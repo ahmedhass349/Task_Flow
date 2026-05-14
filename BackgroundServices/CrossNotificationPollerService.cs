@@ -8,33 +8,39 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using taskflow.Data;
 using taskflow.Data.Entities;
+using taskflow.Services;
 using taskflow.Services.Interfaces;
 
 namespace taskflow.BackgroundServices
 {
     /// <summary>
-    /// Runs every 30 seconds and delivers any pending <see cref="taskflow.Models.Mongo.CrossNotification"/>
+    /// Runs every 15 seconds and delivers any pending <see cref="taskflow.Models.Mongo.CrossNotification"/>
     /// documents that were written by users on other machines.
     ///
     /// Flow:
-    ///   1. Load every registered user from the local SQLite database.
-    ///   2. For each user, call MongoDB to atomically fetch-and-delete any pending cross-notifications
+    ///   1. Skip the poll if MongoDB is currently unreachable (avoids 8-second timeout storms).
+    ///   2. Load every registered user from the local SQLite database.
+    ///   3. For each user, call MongoDB to atomically fetch-and-delete any pending cross-notifications
     ///      addressed to that user's e-mail address.
-    ///   3. Deliver each notification locally via <see cref="INotificationService.CreateAsync"/>,
+    ///   4. Deliver each notification locally via <see cref="INotificationService.CreateAsync"/>,
     ///      which persists it to SQLite and fires a real-time SignalR push.
     /// </summary>
     public class CrossNotificationPollerService : BackgroundService
     {
-        private static readonly TimeSpan _interval = TimeSpan.FromSeconds(30);
+        // FILE: BackgroundServices/CrossNotificationPollerService.cs  PHASE: 3  CHANGE: reduced interval from 30s to 15s for faster invitation response UX
+        private static readonly TimeSpan _interval = TimeSpan.FromSeconds(15);
 
         private readonly IServiceProvider _serviceProvider;
+        private readonly IConnectivityService _connectivityService;
         private readonly ILogger<CrossNotificationPollerService> _logger;
 
         public CrossNotificationPollerService(
             IServiceProvider serviceProvider,
+            IConnectivityService connectivityService,
             ILogger<CrossNotificationPollerService> logger)
         {
             _serviceProvider = serviceProvider;
+            _connectivityService = connectivityService;
             _logger = logger;
         }
 
@@ -46,7 +52,10 @@ namespace taskflow.BackgroundServices
             {
                 try
                 {
-                    await PollAsync(stoppingToken);
+                    // P3-A: Skip poll entirely when MongoDB is offline — avoids 8-second timeout
+                    // storms that would fire every 15 seconds during a connectivity outage.
+                    if (_connectivityService.IsEffectivelyOnline)
+                        await PollAsync(stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {

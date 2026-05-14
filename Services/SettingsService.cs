@@ -73,6 +73,9 @@ namespace taskflow.Services
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
 
+            // Push updated profile to MongoDB presence so other users see the new name/avatar
+            _ = _mongoService.UpsertPresenceAsync(user.Email, user.FullName ?? string.Empty, user.AvatarUrl ?? string.Empty);
+
             // Generate new token with updated claims
             var newToken = _jwtHelper.GenerateToken(user);
             var userDto = _mapper.Map<UserDto>(user);

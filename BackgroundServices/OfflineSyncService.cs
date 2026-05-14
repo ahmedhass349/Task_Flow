@@ -247,6 +247,13 @@ namespace taskflow.BackgroundServices
                     await _mongoService.DeleteInvitationAsync(x.InvitationId, x.OwnerEmail);
                     break;
                 }
+                case "LeaveTeam":
+                {
+                    // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 4  CHANGE: added missing LeaveTeam case
+                    var x = Deserialize<LeaveTeamPayload>(p);
+                    await _mongoService.LeaveTeamAsync(x.TeamId, x.UserEmail);
+                    break;
+                }
                 case "RemoveTeamMember":
                 {
                     var x = Deserialize<MemberPayload>(p);
@@ -384,6 +391,8 @@ namespace taskflow.BackgroundServices
         private record DeclinePayload(string InvitationId, string UserEmail, string? Reason);
 
         private record DeleteInvPayload(string InvitationId, string OwnerEmail);
+
+        private record LeaveTeamPayload(string TeamId, string UserEmail);
 
         private record MemberPayload(string TeamId, string MemberEmail, string OwnerEmail);
 
