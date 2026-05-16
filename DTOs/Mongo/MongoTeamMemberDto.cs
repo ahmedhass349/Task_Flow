@@ -14,5 +14,6 @@ namespace taskflow.DTOs.Mongo
         public string OwnerEmail { get; set; } = string.Empty;
         public DateTime JoinedAt { get; set; }
         public bool IsActive { get; set; }
+        public DateTime? LastSeen { get; set; }
     }
 }

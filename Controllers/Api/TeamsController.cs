@@ -132,6 +132,24 @@ namespace taskflow.Controllers.Api
                         NotificationPriority.Medium,
                         "/teams");
                 }
+                else
+                {
+                    // Member is on a different machine — relay via MongoDB cross-notification bus
+                    try
+                    {
+                        await _mongoService.WriteCrossNotificationAsync(new Models.Mongo.CrossNotification
+                        {
+                            RecipientEmail = member.UserEmail.Trim().ToLowerInvariant(),
+                            SenderEmail    = ownerEmail,
+                            Title          = "Team Deleted",
+                            Message        = $"You are no longer a member of \"{teamName}\" — the team owner deleted it.",
+                            Type           = nameof(NotificationType.TeamDeleted),
+                            Priority       = nameof(NotificationPriority.Medium),
+                            ActionUrl      = "/teams"
+                        });
+                    }
+                    catch { /* cross-notification failure must not break the delete */ }
+                }
             }
 
             return NoContent();
@@ -206,7 +224,7 @@ namespace taskflow.Controllers.Api
             }
             catch (Exception ex) when (ex is not UnauthorizedAccessException)
             {
-                return Ok(ApiResponse<List<UserSearchResultDto>>.Ok([], "Search unavailable"));
+                return StatusCode(503, ApiResponse<List<UserSearchResultDto>>.Fail("Search service temporarily unavailable. Please check your connection and try again."));
             }
         }
 
@@ -590,7 +608,8 @@ namespace taskflow.Controllers.Api
         }
 
         /// <summary>
-        /// Returns shared (MongoDB) team members for a team owned by the current user.
+        /// Returns shared (MongoDB) team members for a team.
+        /// Works for both the team owner and team members (H-02 fix).
         /// Uses path suffix "-shared" to avoid conflict with the SQLite /{id}/members endpoint.
         /// </summary>
         [HttpGet("{teamId}/members-shared")]
@@ -600,6 +619,23 @@ namespace taskflow.Controllers.Api
             {
                 var email = GetUserEmail();
                 var members = await _mongoService.GetTeamMembersAsync(teamId, email);
+
+                // H-02: if empty the caller may be a member, not the owner.
+                // Look up the owner email from the caller's membership record and retry.
+                if (members.Count == 0)
+                {
+                    try
+                    {
+                        var myMemberships = await _mongoService.GetMembershipsByUserAsync(email);
+                        var membership = myMemberships.FirstOrDefault(m =>
+                            m.TeamId == teamId &&
+                            !string.Equals(m.OwnerEmail, email, StringComparison.OrdinalIgnoreCase));
+                        if (membership != null && !string.IsNullOrEmpty(membership.OwnerEmail))
+                            members = await _mongoService.GetTeamMembersAsync(teamId, membership.OwnerEmail);
+                    }
+                    catch { /* non-critical fallback */ }
+                }
+
                 return Ok(ApiResponse<List<MongoTeamMemberDto>>.Ok(members, "Shared team members retrieved"));
             }
             catch (Exception ex) when (ex is not UnauthorizedAccessException)
@@ -617,7 +653,52 @@ namespace taskflow.Controllers.Api
             try
             {
                 var email = GetUserEmail();
+                var ownerName = GetUserFullName();
+
+                // Fetch team name before removing so the notification is descriptive
+                string teamName = string.Empty;
+                try
+                {
+                    var members = await _mongoService.GetTeamMembersAsync(teamId, email);
+                    if (members.Count > 0) teamName = members[0].TeamName;
+                }
+                catch { /* non-critical */ }
+
                 await _mongoService.RemoveTeamMemberAsync(teamId, memberEmail, email);
+
+                // Notify the removed member (cross-machine or local)
+                try
+                {
+                    var removedUser = await _userRepository.GetByEmailAsync(memberEmail);
+                    var teamLabel = string.IsNullOrEmpty(teamName) ? "a team" : $"\"{teamName}\"";
+                    var senderLabel = string.IsNullOrEmpty(ownerName) ? email : ownerName;
+                    if (removedUser != null)
+                    {
+                        await _notificationService.CreateAsync(
+                            removedUser.Id,
+                            "Removed from Team",
+                            $"{senderLabel} removed you from {teamLabel}.",
+                            NotificationType.TeamMemberRemoved,
+                            NotificationPriority.Medium,
+                            actionUrl: "/teams"
+                        );
+                    }
+                    else
+                    {
+                        await _mongoService.WriteCrossNotificationAsync(new Models.Mongo.CrossNotification
+                        {
+                            RecipientEmail = memberEmail.Trim().ToLowerInvariant(),
+                            SenderEmail    = email,
+                            Title          = "Removed from Team",
+                            Message        = $"{senderLabel} removed you from {teamLabel}.",
+                            Type           = nameof(NotificationType.TeamMemberRemoved),
+                            Priority       = nameof(NotificationPriority.Medium),
+                            ActionUrl      = "/teams"
+                        });
+                    }
+                }
+                catch { /* notification failure must not break the remove */ }
+
                 return NoContent();
             }
             catch (KeyNotFoundException)
@@ -659,7 +740,63 @@ namespace taskflow.Controllers.Api
             try
             {
                 var email = GetUserEmail();
+                var myName = GetUserFullName();
+
+                // Fetch membership record to get owner email + team name before leaving
+                string teamName = string.Empty;
+                string ownerEmail = string.Empty;
+                try
+                {
+                    var myMemberships = await _mongoService.GetMembershipsByUserAsync(email);
+                    var membership = myMemberships.FirstOrDefault(m =>
+                        m.TeamId == teamId &&
+                        !string.Equals(m.OwnerEmail, email, StringComparison.OrdinalIgnoreCase));
+                    if (membership != null)
+                    {
+                        teamName = membership.TeamName;
+                        ownerEmail = membership.OwnerEmail;
+                    }
+                }
+                catch { /* non-critical */ }
+
                 await _mongoService.LeaveTeamAsync(teamId, email);
+
+                // Notify the team owner (cross-machine or local)
+                if (!string.IsNullOrEmpty(ownerEmail))
+                {
+                    try
+                    {
+                        var owner = await _userRepository.GetByEmailAsync(ownerEmail);
+                        var memberLabel = string.IsNullOrEmpty(myName) ? email : myName;
+                        var teamLabel = string.IsNullOrEmpty(teamName) ? "your team" : $"\"{teamName}\"";
+                        if (owner != null)
+                        {
+                            await _notificationService.CreateAsync(
+                                owner.Id,
+                                "Member Left Team",
+                                $"{memberLabel} left {teamLabel}.",
+                                NotificationType.TeamMemberLeft,
+                                NotificationPriority.Low,
+                                actionUrl: "/teams"
+                            );
+                        }
+                        else
+                        {
+                            await _mongoService.WriteCrossNotificationAsync(new Models.Mongo.CrossNotification
+                            {
+                                RecipientEmail = ownerEmail.Trim().ToLowerInvariant(),
+                                SenderEmail    = email,
+                                Title          = "Member Left Team",
+                                Message        = $"{memberLabel} left {teamLabel}.",
+                                Type           = nameof(NotificationType.TeamMemberLeft),
+                                Priority       = nameof(NotificationPriority.Low),
+                                ActionUrl      = "/teams"
+                            });
+                        }
+                    }
+                    catch { /* notification failure must not break the leave */ }
+                }
+
                 return NoContent();
             }
             catch (KeyNotFoundException)

@@ -32,12 +32,18 @@ namespace taskflow.Models.Mongo
         [BsonElement("SenderAvatarUrl")]
         public string SenderAvatarUrl { get; set; } = string.Empty;
 
-        // Recipient - identified by email (no Username field in AppUser)
+        [BsonElement("SenderUsername")]
+        public string SenderUsername { get; set; } = string.Empty;
+
+        // Recipient - identified by email + derived username
         [BsonElement("RecipientEmail")]
         public string RecipientEmail { get; set; } = string.Empty;
 
         [BsonElement("RecipientFullName")]
         public string RecipientFullName { get; set; } = string.Empty;
+
+        [BsonElement("RecipientUsername")]
+        public string RecipientUsername { get; set; } = string.Empty;
 
         // Team context (references the sender's local SQLite team)
         [BsonElement("TeamId")]

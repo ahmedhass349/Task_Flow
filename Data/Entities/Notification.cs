@@ -19,6 +19,8 @@ namespace taskflow.Data.Entities
         TeamInvitationAccepted,
         TeamInvitationDeclined,
         TeamDeleted,
+        TeamMemberRemoved,
+        TeamMemberLeft,
         MessageReceived
     }
 

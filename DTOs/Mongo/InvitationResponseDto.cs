@@ -10,9 +10,11 @@ namespace taskflow.DTOs.Mongo
         public string SenderEmail { get; set; } = string.Empty;
         public string SenderFullName { get; set; } = string.Empty;
         public string SenderAvatarUrl { get; set; } = string.Empty;
+        public string SenderUsername { get; set; } = string.Empty;
 
         public string RecipientEmail { get; set; } = string.Empty;
         public string RecipientFullName { get; set; } = string.Empty;
+        public string RecipientUsername { get; set; } = string.Empty;
 
         public string TeamId { get; set; } = string.Empty;
         public string TeamName { get; set; } = string.Empty;

@@ -1,6 +1,7 @@
 import { LayoutDashboard, FolderKanban, MessageSquare, ClipboardList, Bell, User, Settings, Bot, LogOut, FileText, WifiOff } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "../services/api";
 import { TaskFlowLogo } from "./TaskFlowLogo";
 import { useAuth } from "../context/AuthContext";
 import { useConnectivity } from "../hooks/useConnectivity";
@@ -9,6 +10,7 @@ interface NavItem {
   icon: React.ReactNode;
   label: string;
   path: string;
+  badge?: number;
 }
 
 export default function Sidebar() {
@@ -18,13 +20,34 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const { isEffectivelyOnline } = useConnectivity();
 
+  // ── Global invitation badge ───────────────────────────────────────────
+  const [pendingInviteCount, setPendingInviteCount] = useState(0);
+  useEffect(() => {
+    const fetchCount = () => {
+      api.get<{ id: string; status: string }[]>("/api/teams/invitations/incoming")
+        .then(items => setPendingInviteCount((items ?? []).filter(i => i.status === "Pending").length))
+        .catch(() => {});
+    };
+    fetchCount();
+    const onNotification = (e: Event) => {
+      const t = ((e as CustomEvent).detail as { type?: string })?.type?.toLowerCase() ?? "";
+      if (t === "teaminvitationreceived") {
+        setPendingInviteCount(c => c + 1);
+      } else if (["teaminvitationaccepted", "teaminvitationdeclined", "teamdeleted", "teammemberremoved"].includes(t)) {
+        fetchCount();
+      }
+    };
+    window.addEventListener("taskflow:notification-received", onNotification);
+    return () => window.removeEventListener("taskflow:notification-received", onNotification);
+  }, []);
+
   const navItems: NavItem[] = [
     { icon: <LayoutDashboard className="size-5 shrink-0" />, label: "Dashboard",     path: "/" },
     { icon: <FolderKanban  className="size-5 shrink-0" />, label: "Projects",      path: "/projects" },
     { icon: <ClipboardList  className="size-5 shrink-0" />, label: "My Tasks",      path: "/my-work" },
     { icon: <MessageSquare className="size-5 shrink-0" />, label: "Messages",      path: "/message" },
     { icon: <Bell          className="size-5 shrink-0" />, label: "Notifications", path: "/notifications" },
-    { icon: <User          className="size-5 shrink-0" />, label: "Teams",         path: "/teams" },
+    { icon: <User          className="size-5 shrink-0" />, label: "Teams",         path: "/teams", badge: pendingInviteCount || undefined },
     { icon: <Bot            className="size-5 shrink-0" />, label: "Chatbot",       path: "/plans" },
     { icon: <Settings      className="size-5 shrink-0" />, label: "Settings",      path: "/settings" },
     { icon: <FileText      className="size-5 shrink-0" />, label: "Legal",         path: "/terms-of-service" },
@@ -76,7 +99,14 @@ export default function Sidebar() {
                 isActive ? "text-[#3C21F7]" : "text-[#878787] hover:bg-gray-100"
               }`}
             >
-              {item.icon}
+              <span className="relative inline-flex shrink-0">
+                {item.icon}
+                {(item.badge ?? 0) > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white leading-none">
+                    {item.badge! > 9 ? "9+" : item.badge}
+                  </span>
+                )}
+              </span>
               {!isCollapsed && (
                 <span className="text-base font-normal whitespace-nowrap" style={{ fontFamily: 'Inter, sans-serif' }}>
                   {item.label}

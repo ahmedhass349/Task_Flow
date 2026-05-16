@@ -360,7 +360,7 @@ function InviteModal({ onClose, onSend, searchUsers, preselectedTeam }: InviteMo
         {/* Search */}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Find user by email or name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Find user by email, name, or @username</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
               <input
@@ -389,7 +389,7 @@ function InviteModal({ onClose, onSend, searchUsers, preselectedTeam }: InviteMo
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{u.fullName || u.email}</p>
-                      <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                      <p className="text-xs text-gray-500 truncate">{u.email}{u.username ? ` · @${u.username}` : ''}</p>
                     </div>
                     {!u.acceptsInvitations && (
                       <span className="ml-auto text-xs text-gray-400 flex-shrink-0">Not accepting</span>
@@ -593,8 +593,20 @@ function SharedMemberCard({ member, onRemove, showTeam }: SharedMemberCardProps)
   const [busy, setBusy] = useState(false);
   return (
     <div className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
-      <div className={`${avatarColor(member.userEmail)} size-11 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>
-        {getInitials(member.userFullName || member.userEmail)}
+      <div className="relative flex-shrink-0">
+        <div className={`${avatarColor(member.userEmail)} size-11 rounded-full flex items-center justify-center text-white font-bold`}>
+          {getInitials(member.userFullName || member.userEmail)}
+        </div>
+        {member.lastSeen && (
+          <span
+            className={`absolute bottom-0 right-0 size-3 rounded-full border-2 border-white ${
+              new Date(member.lastSeen) > new Date(Date.now() - 5 * 60 * 1000)
+                ? 'bg-green-400'
+                : 'bg-gray-300'
+            }`}
+            title={new Date(member.lastSeen) > new Date(Date.now() - 5 * 60 * 1000) ? 'Online' : `Last seen ${fmtDate(member.lastSeen)}`}
+          />
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">

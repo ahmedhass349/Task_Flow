@@ -18,6 +18,9 @@ namespace taskflow.Models.Mongo
         [BsonElement("Email")]
         public string Email { get; set; } = string.Empty;
 
+        [BsonElement("Username")]
+        public string Username { get; set; } = string.Empty;
+
         [BsonElement("FullName")]
         public string FullName { get; set; } = string.Empty;
 

@@ -57,12 +57,15 @@ export interface SharedMember {
   ownerEmail: string;
   joinedAt: string;
   isActive: boolean;
+  lastSeen?: string;
 }
 
 export interface UserSearchResult {
   email: string;
+  username: string;
   fullName: string;
   avatarUrl: string;
+  lastSeen?: string;
   acceptsInvitations: boolean;
 }
 
@@ -357,7 +360,7 @@ export const useTeams = (): UseTeamsReturn => {
   // ── Refresh on team-related notifications ─────────────────────────────────
 
   useEffect(() => {
-    const TEAM_TYPES = ["teamdeleted", "teaminvitationreceived", "teaminvitationaccepted", "teaminvitationdeclined"];
+    const TEAM_TYPES = ["teamdeleted", "teaminvitationreceived", "teaminvitationaccepted", "teaminvitationdeclined", "teammemberremoved", "teammemberleft"];
     const onNotification = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.type && TEAM_TYPES.includes((detail.type as string).toLowerCase())) {
@@ -370,14 +373,26 @@ export const useTeams = (): UseTeamsReturn => {
     return () => window.removeEventListener("taskflow:notification-received", onNotification);
   }, [fetchInvitations, fetchMembershipsByMe, fetchAllSharedMembers]);
 
-  // ── 60-second safety-net polling (fallback when SignalR events are missed) ─
+  // ── Presence heartbeat ──────────────────────────────────────────────────
+  // Upserts this user's presence record in MongoDB so their profile (name,
+  // avatar, email) stays discoverable across machines.
+  // Called once on mount and every 2 minutes while the app is open.
+
+  useEffect(() => {
+    const ping = () => { api.post("/api/teams/presence", {}).catch(() => {}); };
+    ping();
+    const heartbeatId = setInterval(ping, 60_000);
+    return () => clearInterval(heartbeatId);
+  }, []);
+
+  // ── 15-second safety-net polling (fallback when SignalR events are missed) ─
 
   useEffect(() => {
     const id = setInterval(() => {
       fetchInvitations();
       fetchMembershipsByMe();
       fetchAllSharedMembers();
-    }, 60_000);
+    }, 15_000);
     return () => clearInterval(id);
   }, [fetchInvitations, fetchMembershipsByMe, fetchAllSharedMembers]);
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,6 +25,8 @@ namespace taskflow.Services
         private readonly IMongoCollection<UserPresence>? _presenceCollection;
         private readonly IMongoCollection<TeamInvitation>? _invitationsCollection;
         private readonly IMongoCollection<MongoTeamMember>? _membersCollection;
+        private readonly IMongoCollection<CrossNotification>? _crossNotificationsCollection;
+        private readonly IMongoCollection<UserAccount>? _userAccountsCollection;
         private readonly ILogger<MongoService> _logger;
         private IMongoClient? _client;
         private IMongoDatabase? _db;
@@ -56,6 +59,8 @@ namespace taskflow.Services
                 _presenceCollection = db.GetCollection<UserPresence>("user_presence");
                 _invitationsCollection = db.GetCollection<TeamInvitation>("team_invitations");
                 _membersCollection = db.GetCollection<MongoTeamMember>("team_members");
+                _crossNotificationsCollection = db.GetCollection<CrossNotification>("cross_notifications");
+                _userAccountsCollection = db.GetCollection<UserAccount>("user_accounts");
 
                 // B-02: fire-and-forget index creation — never block the DI constructor thread.
                 _ = Task.Run(async () =>
@@ -117,6 +122,43 @@ namespace taskflow.Services
                     .Ascending(m => m.IsActive);
                 await _membersCollection.Indexes.CreateOneAsync(
                     new CreateIndexModel<MongoTeamMember>(userEmailIdx, new CreateIndexOptions { Name = "member_user_email" }));
+
+                // H-03: unique compound index prevents duplicate membership records
+                var memberUniqueIdx = Builders<MongoTeamMember>.IndexKeys
+                    .Ascending(m => m.TeamId)
+                    .Ascending(m => m.UserEmail)
+                    .Ascending(m => m.OwnerEmail);
+                await _membersCollection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<MongoTeamMember>(memberUniqueIdx,
+                        new CreateIndexOptions { Unique = true, Name = "member_unique_teamId_user_owner" }));
+            }
+
+            // C-01: index on Username for fast username-based search
+            var usernameIdx = Builders<UserPresence>.IndexKeys.Ascending(u => u.Username);
+            await _presenceCollection.Indexes.CreateOneAsync(
+                new CreateIndexModel<UserPresence>(usernameIdx, new CreateIndexOptions { Name = "username_idx" }));
+
+            // L-02: TTL index on cross_notifications so MongoDB auto-expires stale documents
+            if (_crossNotificationsCollection != null)
+            {
+                var crossTtlKey = Builders<CrossNotification>.IndexKeys.Ascending(n => n.ExpiresAt);
+                await _crossNotificationsCollection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<CrossNotification>(crossTtlKey,
+                        new CreateIndexOptions { Name = "cross_notif_expires_ttl", ExpireAfter = TimeSpan.Zero }));
+
+                var crossRecipIdx = Builders<CrossNotification>.IndexKeys.Ascending(n => n.RecipientEmail);
+                await _crossNotificationsCollection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<CrossNotification>(crossRecipIdx,
+                        new CreateIndexOptions { Name = "cross_notif_recipient" }));
+            }
+
+            // Unique email index for user_accounts credential backup
+            if (_userAccountsCollection != null)
+            {
+                var accountEmailIdx = Builders<UserAccount>.IndexKeys.Ascending(a => a.Email);
+                await _userAccountsCollection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<UserAccount>(accountEmailIdx,
+                        new CreateIndexOptions { Unique = true, Name = "account_email_unique" }));
             }
         }
 
@@ -236,7 +278,7 @@ namespace taskflow.Services
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 cts.CancelAfter(TimeSpan.FromSeconds(5));
-                await _client.GetDatabase("admin")
+                await _client.GetDatabase(DatabaseName)
                     .RunCommandAsync<MongoDB.Bson.BsonDocument>(
                         new MongoDB.Bson.BsonDocument("ping", 1),
                         cancellationToken: cts.Token);
@@ -256,10 +298,12 @@ namespace taskflow.Services
             try
             {
                 var filter = Builders<UserPresence>.Filter.Eq(u => u.Email, email);
+                var username = email.Contains('@') ? email.Split('@')[0].ToLowerInvariant() : email.ToLowerInvariant();
                 var update = Builders<UserPresence>.Update
                     .Set(u => u.Email, email)
                     .Set(u => u.FullName, fullName)
                     .Set(u => u.AvatarUrl, avatarUrl ?? string.Empty)
+                    .Set(u => u.Username, username)
                     .Set(u => u.LastSeen, DateTime.UtcNow)
                     .SetOnInsert(u => u.RegisteredAt, DateTime.UtcNow)
                     .Set(u => u.AcceptsInvitations, true);
@@ -290,6 +334,8 @@ namespace taskflow.Services
                         Builders<UserPresence>.Filter.Regex(u => u.Email,
                             new MongoDB.Bson.BsonRegularExpression(Regex.Escape(normalizedQuery), "i")),
                         Builders<UserPresence>.Filter.Regex(u => u.FullName,
+                            new MongoDB.Bson.BsonRegularExpression(Regex.Escape(normalizedQuery), "i")),
+                        Builders<UserPresence>.Filter.Regex(u => u.Username,
                             new MongoDB.Bson.BsonRegularExpression(Regex.Escape(normalizedQuery), "i"))
                     )
                 );
@@ -302,13 +348,15 @@ namespace taskflow.Services
                     Email = u.Email,
                     FullName = u.FullName,
                     AvatarUrl = u.AvatarUrl,
+                    Username = u.Username,
+                    LastSeen = u.LastSeen,
                     AcceptsInvitations = u.AcceptsInvitations,
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "MongoService.SearchUsersAsync failed for query '{Query}'", query);
-                return [];
+                throw;
             }
         }
 
@@ -332,8 +380,9 @@ namespace taskflow.Services
             await _invitationsCollection.UpdateManyAsync(expireFilter,
                 Builders<TeamInvitation>.Update.Set(i => i.Status, InvitationStatus.Expired));
 
-            // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-A — resolve recipient full name from presence at send time
+            // Resolve recipient full name and username from presence; derive both from email as fallback
             string recipientFullName = string.Empty;
+            string recipientUsername = normalizedRecipient.Split('@')[0];
             if (_presenceCollection != null)
             {
                 try
@@ -341,8 +390,13 @@ namespace taskflow.Services
                     var recipPres = await _presenceCollection
                         .Find(Builders<UserPresence>.Filter.Eq(u => u.Email, normalizedRecipient))
                         .FirstOrDefaultAsync();
-                    if (recipPres != null && !string.IsNullOrEmpty(recipPres.FullName))
-                        recipientFullName = recipPres.FullName;
+                    if (recipPres != null)
+                    {
+                        if (!string.IsNullOrEmpty(recipPres.FullName))
+                            recipientFullName = recipPres.FullName;
+                        if (!string.IsNullOrEmpty(recipPres.Username))
+                            recipientUsername = recipPres.Username;
+                    }
                 }
                 catch { /* non-critical */ }
             }
@@ -353,8 +407,10 @@ namespace taskflow.Services
                 SenderEmail = senderEmail,
                 SenderFullName = senderFullName,
                 SenderAvatarUrl = senderAvatarUrl ?? string.Empty,
+                SenderUsername = senderEmail.Split('@')[0].ToLowerInvariant(),
                 RecipientEmail = normalizedRecipient,
                 RecipientFullName = recipientFullName,
+                RecipientUsername = recipientUsername,
                 TeamId = request.TeamId,
                 TeamName = request.TeamName,
                 Message = request.Message ?? string.Empty,
@@ -398,8 +454,13 @@ namespace taskflow.Services
             try
             {
                 var now = DateTime.UtcNow;
+                var normalizedEmail = recipientEmail.Trim().ToLowerInvariant();
+                var derivedUsername = normalizedEmail.Split('@')[0];
                 var filter = Builders<TeamInvitation>.Filter.And(
-                    Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, recipientEmail.Trim().ToLowerInvariant()),
+                    Builders<TeamInvitation>.Filter.Or(
+                        Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, normalizedEmail),
+                        Builders<TeamInvitation>.Filter.Eq(i => i.RecipientUsername, derivedUsername)
+                    ),
                     Builders<TeamInvitation>.Filter.In(i => i.Status,
                         new[] { InvitationStatus.Pending, InvitationStatus.Accepted, InvitationStatus.Declined })
                 );
@@ -589,6 +650,7 @@ namespace taskflow.Services
                 );
 
                 var members = await _membersCollection.Find(filter).ToListAsync();
+                var lastSeenMap = await GetLastSeenBatchAsync(members.Select(m => m.UserEmail));
                 return members.ConvertAll(m => new MongoTeamMemberDto
                 {
                     Id = m.Id ?? string.Empty,
@@ -601,6 +663,7 @@ namespace taskflow.Services
                     OwnerEmail = m.OwnerEmail,
                     JoinedAt = m.JoinedAt,
                     IsActive = m.IsActive,
+                    LastSeen = lastSeenMap.TryGetValue(m.UserEmail, out var ls) ? ls : null,
                 });
             }
             catch (Exception ex)
@@ -623,6 +686,7 @@ namespace taskflow.Services
                 var members = await _membersCollection.Find(filter)
                     .SortByDescending(m => m.JoinedAt)
                     .ToListAsync();
+                var lastSeenMap = await GetLastSeenBatchAsync(members.Select(m => m.UserEmail));
                 return members.ConvertAll(m => new MongoTeamMemberDto
                 {
                     Id = m.Id ?? string.Empty,
@@ -635,6 +699,7 @@ namespace taskflow.Services
                     OwnerEmail = m.OwnerEmail,
                     JoinedAt = m.JoinedAt,
                     IsActive = m.IsActive,
+                    LastSeen = lastSeenMap.TryGetValue(m.UserEmail, out var ls) ? ls : null,
                 });
             }
             catch (Exception ex)
@@ -642,6 +707,16 @@ namespace taskflow.Services
                 _logger.LogWarning(ex, "MongoService.GetAllTeamMembersAsync failed for {Email}", ownerEmail);
                 return [];
             }
+        }
+
+        private async Task<Dictionary<string, DateTime>> GetLastSeenBatchAsync(IEnumerable<string> emails)
+        {
+            if (_presenceCollection == null) return [];
+            var emailList = emails.ToList();
+            if (emailList.Count == 0) return [];
+            var filter = Builders<UserPresence>.Filter.In(p => p.Email, emailList);
+            var presences = await _presenceCollection.Find(filter).ToListAsync();
+            return presences.ToDictionary(p => p.Email, p => p.LastSeen, StringComparer.OrdinalIgnoreCase);
         }
 
         public async Task RemoveTeamMemberAsync(string teamId, string memberEmail, string ownerEmail)
@@ -825,8 +900,10 @@ namespace taskflow.Services
             SenderEmail = i.SenderEmail,
             SenderFullName = i.SenderFullName,
             SenderAvatarUrl = i.SenderAvatarUrl,
+            SenderUsername = i.SenderUsername,
             RecipientEmail = i.RecipientEmail,
             RecipientFullName = i.RecipientFullName,
+            RecipientUsername = i.RecipientUsername,
             TeamId = i.TeamId,
             TeamName = i.TeamName,
             Message = i.Message,
@@ -883,8 +960,45 @@ namespace taskflow.Services
             }
         }
 
-<<<<<<< Updated upstream
-=======
+        // ── Credential backup / restoration ───────────────────────────────────
+
+        public async Task BackupUserAccountAsync(string email, string passwordHash, int sqliteId)
+        {
+            if (_userAccountsCollection == null) return;
+            try
+            {
+                var normalized = email.Trim().ToLowerInvariant();
+                var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, normalized);
+                var update = Builders<UserAccount>.Update
+                    .Set(a => a.Email, normalized)
+                    .Set(a => a.PasswordHash, passwordHash)
+                    .Set(a => a.SqliteId, sqliteId)
+                    .Set(a => a.UpdatedAt, DateTime.UtcNow);
+                await _userAccountsCollection.UpdateOneAsync(filter, update,
+                    new UpdateOptions { IsUpsert = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MongoService.BackupUserAccountAsync failed for {Email}", email);
+            }
+        }
+
+        public async Task<UserAccount?> FindAccountForRestorationAsync(string email)
+        {
+            if (_userAccountsCollection == null) return null;
+            try
+            {
+                var normalized = email.Trim().ToLowerInvariant();
+                var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, normalized);
+                return await _userAccountsCollection.Find(filter).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MongoService.FindAccountForRestorationAsync failed for {Email}", email);
+                return null;
+            }
+        }
+
         // ── Cross-machine notification bus ────────────────────────────────────
 
         /// <summary>
@@ -934,7 +1048,6 @@ namespace taskflow.Services
             }
         }
 
->>>>>>> Stashed changes
         // ── Dev / testing ─────────────────────────────────────────────────────
 
         /// <summary>Drops every document from all three MongoDB collections.</summary>
