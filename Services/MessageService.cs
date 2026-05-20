@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using taskflow.Data.Entities;
 using taskflow.DTOs.Messages;
+using taskflow.Models.Mongo;
 using taskflow.Repositories.Interfaces;
 using taskflow.Services.Interfaces;
 
@@ -21,17 +22,20 @@ namespace taskflow.Services
         private readonly IUserRepository _userRepository;
         private readonly IMirrorService _mirror;
         private readonly INotificationService _notificationService;
+        private readonly IMongoService _mongoService;
 
         public MessageService(
             IMessageRepository messageRepository,
             IUserRepository userRepository,
             IMirrorService mirror,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IMongoService mongoService)
         {
             _messageRepository = messageRepository;
             _userRepository = userRepository;
             _mirror = mirror;
             _notificationService = notificationService;
+            _mongoService = mongoService;
         }
 
         public async Task<IEnumerable<ContactDto>> GetContactsAsync(int userId)
@@ -134,6 +138,37 @@ namespace taskflow.Services
             try { await _notificationService.NotifyMessageReceivedAsync(request.ReceiverId, sender.FullName, request.Body ?? ""); }
             catch { /* Don't fail the send if notification fails */ }
 
+            // Cross-machine delivery: relay via MongoDB if receiver is a shadow user
+            if (receiver.PasswordHash == "__SHADOW__")
+            {
+                try
+                {
+                    var payload = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        senderEmail = sender.Email,
+                        senderName = sender.FullName,
+                        senderAvatarUrl = sender.AvatarUrl,
+                        body = request.Body,
+                        sentAt = message.SentAt.ToString("O"),
+                        attachmentUrl = request.AttachmentUrl,
+                        attachmentName = request.AttachmentName,
+                        attachmentType = request.AttachmentType,
+                        attachmentSize = request.AttachmentSize
+                    });
+                    await _mongoService.WriteCrossNotificationAsync(new CrossNotification
+                    {
+                        RecipientEmail = receiver.Email.Trim().ToLowerInvariant(),
+                        SenderEmail = sender.Email ?? string.Empty,
+                        Title = $"New message from {sender.FullName}",
+                        Message = request.Body?.Length > 100 ? request.Body[..100] + "…" : request.Body ?? "",
+                        Type = nameof(NotificationType.MessageReceived),
+                        Priority = nameof(NotificationPriority.Medium),
+                        Payload = payload
+                    });
+                }
+                catch { /* Don't fail the send if cross-notification fails */ }
+            }
+
             return new MessageDto
             {
                 Id = message.Id,
@@ -167,6 +202,15 @@ namespace taskflow.Services
         public async Task<ContactDto?> ResolveContactAsync(int requestingUserId, string email)
         {
             var user = await _userRepository.GetByEmailAsync(email);
+
+            // Cross-machine fallback: look up user in MongoDB presence if not in local SQLite
+            if (user == null)
+            {
+                var presence = await _mongoService.GetUserPresenceByEmailAsync(email);
+                if (presence == null) return null;
+                user = await _userRepository.GetOrCreateShadowUserAsync(presence.Email, presence.FullName);
+            }
+
             if (user == null || user.Id == requestingUserId)
                 return null;
 

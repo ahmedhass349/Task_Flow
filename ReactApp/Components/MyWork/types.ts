@@ -15,6 +15,7 @@ export interface MyWorkTask {
   priority: Priority;
   status: Status;
   starred?: boolean;
+  assignedById?: number;
   onEdit?: () => void;
   onDelete?: () => void;
   onStatus?: (newStatus: Status) => void;

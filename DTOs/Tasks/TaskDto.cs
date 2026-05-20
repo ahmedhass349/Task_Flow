@@ -13,6 +13,7 @@ namespace taskflow.DTOs.Tasks
         public string? Description { get; set; }
         public string ProjectName { get; set; } = string.Empty;
         public string? AssigneeName { get; set; }
+        public int? AssignedById { get; set; }
         public DateTime? DueDate { get; set; }
         public string? DueDateLabel { get; set; }   // Formatted string e.g. "Oct 15" for frontend (#28)
         public string Priority { get; set; } = string.Empty;

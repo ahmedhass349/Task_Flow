@@ -12,6 +12,7 @@ export interface NewTaskData {
   dueDate: string;
   targetDate: string;
   assignedUser: string;
+  assigneeId?: number;
   description: string;
   tags: string[];
   useClientSettings: boolean;
@@ -24,6 +25,7 @@ export interface NewTaskData {
 interface NewTaskCardProps {
   onCancel: () => void;
   onCreate: (data: NewTaskData) => void;
+  members?: Array<{ userId: number; userName: string }>;
 }
 
 // ── Validation ───────────────────────────────────────────────────────────
@@ -119,7 +121,7 @@ function Toggle({ checked, onToggle, disabled, label }: { checked: boolean; onTo
 
 // ── Main component ───────────────────────────────────────────────────────
 
-export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
+export default function NewTaskCard({ onCancel, onCreate, members }: NewTaskCardProps) {
   const [taskPeriod, setTaskPeriod] = useState<"month" | "year">("month");
   const [selectedClient, setSelectedClient] = useState("");
   const [selectedService, setSelectedService] = useState("");
@@ -127,6 +129,7 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
   const [dueDate, setDueDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [assignedUser, setAssignedUser] = useState("");
+  const [assigneeId, setAssigneeId] = useState<number | undefined>(undefined);
   const [description, setDescription] = useState("");
 
   const [useClientSettings, setUseClientSettings] = useState(false);
@@ -172,6 +175,7 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
       dueDate,
       targetDate,
       assignedUser,
+      assigneeId,
       description: description.trim(),
       tags,
       useClientSettings,
@@ -356,12 +360,19 @@ export default function NewTaskCard({ onCancel, onCreate }: NewTaskCardProps) {
           <div className="relative">
             <select
               value={assignedUser}
-              onChange={(event) => setAssignedUser(event.target.value)}
+              onChange={(event) => {
+                const val = event.target.value;
+                setAssignedUser(val);
+                if (members) {
+                  const found = members.find(m => m.userName === val);
+                  setAssigneeId(found?.userId);
+                }
+              }}
               className={`${inputNormal} appearance-none pr-10 text-[15px]`}
               disabled={isSubmitting}
             >
               <option value="">Select users...</option>
-              {users.map((user) => (
+              {(members && members.length > 0 ? members.map(m => m.userName) : users).map((user) => (
                 <option key={user} value={user}>
                   {user}
                 </option>

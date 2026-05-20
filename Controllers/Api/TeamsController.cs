@@ -636,6 +636,19 @@ namespace taskflow.Controllers.Api
                     catch { /* non-critical fallback */ }
                 }
 
+                // Enrich each member with their local SQLite user ID so the frontend
+                // can set AssigneeId without a second round-trip.
+                foreach (var m in members)
+                {
+                    try
+                    {
+                        var localUser = await _userRepository.GetByEmailAsync(m.UserEmail);
+                        if (localUser != null)
+                            m.LocalUserId = localUser.Id;
+                    }
+                    catch { /* non-critical — leave LocalUserId null */ }
+                }
+
                 return Ok(ApiResponse<List<MongoTeamMemberDto>>.Ok(members, "Shared team members retrieved"));
             }
             catch (Exception ex) when (ex is not UnauthorizedAccessException)
@@ -832,6 +845,32 @@ namespace taskflow.Controllers.Api
                 var teamName = members[0].TeamName;
                 var body = $"[{teamName}] {ownerName}: {request.Message.Trim()}";
 
+                // Persist announcement to MongoDB for read-receipt tracking
+                var recipientList = members
+                    .Where(m => !string.Equals(m.UserEmail, ownerEmail, StringComparison.OrdinalIgnoreCase))
+                    .Select(m => new Models.Mongo.AnnouncementRecipient
+                    {
+                        Email = m.UserEmail.Trim().ToLowerInvariant(),
+                        Name = m.UserFullName ?? m.UserEmail,
+                        HasRead = false
+                    }).ToList();
+
+                var announcement = new Models.Mongo.TeamAnnouncement
+                {
+                    TeamId = teamId,
+                    TeamName = teamName,
+                    SenderEmail = ownerEmail,
+                    SenderName = ownerName,
+                    Title = title,
+                    Body = request.Message.Trim(),
+                    SentAt = DateTime.UtcNow,
+                    Recipients = recipientList
+                };
+                var announcementId = await _mongoService.SaveAnnouncementAsync(announcement);
+                var actionUrl = string.IsNullOrEmpty(announcementId)
+                    ? "/teams"
+                    : $"/teams?announcementId={announcementId}";
+
                 int notified = 0;
                 foreach (var member in members)
                 {
@@ -847,7 +886,7 @@ namespace taskflow.Controllers.Api
                             body,
                             NotificationType.SystemAnnouncement,
                             NotificationPriority.High,
-                            actionUrl: "/teams");
+                            actionUrl: actionUrl);
                         notified++;
                     }
                     else
@@ -863,7 +902,7 @@ namespace taskflow.Controllers.Api
                                 Message        = body,
                                 Type           = nameof(NotificationType.SystemAnnouncement),
                                 Priority       = nameof(NotificationPriority.High),
-                                ActionUrl      = "/teams"
+                                ActionUrl      = actionUrl
                             });
                             notified++;
                         }
@@ -876,6 +915,56 @@ namespace taskflow.Controllers.Api
             catch (Exception ex) when (ex is not UnauthorizedAccessException)
             {
                 return StatusCode(503, ApiResponse<string>.Fail($"Could not send announcement: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Returns the announcement history (with read receipts) for a team. Leader only.
+        /// </summary>
+        [HttpGet("{teamId}/announcements")]
+        public async Task<IActionResult> GetTeamAnnouncements(string teamId)
+        {
+            try
+            {
+                var ownerEmail = GetUserEmail();
+                var announcements = await _mongoService.GetTeamAnnouncementsAsync(teamId, ownerEmail);
+                var result = announcements.Select(a => new
+                {
+                    id = a.Id,
+                    title = a.Title,
+                    body = a.Body,
+                    sentAt = a.SentAt,
+                    recipients = a.Recipients.Select(r => new
+                    {
+                        email = r.Email,
+                        name = r.Name,
+                        hasRead = r.HasRead,
+                        readAt = r.ReadAt
+                    }).ToList()
+                }).ToList();
+                return Ok(ApiResponse<IEnumerable<object>>.Ok(result));
+            }
+            catch (Exception ex) when (ex is not UnauthorizedAccessException)
+            {
+                return StatusCode(503, ApiResponse<object>.Fail($"Could not load announcements: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Marks an announcement as read by the current user.
+        /// </summary>
+        [HttpPost("announcements/{announcementId}/read")]
+        public async Task<IActionResult> MarkAnnouncementRead(string announcementId)
+        {
+            try
+            {
+                var email = GetUserEmail();
+                await _mongoService.MarkAnnouncementReadAsync(announcementId, email);
+                return Ok(ApiResponse<string>.Ok("Marked as read.", "ok"));
+            }
+            catch (Exception ex) when (ex is not UnauthorizedAccessException)
+            {
+                return StatusCode(503, ApiResponse<string>.Fail($"Could not mark as read: {ex.Message}"));
             }
         }
 

@@ -57,6 +57,16 @@ namespace taskflow.Controllers.Api
         }
 
         /// <summary>
+        /// Retrieves tasks assigned to a specific team member (admin use).
+        /// </summary>
+        [HttpGet("member/{memberId}")]
+        public async Task<IActionResult> GetTasksByMember(int memberId)
+        {
+            var tasks = await _taskService.GetTasksByMemberIdAsync(memberId);
+            return Ok(ApiResponse<IEnumerable<TaskDto>>.Ok(tasks));
+        }
+
+        /// <summary>
         /// Retrieves a single task by its identifier.
         /// </summary>
         [HttpGet("{id}")]

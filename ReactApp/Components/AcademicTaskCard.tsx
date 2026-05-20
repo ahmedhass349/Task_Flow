@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef, useCallback, type ReactElement } from "react";
 import {
-  X, ListTodo, AlignLeft, Flag, Calendar, User,
+  X, ListTodo, AlignLeft, Flag, Calendar, User, Lock,
   ChevronDown, Plus, Trash2, Bell, Clock, Mail,
   BellRing, CheckSquare, Square, Sparkles, UploadCloud,
   Loader2, CheckCircle2, AlertCircle,
@@ -29,6 +29,8 @@ interface AcademicTaskCardProps {
   onClose?: () => void;
   onSuccess?: (task: TaskPayload) => Promise<void> | void;
   initialData?: any;
+  /** When set, the Assignee field is pre-filled and read-only */
+  lockAssignee?: string;
 }
 
 type Priority = "Low" | "Medium" | "High" | "Urgent";
@@ -256,7 +258,7 @@ function ReminderRow({
   );
 }
 
-export default function AcademicTaskCard({ onClose, onSuccess, initialData }: AcademicTaskCardProps) {
+export default function AcademicTaskCard({ onClose, onSuccess, initialData, lockAssignee }: AcademicTaskCardProps) {
   const { addToast } = useToast();
   const isEditMode = Boolean(initialData?.id);
 
@@ -771,15 +773,23 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData }: Ac
 
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] text-gray-700" style={{ fontWeight: 500 }}>Assignee</label>
-              <div className="flex items-center gap-3 px-4 py-3 rounded-[10px]" style={{ border: "1.5px solid #e5e7eb", background: "#fafafa" }}>
-                <User className="size-4 text-gray-400 shrink-0" />
-                <input
-                  value={assignee}
-                  onChange={(e) => setAssignee(e.target.value)}
-                  placeholder="e.g. Alex Johnson"
-                  className="flex-1 bg-transparent outline-none text-[13px] text-gray-800 placeholder:text-gray-400"
-                />
-              </div>
+              {lockAssignee ? (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-[10px]" style={{ border: "1.5px solid #dbeafe", background: "#eff6ff" }}>
+                  <User className="size-4 text-blue-500 shrink-0" />
+                  <span className="flex-1 text-[13px] text-blue-700 font-medium">{lockAssignee}</span>
+                  <Lock className="size-3.5 text-blue-400 shrink-0" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-[10px]" style={{ border: "1.5px solid #e5e7eb", background: "#fafafa" }}>
+                  <User className="size-4 text-gray-400 shrink-0" />
+                  <input
+                    value={assignee}
+                    onChange={(e) => setAssignee(e.target.value)}
+                    placeholder="e.g. Alex Johnson"
+                    className="flex-1 bg-transparent outline-none text-[13px] text-gray-800 placeholder:text-gray-400"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

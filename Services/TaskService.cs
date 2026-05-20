@@ -50,6 +50,15 @@ namespace taskflow.Services
                 .Include(t => t.Assignee)
                 .Where(t => t.AssigneeId == userId);
 
+            // Scope filter: "mine" = self-created, "assigned" = assigned by others
+            if (!string.IsNullOrWhiteSpace(filter.Scope))
+            {
+                if (filter.Scope.Equals("mine", StringComparison.OrdinalIgnoreCase))
+                    query = query.Where(t => t.AssignedById == null || t.AssignedById == userId);
+                else if (filter.Scope.Equals("assigned", StringComparison.OrdinalIgnoreCase))
+                    query = query.Where(t => t.AssignedById != null && t.AssignedById != userId);
+            }
+
             if (!string.IsNullOrEmpty(statusStr))
             {
                 if (Enum.TryParse<TaskStatus>(statusStr, ignoreCase: true, out var parsedStatus))
@@ -88,6 +97,18 @@ namespace taskflow.Services
             return _mapper.Map<IEnumerable<TaskDto>>(tasks);
         }
 
+        public async Task<IEnumerable<TaskDto>> GetTasksByMemberIdAsync(int memberId)
+        {
+            var tasks = await _taskRepository.Query()
+                .Include(t => t.Project)
+                .Include(t => t.Assignee)
+                .Where(t => t.AssigneeId == memberId)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            return _mapper.Map<IEnumerable<TaskDto>>(tasks);
+        }
+
         public async Task<TaskDto> GetTaskByIdAsync(int userId, int taskId)
         {
             var task = await _taskRepository.Query()
@@ -98,7 +119,7 @@ namespace taskflow.Services
             if (task == null)
                 throw new KeyNotFoundException($"Task with ID {taskId} not found.");
 
-            if (task.AssigneeId != userId)
+            if (task.AssigneeId != userId && task.AssignedById != userId)
                 throw new UnauthorizedAccessException("You do not have permission to view this task.");
 
             return _mapper.Map<TaskDto>(task);
@@ -115,6 +136,7 @@ namespace taskflow.Services
                 Description = request.Description,
                 ProjectId = request.ProjectId,
                 AssigneeId = request.AssigneeId ?? userId,
+                AssignedById = userId,
                 Priority = request.Priority,
                 Status = request.Status,
                 DueDate = request.DueDate,
@@ -171,7 +193,7 @@ namespace taskflow.Services
                 throw new ArgumentException("Due date cannot be before today.");
 
             // Ownership check (#2)
-            if (task.AssigneeId != userId)
+            if (task.AssigneeId != userId && task.AssignedById != userId)
                 throw new UnauthorizedAccessException("You do not have permission to update this task.");
 
             var changes = new List<string>();
@@ -248,7 +270,7 @@ namespace taskflow.Services
                 throw new KeyNotFoundException($"Task with ID {taskId} not found.");
 
             // Ownership check (#2)
-            if (task.AssigneeId != userId)
+            if (task.AssigneeId != userId && task.AssignedById != userId)
                 throw new UnauthorizedAccessException("You do not have permission to delete this task.");
 
             // Queue MongoDB erase before SQLite remove so the outbox entry exists
@@ -265,7 +287,7 @@ namespace taskflow.Services
                 throw new KeyNotFoundException($"Task with ID {taskId} not found.");
 
             // Ownership check (#2)
-            if (task.AssigneeId != userId)
+            if (task.AssigneeId != userId && task.AssignedById != userId)
                 throw new UnauthorizedAccessException("You do not have permission to modify this task.");
 
             task.IsStarred = !task.IsStarred;
@@ -284,7 +306,7 @@ namespace taskflow.Services
                 throw new KeyNotFoundException($"Task with ID {taskId} not found.");
 
             // Ownership check (#2)
-            if (task.AssigneeId != userId)
+            if (task.AssigneeId != userId && task.AssignedById != userId)
                 throw new UnauthorizedAccessException("You do not have permission to modify this task.");
 
             if (!Enum.TryParse<TaskStatus>(status, ignoreCase: true, out var parsedStatus))

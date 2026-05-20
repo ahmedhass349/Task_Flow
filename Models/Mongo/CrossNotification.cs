@@ -46,5 +46,13 @@ namespace taskflow.Models.Mongo
         [BsonElement("expiresAt")]
         [BsonRepresentation(BsonType.DateTime)]
         public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddDays(30);
+
+        /// <summary>
+        /// Optional JSON payload for structured data (e.g. message body for MessageReceived,
+        /// announcementId for SystemAnnouncement read-receipt tracking).
+        /// </summary>
+        [BsonElement("payload")]
+        [BsonIgnoreIfNull]
+        public string? Payload { get; set; }
     }
 }

@@ -174,7 +174,7 @@ namespace taskflow.Services
                 .ToDictionaryAsync(x => x.UserId, x => x.Count);
 
             var inProgressCounts = await _taskRepository.Query()
-                .Where(t => t.AssigneeId.HasValue && memberUserIds.Contains(t.AssigneeId.Value) && t.Status == TaskStatus.InProgress)
+                .Where(t => t.AssigneeId.HasValue && memberUserIds.Contains(t.AssigneeId.Value) && (t.Status == TaskStatus.InProgress || t.Status == TaskStatus.Todo))
                 .GroupBy(t => t.AssigneeId!.Value)
                 .Select(g => new { UserId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.UserId, x => x.Count);

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using taskflow.Data;
 using taskflow.Data.Entities;
+using taskflow.Repositories.Interfaces;
 using taskflow.Services;
 using taskflow.Services.Interfaces;
 
@@ -25,9 +27,22 @@ namespace taskflow.BackgroundServices
     ///   4. Deliver each notification locally via <see cref="INotificationService.CreateAsync"/>,
     ///      which persists it to SQLite and fires a real-time SignalR push.
     /// </summary>
+    /// <summary>Payload structure for cross-machine message delivery.</summary>
+    internal sealed class CrossMessagePayload
+    {
+        public string? SenderEmail { get; set; }
+        public string? SenderName { get; set; }
+        public string? SenderAvatarUrl { get; set; }
+        public string? Body { get; set; }
+        public string? SentAt { get; set; }
+        public string? AttachmentUrl { get; set; }
+        public string? AttachmentName { get; set; }
+        public string? AttachmentType { get; set; }
+        public long? AttachmentSize { get; set; }
+    }
+
     public class CrossNotificationPollerService : BackgroundService
     {
-        // FILE: BackgroundServices/CrossNotificationPollerService.cs  PHASE: 3  CHANGE: reduced interval from 30s to 15s for faster invitation response UX
         private static readonly TimeSpan _interval = TimeSpan.FromSeconds(15);
 
         private readonly IServiceProvider _serviceProvider;
@@ -108,6 +123,55 @@ namespace taskflow.BackgroundServices
                             var priority = Enum.TryParse<NotificationPriority>(n.Priority, out var p)
                                 ? p
                                 : NotificationPriority.Medium;
+
+                            // Special handling: reconstruct the message locally for cross-machine delivery
+                            if (type == NotificationType.MessageReceived && !string.IsNullOrEmpty(n.Payload))
+                            {
+                                try
+                                {
+                                    var msgPayload = JsonSerializer.Deserialize<CrossMessagePayload>(n.Payload,
+                                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                                    if (msgPayload != null)
+                                    {
+                                        var userRepo = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+                                        var msgRepo = scope.ServiceProvider.GetRequiredService<IMessageRepository>();
+
+                                        var shadowSender = await userRepo.GetOrCreateShadowUserAsync(
+                                            n.SenderEmail,
+                                            msgPayload.SenderName ?? n.SenderEmail);
+
+                                        var newMsg = new Message
+                                        {
+                                            SenderId = shadowSender.Id,
+                                            ReceiverId = user.Id,
+                                            Body = msgPayload.Body,
+                                            IsRead = false,
+                                            SentAt = DateTime.TryParse(msgPayload.SentAt, null,
+                                                System.Globalization.DateTimeStyles.RoundtripKind, out var st)
+                                                ? st : DateTime.UtcNow,
+                                            AttachmentUrl = msgPayload.AttachmentUrl,
+                                            AttachmentName = msgPayload.AttachmentName,
+                                            AttachmentType = msgPayload.AttachmentType,
+                                            AttachmentSize = msgPayload.AttachmentSize
+                                        };
+
+                                        await msgRepo.AddAsync(newMsg);
+                                        await msgRepo.SaveChangesAsync();
+
+                                        // Signal the frontend that a new message arrived
+                                        await notificationService.CreateAsync(
+                                            user.Id, n.Title, n.Message,
+                                            type, priority,
+                                            actionUrl: string.IsNullOrEmpty(n.ActionUrl) ? null : n.ActionUrl);
+                                        continue;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogWarning(ex,
+                                        "CrossNotificationPollerService: failed to reconstruct cross-machine message for user {UserId}.", user.Id);
+                                }
+                            }
 
                             await notificationService.CreateAsync(
                                 user.Id,

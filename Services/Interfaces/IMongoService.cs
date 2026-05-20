@@ -15,6 +15,9 @@ namespace taskflow.Services.Interfaces
         Task UpsertPresenceAsync(string email, string fullName, string avatarUrl);
         Task<List<UserSearchResultDto>> SearchUsersAsync(string query, string excludeEmail);
 
+        /// <summary>Exact email lookup in user_presence. Returns null when not found or MongoDB is offline.</summary>
+        Task<UserSearchResultDto?> GetUserPresenceByEmailAsync(string email);
+
         // ── Invitations ───────────────────────────────────────────────────────
         Task<TeamInvitation> SendInvitationAsync(
             string senderUserId, string senderEmail, string senderFullName, string senderAvatarUrl,
@@ -68,6 +71,17 @@ namespace taskflow.Services.Interfaces
         /// and atomically deletes them (deliver-once semantics).
         /// </summary>
         Task<List<CrossNotification>> PullAndDeleteCrossNotificationsAsync(string recipientEmail);
+
+        // ── Team announcements (read receipts) ────────────────────────────────
+
+        /// <summary>Saves a new team announcement and returns its generated MongoDB ID.</summary>
+        Task<string> SaveAnnouncementAsync(TeamAnnouncement announcement);
+
+        /// <summary>Marks the given recipient as having read the announcement.</summary>
+        Task MarkAnnouncementReadAsync(string announcementId, string recipientEmail);
+
+        /// <summary>Returns all announcements sent by <paramref name="senderEmail"/> for the given team.</summary>
+        Task<List<TeamAnnouncement>> GetTeamAnnouncementsAsync(string teamId, string senderEmail);
 
         // ── Dev / testing ─────────────────────────────────────────────────────
         Task ClearAllAsync();

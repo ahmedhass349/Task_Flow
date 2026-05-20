@@ -15,5 +15,6 @@ namespace taskflow.DTOs.Mongo
         public DateTime JoinedAt { get; set; }
         public bool IsActive { get; set; }
         public DateTime? LastSeen { get; set; }
+        public int? LocalUserId { get; set; }
     }
 }

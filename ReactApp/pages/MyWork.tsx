@@ -19,6 +19,7 @@ import Header from "../Components/Header";
 import AcademicTaskCard, { type TaskPayload } from "../Components/AcademicTaskCard";
 import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
 import { useTasks } from "../hooks/useTasks";
+import { useAuth } from "../context/AuthContext";
 
 import type { MyWorkTask, Priority, Status } from "../Components/MyWork/types";
 import DefaultView from "../Components/MyWork/DefaultView";
@@ -32,6 +33,10 @@ type ViewMode = "default" | "kanban" | "table" | "gantt" | "calendar";
 
 export default function MyWork() {
   const { tasks, isLoading, error, refetch, createTask, updateStatus, updateTask, deleteTask } = useTasks();
+  const { user } = useAuth();
+
+  type TaskSection = "my" | "assigned";
+  const [taskSection, setTaskSection] = useState<TaskSection>("my");
   
   const [activeTab, setActiveTab] = useState<Tab>("assigned");
   const [viewMode, setViewMode] = useState<ViewMode>("default");
@@ -50,9 +55,16 @@ export default function MyWork() {
     }) | null
   >(null);
 
+  // Split tasks by section
+  const sectionTasks = useMemo(() => {
+    if (taskSection === "my")
+      return tasks.filter(t => !t.assignedById || t.assignedById === user?.id);
+    return tasks.filter(t => t.assignedById != null && t.assignedById !== user?.id);
+  }, [tasks, taskSection, user?.id]);
+
   // Convert backend tasks to MyWorkTask format
   const convertedTasks: MyWorkTask[] = useMemo(() => {
-    return tasks.map(task => ({
+    return sectionTasks.map(task => ({
       id: task.id,
       title: task.title,
     project: task.projectName || "Unknown Project",
@@ -103,7 +115,7 @@ export default function MyWork() {
         refetch();
       }
     }));
-  }, [tasks, deleteTask, updateStatus, refetch]);
+  }, [sectionTasks, deleteTask, updateStatus, refetch]);
 
   // Helper functions
   function getDueOrder(dueDate: Date): number {
@@ -254,7 +266,7 @@ export default function MyWork() {
   const inReview = visibleTasks.filter((t) => t.status === "review").length;
 
   const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: "assigned",  label: "Assigned to me", count: convertedTasks.length },
+    { key: "assigned",  label: "All",            count: convertedTasks.length },
     { key: "today",     label: "Today",          count: convertedTasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed").length },
     { key: "upcoming",  label: "Upcoming",       count: convertedTasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed").length },
     { key: "completed", label: "Completed",      count: convertedTasks.filter((t) => t.status === "completed").length },
@@ -299,7 +311,7 @@ export default function MyWork() {
             {/* Page header */}
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">My Tasks</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Tasks</h1>
                 <p className="text-gray-600 mt-1">Prioritize and track everything currently on your plate</p>
               </div>
               <div className="flex items-center gap-2">
@@ -343,6 +355,23 @@ export default function MyWork() {
                     <p className="text-xs uppercase tracking-wide text-gray-500">In Review</p>
                     <p className="text-2xl font-bold text-amber-600 mt-2">{inReview}</p>
                   </div>
+                </div>
+
+                {/* Section switcher */}
+                <div className="flex gap-2">
+                  {(["my", "assigned"] as const).map(s => (
+                    <button
+                      key={s}
+                      onClick={() => setTaskSection(s)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        taskSection === s
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      {s === "my" ? "My Tasks" : "Assigned to me"}
+                    </button>
+                  ))}
                 </div>
 
                 {/* Tabs */}

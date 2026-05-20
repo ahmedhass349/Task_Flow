@@ -151,6 +151,12 @@ namespace taskflow.Data
                       .WithMany(u => u.AssignedTasks)
                       .HasForeignKey(t => t.AssigneeId)
                       .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(t => t.AssignedBy)
+                      .WithMany()
+                      .HasForeignKey(t => t.AssignedById)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             // ── TaskComment ───────────────────────────────────────────────────

@@ -27,6 +27,7 @@ namespace taskflow.Services
         private readonly IMongoCollection<MongoTeamMember>? _membersCollection;
         private readonly IMongoCollection<CrossNotification>? _crossNotificationsCollection;
         private readonly IMongoCollection<UserAccount>? _userAccountsCollection;
+        private readonly IMongoCollection<TeamAnnouncement>? _announcementsCollection;
         private readonly ILogger<MongoService> _logger;
         private IMongoClient? _client;
         private IMongoDatabase? _db;
@@ -61,6 +62,7 @@ namespace taskflow.Services
                 _membersCollection = db.GetCollection<MongoTeamMember>("team_members");
                 _crossNotificationsCollection = db.GetCollection<CrossNotification>("cross_notifications");
                 _userAccountsCollection = db.GetCollection<UserAccount>("user_accounts");
+                _announcementsCollection = db.GetCollection<TeamAnnouncement>("team_announcements");
 
                 // B-02: fire-and-forget index creation — never block the DI constructor thread.
                 _ = Task.Run(async () =>
@@ -1060,6 +1062,94 @@ namespace taskflow.Services
                 await _db!.GetCollection<MongoDB.Bson.BsonDocument>("team_invitations").DeleteManyAsync(empty);
             if (_membersCollection != null)
                 await _db!.GetCollection<MongoDB.Bson.BsonDocument>("team_members").DeleteManyAsync(empty);
+        }
+
+        // ── Presence exact-match lookup ────────────────────────────────────────
+
+        public async Task<UserSearchResultDto?> GetUserPresenceByEmailAsync(string email)
+        {
+            if (_presenceCollection == null || string.IsNullOrWhiteSpace(email)) return null;
+            try
+            {
+                var normalized = email.Trim().ToLowerInvariant();
+                var filter = Builders<UserPresence>.Filter.Eq(u => u.Email, normalized);
+                var presence = await _presenceCollection.Find(filter).FirstOrDefaultAsync();
+                if (presence == null) return null;
+                return new UserSearchResultDto
+                {
+                    Email = presence.Email,
+                    FullName = presence.FullName,
+                    AvatarUrl = presence.AvatarUrl,
+                    Username = presence.Username,
+                    LastSeen = presence.LastSeen,
+                    AcceptsInvitations = presence.AcceptsInvitations
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetUserPresenceByEmailAsync failed for {Email}", email);
+                return null;
+            }
+        }
+
+        // ── Team announcements ────────────────────────────────────────────────
+
+        public async Task<string> SaveAnnouncementAsync(TeamAnnouncement announcement)
+        {
+            if (_announcementsCollection == null) return string.Empty;
+            try
+            {
+                await _announcementsCollection.InsertOneAsync(announcement);
+                return announcement.Id ?? string.Empty;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "SaveAnnouncementAsync failed.");
+                return string.Empty;
+            }
+        }
+
+        public async Task MarkAnnouncementReadAsync(string announcementId, string recipientEmail)
+        {
+            if (_announcementsCollection == null || string.IsNullOrWhiteSpace(announcementId)) return;
+            try
+            {
+                var filter = Builders<TeamAnnouncement>.Filter.And(
+                    Builders<TeamAnnouncement>.Filter.Eq(a => a.Id, announcementId),
+                    Builders<TeamAnnouncement>.Filter.ElemMatch(a => a.Recipients,
+                        r => r.Email == recipientEmail && !r.HasRead));
+
+                var update = Builders<TeamAnnouncement>.Update
+                    .Set("recipients.$.hasRead", true)
+                    .Set("recipients.$.readAt", DateTime.UtcNow);
+
+                await _announcementsCollection.UpdateOneAsync(filter, update);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MarkAnnouncementReadAsync failed for announcement {Id}", announcementId);
+            }
+        }
+
+        public async Task<List<TeamAnnouncement>> GetTeamAnnouncementsAsync(string teamId, string senderEmail)
+        {
+            if (_announcementsCollection == null) return [];
+            try
+            {
+                var filter = Builders<TeamAnnouncement>.Filter.And(
+                    Builders<TeamAnnouncement>.Filter.Eq(a => a.TeamId, teamId),
+                    Builders<TeamAnnouncement>.Filter.Eq(a => a.SenderEmail, senderEmail));
+
+                return await _announcementsCollection.Find(filter)
+                    .SortByDescending(a => a.SentAt)
+                    .Limit(50)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetTeamAnnouncementsAsync failed for team {TeamId}", teamId);
+                return [];
+            }
         }
     }
 }

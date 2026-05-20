@@ -13,6 +13,7 @@ interface Task {
   description?: string;
   projectName?: string;
   assigneeName?: string;
+  assignedById?: number;
   priority: "Low" | "Medium" | "High";
   status: "Todo" | "InProgress" | "Review" | "Completed" | "Overdue";
   dueDate?: string;

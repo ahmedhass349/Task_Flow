@@ -58,6 +58,7 @@ export interface SharedMember {
   joinedAt: string;
   isActive: boolean;
   lastSeen?: string;
+  localUserId?: number;
 }
 
 export interface UserSearchResult {
@@ -67,6 +68,21 @@ export interface UserSearchResult {
   avatarUrl: string;
   lastSeen?: string;
   acceptsInvitations: boolean;
+}
+
+export interface AnnouncementRecipient {
+  email: string;
+  name: string;
+  hasRead: boolean;
+  readAt?: string;
+}
+
+export interface AnnouncementWithReceipts {
+  id: string;
+  title: string;
+  body: string;
+  sentAt: string;
+  recipients: AnnouncementRecipient[];
 }
 
 export interface SendInvitationRequest {
@@ -124,6 +140,8 @@ export interface UseTeamsReturn {
 
   // Announcements
   sendAnnouncement: (teamId: string, message: string, title?: string) => Promise<void>;
+  getAnnouncements: (teamId: string) => Promise<AnnouncementWithReceipts[]>;
+  markAnnouncementRead: (announcementId: string) => Promise<void>;
 }
 
 // â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -148,22 +166,28 @@ export const useTeams = (): UseTeamsReturn => {
 
   // â”€â”€ SQLite teams â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const fetchData = useCallback(async (silent = false) => {
+    if (!silent) {
+      setIsLoading(true);
+      setError(null);
+    }
     try {
       const data = await api.get<Team[]>("/api/teams");
       setTeams(data);
     } catch (err) {
-      setError(
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
+      if (!silent) {
+        setError(
+          err instanceof ApiRequestError
             ? err.message
-            : "Failed to load teams"
-      );
+            : err instanceof Error
+              ? err.message
+              : "Failed to load teams"
+        );
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -184,8 +208,10 @@ export const useTeams = (): UseTeamsReturn => {
 
   // â”€â”€ Invitations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  const fetchInvitations = useCallback(async () => {
-    setInvitationsLoading(true);
+  const fetchInvitations = useCallback(async (silent = false) => {
+    if (!silent) {
+      setInvitationsLoading(true);
+    }
     try {
       const [incoming, outgoing] = await Promise.all([
         api.get<Invitation[]>("/api/teams/invitations/incoming"),
@@ -196,7 +222,9 @@ export const useTeams = (): UseTeamsReturn => {
     } catch {
       // Invitation relay unavailable â€” keep empty lists, don't block UI
     } finally {
-      setInvitationsLoading(false);
+      if (!silent) {
+        setInvitationsLoading(false);
+      }
     }
   }, []);
 
@@ -205,15 +233,19 @@ export const useTeams = (): UseTeamsReturn => {
     fetchInvitations();
   }, [fetchInvitations]);
 
-  const fetchMembershipsByMe = useCallback(async () => {
-    setMembershipsByMeLoading(true);
+  const fetchMembershipsByMe = useCallback(async (silent = false) => {
+    if (!silent) {
+      setMembershipsByMeLoading(true);
+    }
     try {
       const members = await api.get<SharedMember[]>('/api/teams/members-shared/as-member');
       setMembershipsByMe(members ?? []);
     } catch {
       setMembershipsByMe([]);
     } finally {
-      setMembershipsByMeLoading(false);
+      if (!silent) {
+        setMembershipsByMeLoading(false);
+      }
     }
   }, []);
 
@@ -239,27 +271,35 @@ export const useTeams = (): UseTeamsReturn => {
 
   // â”€â”€ Shared members â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  const fetchSharedMembers = useCallback(async (teamId: string) => {
-    setSharedMembersLoading(true);
+  const fetchSharedMembers = useCallback(async (teamId: string, silent = false) => {
+    if (!silent) {
+      setSharedMembersLoading(true);
+    }
     try {
       const members = await api.get<SharedMember[]>(`/api/teams/${teamId}/members-shared`);
       setSharedMembers(members ?? []);
     } catch {
       setSharedMembers([]);
     } finally {
-      setSharedMembersLoading(false);
+      if (!silent) {
+        setSharedMembersLoading(false);
+      }
     }
   }, []);
 
-  const fetchAllSharedMembers = useCallback(async () => {
-    setAllSharedMembersLoading(true);
+  const fetchAllSharedMembers = useCallback(async (silent = false) => {
+    if (!silent) {
+      setAllSharedMembersLoading(true);
+    }
     try {
       const members = await api.get<SharedMember[]>(`/api/teams/members-shared/all`);
       setAllSharedMembers(members ?? []);
     } catch {
       setAllSharedMembers([]);
     } finally {
-      setAllSharedMembersLoading(false);
+      if (!silent) {
+        setAllSharedMembersLoading(false);
+      }
     }
   }, []);
 
@@ -320,6 +360,22 @@ export const useTeams = (): UseTeamsReturn => {
     await api.post(`/api/teams/${teamId}/announce`, { message, title });
   }, []);
 
+  const getAnnouncements = useCallback(async (teamId: string): Promise<AnnouncementWithReceipts[]> => {
+    try {
+      return await api.get<AnnouncementWithReceipts[]>(`/api/teams/${teamId}/announcements`);
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const markAnnouncementRead = useCallback(async (announcementId: string): Promise<void> => {
+    try {
+      await api.post(`/api/teams/announcements/${announcementId}/read`, {});
+    } catch {
+      // non-critical
+    }
+  }, []);
+
   const searchUsers = useCallback(async (query: string): Promise<UserSearchResult[]> => {
     if (!query.trim()) return [];
     try {
@@ -343,10 +399,10 @@ export const useTeams = (): UseTeamsReturn => {
   useEffect(() => {
     const refresh = () => {
       if (document.visibilityState === "visible") {
-        fetchData();
-        fetchInvitations();
-        fetchMembershipsByMe();
-        fetchAllSharedMembers();
+        fetchData(true);
+        fetchInvitations(true);
+        fetchMembershipsByMe(true);
+        fetchAllSharedMembers(true);
       }
     };
     document.addEventListener("visibilitychange", refresh);
@@ -364,9 +420,9 @@ export const useTeams = (): UseTeamsReturn => {
     const onNotification = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.type && TEAM_TYPES.includes((detail.type as string).toLowerCase())) {
-        fetchInvitations();
-        fetchMembershipsByMe();
-        fetchAllSharedMembers();
+        fetchInvitations(true);
+        fetchMembershipsByMe(true);
+        fetchAllSharedMembers(true);
       }
     };
     window.addEventListener("taskflow:notification-received", onNotification);
@@ -385,14 +441,14 @@ export const useTeams = (): UseTeamsReturn => {
     return () => clearInterval(heartbeatId);
   }, []);
 
-  // ── 15-second safety-net polling (fallback when SignalR events are missed) ─
+  // ── 30-second safety-net polling (fallback when SignalR events are missed) ─
 
   useEffect(() => {
     const id = setInterval(() => {
-      fetchInvitations();
-      fetchMembershipsByMe();
-      fetchAllSharedMembers();
-    }, 15_000);
+      fetchInvitations(true);
+      fetchMembershipsByMe(true);
+      fetchAllSharedMembers(true);
+    }, 30_000);
     return () => clearInterval(id);
   }, [fetchInvitations, fetchMembershipsByMe, fetchAllSharedMembers]);
 
@@ -428,6 +484,8 @@ export const useTeams = (): UseTeamsReturn => {
     leaveTeam,
     searchUsers,
     sendAnnouncement,
+    getAnnouncements,
+    markAnnouncementRead,
   };
 };
 

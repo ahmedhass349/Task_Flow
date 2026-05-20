@@ -740,5 +740,18 @@ namespace taskflow.Services
             QueueOutbox("DeleteUserData", new { userEmail });
             _connectivity.IncrementPending();
         }
+
+        // ── Announcement & presence helpers ──────────────────────────────────
+        public Task<UserSearchResultDto?> GetUserPresenceByEmailAsync(string email)
+            => _mongo.GetUserPresenceByEmailAsync(email);
+
+        public Task<string> SaveAnnouncementAsync(TeamAnnouncement announcement)
+            => _mongo.SaveAnnouncementAsync(announcement);
+
+        public Task MarkAnnouncementReadAsync(string announcementId, string recipientEmail)
+            => _mongo.MarkAnnouncementReadAsync(announcementId, recipientEmail);
+
+        public Task<List<TeamAnnouncement>> GetTeamAnnouncementsAsync(string teamId, string senderEmail)
+            => _mongo.GetTeamAnnouncementsAsync(teamId, senderEmail);
     }
 }

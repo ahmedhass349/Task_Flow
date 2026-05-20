@@ -75,7 +75,7 @@ export default function GanttView({ visibleTasks }: GanttViewProps) {
       {/* Header */}
       <div className="flex flex-col gap-2">
         <h2 className="text-2xl font-medium text-gray-900 leading-9">
-          My Tasks Timeline
+          Tasks Timeline
         </h2>
         <p className="text-base text-gray-500 leading-6">
           10-Week Rolling Forward View

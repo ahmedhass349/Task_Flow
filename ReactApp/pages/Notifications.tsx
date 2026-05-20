@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Search, ChevronDown, Lightbulb, Bell, Check, AlertCircle, Info, Eye } from "lucide-react";
+import { Search, ChevronDown, Lightbulb, Bell, Check, AlertCircle, Info, Eye, Megaphone } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
@@ -52,6 +52,8 @@ export default function Notifications() {
             return <AlertCircle className="w-4 h-4" />;
           case "ReminderFired":
             return <Bell className="w-4 h-4" />;
+          case "SystemAnnouncement":
+            return <Megaphone className="w-4 h-4" />;
           default:
             return <Info className="w-4 h-4" />;
         }
