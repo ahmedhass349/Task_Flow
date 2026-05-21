@@ -67,6 +67,30 @@ namespace taskflow.Controllers.Api
         }
 
         /// <summary>
+        /// Retrieves tasks assigned to a member identified by email (cross-machine support).
+        /// </summary>
+        [HttpGet("member-email")]
+        public async Task<IActionResult> GetTasksByMemberEmail([FromQuery] string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest(ApiResponse<object>.Fail("email is required."));
+            var tasks = await _taskService.GetTasksByMemberEmailAsync(email);
+            return Ok(ApiResponse<IEnumerable<TaskDto>>.Ok(tasks));
+        }
+
+        /// <summary>
+        /// Returns computed performance metrics for a member identified by email.
+        /// </summary>
+        [HttpGet("member-metrics")]
+        public async Task<IActionResult> GetMemberMetrics([FromQuery] string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest(ApiResponse<object>.Fail("email is required."));
+            var metrics = await _taskService.GetMemberMetricsAsync(email);
+            return Ok(ApiResponse<MemberMetricsDto>.Ok(metrics));
+        }
+
+        /// <summary>
         /// Retrieves a single task by its identifier.
         /// </summary>
         [HttpGet("{id}")]

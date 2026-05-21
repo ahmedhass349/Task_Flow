@@ -28,8 +28,9 @@ namespace taskflow.Services
         private readonly INotificationService _notificationService;
         private readonly IReminderService _reminderService;
         private readonly IMirrorService _mirror;
+        private readonly IUserRepository _userRepository;
 
-        public TaskService(ITaskRepository taskRepository, IMapper mapper, ILogger<TaskService> logger, INotificationService notificationService, IReminderService reminderService, IMirrorService mirror)
+        public TaskService(ITaskRepository taskRepository, IMapper mapper, ILogger<TaskService> logger, INotificationService notificationService, IReminderService reminderService, IMirrorService mirror, IUserRepository userRepository)
         {
             _taskRepository = taskRepository;
             _mapper = mapper;
@@ -37,6 +38,7 @@ namespace taskflow.Services
             _notificationService = notificationService;
             _reminderService = reminderService;
             _mirror = mirror;
+            _userRepository = userRepository;
         }
 
         public async Task<IEnumerable<TaskDto>> GetTasksAsync(int userId, TaskFilterRequest filter)
@@ -107,6 +109,46 @@ namespace taskflow.Services
                 .ToListAsync();
 
             return _mapper.Map<IEnumerable<TaskDto>>(tasks);
+        }
+
+        public async Task<IEnumerable<TaskDto>> GetTasksByMemberEmailAsync(string email)
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user == null) return Enumerable.Empty<TaskDto>();
+            return await GetTasksByMemberIdAsync(user.Id);
+        }
+
+        public async Task<MemberMetricsDto> GetMemberMetricsAsync(string email)
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user == null) return new MemberMetricsDto();
+
+            var tasks = await _taskRepository.Query()
+                .Where(t => t.AssigneeId == user.Id)
+                .ToListAsync();
+
+            var total = tasks.Count;
+            var completed = tasks.Count(t => t.Status == TaskStatus.Completed);
+            var inProgress = tasks.Count(t => t.Status == TaskStatus.InProgress);
+            var todo = tasks.Count(t => t.Status == TaskStatus.Todo);
+            var review = tasks.Count(t => t.Status == TaskStatus.Review);
+            var overdue = tasks.Count(t =>
+                t.Status == TaskStatus.Overdue ||
+                (t.DueDate.HasValue && t.DueDate.Value < DateTime.UtcNow && t.Status != TaskStatus.Completed));
+
+            return new MemberMetricsDto
+            {
+                Total = total,
+                Completed = completed,
+                InProgress = inProgress,
+                Todo = todo,
+                Review = review,
+                Overdue = overdue,
+                High = tasks.Count(t => t.Priority == TaskPriority.High),
+                Medium = tasks.Count(t => t.Priority == TaskPriority.Medium),
+                Low = tasks.Count(t => t.Priority == TaskPriority.Low),
+                CompletionRatePct = total > 0 ? (int)Math.Round((double)completed / total * 100) : 0
+            };
         }
 
         public async Task<TaskDto> GetTaskByIdAsync(int userId, int taskId)

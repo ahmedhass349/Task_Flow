@@ -18,6 +18,7 @@ import {
   Megaphone,
   History,
   ClipboardList,
+  BarChart2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "../Components/Sidebar";
@@ -593,11 +594,12 @@ interface SharedMemberCardProps {
   member: SharedMember;
   onRemove: (email: string) => Promise<void>;
   onAssign?: () => void;
+  onMetrics?: () => void;
   onClick?: () => void;
   showTeam?: boolean;
 }
 
-function SharedMemberCard({ member, onRemove, onAssign, onClick, showTeam }: SharedMemberCardProps) {
+function SharedMemberCard({ member, onRemove, onAssign, onMetrics, onClick, showTeam }: SharedMemberCardProps) {
   const [busy, setBusy] = useState(false);
   return (
     <div
@@ -636,6 +638,16 @@ function SharedMemberCard({ member, onRemove, onAssign, onClick, showTeam }: Sha
         </p>
       </div>
       <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+        {onMetrics && (
+          <button
+            onClick={onMetrics}
+            aria-label="View performance metrics"
+            title="View metrics"
+            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            <BarChart2 className="size-4" />
+          </button>
+        )}
         {onAssign && (
           <button
             onClick={onAssign}
@@ -898,6 +910,124 @@ function AnnouncementHistoryModal({ teamId, teamName, onClose, getAnnouncements 
   );
 }
 
+// ── Member Metrics Popup ──────────────────────────────────────────────────
+
+interface MemberMetrics {
+  total: number;
+  completed: number;
+  inProgress: number;
+  todo: number;
+  review: number;
+  overdue: number;
+  high: number;
+  medium: number;
+  low: number;
+  completionRatePct: number;
+}
+
+interface MemberMetricsPopupProps {
+  member: SharedMember;
+  onClose: () => void;
+}
+
+function MemberMetricsPopup({ member, onClose }: MemberMetricsPopupProps) {
+  const [metrics, setMetrics] = useState<MemberMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get<MemberMetrics>(`/api/tasks/member-metrics?email=${encodeURIComponent(member.userEmail)}`)
+      .then(data => setMetrics(data))
+      .catch(() => setMetrics(null))
+      .finally(() => setLoading(false));
+  }, [member.userEmail]);
+
+  const bar = (value: number, max: number, color: string) => (
+    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div
+        className={`h-full ${color} rounded-full transition-all`}
+        style={{ width: max > 0 ? `${Math.round((value / max) * 100)}%` : "0%" }}
+      />
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <BarChart2 className="size-5 text-blue-600" />
+            <h2 className="text-lg font-bold text-gray-900">Performance</h2>
+          </div>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <X className="size-5" />
+          </button>
+        </div>
+        <div className="flex items-center gap-3 mb-5">
+          <div className={`${avatarColor(member.userEmail)} size-10 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>
+            {getInitials(member.userFullName || member.userEmail)}
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-gray-900 truncate">{member.userFullName || member.userEmail}</p>
+            <p className="text-xs text-gray-500 truncate">{member.userEmail}</p>
+          </div>
+        </div>
+        {loading ? (
+          <div className="flex items-center justify-center h-32">
+            <span className="size-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+          </div>
+        ) : metrics == null ? (
+          <div className="text-center text-sm text-gray-400 py-8">Could not load metrics</div>
+        ) : (
+          <div className="space-y-5">
+            {/* Completion rate hero */}
+            <div className="bg-gray-50 rounded-xl p-4 text-center">
+              <p className="text-4xl font-bold text-gray-900">{metrics.completionRatePct}%</p>
+              <p className="text-xs text-gray-500 mt-1">Completion rate · {metrics.total} total task{metrics.total !== 1 ? "s" : ""}</p>
+              <div className="mt-3">{bar(metrics.completed, metrics.total, "bg-green-500")}</div>
+            </div>
+            {/* Status breakdown */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">By Status</p>
+              <div className="space-y-2">
+                {[
+                  { label: "Completed",   value: metrics.completed,  color: "bg-green-500",  text: "text-green-600"  },
+                  { label: "In Progress", value: metrics.inProgress, color: "bg-orange-400", text: "text-orange-500" },
+                  { label: "Review",      value: metrics.review,     color: "bg-purple-400", text: "text-purple-600" },
+                  { label: "To Do",       value: metrics.todo,       color: "bg-gray-400",   text: "text-gray-500"  },
+                  { label: "Overdue",     value: metrics.overdue,    color: "bg-red-500",    text: "text-red-600"   },
+                ].map(({ label, value, color, text }) => (
+                  <div key={label} className="flex items-center gap-3">
+                    <span className={`text-xs font-medium ${text} w-20 flex-shrink-0`}>{label}</span>
+                    <div className="flex-1">{bar(value, metrics.total, color)}</div>
+                    <span className="text-xs font-bold text-gray-700 w-6 text-right">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Priority breakdown */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">By Priority</p>
+              <div className="space-y-2">
+                {[
+                  { label: "High",   value: metrics.high,   color: "bg-red-400",    text: "text-red-500"    },
+                  { label: "Medium", value: metrics.medium, color: "bg-orange-300", text: "text-orange-400" },
+                  { label: "Low",    value: metrics.low,    color: "bg-gray-300",   text: "text-gray-400"   },
+                ].map(({ label, value, color, text }) => (
+                  <div key={label} className="flex items-center gap-3">
+                    <span className={`text-xs font-medium ${text} w-20 flex-shrink-0`}>{label}</span>
+                    <div className="flex-1">{bar(value, metrics.total, color)}</div>
+                    <span className="text-xs font-bold text-gray-700 w-6 text-right">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Team Member Dto (for metrics & assignment) ────────────────────────────
 
 interface LocalTeamMember {
@@ -918,20 +1048,25 @@ interface MemberInfoModalProps {
 }
 
 function MemberInfoModal({ member, localData, onClose, onAssign }: MemberInfoModalProps) {
-  const [tasks, setTasks] = useState<{ id: number; title: string; status: string; priority: string; dueDate?: string; projectName: string }[]>([]);
+  type TaskRow = { id: number; title: string; status: string; priority: string; dueDate?: string; projectName: string };
+  const [tasks, setTasks] = useState<TaskRow[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
 
   useEffect(() => {
-    if (!localData?.userId) return;
     setTasksLoading(true);
-    api.get<{ id: number; title: string; status: string; priority: string; dueDate?: string; projectName: string }[]>(`/api/tasks/member/${localData.userId}`)
+    const url = member.localUserId != null
+      ? `/api/tasks/member/${member.localUserId}`
+      : `/api/tasks/member-email?email=${encodeURIComponent(member.userEmail)}`;
+    api.get<TaskRow[]>(url)
       .then(data => setTasks(Array.isArray(data) ? data : []))
       .catch(() => setTasks([]))
       .finally(() => setTasksLoading(false));
-  }, [localData?.userId]);
+  }, [member.localUserId, member.userEmail]);
 
-  const total = (localData?.tasksCompleted ?? 0) + (localData?.tasksInProgress ?? 0);
-  const pct = total > 0 ? Math.round(((localData?.tasksCompleted ?? 0) / total) * 100) : 0;
+  const completed = tasks.filter(t => t.status === "Completed").length;
+  const inProgress = tasks.filter(t => t.status === "InProgress").length;
+  const total = tasks.length;
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   const statusBadge = (status: string) => {
     if (status === "Completed") return "bg-green-100 text-green-700";
@@ -974,57 +1109,51 @@ function MemberInfoModal({ member, localData, onClose, onAssign }: MemberInfoMod
           </div>
 
           {/* Stats */}
-          {localData ? (
-            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Task Completion</span>
-                <span className={`text-sm font-bold ${pct >= 70 ? "text-green-600" : pct >= 40 ? "text-orange-500" : "text-red-500"}`}>{pct}%</span>
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
-              </div>
-              <div className="flex gap-4 text-xs">
-                <span className="flex items-center gap-1 text-green-600"><CheckCircle className="size-3" /> {localData.tasksCompleted} completed</span>
-                <span className="flex items-center gap-1 text-orange-500"><Clock className="size-3" /> {localData.tasksInProgress} in progress</span>
-              </div>
+          <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Task Completion</span>
+              <span className={`text-sm font-bold ${pct >= 70 ? "text-green-600" : pct >= 40 ? "text-orange-500" : "text-red-500"}`}>{pct}%</span>
             </div>
-          ) : (
-            <div className="bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-400">No task data available</div>
-          )}
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            <div className="flex gap-4 text-xs">
+              <span className="flex items-center gap-1 text-green-600"><CheckCircle className="size-3" /> {completed} completed</span>
+              <span className="flex items-center gap-1 text-orange-500"><Clock className="size-3" /> {inProgress} in progress</span>
+            </div>
+          </div>
 
           {/* Assigned tasks list */}
-          {localData?.userId && (
-            <div>
-              <p className="text-sm font-semibold text-gray-700 mb-2">Assigned Tasks</p>
-              {tasksLoading ? (
-                <div className="text-center text-sm text-gray-400 py-4">Loading tasks…</div>
-              ) : tasks.length === 0 ? (
-                <div className="text-center text-sm text-gray-400 py-4">No tasks assigned</div>
-              ) : (
-                <div className="space-y-2">
-                  {tasks.map(task => (
-                    <div key={task.id} className="flex items-start gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{task.title}</p>
-                        {task.projectName && (
-                          <p className="text-xs text-gray-400 truncate">{task.projectName}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {task.dueDate && (
-                          <span className="text-xs text-gray-400">
-                            {new Date(task.dueDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                          </span>
-                        )}
-                        <span className={`text-xs font-medium ${priorityBadge(task.priority)}`}>{task.priority}</span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${statusBadge(task.status)}`}>{statusLabel(task.status)}</span>
-                      </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-700 mb-2">Assigned Tasks</p>
+            {tasksLoading ? (
+              <div className="text-center text-sm text-gray-400 py-4">Loading tasks…</div>
+            ) : tasks.length === 0 ? (
+              <div className="text-center text-sm text-gray-400 py-4">{member.localUserId == null ? "Tasks on another machine aren't visible here" : "No tasks assigned"}</div>
+            ) : (
+              <div className="space-y-2">
+                {tasks.map(task => (
+                  <div key={task.id} className="flex items-start gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{task.title}</p>
+                      {task.projectName && (
+                        <p className="text-xs text-gray-400 truncate">{task.projectName}</p>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {task.dueDate && (
+                        <span className="text-xs text-gray-400">
+                          {new Date(task.dueDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        </span>
+                      )}
+                      <span className={`text-xs font-medium ${priorityBadge(task.priority)}`}>{task.priority}</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${statusBadge(task.status)}`}>{statusLabel(task.status)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Metadata */}
           <div className="space-y-2 text-sm">
@@ -1116,6 +1245,8 @@ export default function Teams() {
 
   // Feature 5: Member info popup
   const [selectedMemberInfo, setSelectedMemberInfo] = useState<SharedMember | null>(null);
+  // Feature 6: Member metrics popup
+  const [selectedMemberMetrics, setSelectedMemberMetrics] = useState<SharedMember | null>(null);
 
   // Load local SQLite members (for task assignment + metrics) when a team is selected
   const loadLocalMembers = useCallback(async (teamId: string) => {
@@ -1457,6 +1588,7 @@ export default function Teams() {
                                     key={m.id}
                                     member={m}
                                     onRemove={handleRemoveSharedMember}
+                                    onMetrics={m.userEmail !== user?.email ? () => setSelectedMemberMetrics(m) : undefined}
                                     onAssign={m.userEmail !== user?.email ? () => {
                                       setSelectedAssigneeId(m.localUserId ?? null);
                                       setSelectedAssigneeName(m.userFullName || m.userEmail);
@@ -1619,6 +1751,13 @@ export default function Teams() {
           teamName={teams.find(t => t.id === selectedTeamId)?.name ?? "your team"}
           onClose={() => setShowAnnouncementHistory(false)}
           getAnnouncements={getAnnouncements}
+        />
+      )}
+
+      {selectedMemberMetrics && (
+        <MemberMetricsPopup
+          member={selectedMemberMetrics}
+          onClose={() => setSelectedMemberMetrics(null)}
         />
       )}
 

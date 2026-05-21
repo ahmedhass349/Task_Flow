@@ -8,6 +8,8 @@ namespace taskflow.Services.Interfaces
     {
         Task<IEnumerable<TaskDto>> GetTasksAsync(int userId, TaskFilterRequest filter);
         Task<IEnumerable<TaskDto>> GetTasksByMemberIdAsync(int memberId);
+        Task<IEnumerable<TaskDto>> GetTasksByMemberEmailAsync(string email);
+        Task<MemberMetricsDto> GetMemberMetricsAsync(string email);
         Task<TaskDto> GetTaskByIdAsync(int userId, int taskId);
         Task<TaskDto> CreateTaskAsync(int userId, CreateTaskRequest request);
         Task<TaskDto> UpdateTaskAsync(int userId, int taskId, UpdateTaskRequest request);
