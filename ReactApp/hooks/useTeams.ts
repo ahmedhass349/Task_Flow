@@ -8,12 +8,13 @@ import { api, ApiRequestError } from "../services/api";
 
 // â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+// FILE: ReactApp/hooks/useTeams.ts  PHASE: 1  CHANGES: TeamMember.role union "Admin" → "Leader"
 export interface TeamMember {
   id: string;
   userId: string;
   name: string;
   email: string;
-  role: "Member" | "Admin";
+  role: "Member" | "Leader";
   status: "active" | "invited" | "inactive";
   avatarUrl?: string;
 }
@@ -67,6 +68,33 @@ export interface UserSearchResult {
   avatarUrl: string;
   lastSeen?: string;
   acceptsInvitations: boolean;
+}
+
+// FILE: ReactApp/hooks/useTeams.ts  PHASE: 2  CHANGES: Persistent announcement types + callbacks
+export interface Announcement {
+  id: string;
+  teamId: string;
+  teamName: string;
+  senderEmail: string;
+  senderName: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  readBy: string[];
+}
+
+// FILE: ReactApp/hooks/useTeams.ts  PHASE: 5  CHANGES: MemberProgressStat type for leader progress dashboard
+export interface MemberProgressStat {
+  userId: number;
+  userName: string;
+  initials: string;
+  email: string;
+  avatarUrl?: string;
+  role: string;
+  tasksTodo: number;
+  tasksInProgress: number;
+  tasksCompleted: number;
+  tasksOverdue: number;
 }
 
 export interface SendInvitationRequest {
@@ -124,6 +152,14 @@ export interface UseTeamsReturn {
 
   // Announcements
   sendAnnouncement: (teamId: string, message: string, title?: string) => Promise<void>;
+  announcements: Announcement[];
+  announcementsLoading: boolean;
+  fetchAnnouncements: (teamId: string) => Promise<void>;
+  markAnnouncementRead: (teamId: string, announcementId: string) => Promise<void>;
+  // PHASE 5: leader progress dashboard
+  memberProgress: MemberProgressStat[];
+  memberProgressLoading: boolean;
+  fetchMemberProgress: (teamId: string) => Promise<void>;
 }
 
 // â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -310,6 +346,54 @@ export const useTeams = (): UseTeamsReturn => {
   // â”€â”€ User search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
+  // ── Announcements ────────────────────────────────────────────────────────
+
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+
+  // PHASE 5: member progress stats
+  const [memberProgress, setMemberProgress] = useState<MemberProgressStat[]>([]);
+  const [memberProgressLoading, setMemberProgressLoading] = useState(false);
+
+  const fetchAnnouncementsInner = useCallback(async (teamId: string) => {
+    if (!teamId) return;
+    setAnnouncementsLoading(true);
+    try {
+      const data = await api.get<Announcement[]>(`/api/teams/${teamId}/announcements`);
+      setAnnouncements(data ?? []);
+    } catch {
+      // silently ignore — announcements are non-critical
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  }, []);
+
+  const fetchAnnouncements = useCallback(async (teamId: string) => {
+    await fetchAnnouncementsInner(teamId);
+  }, [fetchAnnouncementsInner]);
+
+  const markAnnouncementRead = useCallback(async (teamId: string, announcementId: string): Promise<void> => {
+    try {
+      await api.post(`/api/teams/${teamId}/announcements/${announcementId}/read`, {});
+    } catch {
+      // non-critical — silently swallow
+    }
+  }, []);
+
+  const fetchMemberProgress = useCallback(async (teamId: string) => {
+    if (!teamId) return;
+    setMemberProgressLoading(true);
+    try {
+      // GET /api/teams/{id}/members returns TeamMemberDto[] with all four task counts
+      const data = await api.get<MemberProgressStat[]>(`/api/teams/${teamId}/members`);
+      setMemberProgress(data ?? []);
+    } catch {
+      setMemberProgress([]);
+    } finally {
+      setMemberProgressLoading(false);
+    }
+  }, []);
+
   const leaveTeam = useCallback(async (teamId) => {
     if (!teamId) return;
     await api.delete(`/api/teams/${teamId}/membership`);
@@ -318,7 +402,9 @@ export const useTeams = (): UseTeamsReturn => {
 
   const sendAnnouncement = useCallback(async (teamId: string, message: string, title?: string): Promise<void> => {
     await api.post(`/api/teams/${teamId}/announce`, { message, title });
-  }, []);
+    // PHASE 2: refresh announcement list after sending
+    await fetchAnnouncementsInner(teamId);
+  }, [fetchAnnouncementsInner]);
 
   const searchUsers = useCallback(async (query: string): Promise<UserSearchResult[]> => {
     if (!query.trim()) return [];
@@ -428,6 +514,13 @@ export const useTeams = (): UseTeamsReturn => {
     leaveTeam,
     searchUsers,
     sendAnnouncement,
+    announcements,
+    announcementsLoading,
+    fetchAnnouncements,
+    markAnnouncementRead,
+    memberProgress,
+    memberProgressLoading,
+    fetchMemberProgress,
   };
 };
 

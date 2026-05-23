@@ -1,4 +1,12 @@
-// FILE: BackgroundServices/BulkSyncStartupService.cs  PHASE: 2  CHANGE: uses SyncId as _id for ISyncableEntity collections; added ToBsonDocumentSyncable helper
+// FILE: BackgroundServices/BulkSyncStartupService.cs
+// PHASE: 7  CHANGE: Reversed sync direction — now pulls MongoDB → SQLite (MongoDB is the source
+//          of truth). On startup, ISyncableEntity collections (projects, tasks, notifications,
+//          reminders) are reconciled against MongoDB: records absent from MongoDB are deleted
+//          from SQLite, newer MongoDB records are applied locally, and records present in MongoDB
+//          but not yet local are inserted. Non-ISyncableEntity collections (messages, teams, etc.)
+//          are device-local and are no longer pushed or pulled during bulk sync.
+// PHASE: 6  CHANGE: P6-B1 — late-start recovery + ConnectivityChanged subscription.
+// PHASE: 2  CHANGE: ISyncableEntity SyncId support.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,8 +27,9 @@ using taskflow.Services.Interfaces;
 namespace taskflow.BackgroundServices
 {
     /// <summary>
-    /// Runs once at startup: waits for MongoDB to come online, then bulk-upserts
-    /// all existing SQLite entities so every collection is created and populated.
+    /// Runs once at startup: waits for MongoDB to come online, then pulls all
+    /// ISyncableEntity collections from MongoDB into SQLite (MongoDB is the source of truth).
+    /// Deletions made directly in MongoDB are honoured — absent records are removed from SQLite.
     /// </summary>
     public class BulkSyncStartupService : BackgroundService
     {
@@ -28,6 +37,9 @@ namespace taskflow.BackgroundServices
         private readonly IConnectivityService _connectivity;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<BulkSyncStartupService> _logger;
+
+        // P6-B1: ensures the full bulk sync runs exactly once — at startup or on first reconnect.
+        private int _hasSynced = 0;
 
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
@@ -49,65 +61,77 @@ namespace taskflow.BackgroundServices
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // Wait up to 90 s for MongoDB to be confirmed online (ping runs every 30 s by default).
-            for (int i = 0; i < 18 && !stoppingToken.IsCancellationRequested; i++)
-            {
-                if (_connectivity.IsEffectivelyOnline) break;
-                await Task.Delay(5_000, stoppingToken).ContinueWith(_ => { });
-            }
+            // P6-B1: subscribe to ConnectivityChanged for late-start recovery.
+            // If MongoDB is still unreachable after the 90-second wait below,
+            // RunBulkSyncOnceAsync will be triggered the first time it comes online.
+            _connectivity.ConnectivityChanged += OnConnectivityChanged;
 
-            if (!_connectivity.IsEffectivelyOnline)
+            try
             {
-                _logger.LogWarning("BulkSyncStartupService: MongoDB not reachable on startup – skipping bulk sync.");
-                return;
-            }
+                // Wait up to 90 s for MongoDB to be confirmed online (ping runs every 10 s).
+                for (int i = 0; i < 18 && !stoppingToken.IsCancellationRequested; i++)
+                {
+                    if (_connectivity.IsEffectivelyOnline) break;
+                    await Task.Delay(5_000, stoppingToken).ContinueWith(_ => { });
+                }
 
-            _logger.LogInformation("BulkSyncStartupService: starting bulk sync of all SQLite entities to MongoDB...");
+                if (_connectivity.IsEffectivelyOnline)
+                    await RunBulkSyncOnceAsync(stoppingToken);
+                else
+                    _logger.LogWarning(
+                        "BulkSyncStartupService: MongoDB not reachable on startup — " +
+                        "bulk sync deferred until first reconnect.");
+
+                // Keep the service alive so the ConnectivityChanged subscription stays active.
+                await Task.Delay(Timeout.Infinite, stoppingToken).ContinueWith(_ => { });
+            }
+            finally
+            {
+                _connectivity.ConnectivityChanged -= OnConnectivityChanged;
+            }
+        }
+
+        // P6-B1: late-start recovery — fires bulk sync the first time MongoDB comes online
+        // after the app started offline.  Subsequent reconnects are handled by the outbox.
+        private void OnConnectivityChanged(bool isOnline)
+        {
+            if (!isOnline) return;
+            _ = Task.Run(async () =>
+            {
+                try   { await RunBulkSyncOnceAsync(CancellationToken.None); }
+                catch (Exception ex)
+                { _logger.LogWarning(ex, "BulkSyncStartupService: late-start recovery failed."); }
+            });
+        }
+
+        // Runs the full pull sync exactly once (guarded by _hasSynced flag).
+        // MongoDB is the source of truth; SQLite is a local cache populated FROM MongoDB.
+        private async Task RunBulkSyncOnceAsync(CancellationToken stoppingToken)
+        {
+            // Atomically flip 0 → 1; if the exchange returns 1 it was already set, skip.
+            if (Interlocked.CompareExchange(ref _hasSynced, 1, 0) != 0) return;
+
+            _logger.LogInformation("BulkSyncStartupService: starting pull sync (MongoDB → SQLite)...");
 
             try
             {
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                await SyncAsync(db.AppUsers.AsNoTracking(), "users",
-                    u => u.Id, u => u, stoppingToken);
+                // Pull ISyncableEntity collections from MongoDB into SQLite.
+                // MongoDB deletions are respected: records absent from MongoDB are removed from SQLite.
+                await PullSyncableAsync<Project>(db, db.Projects, "projects", stoppingToken);
+                await PullSyncableAsync<TaskItem>(db, db.TaskItems, "tasks", stoppingToken);
+                await PullSyncableAsync<Notification>(db, db.Notifications, "notifications", stoppingToken);
+                await PullSyncableAsync<Reminder>(db, db.Reminders, "reminders", stoppingToken);
 
-                await SyncSyncableAsync(db.Projects.AsNoTracking(), "projects",
-                    p => p.Id, stoppingToken);
-
-                await SyncSyncableAsync(db.TaskItems.AsNoTracking(), "tasks",
-                    t => t.Id, stoppingToken);
-
-                await SyncAsync(db.TaskComments.AsNoTracking(), "task_comments",
-                    c => c.Id, c => c, stoppingToken);
-
-                await SyncAsync(db.Teams.AsNoTracking(), "teams",
-                    t => t.Id, t => t, stoppingToken);
-
-                await SyncAsync(db.Messages.AsNoTracking(), "messages",
-                    m => m.Id, m => m, stoppingToken);
-
-                await SyncSyncableAsync(db.Notifications.AsNoTracking(), "notifications",
-                    n => n.Id, stoppingToken);
-
-                await SyncSyncableAsync(db.Reminders.AsNoTracking(), "reminders",
-                    r => r.Id, stoppingToken);
-
-                await SyncAsync(db.CalendarEvents.AsNoTracking(), "calendar_events",
-                    e => e.Id, e => e, stoppingToken);
-
-                await SyncAsync(db.ChatbotConversations.AsNoTracking(), "chatbot_conversations",
-                    c => c.Id, c => c, stoppingToken);
-
-                await SyncAsync(db.ChatbotMessages.AsNoTracking(), "chatbot_messages",
-                    m => m.Id, m => m, stoppingToken);
-
-                // Composite-PK entities: use synthetic id = parentId * 1_000_000 + userId
-                await SyncAsync(db.ProjectMembers.AsNoTracking(), "project_members",
-                    pm => pm.ProjectId * 1_000_000 + pm.UserId, pm => pm, stoppingToken);
-
-                await SyncAsync(db.TeamMembers.AsNoTracking(), "team_member_records",
-                    tm => tm.TeamId * 1_000_000 + tm.UserId, tm => tm, stoppingToken);
+                // Reconcile AppUsers against user_accounts: if a user was backed up to MongoDB
+                // previously but their credential record no longer exists there (e.g. the account
+                // was deleted externally / via Atlas UI), remove the stale SQLite record so they
+                // cannot log in on this device with stale cached credentials.
+                // Must run BEFORE BackupUnbackedUsersAsync so that offline-registered users
+                // (IsBackedUpToMongo == false) are still protected by that flag.
+                await ReconcileUsersAsync(db, stoppingToken);
 
                 // Retry credential backups for users that registered while offline.
                 // Any AppUser where IsBackedUpToMongo is false means the BackupUserAccountAsync
@@ -115,11 +139,64 @@ namespace taskflow.BackgroundServices
                 // that we are confirmed online.
                 await BackupUnbackedUsersAsync(db, stoppingToken);
 
-                _logger.LogInformation("BulkSyncStartupService: bulk sync complete.");
+                _logger.LogInformation("BulkSyncStartupService: pull sync complete.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "BulkSyncStartupService: bulk sync failed.");
+                // P6-B1: reset the flag so the next reconnect can retry if the sync failed.
+                Interlocked.Exchange(ref _hasSynced, 0);
+                _logger.LogError(ex, "BulkSyncStartupService: pull sync failed.");
+            }
+        }
+
+        /// <summary>
+        /// Removes SQLite <see cref="AppUser"/> records that no longer have a matching entry in
+        /// MongoDB's <c>user_accounts</c> collection (the authoritative credential store).
+        /// This closes the "stale login" hole: if an account is deleted directly from MongoDB
+        /// (bypassing the in-app delete flow), the local copy is cleaned up here so the user
+        /// cannot continue to sign in on this device with cached credentials.
+        /// <para>
+        /// Only users whose <c>IsBackedUpToMongo</c> flag is <c>true</c> are candidates —
+        /// offline-registered users that have not been backed up yet are never removed.
+        /// </para>
+        /// </summary>
+        private async Task ReconcileUsersAsync(AppDbContext db, CancellationToken ct)
+        {
+            try
+            {
+                // Null → offline; skip rather than incorrectly purging everyone.
+                var accountDocs = await _mongo.GetAllDocumentsAsync("user_accounts", ct);
+                if (accountDocs == null) return;
+
+                var validEmails = new HashSet<string>(
+                    accountDocs
+                        .Where(d => d.Contains("email"))
+                        .Select(d => d["email"].AsString.Trim().ToLowerInvariant()),
+                    StringComparer.OrdinalIgnoreCase);
+
+                // Only consider users that have previously been backed up to MongoDB.
+                // IsBackedUpToMongo == false means the account was created while offline and
+                // hasn't been pushed yet — BackupUnbackedUsersAsync will handle that shortly.
+                var candidates = await db.AppUsers
+                    .Where(u => u.IsBackedUpToMongo)
+                    .ToListAsync(ct);
+
+                var toDelete = candidates
+                    .Where(u => !validEmails.Contains(u.Email.Trim().ToLowerInvariant()))
+                    .ToList();
+
+                if (toDelete.Count == 0) return;
+
+                _logger.LogInformation(
+                    "BulkSync: removing {N} user(s) whose credential backup no longer exists in MongoDB.",
+                    toDelete.Count);
+
+                db.AppUsers.RemoveRange(toDelete);
+                await db.SaveChangesAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "BulkSync: ReconcileUsersAsync failed");
             }
         }
 
@@ -171,122 +248,162 @@ namespace taskflow.BackgroundServices
             }
         }
 
-        private async Task SyncAsync<T>(
-            IQueryable<T> query,
+        private static readonly JsonSerializerOptions JsonOptsDeserialize = new()
+        {
+            PropertyNameCaseInsensitive = true,
+        };
+
+        /// <summary>
+        /// Reconciles one SQLite collection against its MongoDB counterpart:
+        /// <list type="bullet">
+        ///   <item>Deletes local records whose SyncId is absent from MongoDB (respects MongoDB deletions).</item>
+        ///   <item>Updates existing local records when MongoDB has a strictly newer UpdatedAt.</item>
+        ///   <item>Inserts records present in MongoDB but not yet in SQLite (cross-device pull).</item>
+        /// </list>
+        /// Skips without touching SQLite if MongoDB is unreachable.
+        /// </summary>
+        private async Task PullSyncableAsync<T>(
+            AppDbContext db,
+            DbSet<T> dbSet,
             string collectionName,
-            Func<T, int> idSelector,
-            Func<T, object> entitySelector,
-            CancellationToken ct) where T : class
+            CancellationToken ct)
+            where T : class, ISyncableEntity, new()
         {
             try
             {
-                var entities = await query.ToListAsync(ct);
-                int count = 0;
-                foreach (var entity in entities)
+                // null = unreachable/error; empty list = genuinely empty collection
+                var docs = await _mongo.GetAllDocumentsAsync(collectionName, ct);
+                if (docs == null)
+                {
+                    _logger.LogWarning(
+                        "PullSync: {Col} — MongoDB unreachable, skipping reconciliation",
+                        collectionName);
+                    return;
+                }
+
+                // Index MongoDB documents by their SyncId (_id field)
+                var mongoSyncIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var docBySyncId = new Dictionary<string, BsonDocument>(StringComparer.OrdinalIgnoreCase);
+                foreach (var doc in docs)
+                {
+                    if (!doc.Contains("_id") || doc["_id"].BsonType != BsonType.String) continue;
+                    var syncId = doc["_id"].AsString;
+                    if (!Guid.TryParse(syncId, out _)) continue; // ignore non-GUID _id values
+                    mongoSyncIds.Add(syncId);
+                    docBySyncId[syncId] = doc;
+                }
+
+                // Load all tracked SQLite entities for this collection
+                var sqliteEntities = await dbSet.ToListAsync(ct);
+                var sqliteBySyncId = sqliteEntities.ToDictionary(
+                    e => e.SyncId.ToString(), StringComparer.OrdinalIgnoreCase);
+
+                // 1. Delete SQLite records whose SyncId is absent from MongoDB
+                var toDelete = sqliteEntities
+                    .Where(e => e.SyncId != Guid.Empty && !mongoSyncIds.Contains(e.SyncId.ToString()))
+                    .ToList();
+                if (toDelete.Count > 0)
+                {
+                    dbSet.RemoveRange(toDelete);
+                    _logger.LogInformation(
+                        "PullSync: {Col} — removing {N} record(s) deleted from MongoDB",
+                        collectionName, toDelete.Count);
+                }
+
+                // 2. Update existing and insert new records
+                int updatedCount = 0, insertedCount = 0;
+                foreach (var (syncId, doc) in docBySyncId)
                 {
                     if (ct.IsCancellationRequested) break;
-                    int id = idSelector(entity);
-                    var doc = ToBsonDocument(entitySelector(entity), id);
-                    await _mongo.UpsertDocumentAsync(collectionName, id, doc);
-                    count++;
+
+                    if (sqliteBySyncId.TryGetValue(syncId, out var existing))
+                    {
+                        // Update only when MongoDB version is strictly newer
+                        var mongoUpdatedAt = doc.Contains("UpdatedAt")
+                            && doc["UpdatedAt"].BsonType == BsonType.DateTime
+                            ? doc["UpdatedAt"].ToUniversalTime()
+                            : DateTime.MinValue;
+                        if (mongoUpdatedAt <= existing.UpdatedAt) continue;
+
+                        var refreshed = BsonToEntityInstance<T>(doc, syncId, existing.Id); // Id from ISyncableEntity
+                        if (refreshed == null) continue;
+                        db.Entry(existing).CurrentValues.SetValues(refreshed);
+                        updatedCount++;
+                    }
+                    else
+                    {
+                        // Insert record present in MongoDB but not yet in local SQLite
+                        var entity = BsonToEntityInstance<T>(doc, syncId, 0);
+                        if (entity == null) continue;
+                        dbSet.Add(entity); // Id=0 already set; SQLite auto-assigns the PK
+                        insertedCount++;
+                    }
                 }
-                _logger.LogInformation("BulkSync: {Col} → {N} documents upserted", collectionName, count);
+
+                await db.SaveChangesAsync(ct);
+                _logger.LogInformation(
+                    "PullSync: {Col} — inserted {I}, updated {U}, deleted {D}",
+                    collectionName, insertedCount, updatedCount, toDelete.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "BulkSync: failed for collection {Col}", collectionName);
+                _logger.LogWarning(ex, "PullSync: failed for collection {Col}", collectionName);
             }
         }
 
-        /// <summary>Phase 2: syncs entities that implement ISyncableEntity using SyncId as MongoDB _id.</summary>
-        private async Task SyncSyncableAsync<T>(
-            IQueryable<T> query,
-            string collectionName,
-            Func<T, int> idSelector,
-            CancellationToken ct) where T : class, ISyncableEntity
+        /// <summary>
+        /// Reconstructs an <see cref="ISyncableEntity"/> instance from a BsonDocument that was
+        /// originally written by <see cref="MirrorService"/> (System.Text.Json → BsonDocument path).
+        /// </summary>
+        /// <param name="forceId">
+        /// Pass the existing SQLite int PK when updating; pass 0 for new inserts so SQLite
+        /// auto-assigns a fresh auto-increment value.
+        /// </param>
+        private static T? BsonToEntityInstance<T>(BsonDocument doc, string syncId, int forceId)
+            where T : class, ISyncableEntity, new()
         {
             try
             {
-                var entities = await query.ToListAsync(ct);
-                int count = 0;
-                foreach (var entity in entities)
+                var dict = new Dictionary<string, object?>();
+                dict["Id"] = forceId;
+                dict["SyncId"] = syncId;
+                foreach (var elem in doc)
                 {
-                    if (ct.IsCancellationRequested) break;
-                    int intId = idSelector(entity);
-                    var syncId = entity.SyncId == Guid.Empty ? Guid.NewGuid() : entity.SyncId;
-                    var doc = ToBsonDocumentSyncable(entity, syncId, intId);
-                    await _mongo.UpsertDocumentBySyncIdAsync(collectionName, syncId.ToString(), intId, doc);
-                    count++;
+                    if (elem.Name == "_id" || elem.Name == "intId") continue;
+                    dict[elem.Name] = BsonValueToObject(elem.Value);
                 }
-                _logger.LogInformation("BulkSync (SyncId): {Col} → {N} documents upserted", collectionName, count);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "BulkSync: failed for collection {Col}", collectionName);
-            }
-}
 
-        private static BsonDocument ToBsonDocument(object entity, int id)
-        {
-            try
-            {
-                var json = JsonSerializer.Serialize(entity, JsonOpts);
-                var bson = new BsonDocument { ["_id"] = id };
-                using var doc = JsonDocument.Parse(json);
-                foreach (var prop in doc.RootElement.EnumerateObject())
-                {
-                    if (prop.Name.Equals("id", StringComparison.OrdinalIgnoreCase)) continue;
-                    bson[prop.Name] = ToBsonValue(prop.Value);
-                }
-                return bson;
+                var json = JsonSerializer.Serialize(dict, JsonOpts);
+                var entity = JsonSerializer.Deserialize<T>(json, JsonOptsDeserialize);
+                if (entity == null) return null;
+
+                // Guard: ensure SyncId is always set even if deserialization yielded Guid.Empty
+                if (entity.SyncId == Guid.Empty)
+                    entity.SyncId = Guid.Parse(syncId);
+
+                return entity;
             }
             catch
             {
-                return new BsonDocument { ["_id"] = id };
+                return null;
             }
         }
 
-        /// <summary>Phase 2: serialises an ISyncableEntity with _id = syncId (string) and intId = int PK.</summary>
-        private static BsonDocument ToBsonDocumentSyncable(object entity, Guid syncId, int intId)
+        /// <summary>
+        /// Converts a <see cref="BsonValue"/> to a .NET object suitable for
+        /// <see cref="JsonSerializer.Serialize"/> / Deserialize round-trip.
+        /// </summary>
+        private static object? BsonValueToObject(BsonValue v) => v.BsonType switch
         {
-            try
-            {
-                var json = JsonSerializer.Serialize(entity, JsonOpts);
-                var bson = new BsonDocument { ["_id"] = syncId.ToString(), ["intId"] = intId };
-                using var doc = JsonDocument.Parse(json);
-                foreach (var prop in doc.RootElement.EnumerateObject())
-                {
-                    if (prop.Name.Equals("id", StringComparison.OrdinalIgnoreCase)) continue;
-                    bson[prop.Name] = ToBsonValue(prop.Value);
-                }
-                return bson;
-            }
-            catch
-            {
-                return new BsonDocument { ["_id"] = syncId.ToString(), ["intId"] = intId };
-            }
-}
-
-        private static BsonValue ToBsonValue(JsonElement el)
-        {
-            return el.ValueKind switch
-            {
-                JsonValueKind.Null or JsonValueKind.Undefined => BsonNull.Value,
-                JsonValueKind.True => (BsonValue)true,
-                JsonValueKind.False => (BsonValue)false,
-                JsonValueKind.Number =>
-                    el.TryGetInt64(out var l) ? (BsonValue)(long)l :
-                    el.TryGetDouble(out var d) ? (BsonValue)(double)d : BsonNull.Value,
-                JsonValueKind.String =>
-                    DateTime.TryParse(el.GetString(),
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        System.Globalization.DateTimeStyles.RoundtripKind, out var dt)
-                        ? (BsonValue)dt
-                        : (BsonValue)(el.GetString() ?? string.Empty),
-                JsonValueKind.Array => new BsonArray(),
-                JsonValueKind.Object => new BsonDocument(),
-                _ => BsonNull.Value,
-            };
-        }
+            BsonType.Int32 => (object?)v.AsInt32,
+            BsonType.Int64 => (object?)(long)v.AsInt64,
+            BsonType.Double => (object?)v.AsDouble,
+            BsonType.String => (object?)v.AsString,
+            BsonType.Boolean => (object?)v.AsBoolean,
+            BsonType.DateTime => (object?)v.ToUniversalTime(),
+            BsonType.Null or BsonType.Undefined => null,
+            BsonType.ObjectId => (object?)v.AsObjectId.ToString(),
+            _ => null,
+        };
     }
 }

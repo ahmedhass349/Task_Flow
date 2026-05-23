@@ -69,6 +69,17 @@ namespace taskflow.Services.Interfaces
         /// </summary>
         Task<List<CrossNotification>> PullAndDeleteCrossNotificationsAsync(string recipientEmail);
 
+        // ── Announcements (Phase 2) ───────────────────────────────────────────
+
+        /// <summary>Persists a new announcement to MongoDB and returns it with its generated Id.</summary>
+        Task<TeamAnnouncement> WriteAnnouncementAsync(TeamAnnouncement announcement);
+
+        /// <summary>Returns the <paramref name="limit"/> most recent announcements for a team.</summary>
+        Task<List<TeamAnnouncement>> GetAnnouncementsAsync(string teamId, int limit = 50);
+
+        /// <summary>Adds <paramref name="userEmail"/> to the ReadBy list of an announcement (idempotent).</summary>
+        Task MarkAnnouncementReadAsync(string announcementId, string userEmail);
+
         // ── Dev / testing ─────────────────────────────────────────────────────
         Task ClearAllAsync();
     }

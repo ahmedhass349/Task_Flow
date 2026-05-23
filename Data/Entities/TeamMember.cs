@@ -1,6 +1,7 @@
+// FILE: Data/Entities/TeamMember.cs  PHASE: 1  CHANGES: Renamed TeamRole.Admin → TeamRole.Leader
 namespace taskflow.Data.Entities
 {
-    public enum TeamRole { Member, Admin }
+    public enum TeamRole { Member, Leader }
 
     public class TeamMember
     {

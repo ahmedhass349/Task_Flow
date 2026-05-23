@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using taskflow.Data;
 
@@ -10,9 +11,11 @@ using taskflow.Data;
 namespace TaskFlow.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260522145109_Phase1_RenameAdminToLeader")]
+    partial class Phase1_RenameAdminToLeader
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
@@ -750,9 +753,6 @@ namespace TaskFlow.Migrations
                     b.Property<string>("CreatedAt")
                         .IsRequired()
                         .HasColumnType("TEXT");
-
-                    b.Property<int?>("CreatedById")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");

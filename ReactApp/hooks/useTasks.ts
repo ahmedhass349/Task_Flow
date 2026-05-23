@@ -18,6 +18,8 @@ interface Task {
   dueDate?: string;
   dueDateLabel?: string;
   isStarred: boolean;
+  /** Phase 4: true when this task was assigned by a leader, not self-created */
+  isAssignedByOther: boolean;
   createdAt: string;
 }
 

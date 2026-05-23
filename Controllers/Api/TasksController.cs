@@ -79,6 +79,17 @@ namespace taskflow.Controllers.Api
         }
 
         /// <summary>
+        /// PHASE 3: Assigns a task to a team member by their email (leader-to-member assignment).
+        /// </summary>
+        [HttpPost("assign")]
+        public async Task<IActionResult> AssignTask([FromBody] AssignTaskRequest request)
+        {
+            var assignerUserId = GetUserId();
+            var task = await _taskService.AssignTaskAsync(assignerUserId, request);
+            return StatusCode(201, ApiResponse<TaskDto>.Ok(task, "Task assigned successfully"));
+        }
+
+        /// <summary>
         /// Updates an existing task by its identifier.
         /// </summary>
         [HttpPut("{id}")]

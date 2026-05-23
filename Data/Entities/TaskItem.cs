@@ -1,4 +1,4 @@
-// FILE: Data/Entities/TaskItem.cs  PHASE: 2  CHANGE: implements ISyncableEntity — adds SyncId, UpdatedAt, IsSynced, LastModifiedBy
+// FILE: Data/Entities/TaskItem.cs  PHASE: 4  CHANGES: Added CreatedById (int?) to distinguish self-created vs leader-assigned tasks
 using System;
 using System.Collections.Generic;
 
@@ -21,6 +21,8 @@ namespace taskflow.Data.Entities
         public string? Description { get; set; }
         public int? ProjectId { get; set; }
         public int? AssigneeId { get; set; }
+        /// <summary>Id of the user who originally created this task. Null for legacy rows (treated as self-created).</summary>
+        public int? CreatedById { get; set; }
         public TaskPriority Priority { get; set; } = TaskPriority.Medium;
         public TaskStatus Status { get; set; } = TaskStatus.Todo;
         public DateTime? DueDate { get; set; }

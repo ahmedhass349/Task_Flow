@@ -327,6 +327,39 @@ namespace taskflow.BackgroundServices
                     }
                     break;
                 }
+                // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 6  CHANGES: P6-O1+P6-O2
+                // Dispatch cases for cross-notifications and announcements queued while offline.
+                case "WriteCrossNotification":
+                {
+                    var x = Deserialize<CrossNotificationPayload>(p);
+                    await _mongoService.WriteCrossNotificationAsync(new taskflow.Models.Mongo.CrossNotification
+                    {
+                        RecipientEmail = x.RecipientEmail,
+                        SenderEmail    = x.SenderEmail,
+                        Title          = x.Title,
+                        Message        = x.Message,
+                        Type           = x.Type,
+                        Priority       = x.Priority,
+                        ActionUrl      = x.ActionUrl ?? string.Empty,
+                    });
+                    break;
+                }
+                case "WriteAnnouncement":
+                {
+                    var x = Deserialize<WriteAnnouncementPayload>(p);
+                    await _mongoService.WriteAnnouncementAsync(new taskflow.Models.Mongo.TeamAnnouncement
+                    {
+                        Id          = x.Id,
+                        TeamId      = x.TeamId,
+                        TeamName    = x.TeamName,
+                        SenderEmail = x.SenderEmail,
+                        SenderName  = x.SenderName,
+                        Title       = x.Title,
+                        Message     = x.Message,
+                        CreatedAt   = x.CreatedAt,
+                    });
+                    break;
+                }
                 default:
                     _logger.LogWarning("Unknown outbox operation: {Op}", entry.OperationName);
                     throw new InvalidOperationException($"Unknown operation: {entry.OperationName}");
@@ -409,5 +442,15 @@ namespace taskflow.BackgroundServices
         private record UserDataPayload(string UserEmail);
 
         private record BackupAccountPayload(string Email, string PasswordHash, int SqliteId);
+
+        // P6-O1: payload for cross-notification queued while offline.
+        private record CrossNotificationPayload(
+            string RecipientEmail, string SenderEmail, string Title,
+            string Message, string Type, string Priority, string? ActionUrl);
+
+        // P6-O2: payload for announcement queued while offline.
+        private record WriteAnnouncementPayload(
+            string? Id, string TeamId, string TeamName,
+            string SenderEmail, string SenderName, string Title, string Message, DateTime CreatedAt);
     }
 }

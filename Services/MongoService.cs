@@ -27,6 +27,8 @@ namespace taskflow.Services
         private readonly IMongoCollection<MongoTeamMember>? _membersCollection;
         private readonly IMongoCollection<CrossNotification>? _crossNotificationsCollection;
         private readonly IMongoCollection<UserAccount>? _userAccountsCollection;
+        // PHASE 2: persistent team announcements collection
+        private readonly IMongoCollection<TeamAnnouncement>? _announcementsCollection;
         private readonly ILogger<MongoService> _logger;
         private IMongoClient? _client;
         private IMongoDatabase? _db;
@@ -61,12 +63,16 @@ namespace taskflow.Services
                 _membersCollection = db.GetCollection<MongoTeamMember>("team_members");
                 _crossNotificationsCollection = db.GetCollection<CrossNotification>("cross_notifications");
                 _userAccountsCollection = db.GetCollection<UserAccount>("user_accounts");
+                _announcementsCollection = db.GetCollection<TeamAnnouncement>("team_announcements"); // PHASE 2
 
                 // B-02: fire-and-forget index creation — never block the DI constructor thread.
                 _ = Task.Run(async () =>
                 {
                     try { await EnsureIndexesAsync(); }
                     catch (Exception ex) { _logger.LogWarning(ex, "MongoService: index creation failed (non-critical)."); }
+                    // PHASE 1: normalize legacy "Admin" role documents to "Leader"
+                    try { await NormalizeTeamMemberRolesAsync(); }
+                    catch (Exception ex) { _logger.LogWarning(ex, "MongoService: role normalization failed (non-critical)."); }
                 });
             }
             catch (Exception ex)
@@ -160,6 +166,55 @@ namespace taskflow.Services
                     new CreateIndexModel<UserAccount>(accountEmailIdx,
                         new CreateIndexOptions { Unique = true, Name = "account_email_unique" }));
             }
+
+            // PHASE 2: compound index for team_announcements (teamId + createdAt desc)
+            if (_announcementsCollection != null)
+            {
+                var annIdx = Builders<TeamAnnouncement>.IndexKeys
+                    .Ascending(a => a.TeamId)
+                    .Descending(a => a.CreatedAt);
+                await _announcementsCollection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<TeamAnnouncement>(annIdx,
+                        new CreateIndexOptions { Name = "ann_teamid_createdat" }));
+            }
+        }
+
+        // FILE: Services/MongoService.cs  PHASE: 1  CHANGES: Normalize legacy "Admin" → "Leader" in team_members collection
+        private async Task NormalizeTeamMemberRolesAsync()
+        {
+            if (_membersCollection == null) return;
+            var filter = Builders<MongoTeamMember>.Filter.Eq(m => m.Role, "Admin");
+            var update = Builders<MongoTeamMember>.Update.Set(m => m.Role, "Leader");
+            var result = await _membersCollection.UpdateManyAsync(filter, update);
+            if (result.ModifiedCount > 0)
+                _logger.LogInformation("MongoService: normalized {Count} team_members documents from 'Admin' to 'Leader'.", result.ModifiedCount);
+        }
+
+        // FILE: Services/MongoService.cs  PHASE: 2  CHANGES: Persistent announcement methods
+        public async Task<TeamAnnouncement> WriteAnnouncementAsync(TeamAnnouncement announcement)
+        {
+            if (_announcementsCollection == null) return announcement;
+            announcement.CreatedAt = DateTime.UtcNow;
+            await _announcementsCollection.InsertOneAsync(announcement);
+            return announcement;
+        }
+
+        public async Task<List<TeamAnnouncement>> GetAnnouncementsAsync(string teamId, int limit = 50)
+        {
+            if (_announcementsCollection == null) return new List<TeamAnnouncement>();
+            var filter = Builders<TeamAnnouncement>.Filter.Eq(a => a.TeamId, teamId);
+            var sort = Builders<TeamAnnouncement>.Sort.Descending(a => a.CreatedAt);
+            return await _announcementsCollection.Find(filter).Sort(sort).Limit(limit).ToListAsync();
+        }
+
+        public async Task MarkAnnouncementReadAsync(string announcementId, string userEmail)
+        {
+            if (_announcementsCollection == null) return;
+            var normalizedEmail = userEmail.Trim().ToLowerInvariant();
+            var filter = Builders<TeamAnnouncement>.Filter.Eq(a => a.Id, announcementId);
+            // AddToSet is idempotent — won't add duplicates
+            var update = Builders<TeamAnnouncement>.Update.AddToSet(a => a.ReadBy, normalizedEmail);
+            await _announcementsCollection.UpdateOneAsync(filter, update);
         }
 
         // ── Generic entity mirror ─────────────────────────────────────────────
@@ -262,6 +317,26 @@ namespace taskflow.Services
             {
                 _logger.LogWarning(ex, "FindDocumentsAsync failed: col={Col}", collectionName);
                 return new List<MongoDB.Bson.BsonDocument>();
+            }
+        }
+
+        /// <summary>
+        /// Returns ALL documents in the named collection, or <c>null</c> when MongoDB is
+        /// unreachable (distinguishes an error from a genuinely empty collection).
+        /// </summary>
+        internal async Task<List<MongoDB.Bson.BsonDocument>?> GetAllDocumentsAsync(
+            string collectionName, CancellationToken ct = default)
+        {
+            if (_db == null) return null;
+            try
+            {
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>(collectionName);
+                return await collection.Find(new MongoDB.Bson.BsonDocument()).ToListAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetAllDocumentsAsync failed: col={Col}", collectionName);
+                return null; // null = unreachable; empty list = collection is genuinely empty
             }
         }
 
@@ -422,7 +497,7 @@ namespace taskflow.Services
 
             await _invitationsCollection.InsertOneAsync(invitation);
 
-            // Auto-upsert the sender as Admin in their own team
+            // Auto-upsert the sender as Leader in their own team
             if (!string.IsNullOrEmpty(request.TeamId) && _membersCollection != null)
             {
                 var senderFilter = Builders<MongoTeamMember>.Filter.And(
@@ -435,7 +510,7 @@ namespace taskflow.Services
                     .Set(m => m.UserEmail, senderEmail)
                     .Set(m => m.UserFullName, senderFullName)
                     .Set(m => m.AvatarUrl, senderAvatarUrl ?? string.Empty)
-                    .Set(m => m.Role, "Admin")
+                    .Set(m => m.Role, "Leader")  // PHASE 1: was "Admin"
                     .Set(m => m.TeamId, request.TeamId)
                     .Set(m => m.TeamName, request.TeamName ?? string.Empty)
                     .Set(m => m.OwnerEmail, senderEmail)
@@ -926,20 +1001,22 @@ namespace taskflow.Services
         {
             try
             {
+                var normalized = userEmail.Trim().ToLowerInvariant();
+
                 if (_presenceCollection != null)
                     await _presenceCollection.DeleteOneAsync(
-                        Builders<UserPresence>.Filter.Eq(u => u.Email, userEmail));
+                        Builders<UserPresence>.Filter.Eq(u => u.Email, normalized));
 
                 if (_membersCollection != null)
                 {
                     // Deactivate records where the user is a member of someone else's team
                     await _membersCollection.UpdateManyAsync(
-                        Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, userEmail),
+                        Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, normalized),
                         Builders<MongoTeamMember>.Update.Set(m => m.IsActive, false));
 
                     // Deactivate records for teams the user owned
                     await _membersCollection.UpdateManyAsync(
-                        Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, userEmail),
+                        Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, normalized),
                         Builders<MongoTeamMember>.Update.Set(m => m.IsActive, false));
                 }
 
@@ -949,10 +1026,16 @@ namespace taskflow.Services
                         Builders<TeamInvitation>.Filter.And(
                             Builders<TeamInvitation>.Filter.Eq(i => i.Status, InvitationStatus.Pending),
                             Builders<TeamInvitation>.Filter.Or(
-                                Builders<TeamInvitation>.Filter.Eq(i => i.SenderEmail, userEmail),
-                                Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, userEmail))),
+                                Builders<TeamInvitation>.Filter.Eq(i => i.SenderEmail, normalized),
+                                Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, normalized))),
                         Builders<TeamInvitation>.Update.Set(i => i.Status, InvitationStatus.Cancelled));
                 }
+
+                // Remove the credential backup so the account cannot be ghost-restored
+                // on another machine after it has been deleted.
+                if (_userAccountsCollection != null)
+                    await _userAccountsCollection.DeleteOneAsync(
+                        Builders<UserAccount>.Filter.Eq(a => a.Email, normalized));
             }
             catch (Exception ex)
             {
@@ -964,23 +1047,24 @@ namespace taskflow.Services
 
         public async Task BackupUserAccountAsync(string email, string passwordHash, int sqliteId)
         {
-            if (_userAccountsCollection == null) return;
-            try
-            {
-                var normalized = email.Trim().ToLowerInvariant();
-                var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, normalized);
-                var update = Builders<UserAccount>.Update
-                    .Set(a => a.Email, normalized)
-                    .Set(a => a.PasswordHash, passwordHash)
-                    .Set(a => a.SqliteId, sqliteId)
-                    .Set(a => a.UpdatedAt, DateTime.UtcNow);
-                await _userAccountsCollection.UpdateOneAsync(filter, update,
-                    new UpdateOptions { IsUpsert = true });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "MongoService.BackupUserAccountAsync failed for {Email}", email);
-            }
+            // Do NOT catch exceptions here — callers rely on exceptions propagating to determine
+            // whether the backup succeeded.  If the write fails, IsBackedUpToMongo must stay false
+            // so BulkSyncStartupService.BackupUnbackedUsersAsync can retry on the next startup.
+            if (_userAccountsCollection == null)
+                throw new InvalidOperationException("MongoDB user_accounts collection is unavailable.");
+
+            var normalized = email.Trim().ToLowerInvariant();
+            var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, normalized);
+            var update = Builders<UserAccount>.Update
+                .Set(a => a.Email, normalized)
+                .Set(a => a.PasswordHash, passwordHash)
+                .Set(a => a.SqliteId, sqliteId)
+                .Set(a => a.UpdatedAt, DateTime.UtcNow)
+                // SetOnInsert ensures _id is always a proper ObjectId on first insert,
+                // guarding against a null-_id regression if this method is ever refactored.
+                .SetOnInsert(a => a.Id, MongoDB.Bson.ObjectId.GenerateNewId().ToString());
+            await _userAccountsCollection.UpdateOneAsync(filter, update,
+                new UpdateOptions { IsUpsert = true });
         }
 
         public async Task<UserAccount?> FindAccountForRestorationAsync(string email)
@@ -988,9 +1072,14 @@ namespace taskflow.Services
             if (_userAccountsCollection == null) return null;
             try
             {
+                // Use a 6-second hard cap so a dead/slow connection doesn't stall the
+                // login endpoint for the full driver ServerSelectionTimeout (8 s).
+                using var cts = new System.Threading.CancellationTokenSource(
+                    TimeSpan.FromSeconds(6));
                 var normalized = email.Trim().ToLowerInvariant();
                 var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, normalized);
-                return await _userAccountsCollection.Find(filter).FirstOrDefaultAsync();
+                return await _userAccountsCollection.Find(filter)
+                    .FirstOrDefaultAsync(cts.Token);
             }
             catch (Exception ex)
             {

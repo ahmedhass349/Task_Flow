@@ -73,11 +73,12 @@ namespace taskflow.Services
             _mirror.Mirror("teams", team.Id, team);
 
             // Fix #14: Use single SaveChangesAsync instead of two
+            // FILE: Services/TeamService.cs  PHASE: 1  CHANGES: TeamRole.Admin → TeamRole.Leader
             var ownerMember = new TeamMember
             {
                 TeamId = team.Id,
                 UserId = userId,
-                Role = TeamRole.Admin
+                Role = TeamRole.Leader
             };
 
             await _teamMemberRepository.AddAsync(ownerMember);
@@ -136,10 +137,11 @@ namespace taskflow.Services
                 .Select(m => m.UserId)
                 .ToList();
 
-            // Remove all members first
+            // Remove all members first; mirror each deletion to MongoDB
             foreach (var member in team.Members.ToList())
             {
                 _teamMemberRepository.Remove(member);
+                _mirror.Erase("team_member_records", member.TeamId * 1_000_000 + member.UserId);
             }
 
             _teamRepository.Remove(team);
@@ -164,7 +166,7 @@ namespace taskflow.Services
             if (team == null)
                 throw new KeyNotFoundException($"Team with ID {teamId} not found.");
 
-            // Fix #12: Batch-load task counts instead of N+1
+            // PHASE 5: Batch-load all four task status counts in one pass
             var memberUserIds = team.Members.Select(m => m.UserId).ToList();
 
             var completedCounts = await _taskRepository.Query()
@@ -175,6 +177,18 @@ namespace taskflow.Services
 
             var inProgressCounts = await _taskRepository.Query()
                 .Where(t => t.AssigneeId.HasValue && memberUserIds.Contains(t.AssigneeId.Value) && t.Status == TaskStatus.InProgress)
+                .GroupBy(t => t.AssigneeId!.Value)
+                .Select(g => new { UserId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.UserId, x => x.Count);
+
+            var todoCounts = await _taskRepository.Query()
+                .Where(t => t.AssigneeId.HasValue && memberUserIds.Contains(t.AssigneeId.Value) && t.Status == TaskStatus.Todo)
+                .GroupBy(t => t.AssigneeId!.Value)
+                .Select(g => new { UserId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.UserId, x => x.Count);
+
+            var overdueCounts = await _taskRepository.Query()
+                .Where(t => t.AssigneeId.HasValue && memberUserIds.Contains(t.AssigneeId.Value) && t.Status == TaskStatus.Overdue)
                 .GroupBy(t => t.AssigneeId!.Value)
                 .Select(g => new { UserId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.UserId, x => x.Count);
@@ -190,6 +204,8 @@ namespace taskflow.Services
 
                 completedCounts.TryGetValue(member.UserId, out int completedCount);
                 inProgressCounts.TryGetValue(member.UserId, out int inProgressCount);
+                todoCounts.TryGetValue(member.UserId, out int todoCount);
+                overdueCounts.TryGetValue(member.UserId, out int overdueCount);
 
                 result.Add(new TeamMemberDto
                 {
@@ -200,7 +216,9 @@ namespace taskflow.Services
                     Initials = initials,
                     Role = member.Role.ToString(),
                     TasksCompleted = completedCount,
-                    TasksInProgress = inProgressCount
+                    TasksInProgress = inProgressCount,
+                    TasksTodo = todoCount,
+                    TasksOverdue = overdueCount,
                 });
             }
 
@@ -232,6 +250,11 @@ namespace taskflow.Services
 
             await _teamMemberRepository.AddAsync(teamMember);
             await _teamMemberRepository.SaveChangesAsync();
+
+            // Mirror the addition to MongoDB immediately so team_member_records
+            // stays consistent across machines without waiting for the next BulkSync.
+            // Synthetic id matches the BulkSync formula: TeamId * 1_000_000 + UserId.
+            _mirror.Mirror("team_member_records", teamMember.TeamId * 1_000_000 + teamMember.UserId, teamMember);
         }
 
         public async Task RemoveTeamMemberAsync(int userId, int teamId, int memberUserId)
@@ -256,6 +279,10 @@ namespace taskflow.Services
 
             _teamMemberRepository.Remove(membership);
             await _teamMemberRepository.SaveChangesAsync();
+
+            // Mirror the deletion to MongoDB so team_member_records stays consistent
+            // across all machines (BulkSync uses a synthetic id = TeamId * 1_000_000 + UserId)
+            _mirror.Erase("team_member_records", membership.TeamId * 1_000_000 + membership.UserId);
         }
     }
 }

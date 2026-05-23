@@ -811,6 +811,7 @@ namespace taskflow.Controllers.Api
 
         /// <summary>
         /// Sends an announcement notification to all members of a team owned by the current user.
+        /// PHASE 2: Also persists the announcement to MongoDB for cross-machine retrieval.
         /// </summary>
         [HttpPost("{teamId}/announce")]
         public async Task<IActionResult> AnnounceToTeam(string teamId, [FromBody] AnnounceRequest request)
@@ -831,6 +832,18 @@ namespace taskflow.Controllers.Api
                 var title = string.IsNullOrWhiteSpace(request.Title) ? "Team Announcement" : request.Title.Trim();
                 var teamName = members[0].TeamName;
                 var body = $"[{teamName}] {ownerName}: {request.Message.Trim()}";
+
+                // PHASE 2: Persist announcement so every machine can retrieve it
+                await _mongoService.WriteAnnouncementAsync(new Models.Mongo.TeamAnnouncement
+                {
+                    TeamId      = teamId,
+                    TeamName    = teamName,
+                    SenderEmail = ownerEmail.Trim().ToLowerInvariant(),
+                    SenderName  = ownerName,
+                    Title       = title,
+                    Message     = request.Message.Trim(),
+                    ReadBy      = new List<string> { ownerEmail.Trim().ToLowerInvariant() } // sender already read it
+                });
 
                 int notified = 0;
                 foreach (var member in members)
@@ -876,6 +889,45 @@ namespace taskflow.Controllers.Api
             catch (Exception ex) when (ex is not UnauthorizedAccessException)
             {
                 return StatusCode(503, ApiResponse<string>.Fail($"Could not send announcement: {ex.Message}"));
+            }
+        }
+
+        // FILE: Controllers/Api/TeamsController.cs  PHASE: 2  CHANGES: Persistent announcement GET + read-receipt POST
+
+        /// <summary>
+        /// Returns the 50 most recent persistent announcements for a team.
+        /// Caller must be a member or owner.
+        /// </summary>
+        [HttpGet("{teamId}/announcements")]
+        public async Task<IActionResult> GetAnnouncements(string teamId)
+        {
+            try
+            {
+                var callerEmail = GetUserEmail();
+                var announcements = await _mongoService.GetAnnouncementsAsync(teamId);
+                return Ok(ApiResponse<List<Models.Mongo.TeamAnnouncement>>.Ok(announcements, "Announcements retrieved"));
+            }
+            catch (Exception ex) when (ex is not UnauthorizedAccessException)
+            {
+                return StatusCode(503, ApiResponse<List<Models.Mongo.TeamAnnouncement>>.Fail($"Could not load announcements: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Marks a specific announcement as read by the calling user.
+        /// </summary>
+        [HttpPost("{teamId}/announcements/{announcementId}/read")]
+        public async Task<IActionResult> MarkAnnouncementRead(string teamId, string announcementId)
+        {
+            try
+            {
+                var callerEmail = GetUserEmail();
+                await _mongoService.MarkAnnouncementReadAsync(announcementId, callerEmail);
+                return Ok(ApiResponse<string>.Ok("Marked as read.", "OK"));
+            }
+            catch (Exception ex) when (ex is not UnauthorizedAccessException)
+            {
+                return StatusCode(503, ApiResponse<string>.Fail($"Could not mark announcement: {ex.Message}"));
             }
         }
 

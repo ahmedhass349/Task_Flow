@@ -1,4 +1,5 @@
-﻿import { useState, useRef, useEffect, useMemo } from "react";
+﻿// FILE: ReactApp/pages/Teams.tsx  PHASE: 5  CHANGES: Leader progress dashboard inner panel tab + ProgressDashboard component
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   Users,
   Mail,
@@ -16,11 +17,19 @@ import {
   Pencil,
   LogOut,
   Megaphone,
+  Eye,
+  ChevronDown,
+  ClipboardList,
+  BarChart3,
+  AlertCircle,
 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Footer from "../Components/Footer";
 import Header from "../Components/Header";
 import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
+// PHASE 3: reuse task creation card for leader-to-member assignment
+import AcademicTaskCard, { type TaskPayload } from "../Components/AcademicTaskCard";
+import { api } from "../services/api";
 import {
   useTeams,
   type Invitation,
@@ -28,6 +37,8 @@ import {
   type UserSearchResult,
   type SendInvitationRequest,
   type Team,
+  type Announcement,
+  type MemberProgressStat,
 } from "../hooks/useTeams";
 
 // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -587,9 +598,11 @@ interface SharedMemberCardProps {
   member: SharedMember;
   onRemove: (email: string) => Promise<void>;
   showTeam?: boolean;
+  // PHASE 3: optional handler for leader-to-member task assignment
+  onAssignTask?: (member: SharedMember) => void;
 }
 
-function SharedMemberCard({ member, onRemove, showTeam }: SharedMemberCardProps) {
+function SharedMemberCard({ member, onRemove, showTeam, onAssignTask }: SharedMemberCardProps) {
   const [busy, setBusy] = useState(false);
   return (
     <div className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
@@ -618,12 +631,29 @@ function SharedMemberCard({ member, onRemove, showTeam }: SharedMemberCardProps)
         <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
           <Mail className="size-3" />
           <span className="truncate">{member.userEmail}</span>
-          <span className="ml-2 font-medium text-gray-700">· {member.role}</span>
+          {/* FILE: ReactApp/pages/Teams.tsx  PHASE: 1  CHANGES: amber/gold badge for Leader role */}
+          <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+            member.role === 'Leader' || member.role === 'Owner'
+              ? 'bg-amber-100 text-amber-700'
+              : 'bg-gray-100 text-gray-600'
+          }`}>{member.role}</span>
         </div>
         <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
           <Clock className="size-3" /> Joined {fmtDate(member.joinedAt)}
         </p>
       </div>
+      {/* PHASE 3: Assign Task button — only visible when handler is provided (i.e. current user is a leader) */}
+      {onAssignTask && (
+        <button
+          type="button"
+          onClick={() => onAssignTask(member)}
+          aria-label="Assign task to this member"
+          title="Assign task"
+          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0"
+        >
+          <ClipboardList className="size-4" />
+        </button>
+      )}
       <button
         onClick={async () => { setBusy(true); try { await onRemove(member.userEmail); } finally { setBusy(false); } }}
         disabled={busy}
@@ -653,7 +683,13 @@ function MembershipCard({ member, onLeave }: MembershipCardProps) {
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-gray-900">{member.ownerEmail}</p>
         <p className="text-sm text-gray-700 mt-1">
-          Added you to <strong>{member.teamName || "their team"}</strong> as <span className="font-medium">{member.role}</span>
+          Added you to <strong>{member.teamName || "their team"}</strong> as{" "}
+          {/* FILE: ReactApp/pages/Teams.tsx  PHASE: 1  CHANGES: amber/gold badge for Leader role in membership card */}
+          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+            member.role === 'Leader' || member.role === 'Owner'
+              ? 'bg-amber-100 text-amber-700'
+              : 'bg-gray-100 text-gray-600'
+          }`}>{member.role}</span>
         </p>
         <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
           <Clock className="size-3" /> {fmtDate(member.joinedAt)}
@@ -673,6 +709,64 @@ function MembershipCard({ member, onLeave }: MembershipCardProps) {
 }
 
 // â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// FILE: ReactApp/pages/Teams.tsx  PHASE: 2  CHANGES: ReadReceiptsPopup + AnnouncementFeed components
+
+// ── ReadReceiptsPopup ─────────────────────────────────────────────────────
+
+interface ReadReceiptsPopupProps {
+  announcement: Announcement;
+  allMembers: SharedMember[];
+  onClose: () => void;
+}
+
+function ReadReceiptsPopup({ announcement, allMembers, onClose }: ReadReceiptsPopupProps) {
+  const readSet = new Set(announcement.readBy.map(e => e.toLowerCase()));
+  const read = allMembers.filter(m => readSet.has(m.userEmail.toLowerCase()));
+  const unread = allMembers.filter(m => !readSet.has(m.userEmail.toLowerCase()));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl p-5 w-full max-w-xs" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Eye className="size-4 text-blue-500" />
+            <h3 className="font-semibold text-gray-900 text-sm">Read by</h3>
+          </div>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+            <X className="size-4" />
+          </button>
+        </div>
+        <p className="text-xs text-gray-400 mb-1 font-medium uppercase tracking-wide">Read ({read.length})</p>
+        {read.length === 0 ? (
+          <p className="text-xs text-gray-400 mb-3 italic">Nobody yet</p>
+        ) : (
+          <ul className="space-y-1 mb-3">
+            {read.map(m => (
+              <li key={m.id} className="flex items-center gap-2 text-sm">
+                <CheckCircle className="size-3.5 text-green-500 flex-shrink-0" />
+                <span className="text-gray-700">{m.userFullName || m.userEmail}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {unread.length > 0 && (
+          <>
+            <p className="text-xs text-gray-400 mb-1 font-medium uppercase tracking-wide">Not read ({unread.length})</p>
+            <ul className="space-y-1">
+              {unread.map(m => (
+                <li key={m.id} className="flex items-center gap-2 text-sm">
+                  <Clock className="size-3.5 text-gray-300 flex-shrink-0" />
+                  <span className="text-gray-500">{m.userFullName || m.userEmail}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ── AnnouncementModal ─────────────────────────────────────────────────────
 
@@ -770,6 +864,164 @@ function AnnouncementModal({ teamName, onClose, onSend }: AnnouncementModalProps
   );
 }
 
+// ── ProgressDashboard ─────────────────────────────────────────────────────
+// FILE: ReactApp/pages/Teams.tsx  PHASE: 5  CHANGES: New component — per-member task stats for leader
+
+interface ProgressDashboardProps {
+  members: MemberProgressStat[];
+  loading: boolean;
+  onRefresh: () => void;
+  onAssignTask?: (email: string, name: string) => void;
+}
+
+const STAT_COLORS = {
+  todo:       { bar: "bg-gray-300",   text: "text-gray-500",   label: "To Do"       },
+  inProgress: { bar: "bg-blue-400",   text: "text-blue-600",   label: "In Progress" },
+  completed:  { bar: "bg-green-400",  text: "text-green-600",  label: "Done"        },
+  overdue:    { bar: "bg-red-400",    text: "text-red-600",    label: "Overdue"     },
+};
+
+function ProgressBar({ value, total, colorClass }: { value: number; total: number; colorClass: string }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all duration-300 ${colorClass}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs text-gray-400 w-6 text-right">{value}</span>
+    </div>
+  );
+}
+
+function ProgressDashboard({ members, loading, onRefresh, onAssignTask }: ProgressDashboardProps) {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+        <span className="size-6 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+        <p className="text-sm">Loading progress…</p>
+      </div>
+    );
+  }
+
+  if (members.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+        <BarChart3 className="size-10 opacity-25" />
+        <p className="text-sm">No member data yet</p>
+        <button
+          onClick={onRefresh}
+          className="mt-1 text-xs text-blue-500 hover:text-blue-700 underline"
+        >
+          Refresh
+        </button>
+      </div>
+    );
+  }
+
+  // Overall team totals for the summary row
+  const totals = members.reduce(
+    (acc, m) => ({
+      todo:       acc.todo       + m.tasksTodo,
+      inProgress: acc.inProgress + m.tasksInProgress,
+      completed:  acc.completed  + m.tasksCompleted,
+      overdue:    acc.overdue    + m.tasksOverdue,
+    }),
+    { todo: 0, inProgress: 0, completed: 0, overdue: 0 }
+  );
+  const grandTotal = totals.todo + totals.inProgress + totals.completed + totals.overdue;
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Team summary strip */}
+      <div className="grid grid-cols-4 gap-2">
+        {(["todo", "inProgress", "completed", "overdue"] as const).map(key => (
+          <div key={key} className="bg-gray-50 border border-gray-100 rounded-xl p-3 text-center">
+            <p className={`text-xl font-bold ${STAT_COLORS[key].text}`}>{totals[key]}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{STAT_COLORS[key].label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Per-member cards */}
+      <div className="space-y-3">
+        {members.map(m => {
+          const memberTotal = m.tasksTodo + m.tasksInProgress + m.tasksCompleted + m.tasksOverdue;
+          const completionPct = memberTotal > 0 ? Math.round((m.tasksCompleted / memberTotal) * 100) : 0;
+          return (
+            <div key={m.userId} className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+              {/* Header row */}
+              <div className="flex items-center gap-3">
+                <div className={`${avatarColor(m.email)} size-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
+                  {m.initials || getInitials(m.userName || m.email)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-gray-900 text-sm truncate">{m.userName || m.email}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      m.role === "Leader" || m.role === "Owner"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>{m.role}</span>
+                    {m.tasksOverdue > 0 && (
+                      <span className="flex items-center gap-0.5 text-xs text-red-500">
+                        <AlertCircle className="size-3" />{m.tasksOverdue} overdue
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 truncate">{m.email}</p>
+                </div>
+                <div className="flex-shrink-0 text-right">
+                  <p className="text-sm font-bold text-gray-700">{completionPct}%</p>
+                  <p className="text-xs text-gray-400">{m.tasksCompleted}/{memberTotal}</p>
+                </div>
+                {onAssignTask && (
+                  <button
+                    type="button"
+                    onClick={() => onAssignTask(m.email, m.userName)}
+                    title="Assign task"
+                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0"
+                  >
+                    <ClipboardList className="size-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Progress bars */}
+              <div className="space-y-1.5">
+                <ProgressBar value={m.tasksTodo}       total={memberTotal} colorClass={STAT_COLORS.todo.bar} />
+                <ProgressBar value={m.tasksInProgress} total={memberTotal} colorClass={STAT_COLORS.inProgress.bar} />
+                <ProgressBar value={m.tasksCompleted}  total={memberTotal} colorClass={STAT_COLORS.completed.bar} />
+                <ProgressBar value={m.tasksOverdue}    total={memberTotal} colorClass={STAT_COLORS.overdue.bar} />
+              </div>
+
+              {/* Legend */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {(["todo", "inProgress", "completed", "overdue"] as const).map(key => {
+                  const val = key === "todo" ? m.tasksTodo : key === "inProgress" ? m.tasksInProgress : key === "completed" ? m.tasksCompleted : m.tasksOverdue;
+                  return (
+                    <span key={key} className={`text-xs ${STAT_COLORS[key].text}`}>
+                      <span className="font-semibold">{val}</span> {STAT_COLORS[key].label}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {grandTotal === 0 && (
+        <p className="text-center text-xs text-gray-400 pt-2">
+          No tasks assigned to team members yet.{" "}
+          {onAssignTask && (
+            <span className="text-blue-500">Use the assign button to get started.</span>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function Teams() {
   const {
     teams,
@@ -802,6 +1054,13 @@ export default function Teams() {
     membershipsByMeLoading,
     leaveTeam,
     sendAnnouncement,
+    announcements,
+    announcementsLoading,
+    fetchAnnouncements,
+    markAnnouncementRead,
+    memberProgress,
+    memberProgressLoading,
+    fetchMemberProgress,
   } = useTeams();
 
   const [activeTab, setActiveTab] = useState<Tab>("all-members");
@@ -813,6 +1072,17 @@ export default function Teams() {
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [deletingTeamId, setDeletingTeamId] = useState<string | null>(null);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  // PHASE 3: member selected for task assignment
+  const [assigningToMember, setAssigningToMember] = useState<SharedMember | null>(null);
+  // PHASE 2: which announcement's read-receipts popup is visible
+  const [readReceiptsFor, setReadReceiptsFor] = useState<string | null>(null);
+  // PHASE 5: inner panel tab for owned-team right panel
+  const [teamPanelTab, setTeamPanelTab] = useState<"members" | "progress">("members");
+
+  // PHASE 2: load announcements whenever the selected owned-team changes
+  useEffect(() => {
+    if (selectedTeamId) fetchAnnouncements(selectedTeamId);
+  }, [selectedTeamId, fetchAnnouncements]);
 
   // Derived: contacts who have accepted an invitation (bidirectional)
   const acceptedContacts = useMemo<AcceptedContact[]>(() => {
@@ -852,12 +1122,39 @@ export default function Teams() {
 
   const handleSelectTeam = (teamId: string) => {
     setSelectedTeamId(teamId);
+    setTeamPanelTab("members"); // PHASE 5: reset inner panel to members when switching teams
     fetchSharedMembers(teamId);
+    fetchMemberProgress(teamId); // PHASE 5: pre-fetch progress so switching tabs is instant
   };
 
   const handleRemoveSharedMember = async (email: string) => {
     if (!selectedTeamId) return;
     await removeSharedMember(selectedTeamId, email);
+  };
+
+  // PHASE 3: Submit task assignment via /api/tasks/assign
+  const handleAssignTask = async (payload: TaskPayload) => {
+    if (!assigningToMember) return;
+    // Map AcademicTaskCard payload fields to AssignTaskRequest DTO
+    // TaskPriority: Low=0, Medium=1, High=2
+    const priorityMap: Record<string, number> = { low: 0, medium: 1, high: 2 };
+    // TaskStatus: Todo=0, InProgress=1, Review=2, Completed=3, Overdue=4
+    const statusMap: Record<string, number> = {
+      "To Do": 0, "In Progress": 1, "In Review": 2, "Done": 3, "Overdue": 4,
+    };
+    await api.post("/api/tasks/assign", {
+      assigneeEmail: assigningToMember.userEmail,
+      title: payload.title,
+      description: payload.notes || null,
+      projectId: null,
+      priority: priorityMap[payload.priority] ?? 1,
+      status: statusMap[payload.taskType] ?? 0,
+      dueDate: payload.dueDate || null,
+      reminderMap: payload.reminderMap ?? null,
+      notifyEmail: payload.notifyVia.email,
+      notifyInApp: payload.notifyVia.inApp,
+    });
+    setAssigningToMember(null);
   };
 
   const tabs = [
@@ -1058,10 +1355,38 @@ export default function Teams() {
 
                       {selectedTeamId && (
                         <>
-                          <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                            <h2 className="font-semibold text-gray-900">
-                              Members &mdash; {teams.find(t => t.id === selectedTeamId)?.name}
-                            </h2>
+                          {/* PHASE 5: inner tab bar — Members | Progress */}
+                          <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
+                            {/* Tab buttons */}
+                            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
+                              <button
+                                onClick={() => setTeamPanelTab("members")}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                  teamPanelTab === "members"
+                                    ? "bg-white text-gray-900 shadow-sm"
+                                    : "text-gray-500 hover:text-gray-700"
+                                }`}
+                              >
+                                <Users className="size-3.5" /> Members
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setTeamPanelTab("progress");
+                                  if (memberProgress.length === 0 || !memberProgressLoading) {
+                                    fetchMemberProgress(selectedTeamId);
+                                  }
+                                }}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                  teamPanelTab === "progress"
+                                    ? "bg-white text-gray-900 shadow-sm"
+                                    : "text-gray-500 hover:text-gray-700"
+                                }`}
+                              >
+                                <BarChart3 className="size-3.5" /> Progress
+                              </button>
+                            </div>
+
+                            {/* Right-side action buttons (shared by both tabs) */}
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => setShowAnnouncementModal(true)}
@@ -1078,26 +1403,97 @@ export default function Teams() {
                               >
                                 <UserPlus className="size-3.5" /> Invite Member
                               </button>
-                              {sharedMembersLoading && (
+                              {(sharedMembersLoading || memberProgressLoading) && (
                                 <span className="size-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
                               )}
                             </div>
                           </div>
-                          {!sharedMembersLoading && sharedMembers.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-36 text-gray-400">
-                              <Users className="size-8 mb-2 opacity-30" />
-                              <p className="text-sm">No members yet &mdash; invite someone!</p>
-                            </div>
-                          ) : (
-                            <div className="divide-y divide-gray-100">
-                              {sharedMembers.map(m => (
-                                <SharedMemberCard
-                                  key={m.id}
-                                  member={m}
-                                  onRemove={handleRemoveSharedMember}
-                                />
-                              ))}
-                            </div>
+
+                          {/* Members tab */}
+                          {teamPanelTab === "members" && (
+                            <>
+                              {!sharedMembersLoading && sharedMembers.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-36 text-gray-400">
+                                  <Users className="size-8 mb-2 opacity-30" />
+                                  <p className="text-sm">No members yet &mdash; invite someone!</p>
+                                </div>
+                              ) : (
+                                <div className="divide-y divide-gray-100">
+                                  {sharedMembers.map(m => (
+                                    <SharedMemberCard
+                                      key={m.id}
+                                      member={m}
+                                      onRemove={handleRemoveSharedMember}
+                                      // PHASE 3: leader can assign tasks to their team members
+                                      onAssignTask={setAssigningToMember}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* PHASE 2: Persistent announcement feed */}
+                              <div className="border-t border-gray-100">
+                                <div className="px-6 py-3 flex items-center justify-between bg-gray-50">
+                                  <div className="flex items-center gap-1.5">
+                                    <Megaphone className="size-3.5 text-orange-400" />
+                                    <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Announcements</span>
+                                    {announcements.length > 0 && (
+                                      <span className="bg-orange-100 text-orange-600 text-xs font-medium px-1.5 py-0.5 rounded-full">{announcements.length}</span>
+                                    )}
+                                  </div>
+                                  {announcementsLoading && (
+                                    <span className="size-3.5 border-2 border-gray-300 border-t-orange-400 rounded-full animate-spin" />
+                                  )}
+                                </div>
+                                {!announcementsLoading && announcements.length === 0 ? (
+                                  <div className="flex flex-col items-center justify-center py-6 text-gray-400">
+                                    <Megaphone className="size-6 mb-1 opacity-30" />
+                                    <p className="text-xs">No announcements yet</p>
+                                  </div>
+                                ) : (
+                                  <ul className="divide-y divide-gray-50 max-h-64 overflow-y-auto">
+                                    {announcements.map(ann => {
+                                      const readCount = ann.readBy.length;
+                                      const totalCount = sharedMembers.length;
+                                      return (
+                                        <li key={ann.id} className="px-6 py-3 hover:bg-gray-50 transition-colors">
+                                          <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0 flex-1">
+                                              <p className="text-xs font-semibold text-gray-800 truncate">{ann.title}</p>
+                                              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{ann.message}</p>
+                                              <p className="text-xs text-gray-400 mt-1">
+                                                {ann.senderName} &middot; {new Date(ann.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                              </p>
+                                            </div>
+                                            <button
+                                              onClick={() => setReadReceiptsFor(ann.id ?? null)}
+                                              className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-500 transition-colors flex-shrink-0 mt-0.5"
+                                              title="View read receipts"
+                                            >
+                                              <Eye className="size-3.5" />
+                                              <span>{readCount}/{totalCount}</span>
+                                            </button>
+                                          </div>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                )}
+                              </div>
+                            </>
+                          )}
+
+                          {/* PHASE 5: Progress tab */}
+                          {teamPanelTab === "progress" && (
+                            <ProgressDashboard
+                              members={memberProgress}
+                              loading={memberProgressLoading}
+                              onRefresh={() => fetchMemberProgress(selectedTeamId)}
+                              onAssignTask={(email, _name) => {
+                                const found = sharedMembers.find(m => m.userEmail === email);
+                                if (found) setAssigningToMember(found);
+                              }}
+                            />
                           )}
                         </>
                       )}
@@ -1242,6 +1638,52 @@ export default function Teams() {
           onClose={() => setShowAnnouncementModal(false)}
           onSend={(msg, ttl) => sendAnnouncement(selectedTeamId, msg, ttl)}
         />
+      )}
+
+      {/* PHASE 2: Read receipts popup */}
+      {readReceiptsFor && (() => {
+        const ann = announcements.find(a => a.id === readReceiptsFor);
+        if (!ann) return null;
+        return (
+          <ReadReceiptsPopup
+            announcement={ann}
+            allMembers={sharedMembers}
+            onClose={() => setReadReceiptsFor(null)}
+          />
+        );
+      })()}
+
+      {/* PHASE 3: Assign task modal — rendered when leader clicks the ClipboardList button */}
+      {assigningToMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-auto max-h-[90vh]">
+            <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Assign Task</h2>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Assigning to <span className="font-medium text-gray-700">{assigningToMember.userFullName || assigningToMember.userEmail}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAssigningToMember(null)}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                aria-label="Close"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+            <div className="p-4">
+              <AcademicTaskCard
+                prefilledAssignee={assigningToMember.userEmail}
+                lockAssignee
+                assignmentContext={`Assigning task to ${assigningToMember.userFullName || assigningToMember.userEmail}`}
+                onSuccess={handleAssignTask}
+                onClose={() => setAssigningToMember(null)}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

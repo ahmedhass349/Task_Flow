@@ -3,6 +3,7 @@
 // CHANGES: Added userId ownership checks to Update/Delete/ToggleStar/UpdateStatus (#2),
 //          Fixed in-memory search to DB query (#8),
 //          Fixed double-fetch pattern (#13)
+// PHASE: 3  CHANGES: Added IUserRepository dependency + AssignTaskAsync for leader task assignment
 
 using System;
 using System.Collections.Generic;
@@ -28,8 +29,9 @@ namespace taskflow.Services
         private readonly INotificationService _notificationService;
         private readonly IReminderService _reminderService;
         private readonly IMirrorService _mirror;
+        private readonly IUserRepository _userRepository;
 
-        public TaskService(ITaskRepository taskRepository, IMapper mapper, ILogger<TaskService> logger, INotificationService notificationService, IReminderService reminderService, IMirrorService mirror)
+        public TaskService(ITaskRepository taskRepository, IMapper mapper, ILogger<TaskService> logger, INotificationService notificationService, IReminderService reminderService, IMirrorService mirror, IUserRepository userRepository)
         {
             _taskRepository = taskRepository;
             _mapper = mapper;
@@ -37,6 +39,7 @@ namespace taskflow.Services
             _notificationService = notificationService;
             _reminderService = reminderService;
             _mirror = mirror;
+            _userRepository = userRepository;
         }
 
         public async Task<IEnumerable<TaskDto>> GetTasksAsync(int userId, TaskFilterRequest filter)
@@ -115,6 +118,7 @@ namespace taskflow.Services
                 Description = request.Description,
                 ProjectId = request.ProjectId,
                 AssigneeId = request.AssigneeId ?? userId,
+                CreatedById = userId,  // Phase 4: track creator
                 Priority = request.Priority,
                 Status = request.Status,
                 DueDate = request.DueDate,
@@ -159,6 +163,72 @@ namespace taskflow.Services
             }
 
             return await GetTaskByIdAsync(userId, task.Id);
+        }
+
+        // PHASE 3: Assign a task to a team member by their email on behalf of a leader.
+        public async Task<TaskDto> AssignTaskAsync(int assignerUserId, AssignTaskRequest request)
+        {
+            var assignee = await _userRepository.GetByEmailAsync(request.AssigneeEmail)
+                ?? throw new KeyNotFoundException($"User with email '{request.AssigneeEmail}' not found.");
+
+            if (request.DueDate.HasValue && request.DueDate.Value.Date < DateTime.UtcNow.Date)
+                throw new ArgumentException("Due date cannot be before today.");
+
+            var task = new TaskItem
+            {
+                Title = request.Title,
+                Description = request.Description,
+                ProjectId = request.ProjectId,
+                AssigneeId = assignee.Id,
+                CreatedById = assignerUserId,  // Phase 4: track who assigned
+                Priority = request.Priority,
+                Status = request.Status,
+                DueDate = request.DueDate,
+                CreatedAt = DateTime.UtcNow,
+                LastModifiedBy = assignee.Email
+            };
+
+            await _taskRepository.AddAsync(task);
+            await _taskRepository.SaveChangesAsync();
+            _mirror.Mirror("tasks", task.Id, task);
+
+            // Schedule reminders under the assignee's account
+            if (request.ReminderMap != null && (request.NotifyEmail || request.NotifyInApp))
+            {
+                try
+                {
+                    var reminderDto = new CreateReminderDto
+                    {
+                        TaskId = task.Id,
+                        ReminderMap = request.ReminderMap,
+                        DueDate = request.DueDate,
+                        NotifyEmail = request.NotifyEmail,
+                        NotifyInApp = request.NotifyInApp
+                    };
+                    await _reminderService.SaveRemindersAsync(reminderDto, assignee.Id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to schedule reminders for assigned task {Id}", task.Id);
+                }
+            }
+
+            // Notify the assignee
+            try
+            {
+                await _notificationService.NotifyTaskCreatedAsync(assignee.Id, task);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send notification for assigned task {Id}", task.Id);
+            }
+
+            // Return DTO visible to the assigner (bypass ownership check)
+            var created = await _taskRepository.Query()
+                .Include(t => t.Project)
+                .Include(t => t.Assignee)
+                .FirstOrDefaultAsync(t => t.Id == task.Id);
+            return _mapper.Map<TaskDto>(created!);
         }
 
         public async Task<TaskDto> UpdateTaskAsync(int userId, int taskId, UpdateTaskRequest request)

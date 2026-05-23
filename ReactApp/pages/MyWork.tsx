@@ -1,4 +1,4 @@
-// ── MyWork page: orchestrator ────────────────────────────────────────────
+// FILE: MyWork.tsx  PHASE: 4  CHANGES: Added top-level page tabs "My Tasks" / "Assigned to Me" based on isAssignedByOther flag
 //
 // Main "My Tasks" page. Manages state, tabs, filters, and delegates
 // rendering to extracted view components:
@@ -27,12 +27,14 @@ import TableView from "../Components/MyWork/TableView";
 import GanttView from "../Components/MyWork/GanttView";
 import CalendarView from "../Components/MyWork/CalendarView";
 
+type PageTab = "myTasks" | "assignedToMe";
 type Tab = "assigned" | "today" | "upcoming" | "completed";
 type ViewMode = "default" | "kanban" | "table" | "gantt" | "calendar";
 
 export default function MyWork() {
   const { tasks, isLoading, error, refetch, createTask, updateStatus, updateTask, deleteTask } = useTasks();
-  
+
+  const [pageTab, setPageTab] = useState<PageTab>("myTasks");
   const [activeTab, setActiveTab] = useState<Tab>("assigned");
   const [viewMode, setViewMode] = useState<ViewMode>("default");
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,6 +66,7 @@ export default function MyWork() {
       priority: mapPriority(task.priority),
       status: mapStatus(task.status),
       starred: task.isStarred,
+      isAssignedByOther: task.isAssignedByOther,
         onEdit: () => {
         setEditingTask({
           id: task.id,
@@ -202,20 +205,32 @@ export default function MyWork() {
     };
   }, [showNewTaskCard]);
 
+  // ── Page-level split: My Tasks vs Assigned to Me ────────────────────────
+  const myOwnTasks = useMemo(() =>
+    convertedTasks.filter(t => !t.isAssignedByOther),
+  [convertedTasks]);
+
+  const assignedByOtherTasks = useMemo(() =>
+    convertedTasks.filter(t => t.isAssignedByOther),
+  [convertedTasks]);
+
+  /** Active task pool depends on the current top-level page tab */
+  const activePool = pageTab === "myTasks" ? myOwnTasks : assignedByOtherTasks;
+
   // ── Derived data ────────────────────────────────────────────────────────
 
   const tabFilteredTasks = useMemo(() => {
     switch (activeTab) {
       case "today":
-        return convertedTasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed");
+        return activePool.filter((t) => t.dueOrder <= 1 && t.status !== "completed");
       case "upcoming":
-        return convertedTasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed");
+        return activePool.filter((t) => t.dueOrder >= 2 && t.status !== "completed");
       case "completed":
-        return convertedTasks.filter((t) => t.status === "completed");
+        return activePool.filter((t) => t.status === "completed");
       default:
-        return convertedTasks;
+        return activePool;
     }
-  }, [activeTab, convertedTasks]);
+  }, [activeTab, activePool]);
 
   const visibleTasks = useMemo(() => {
     return tabFilteredTasks.filter((t) => {
@@ -254,10 +269,10 @@ export default function MyWork() {
   const inReview = visibleTasks.filter((t) => t.status === "review").length;
 
   const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: "assigned",  label: "Assigned to me", count: convertedTasks.length },
-    { key: "today",     label: "Today",          count: convertedTasks.filter((t) => t.dueOrder <= 1 && t.status !== "completed").length },
-    { key: "upcoming",  label: "Upcoming",       count: convertedTasks.filter((t) => t.dueOrder >= 2 && t.status !== "completed").length },
-    { key: "completed", label: "Completed",      count: convertedTasks.filter((t) => t.status === "completed").length },
+    { key: "assigned",  label: "All",       count: activePool.length },
+    { key: "today",     label: "Today",     count: activePool.filter((t) => t.dueOrder <= 1 && t.status !== "completed").length },
+    { key: "upcoming",  label: "Upcoming",  count: activePool.filter((t) => t.dueOrder >= 2 && t.status !== "completed").length },
+    { key: "completed", label: "Completed", count: activePool.filter((t) => t.status === "completed").length },
   ];
 
   const views: { key: ViewMode; label: string }[] = [
@@ -306,13 +321,42 @@ export default function MyWork() {
                 <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   Export
                 </button>
-                <button
-                  onClick={() => { setEditingTask(null); setShowNewTaskCard(true); }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  New Task
-                </button>
+                {pageTab === "myTasks" && (
+                  <button
+                    onClick={() => { setEditingTask(null); setShowNewTaskCard(true); }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    New Task
+                  </button>
+                )}
               </div>
+            </div>
+
+            {/* Top-level page tab: My Tasks / Assigned to Me */}
+            <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+              {(["myTasks", "assignedToMe"] as const).map((pt) => {
+                const active = pageTab === pt;
+                const label = pt === "myTasks" ? "My Tasks" : "Assigned to Me";
+                const count = pt === "myTasks" ? myOwnTasks.length : assignedByOtherTasks.length;
+                return (
+                  <button
+                    key={pt}
+                    onClick={() => { setPageTab(pt); setActiveTab("assigned"); }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-800"
+                    }`}
+                  >
+                    {label}
+                    <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${
+                      active ? "bg-blue-100 text-blue-700" : "bg-gray-200 text-gray-600"
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Loading / Error / Empty */}

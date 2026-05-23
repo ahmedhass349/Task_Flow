@@ -16,6 +16,9 @@ namespace taskflow.Data.Entities
     /// </summary>
     public interface ISyncableEntity
     {
+        /// <summary>SQLite integer primary key.</summary>
+        int Id { get; set; }
+
         /// <summary>Stable cross-device identifier — used as MongoDB <c>_id</c>.</summary>
         Guid SyncId { get; set; }
 

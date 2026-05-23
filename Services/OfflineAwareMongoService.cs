@@ -688,11 +688,29 @@ namespace taskflow.Services
         public Task ClearAllAsync() => _mongo.ClearAllAsync();
 
         // ── Cross-machine notification bus ────────────────────────────────────
+        // FILE: Services/OfflineAwareMongoService.cs  PHASE: 6  CHANGES: P6-O1 — queue
+        //       WriteCrossNotification in outbox when offline so it's delivered on reconnect
+        //       instead of being silently dropped.
 
-        public Task WriteCrossNotificationAsync(CrossNotification notification)
+        public async Task WriteCrossNotificationAsync(CrossNotification notification)
         {
-            if (!_connectivity.IsEffectivelyOnline) return Task.CompletedTask;
-            return _mongo.WriteCrossNotificationAsync(notification);
+            if (_connectivity.IsEffectivelyOnline)
+            {
+                await _mongo.WriteCrossNotificationAsync(notification);
+                return;
+            }
+            // Offline: queue for replay when connectivity is restored.
+            QueueOutbox("WriteCrossNotification", new
+            {
+                recipientEmail = notification.RecipientEmail,
+                senderEmail    = notification.SenderEmail,
+                title          = notification.Title,
+                message        = notification.Message,
+                type           = notification.Type,
+                priority       = notification.Priority,
+                actionUrl      = notification.ActionUrl,
+            });
+            _connectivity.IncrementPending();
         }
 
         public Task<List<CrossNotification>> PullAndDeleteCrossNotificationsAsync(string recipientEmail)
@@ -722,12 +740,14 @@ namespace taskflow.Services
 
         /// <summary>
         /// Account restoration is a read operation required during login.
-        /// Returns null if offline — caller will interpret as "cannot restore right now".
+        /// Bypasses the IsEffectivelyOnline gate: the cached connectivity state may still
+        /// be false at login time due to the startup race (first ping hasn't completed yet).
+        /// MongoService.FindAccountForRestorationAsync already catches all MongoDB exceptions
+        /// and returns null — it is safe to call regardless of cached ping state.
         /// </summary>
-        public async Task<UserAccount?> FindAccountForRestorationAsync(string email)
+        public Task<UserAccount?> FindAccountForRestorationAsync(string email)
         {
-            if (!_connectivity.IsEffectivelyOnline) return null;
-            return await _mongo.FindAccountForRestorationAsync(email);
+            return _mongo.FindAccountForRestorationAsync(email);
         }
 
         public async Task DeleteUserDataAsync(string userEmail)
@@ -739,6 +759,45 @@ namespace taskflow.Services
             }
             QueueOutbox("DeleteUserData", new { userEmail });
             _connectivity.IncrementPending();
+        }
+
+        // ── Announcements (Phase 2) ───────────────────────────────────────────
+        // FILE: Services/OfflineAwareMongoService.cs  PHASE: 6  CHANGES: P6-O2 — queue
+        //       WriteAnnouncement in outbox when offline so the MongoDB feed is updated
+        //       on reconnect (local notifications are delivered immediately by the controller).
+
+        public async Task<TeamAnnouncement> WriteAnnouncementAsync(TeamAnnouncement announcement)
+        {
+            if (_connectivity.IsEffectivelyOnline)
+                return await _mongo.WriteAnnouncementAsync(announcement);
+
+            // Offline: queue the MongoDB write; local delivery handled by the controller.
+            QueueOutbox("WriteAnnouncement", new
+            {
+                id          = announcement.Id,
+                teamId      = announcement.TeamId,
+                teamName    = announcement.TeamName,
+                senderEmail = announcement.SenderEmail,
+                senderName  = announcement.SenderName,
+                title       = announcement.Title,
+                message     = announcement.Message,
+                createdAt   = announcement.CreatedAt,
+            });
+            _connectivity.IncrementPending();
+            return announcement;
+        }
+
+        public Task<List<TeamAnnouncement>> GetAnnouncementsAsync(string teamId, int limit = 50)
+        {
+            if (!_connectivity.IsEffectivelyOnline)
+                return Task.FromResult(new List<TeamAnnouncement>());
+            return _mongo.GetAnnouncementsAsync(teamId, limit);
+        }
+
+        public Task MarkAnnouncementReadAsync(string announcementId, string userEmail)
+        {
+            if (!_connectivity.IsEffectivelyOnline) return Task.CompletedTask;
+            return _mongo.MarkAnnouncementReadAsync(announcementId, userEmail);
         }
     }
 }

@@ -151,6 +151,9 @@ namespace taskflow.Data
                       .WithMany(u => u.AssignedTasks)
                       .HasForeignKey(t => t.AssigneeId)
                       .OnDelete(DeleteBehavior.SetNull);
+
+                // Phase 4: track who created the task (null = legacy row treated as self-created)
+                entity.Property(t => t.CreatedById).IsRequired(false);
             });
 
             // ── TaskComment ───────────────────────────────────────────────────

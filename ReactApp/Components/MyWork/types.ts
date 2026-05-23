@@ -15,6 +15,8 @@ export interface MyWorkTask {
   priority: Priority;
   status: Status;
   starred?: boolean;
+  /** Phase 4: true when task was created by a leader, not self-created */
+  isAssignedByOther?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
   onStatus?: (newStatus: Status) => void;
