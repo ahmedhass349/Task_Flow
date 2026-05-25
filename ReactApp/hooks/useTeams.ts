@@ -375,10 +375,11 @@ export const useTeams = (): UseTeamsReturn => {
   const markAnnouncementRead = useCallback(async (teamId: string, announcementId: string): Promise<void> => {
     try {
       await api.post(`/api/teams/${teamId}/announcements/${announcementId}/read`, {});
+      await fetchAnnouncementsInner(teamId);
     } catch {
       // non-critical — silently swallow
     }
-  }, []);
+  }, [fetchAnnouncementsInner]);
 
   const fetchMemberProgress = useCallback(async (teamId: string) => {
     if (!teamId) return;

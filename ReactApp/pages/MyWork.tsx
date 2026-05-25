@@ -314,7 +314,7 @@ export default function MyWork() {
             {/* Page header */}
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">My Tasks</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Tasks</h1>
                 <p className="text-gray-600 mt-1">Prioritize and track everything currently on your plate</p>
               </div>
               <div className="flex items-center gap-2">
@@ -336,7 +336,7 @@ export default function MyWork() {
             <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
               {(["myTasks", "assignedToMe"] as const).map((pt) => {
                 const active = pageTab === pt;
-                const label = pt === "myTasks" ? "My Tasks" : "Assigned to Me";
+                const label = pt === "myTasks" ? "Tasks" : "Assigned to Me";
                 const count = pt === "myTasks" ? myOwnTasks.length : assignedByOtherTasks.length;
                 return (
                   <button

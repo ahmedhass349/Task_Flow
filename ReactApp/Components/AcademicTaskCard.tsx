@@ -526,7 +526,7 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData, pref
 
   return (
     <div
-      className="w-full max-w-[560px] rounded-[20px] bg-white shadow-2xl flex flex-col max-h-[92vh]"
+      className="w-full max-w-[680px] rounded-[20px] bg-white shadow-2xl flex flex-col max-h-[92vh]"
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <div className="flex items-center justify-between px-7 pt-7 pb-5 shrink-0" style={{ borderBottom: "1px solid #f0f1f5" }}>

@@ -63,6 +63,9 @@ const avatarColor = (str: string) =>
     str.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) % AVATAR_COLORS.length
   ];
 
+/** Normalise legacy "Admin" role label to "Leader" for display. */
+const displayRole = (role: string) => role === "Admin" ? "Leader" : role;
+
 const statusBadge: Record<string, string> = {
   Pending:   "bg-yellow-100 text-yellow-700",
   Accepted:  "bg-green-100 text-green-700",
@@ -633,10 +636,10 @@ function SharedMemberCard({ member, onRemove, showTeam, onAssignTask }: SharedMe
           <span className="truncate">{member.userEmail}</span>
           {/* FILE: ReactApp/pages/Teams.tsx  PHASE: 1  CHANGES: amber/gold badge for Leader role */}
           <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
-            member.role === 'Leader' || member.role === 'Owner'
+            member.role === 'Leader' || member.role === 'Owner' || member.role === 'Admin'
               ? 'bg-amber-100 text-amber-700'
               : 'bg-gray-100 text-gray-600'
-          }`}>{member.role}</span>
+          }`}>{displayRole(member.role)}</span>
         </div>
         <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
           <Clock className="size-3" /> Joined {fmtDate(member.joinedAt)}
@@ -686,10 +689,10 @@ function MembershipCard({ member, onLeave }: MembershipCardProps) {
           Added you to <strong>{member.teamName || "their team"}</strong> as{" "}
           {/* FILE: ReactApp/pages/Teams.tsx  PHASE: 1  CHANGES: amber/gold badge for Leader role in membership card */}
           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-            member.role === 'Leader' || member.role === 'Owner'
+            member.role === 'Leader' || member.role === 'Owner' || member.role === 'Admin'
               ? 'bg-amber-100 text-amber-700'
               : 'bg-gray-100 text-gray-600'
-          }`}>{member.role}</span>
+          }`}>{displayRole(member.role)}</span>
         </p>
         <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
           <Clock className="size-3" /> {fmtDate(member.joinedAt)}
@@ -1079,10 +1082,20 @@ export default function Teams() {
   // PHASE 5: inner panel tab for owned-team right panel
   const [teamPanelTab, setTeamPanelTab] = useState<"members" | "progress">("members");
 
-  // PHASE 2: load announcements whenever the selected owned-team changes
+  // PHASE 2: load announcements whenever the selected owned-team changes + poll every 30s
   useEffect(() => {
-    if (selectedTeamId) fetchAnnouncements(selectedTeamId);
+    if (!selectedTeamId) return;
+    fetchAnnouncements(selectedTeamId);
+    const interval = setInterval(() => fetchAnnouncements(selectedTeamId), 30_000);
+    return () => clearInterval(interval);
   }, [selectedTeamId, fetchAnnouncements]);
+
+  // Load announcements when member selects a joined team
+  useEffect(() => {
+    if (!selectedMembershipId) return;
+    const membership = membershipsByMe.find(m => m.id === selectedMembershipId);
+    if (membership?.teamId) fetchAnnouncements(membership.teamId);
+  }, [selectedMembershipId, membershipsByMe, fetchAnnouncements]);
 
   // Derived: contacts who have accepted an invitation (bidirectional)
   const acceptedContacts = useMemo<AcceptedContact[]>(() => {
@@ -1505,7 +1518,7 @@ export default function Teams() {
                           <>
                             <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                               <h2 className="font-semibold text-gray-900">{membership.teamName || "Team"}</h2>
-                              <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">{membership.role}</span>
+                              <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">{displayRole(membership.role)}</span>
                             </div>
                             <div className="p-6 space-y-4">
                               <div className="flex items-center gap-3">
@@ -1520,7 +1533,7 @@ export default function Teams() {
                               <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Your Role</p>
-                                  <p className="font-medium text-gray-900">{membership.role}</p>
+                                  <p className="font-medium text-gray-900">{displayRole(membership.role)}</p>
                                 </div>
                                 <div>
                                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Joined</p>
@@ -1537,6 +1550,40 @@ export default function Teams() {
                               >
                                 <LogOut className="size-4" /> Leave Team
                               </button>
+
+                              {/* Announcements for this team */}
+                              {announcements.length > 0 && (
+                                <div className="pt-2 space-y-2">
+                                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Announcements</p>
+                                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {announcements.map(ann => {
+                                      const alreadyRead = ann.readBy.includes(membership.userEmail.toLowerCase());
+                                      return (
+                                        <div key={ann.id} className={`rounded-lg border p-3 text-sm ${alreadyRead ? "border-gray-100 bg-gray-50" : "border-orange-200 bg-orange-50"}`}>
+                                          {ann.title && <p className="font-semibold text-gray-900 text-xs mb-0.5">{ann.title}</p>}
+                                          <p className="text-gray-700 text-xs leading-relaxed">{ann.message}</p>
+                                          <div className="flex items-center justify-between mt-2">
+                                            <p className="text-[11px] text-gray-400">{fmtDate(ann.createdAt)}</p>
+                                            {!alreadyRead && (
+                                              <button
+                                                onClick={() => markAnnouncementRead(membership.teamId, ann.id)}
+                                                className="text-[11px] font-medium text-orange-600 hover:text-orange-700 flex items-center gap-1"
+                                              >
+                                                <CheckCircle className="size-3" /> Mark as read
+                                              </button>
+                                            )}
+                                            {alreadyRead && (
+                                              <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                                                <CheckCircle className="size-3 text-green-500" /> Read
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </>
                         );
@@ -1655,33 +1702,24 @@ export default function Teams() {
 
       {/* PHASE 3: Assign task modal — rendered when leader clicks the ClipboardList button */}
       {assigningToMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-auto max-h-[90vh]">
-            <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Assign Task</h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  Assigning to <span className="font-medium text-gray-700">{assigningToMember.userFullName || assigningToMember.userEmail}</span>
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAssigningToMember(null)}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
-                aria-label="Close"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-            <div className="p-4">
-              <AcademicTaskCard
-                prefilledAssignee={assigningToMember.userEmail}
-                lockAssignee
-                assignmentContext={`Assigning task to ${assigningToMember.userFullName || assigningToMember.userEmail}`}
-                onSuccess={handleAssignTask}
-                onClose={() => setAssigningToMember(null)}
-              />
-            </div>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Assign task"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-900/30 backdrop-blur-sm px-4"
+          onClick={() => setAssigningToMember(null)}
+        >
+          <div
+            className="w-full max-w-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AcademicTaskCard
+              prefilledAssignee={assigningToMember.userEmail}
+              lockAssignee
+              assignmentContext={`Assigning task to ${assigningToMember.userFullName || assigningToMember.userEmail}`}
+              onSuccess={handleAssignTask}
+              onClose={() => setAssigningToMember(null)}
+            />
           </div>
         </div>
       )}

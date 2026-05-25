@@ -81,7 +81,7 @@ export default function TableView({ visibleTasks }: TableViewProps) {
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       {/* Card header */}
       <div className="px-6 pt-5 pb-3">
-        <span className="text-lg font-semibold text-gray-900">My Tasks</span>
+        <span className="text-lg font-semibold text-gray-900">Tasks</span>
       </div>
 
       {/* Column headers */}
