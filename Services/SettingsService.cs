@@ -1,7 +1,3 @@
-// FILE: Services/SettingsService.cs
-// STATUS: UPDATED
-// CHANGES: Updated UpdateProfileAsync to use FirstName/LastName (#24)
-
 using System;
 using System.Collections.Generic;
 using System.Linq;

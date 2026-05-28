@@ -1,8 +1,3 @@
-// FILE: Mapping/MappingProfile.cs
-// STATUS: UPDATED
-// CHANGES: Added TaskComment mappings (#21), DueDateLabel for TaskDto (#28),
-//          ProfileDto FirstName/LastName auto-mapped by convention (#24)
-
 using System.Globalization;
 using System.Linq;
 using AutoMapper;

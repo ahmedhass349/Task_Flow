@@ -1,7 +1,3 @@
-// FILE: Controllers/Api/DashboardController.cs
-// STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() (#3), removed try-catch (#15), cleaned usings (#17), standardized route (#20)
-
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;

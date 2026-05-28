@@ -16,7 +16,10 @@
       "from": "publish/backend",
       "to": "backend",
       "filter": [
-        "**/*"
+        "**/*",
+        "!**/*.db",
+        "!**/*.db-wal",
+        "!**/*.db-shm"
       ]
     }
   ],

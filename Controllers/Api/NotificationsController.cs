@@ -1,7 +1,3 @@
-// FILE: Controllers/Api/NotificationsController.cs
-// STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() (#3), removed try-catch (#15), pass userId to MarkAsRead (#2), cleaned usings (#17), standardized route (#20)
-
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;

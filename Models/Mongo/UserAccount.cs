@@ -1,10 +1,3 @@
-// FILE: Models/Mongo/UserAccount.cs
-// PURPOSE: MongoDB credential backup for account restoration after reinstall.
-//          Stored in a private "user_accounts" collection, separate from the
-//          public "user_presence" collection.
-// SECURITY: BCrypt hashes are one-way functions that embed their own salt.
-//           No plaintext password is ever written here.
-
 using System;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;

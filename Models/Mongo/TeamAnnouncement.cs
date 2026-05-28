@@ -1,4 +1,3 @@
-// FILE: Models/Mongo/TeamAnnouncement.cs  PHASE: 2  CHANGES: New persistent announcement model (MongoDB)
 using System;
 using System.Collections.Generic;
 using MongoDB.Bson;

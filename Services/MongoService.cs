@@ -19,7 +19,6 @@ namespace taskflow.Services
     /// </summary>
     public class MongoService : IMongoService
     {
-        // FILE: Services/MongoService.cs  PHASE: 1  CHANGE: corrected connection string (appName), driver settings
         private const string DatabaseName = "TaskFlow";
 
         private readonly IMongoCollection<UserPresence>? _presenceCollection;
@@ -27,7 +26,6 @@ namespace taskflow.Services
         private readonly IMongoCollection<MongoTeamMember>? _membersCollection;
         private readonly IMongoCollection<CrossNotification>? _crossNotificationsCollection;
         private readonly IMongoCollection<UserAccount>? _userAccountsCollection;
-        // PHASE 2: persistent team announcements collection
         private readonly IMongoCollection<TeamAnnouncement>? _announcementsCollection;
         private readonly ILogger<MongoService> _logger;
         private IMongoClient? _client;
@@ -63,14 +61,13 @@ namespace taskflow.Services
                 _membersCollection = db.GetCollection<MongoTeamMember>("team_members");
                 _crossNotificationsCollection = db.GetCollection<CrossNotification>("cross_notifications");
                 _userAccountsCollection = db.GetCollection<UserAccount>("user_accounts");
-                _announcementsCollection = db.GetCollection<TeamAnnouncement>("team_announcements"); // PHASE 2
+                _announcementsCollection = db.GetCollection<TeamAnnouncement>("team_announcements");
 
                 // B-02: fire-and-forget index creation — never block the DI constructor thread.
                 _ = Task.Run(async () =>
                 {
                     try { await EnsureIndexesAsync(); }
                     catch (Exception ex) { _logger.LogWarning(ex, "MongoService: index creation failed (non-critical)."); }
-                    // PHASE 1: normalize legacy "Admin" role documents to "Leader"
                     try { await NormalizeTeamMemberRolesAsync(); }
                     catch (Exception ex) { _logger.LogWarning(ex, "MongoService: role normalization failed (non-critical)."); }
                 });
@@ -167,7 +164,7 @@ namespace taskflow.Services
                         new CreateIndexOptions { Unique = true, Name = "account_email_unique" }));
             }
 
-            // PHASE 2: compound index for team_announcements (teamId + createdAt desc)
+            // Compound index for team_announcements (teamId + createdAt desc)
             if (_announcementsCollection != null)
             {
                 var annIdx = Builders<TeamAnnouncement>.IndexKeys
@@ -179,7 +176,6 @@ namespace taskflow.Services
             }
         }
 
-        // FILE: Services/MongoService.cs  PHASE: 1  CHANGES: Normalize legacy "Admin" → "Leader" in team_members collection
         private async Task NormalizeTeamMemberRolesAsync()
         {
             if (_membersCollection == null) return;
@@ -190,7 +186,6 @@ namespace taskflow.Services
                 _logger.LogInformation("MongoService: normalized {Count} team_members documents from 'Admin' to 'Leader'.", result.ModifiedCount);
         }
 
-        // FILE: Services/MongoService.cs  PHASE: 2  CHANGES: Persistent announcement methods
         public async Task<TeamAnnouncement> WriteAnnouncementAsync(TeamAnnouncement announcement)
         {
             if (_announcementsCollection == null) return announcement;
@@ -257,7 +252,6 @@ namespace taskflow.Services
             }
         }
 
-        // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: SyncId-keyed upsert/delete + generic find for cross-device sync
 
         /// <summary>
         /// Upserts a document using a GUID SyncId as <c>_id</c> (string).
@@ -505,12 +499,11 @@ namespace taskflow.Services
                     Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, senderEmail),
                     Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, senderEmail)
                 );
-                // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-A — persist sender avatar in team_members
                 var senderUpdate = Builders<MongoTeamMember>.Update
                     .Set(m => m.UserEmail, senderEmail)
                     .Set(m => m.UserFullName, senderFullName)
                     .Set(m => m.AvatarUrl, senderAvatarUrl ?? string.Empty)
-                    .Set(m => m.Role, "Leader")  // PHASE 1: was "Admin"
+                    .Set(m => m.Role, "Leader")
                     .Set(m => m.TeamId, request.TeamId)
                     .Set(m => m.TeamName, request.TeamName ?? string.Empty)
                     .Set(m => m.OwnerEmail, senderEmail)
@@ -602,7 +595,6 @@ namespace taskflow.Services
             if (invitation == null)
                 throw new KeyNotFoundException("Invitation not found or already responded to.");
 
-            // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-B — also capture avatar URL and back-fill invitation doc
             // Resolve recipient's display name and avatar from their presence record.
             string recipientFullName = invitation.RecipientFullName;
             string recipientAvatarUrl = string.Empty;
@@ -647,7 +639,6 @@ namespace taskflow.Services
                     Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, recipientEmail),
                     Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, invitation.SenderEmail)
                 );
-                // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-B — persist recipient avatar in team_members
                 var memberUpdate = Builders<MongoTeamMember>.Update
                     .Set(m => m.TeamId, invitation.TeamId ?? string.Empty)
                     .Set(m => m.TeamName, invitation.TeamName ?? string.Empty)
@@ -721,7 +712,8 @@ namespace taskflow.Services
                 var filter = Builders<MongoTeamMember>.Filter.And(
                     Builders<MongoTeamMember>.Filter.Eq(m => m.TeamId, teamId),
                     Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, ownerEmail),
-                    Builders<MongoTeamMember>.Filter.Eq(m => m.IsActive, true)
+                    Builders<MongoTeamMember>.Filter.Eq(m => m.IsActive, true),
+                    Builders<MongoTeamMember>.Filter.Ne(m => m.UserEmail, ownerEmail)
                 );
 
                 var members = await _membersCollection.Find(filter).ToListAsync();
@@ -755,7 +747,8 @@ namespace taskflow.Services
             {
                 var filter = Builders<MongoTeamMember>.Filter.And(
                     Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, ownerEmail),
-                    Builders<MongoTeamMember>.Filter.Eq(m => m.IsActive, true)
+                    Builders<MongoTeamMember>.Filter.Eq(m => m.IsActive, true),
+                    Builders<MongoTeamMember>.Filter.Ne(m => m.UserEmail, ownerEmail)
                 );
 
                 var members = await _membersCollection.Find(filter)
@@ -784,7 +777,7 @@ namespace taskflow.Services
             }
         }
 
-        private async Task<Dictionary<string, DateTime>> GetLastSeenBatchAsync(IEnumerable<string> emails)
+        public async Task<Dictionary<string, DateTime>> GetLastSeenBatchAsync(IEnumerable<string> emails)
         {
             if (_presenceCollection == null) return [];
             var emailList = emails.ToList();
@@ -846,7 +839,6 @@ namespace taskflow.Services
                 .Set(m => m.UserFullName, memberFullName)
                 .Set(m => m.OwnerEmail, ownerEmail)
                 .Set(m => m.IsActive, true)
-                // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-C — Set(Role) so re-adds can upgrade role
                 .Set(m => m.Role, role)
                 .SetOnInsert(m => m.JoinedAt, DateTime.UtcNow);
 
@@ -1122,8 +1114,7 @@ namespace taskflow.Services
                 var docs = await _crossNotificationsCollection.Find(filter).ToListAsync();
                 if (docs.Count > 0)
                 {
-                    // FILE: Services/MongoService.cs  PHASE: 4  CHANGE: delete by specific IDs (not email filter)
-                    // to avoid silently deleting notifications that arrived between the Find and DeleteMany.
+                    // Snapshot IDs before delete to avoid a race condition between Find and DeleteMany.
                     var ids = docs.Select(d => d.Id).ToList();
                     var idFilter = Builders<CrossNotification>.Filter.In(n => n.Id, ids);
                     await _crossNotificationsCollection.DeleteManyAsync(idFilter);

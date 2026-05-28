@@ -1,13 +1,3 @@
-// FILE: TaskFlow.Tests/AccountRestorationServiceTests.cs
-// PURPOSE: Unit tests for AccountRestorationService — the core of the reinstall-login fix.
-//
-// Scenarios covered:
-//   1. No MongoDB backup exists (user offline or never registered) → returns null
-//   2. Backup found but password wrong → throws UnauthorizedAccessException
-//   3. Backup found, correct password, no presence data → user restored, IsBackedUpToMongo = true
-//   4. Backup found, correct password, presence data present → full name/avatar populated
-//   5. Presence data exists but no entry matches this email → still restores with empty name
-
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

@@ -1,9 +1,3 @@
-// FILE: Controllers/Api/TeamsController.cs
-// STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() (#3), removed try-catch (#15), fixed null! (#6),
-//          added PUT/DELETE team + DELETE member endpoints (#22), cleaned usings (#17), standardized route (#20),
-//          added MongoDB invitation relay endpoints (Phase 2)
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -542,6 +536,8 @@ namespace taskflow.Controllers.Api
             {
                 var email = GetUserEmail();
                 var members = await _mongoService.GetAllTeamMembersAsync(email);
+                // Safety net: never return the caller in their own shared-members list
+                members = members.Where(m => !string.Equals(m.UserEmail, email, StringComparison.OrdinalIgnoreCase)).ToList();
 
                 // Also add owners of teams the current user joined as a member.
                 try
@@ -554,7 +550,6 @@ namespace taskflow.Controllers.Api
                         .Where(oe => !members.Any(m => m.UserEmail == oe))
                         .ToList();
 
-                    // FILE: Controllers/Api/TeamsController.cs  PHASE: 2  CHANGE: P2-D — cross-machine owner fallback
                     foreach (var ownerEmail in ownerEmailsToAdd)
                     {
                         var teamInfo = myMemberships.First(m => m.OwnerEmail == ownerEmail);
@@ -891,8 +886,6 @@ namespace taskflow.Controllers.Api
                 return StatusCode(503, ApiResponse<string>.Fail($"Could not send announcement: {ex.Message}"));
             }
         }
-
-        // FILE: Controllers/Api/TeamsController.cs  PHASE: 2  CHANGES: Persistent announcement GET + read-receipt POST
 
         /// <summary>
         /// Returns the 50 most recent persistent announcements for a team.

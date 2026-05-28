@@ -1,8 +1,3 @@
-// FILE: Controllers/Api/TasksController.cs
-// STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() (#3), removed try-catch (#15), pass userId to Update/Delete/ToggleStar/UpdateStatus (#2),
-//          replaced inline UpdateStatusBody with UpdateStatusRequest DTO (#5), cleaned usings (#17)
-
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;

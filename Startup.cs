@@ -1,10 +1,3 @@
-/*
-    FILE: Startup.cs
-    PHASE: Phase 1
-    PURPOSE: Configures services and middleware with provider-switching database support and desktop startup readiness signals.
-    CHANGED FROM: SQL Server-only DbContext registration and restricted CORS without startup DB readiness signals.
-*/
-
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -178,9 +171,7 @@ namespace taskflow
             services.AddAuthorization();
 
             // ── CORS ─────────────────────────────────────────────────────────
-            // PHASE 1 CHANGE: Switched from WithOrigins() to SetIsOriginAllowed(_ => true).
-            // Reason: In Electron production the React renderer loads from file:// origin,
-            // which is not covered by specific localhost origins.
+            // In Electron production the React renderer loads from file:// origin.
             // The backend only binds to 127.0.0.1 so permitting any origin is safe —
             // no external machine can reach the API.
             // SetIsOriginAllowed (not AllowAnyOrigin) is used so AllowCredentials()
@@ -307,8 +298,9 @@ namespace taskflow
             // ── SignalR ─────────────────────────────────────────────────────
             services.AddSignalR();
 
-            // S-09: Fixed-window rate limiter — caps anonymous auth endpoints at 10 requests/minute
-            // per client IP to mitigate brute-force and credential-stuffing attacks.
+            // ── Rate limiting ───────────────────────────────────────────────
+            // C-01: GlobalLimiter — sliding window, 300 req/min per authenticated userId.
+            // Falls back to remote IP for anonymous requests.
             services.AddRateLimiter(options =>
             {
                 options.AddFixedWindowLimiter("auth", o =>
@@ -318,6 +310,24 @@ namespace taskflow
                     o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     o.QueueLimit = 0;
                 });
+
+                // C-01: Per-user global cap — partitioned by JWT userId so each user
+                // gets their own bucket rather than all local users sharing one IP bucket.
+                options.GlobalLimiter = PartitionedRateLimiter.Create<Microsoft.AspNetCore.Http.HttpContext, string>(ctx =>
+                {
+                    var userId = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                                 ?? ctx.Connection.RemoteIpAddress?.ToString()
+                                 ?? "anon";
+                    return RateLimitPartition.GetSlidingWindowLimiter(userId, _ => new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit          = 300,
+                        Window               = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow    = 6,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit           = 0,
+                    });
+                });
+
                 options.RejectionStatusCode = 429;
             });
 
@@ -367,7 +377,21 @@ namespace taskflow
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 try
                 {
-                    db.Database.Migrate();
+                    // P1.3: Only run migrations when there are actually pending migrations.
+                    // GetPendingMigrations() does a lightweight schema-version check against
+                    // __EFMigrationsHistory. Skipping Migrate() when the DB is current removes
+                    // ~100–300ms from the critical path on every launch after initial setup.
+                    var pendingMigrations = db.Database.GetPendingMigrations().ToList();
+                    if (pendingMigrations.Any())
+                    {
+                        Log.Information("Running {Count} pending migration(s): {Names}",
+                            pendingMigrations.Count, string.Join(", ", pendingMigrations));
+                        db.Database.Migrate();
+                    }
+                    else
+                    {
+                        Log.Debug("Database schema is current — migration skipped");
+                    }
                     Console.WriteLine("TASKFLOW_DB_READY");
                 }
                 catch (Exception ex)

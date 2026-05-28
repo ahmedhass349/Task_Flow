@@ -128,7 +128,7 @@ export default function Projects() {
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className={`${project.color} h-2 rounded-full transition-all`}
-                          style={{ width: `${(project.tasksCompleted / project.tasksTotal) * 100}%` }}
+                          style={{ width: `${project.tasksTotal > 0 ? Math.round((project.tasksCompleted / project.tasksTotal) * 100) : 0}%` }}
                         />
                       </div>
                     </div>
@@ -140,7 +140,7 @@ export default function Projects() {
                         <span>{project.memberCount} members</span>
                       </div>
                       <span className="text-xs text-gray-500">
-                        {Math.round((project.tasksCompleted / project.tasksTotal) * 100)}% complete
+                        {project.tasksTotal > 0 ? Math.round((project.tasksCompleted / project.tasksTotal) * 100) : 0}% complete
                       </span>
                     </div>
                   </div>

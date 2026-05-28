@@ -1,9 +1,3 @@
-// FILE: Services/AuthService.cs
-// STATUS: UPDATED
-// CHANGES: Fixed ResetPasswordAsync to validate ResetToken (#1),
-//          ForgotPasswordAsync now generates reset token (#18),
-//          RegisterAsync now sets FirstName/LastName (#24)
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -188,8 +182,9 @@ namespace taskflow.Services
         public async Task ForgotPasswordAsync(ForgotPasswordRequest request)
         {
             var user = await _userRepository.GetByEmailAsync(request.Email);
+            // Return silently for unknown emails — never reveal whether an account exists.
             if (user == null)
-                throw new KeyNotFoundException("No account found with this email address.");
+                return;
 
             var code = GenerateRecoveryCode();
             user.ResetToken = code;

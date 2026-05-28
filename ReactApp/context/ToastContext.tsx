@@ -1,6 +1,14 @@
+/*
+  FILE: ReactApp/context/ToastContext.tsx
+  PHASE: 4
+  MISSION: 4-Cleanup
+  CHANGES:
+    - Removed unused `Bell` import from lucide-react. `Bell` was never referenced
+      in this file; only X, CheckCircle, AlertCircle, Info, AlertTriangle are used.
+*/
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { DEFAULT_TOAST_DURATION_MS } from '../config/constants';
-import { X, Bell, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
 // Toast notification interface
 export interface Toast {

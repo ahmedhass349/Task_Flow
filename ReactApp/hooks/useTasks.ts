@@ -4,10 +4,10 @@
 // Provides loading, error, data, and refetch states.
 
 import { useState, useEffect, useCallback } from "react";
-import { api, ApiRequestError } from "../services/api";
+import { api, extractErrorMessage } from "../services/api";
 
 // Task interface matching backend TaskDto
-interface Task {
+export interface Task {
   id: number;
   title: string;
   description?: string;
@@ -18,7 +18,7 @@ interface Task {
   dueDate?: string;
   dueDateLabel?: string;
   isStarred: boolean;
-  /** Phase 4: true when this task was assigned by a leader, not self-created */
+  /** true when this task was assigned by a leader, not self-created */
   isAssignedByOther: boolean;
   createdAt: string;
 }
@@ -72,53 +72,29 @@ export const useTasks = (): UseTasksReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    let cancelled = false;
     setIsLoading(true);
     setError(null);
 
     try {
       const data = await api.get<Task[]>("/api/tasks");
-      if (!cancelled) {
-        setTasks(data);
-      }
+      setTasks(data ?? []);
     } catch (err) {
-      if (!cancelled) {
-        const message =
-          err instanceof ApiRequestError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : "Failed to load tasks";
-        setError(message);
-      }
+      setError(extractErrorMessage(err, "Failed to load tasks"));
     } finally {
-      if (!cancelled) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const toggleStar = useCallback(async (id: number) => {
     try {
       await api.patch(`/api/tasks/${id}/star`);
-      // Update local state to reflect change
       setTasks(prev =>
         prev.map(task =>
           task.id === id ? { ...task, isStarred: !task.isStarred } : task
         )
       );
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to toggle task star";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to toggle task star"));
       throw err;
     }
   }, []);
@@ -126,20 +102,13 @@ export const useTasks = (): UseTasksReturn => {
   const updateStatus = useCallback(async (id: number, status: string) => {
     try {
       await api.patch(`/api/tasks/${id}/status`, { status });
-      // Update local state to reflect change
       setTasks(prev =>
         prev.map(task =>
-          task.id === id ? { ...task, status: status as any } : task
+          task.id === id ? { ...task, status: status as Task["status"] } : task
         )
       );
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to update task status";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to update task status"));
       throw err;
     }
   }, []);
@@ -147,16 +116,9 @@ export const useTasks = (): UseTasksReturn => {
   const createTask = useCallback(async (data: CreateTaskRequest) => {
     try {
       await api.post<Task>("/api/tasks", data);
-      // Refetch the full list to get server-generated fields (id, createdAt, etc.)
       await fetchData();
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to create task";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to create task"));
       throw err;
     }
   }, [fetchData]);
@@ -170,13 +132,7 @@ export const useTasks = (): UseTasksReturn => {
         )
       );
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to update task";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to update task"));
       throw err;
     }
   }, []);
@@ -186,20 +142,23 @@ export const useTasks = (): UseTasksReturn => {
       await api.delete(`/api/tasks/${id}`);
       setTasks(prev => prev.filter(task => task.id !== id));
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to delete task";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to delete task"));
       throw err;
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+    api.get<Task[]>("/api/tasks")
+      .then(data => { if (!cancelled) setTasks(data ?? []); })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(extractErrorMessage(err, "Failed to load tasks"));
+      })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   return {
     tasks,

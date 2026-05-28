@@ -1,4 +1,3 @@
-﻿// FILE: ReactApp/pages/Teams.tsx  PHASE: 5  CHANGES: Leader progress dashboard inner panel tab + ProgressDashboard component
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
   Users,
@@ -634,7 +633,6 @@ function SharedMemberCard({ member, onRemove, showTeam, onAssignTask }: SharedMe
         <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
           <Mail className="size-3" />
           <span className="truncate">{member.userEmail}</span>
-          {/* FILE: ReactApp/pages/Teams.tsx  PHASE: 1  CHANGES: amber/gold badge for Leader role */}
           <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
             member.role === 'Leader' || member.role === 'Owner' || member.role === 'Admin'
               ? 'bg-amber-100 text-amber-700'
@@ -687,7 +685,6 @@ function MembershipCard({ member, onLeave }: MembershipCardProps) {
         <p className="font-semibold text-gray-900">{member.ownerEmail}</p>
         <p className="text-sm text-gray-700 mt-1">
           Added you to <strong>{member.teamName || "their team"}</strong> as{" "}
-          {/* FILE: ReactApp/pages/Teams.tsx  PHASE: 1  CHANGES: amber/gold badge for Leader role in membership card */}
           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
             member.role === 'Leader' || member.role === 'Owner' || member.role === 'Admin'
               ? 'bg-amber-100 text-amber-700'
@@ -712,8 +709,6 @@ function MembershipCard({ member, onLeave }: MembershipCardProps) {
 }
 
 // â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-// FILE: ReactApp/pages/Teams.tsx  PHASE: 2  CHANGES: ReadReceiptsPopup + AnnouncementFeed components
 
 // ── ReadReceiptsPopup ─────────────────────────────────────────────────────
 
@@ -868,7 +863,6 @@ function AnnouncementModal({ teamName, onClose, onSend }: AnnouncementModalProps
 }
 
 // ── ProgressDashboard ─────────────────────────────────────────────────────
-// FILE: ReactApp/pages/Teams.tsx  PHASE: 5  CHANGES: New component — per-member task stats for leader
 
 interface ProgressDashboardProps {
   members: MemberProgressStat[];
@@ -1178,7 +1172,7 @@ export default function Teams() {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">

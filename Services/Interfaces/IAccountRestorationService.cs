@@ -1,6 +1,3 @@
-// FILE: Services/Interfaces/IAccountRestorationService.cs
-// PURPOSE: Contract for restoring an account from MongoDB credentials after reinstall.
-
 using System.Threading.Tasks;
 using taskflow.Data.Entities;
 

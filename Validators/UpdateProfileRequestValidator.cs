@@ -1,7 +1,3 @@
-// FILE: Validators/UpdateProfileRequestValidator.cs
-// STATUS: UPDATED
-// CHANGES: Replaced FullName rule with FirstName/LastName rules (#24)
-
 using FluentValidation;
 using taskflow.DTOs.Settings;
 

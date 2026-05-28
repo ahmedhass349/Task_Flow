@@ -1,7 +1,3 @@
-// FILE: Validators/CreateTaskCommentRequestValidator.cs
-// STATUS: NEW
-// CHANGES: Created for fully exposing TaskComment entity (#21)
-
 using FluentValidation;
 using taskflow.DTOs.TaskComments;
 

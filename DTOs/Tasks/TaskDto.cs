@@ -1,7 +1,3 @@
-// FILE: DTOs/Tasks/TaskDto.cs
-// PHASE: 4
-// CHANGES: Added IsAssignedByOther flag so frontend can split "My Tasks" vs "Assigned to Me"
-
 using System;
 
 namespace taskflow.DTOs.Tasks

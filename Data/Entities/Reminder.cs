@@ -1,4 +1,3 @@
-// FILE: Data/Entities/Reminder.cs  PHASE: 2  CHANGE: implements ISyncableEntity — adds SyncId, UpdatedAt, IsSynced
 using System;
 
 namespace taskflow.Data.Entities

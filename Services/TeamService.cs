@@ -1,10 +1,3 @@
-// FILE: Services/TeamService.cs
-// STATUS: UPDATED
-// CHANGES: Added UpdateTeam/DeleteTeam/RemoveTeamMember (#22),
-//          Fixed N+1 in GetTeamMembersAsync (#12),
-//          Fixed double SaveChangesAsync in CreateTeamAsync (#14),
-//          Added Initials to TeamMemberDto (#30)
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -73,7 +66,6 @@ namespace taskflow.Services
             _mirror.Mirror("teams", team.Id, team);
 
             // Fix #14: Use single SaveChangesAsync instead of two
-            // FILE: Services/TeamService.cs  PHASE: 1  CHANGES: TeamRole.Admin → TeamRole.Leader
             var ownerMember = new TeamMember
             {
                 TeamId = team.Id,

@@ -1,4 +1,3 @@
-﻿// FILE: Migrations/20260522145109_Phase1_RenameAdminToLeader.cs  PHASE: 1  CHANGES: Rename stored "Admin" → "Leader" in TeamMembers.Role
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable

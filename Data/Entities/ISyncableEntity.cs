@@ -1,4 +1,3 @@
-// FILE: Data/Entities/ISyncableEntity.cs  PHASE: 2  CHANGE: new interface — marks entities that carry a cross-device SyncId and conflict-resolution timestamp
 using System;
 
 namespace taskflow.Data.Entities

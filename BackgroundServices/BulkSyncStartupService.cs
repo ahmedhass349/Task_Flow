@@ -1,12 +1,3 @@
-// FILE: BackgroundServices/BulkSyncStartupService.cs
-// PHASE: 7  CHANGE: Reversed sync direction — now pulls MongoDB → SQLite (MongoDB is the source
-//          of truth). On startup, ISyncableEntity collections (projects, tasks, notifications,
-//          reminders) are reconciled against MongoDB: records absent from MongoDB are deleted
-//          from SQLite, newer MongoDB records are applied locally, and records present in MongoDB
-//          but not yet local are inserted. Non-ISyncableEntity collections (messages, teams, etc.)
-//          are device-local and are no longer pushed or pulled during bulk sync.
-// PHASE: 6  CHANGE: P6-B1 — late-start recovery + ConnectivityChanged subscription.
-// PHASE: 2  CHANGE: ISyncableEntity SyncId support.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,6 +31,7 @@ namespace taskflow.BackgroundServices
 
         // P6-B1: ensures the full bulk sync runs exactly once — at startup or on first reconnect.
         private int _hasSynced = 0;
+        private CancellationToken _stoppingToken;
 
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
@@ -61,6 +53,7 @@ namespace taskflow.BackgroundServices
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _stoppingToken = stoppingToken;
             // P6-B1: subscribe to ConnectivityChanged for late-start recovery.
             // If MongoDB is still unreachable after the 90-second wait below,
             // RunBulkSyncOnceAsync will be triggered the first time it comes online.
@@ -98,10 +91,10 @@ namespace taskflow.BackgroundServices
             if (!isOnline) return;
             _ = Task.Run(async () =>
             {
-                try   { await RunBulkSyncOnceAsync(CancellationToken.None); }
+                try   { await RunBulkSyncOnceAsync(_stoppingToken); }
                 catch (Exception ex)
                 { _logger.LogWarning(ex, "BulkSyncStartupService: late-start recovery failed."); }
-            });
+            }, _stoppingToken);
         }
 
         // Runs the full pull sync exactly once (guarded by _hasSynced flag).
@@ -124,6 +117,9 @@ namespace taskflow.BackgroundServices
                 await PullSyncableAsync<TaskItem>(db, db.TaskItems, "tasks", stoppingToken);
                 await PullSyncableAsync<Notification>(db, db.Notifications, "notifications", stoppingToken);
                 await PullSyncableAsync<Reminder>(db, db.Reminders, "reminders", stoppingToken);
+                // Phase 3 (P3.5): CalendarEvent implements ISyncableEntity since Phase 2 migration —
+                // pull calendar_events so they are consistent across machines on startup.
+                await PullSyncableAsync<CalendarEvent>(db, db.CalendarEvents, "calendar_events", stoppingToken);
 
                 // Reconcile AppUsers against user_accounts: if a user was backed up to MongoDB
                 // previously but their credential record no longer exists there (e.g. the account

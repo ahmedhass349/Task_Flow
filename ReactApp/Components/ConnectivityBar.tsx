@@ -1,4 +1,3 @@
-// FILE: ReactApp/Components/ConnectivityBar.tsx  PHASE: 3  CHANGE: new component — fixed bar indicating offline/syncing state
 import React from "react";
 import { Wifi, WifiOff, RefreshCw, CloudOff, Cloud } from "lucide-react";
 import { useConnectivity } from "../hooks/useConnectivity";

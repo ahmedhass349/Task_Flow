@@ -1,5 +1,3 @@
-// FILE: DTOs/Tasks/AssignTaskRequest.cs  PHASE: 3  CHANGES: DTO for leader-to-member task assignment
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

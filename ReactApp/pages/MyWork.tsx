@@ -1,5 +1,3 @@
-// FILE: MyWork.tsx  PHASE: 4  CHANGES: Added top-level page tabs "My Tasks" / "Assigned to Me" based on isAssignedByOther flag
-//
 // Main "My Tasks" page. Manages state, tabs, filters, and delegates
 // rendering to extracted view components:
 //   - DefaultView  — grouped task list
@@ -303,7 +301,7 @@ export default function MyWork() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">

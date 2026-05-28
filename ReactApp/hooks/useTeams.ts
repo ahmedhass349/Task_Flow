@@ -8,7 +8,6 @@ import { api, ApiRequestError } from "../services/api";
 
 // â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// FILE: ReactApp/hooks/useTeams.ts  PHASE: 1  CHANGES: TeamMember.role union "Admin" → "Leader"
 export interface TeamMember {
   id: string;
   userId: string;
@@ -70,7 +69,6 @@ export interface UserSearchResult {
   acceptsInvitations: boolean;
 }
 
-// FILE: ReactApp/hooks/useTeams.ts  PHASE: 2  CHANGES: Persistent announcement types + callbacks
 export interface Announcement {
   id: string;
   teamId: string;
@@ -83,7 +81,6 @@ export interface Announcement {
   readBy: string[];
 }
 
-// FILE: ReactApp/hooks/useTeams.ts  PHASE: 5  CHANGES: MemberProgressStat type for leader progress dashboard
 export interface MemberProgressStat {
   userId: number;
   userName: string;
@@ -189,7 +186,7 @@ export const useTeams = (): UseTeamsReturn => {
     setError(null);
     try {
       const data = await api.get<Team[]>("/api/teams");
-      setTeams(data);
+      setTeams(data ?? []);
     } catch (err) {
       setError(
         err instanceof ApiRequestError

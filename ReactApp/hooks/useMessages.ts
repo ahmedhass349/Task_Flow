@@ -17,6 +17,8 @@ export interface Contact {
   lastMessageTime?: string;
   unreadCount: number;
   isStarred: boolean;
+  // A-02: ISO string from MongoDB user_presence.LastSeen; undefined when user has no presence record
+  lastSeen?: string;
 }
 
 export interface Message {
@@ -68,6 +70,7 @@ interface UseMessagesReturn {
   markConversationAsRead: (contactId: number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteConversation: (contactId: number) => Promise<void>;
+  deleteMessage: (messageId: number) => Promise<void>;
 }
 
 // ── Helper ────────────────────────────────────────────────────────────────
@@ -87,6 +90,8 @@ function toContact(raw: any): Contact {
     lastMessageTime,
     unreadCount: raw.unreadCount ?? 0,
     isStarred: raw.isStarred ?? false,
+    // A-02: pass through lastSeen from ContactDto; undefined/null when no presence record
+    lastSeen: raw.lastSeen ?? undefined,
   };
 }
 
@@ -252,6 +257,17 @@ export const useMessages = (): UseMessagesReturn => {
     }
   }, []);
 
+  const deleteMessage = useCallback(async (messageId: number) => {
+    // Optimistically remove from UI immediately
+    setMessages(prev => prev.filter(m => m.id !== messageId));
+    try {
+      await api.delete(`/api/messages/${messageId}`);
+    } catch (err) {
+      // Re-fetch on failure to restore the message
+      if (activeContactId !== null) fetchMessages(activeContactId);
+    }
+  }, [activeContactId, fetchMessages]);
+
   // ── Initial load ─────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -332,5 +348,6 @@ export const useMessages = (): UseMessagesReturn => {
     markConversationAsRead,
     markAllAsRead,
     deleteConversation,
+    deleteMessage,
   };
 };

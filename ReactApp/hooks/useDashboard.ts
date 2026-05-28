@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { CheckSquare, FileText, Users } from "lucide-react";
-import { api, ApiRequestError } from "../services/api";
+import { api, extractErrorMessage } from "../services/api";
 
 // Dashboard stats from backend DTO
 interface DashboardStatsDto {
@@ -122,7 +122,6 @@ export const useDashboard = (): UseDashboardReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    let cancelled = false;
     setIsLoading(true);
     setError(null);
 
@@ -132,34 +131,35 @@ export const useDashboard = (): UseDashboardReturn => {
         api.get<ActivityItemDto[]>("/api/dashboard/activity"),
       ]);
 
-      if (!cancelled) {
-        setStats(mapStats(statsDto));
-        setRecentActivity(mapActivity(activityDto));
-      }
+      setStats(statsDto ? mapStats(statsDto) : null);
+      setRecentActivity(activityDto ? mapActivity(activityDto) : []);
     } catch (err) {
-      if (!cancelled) {
-        const message =
-          err instanceof ApiRequestError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : "Failed to load dashboard data";
-        setError(message);
-      }
+      setError(extractErrorMessage(err, "Failed to load dashboard data"));
     } finally {
-      if (!cancelled) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+    Promise.all([
+      api.get<DashboardStatsDto>("/api/dashboard/stats"),
+      api.get<ActivityItemDto[]>("/api/dashboard/activity"),
+    ])
+      .then(([statsDto, activityDto]) => {
+        if (!cancelled) {
+          setStats(statsDto ? mapStats(statsDto) : null);
+          setRecentActivity(activityDto ? mapActivity(activityDto) : []);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(extractErrorMessage(err, "Failed to load dashboard data"));
+      })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   return {
     stats,

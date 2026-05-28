@@ -1,6 +1,3 @@
-// FILE: Validators/SendMessageRequestValidator.cs
-// PHASE: Phase 5
-// CHANGES: S-05 — added MaximumLength(4000) on Body to prevent unbounded message storage.
 using FluentValidation;
 using taskflow.DTOs.Messages;
 

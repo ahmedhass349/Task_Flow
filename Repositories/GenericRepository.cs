@@ -1,3 +1,19 @@
+/*
+  FILE: Repositories/GenericRepository.cs
+  PHASE: 3
+  MISSION: 2-Performance
+  CHANGES:
+    - GetAllAsync: added .AsNoTracking() — all callers are read-only; eliminates EF change-tracking
+      overhead per row (identity map entry, property snapshot, reverse-lookup bookkeeping).
+    - FindAsync: added .AsNoTracking() — same reason; always used for read-only lookups.
+    - Query: added .AsNoTracking() — complex LINQ reads with .Include() still work correctly with
+      AsNoTracking (EF Core fully supports eager loading on no-tracking queries). All write callers
+      already call _dbSet.Update(entity) explicitly, so tracking is not required.
+    - GetByIdAsync / FirstOrDefaultAsync: intentionally left TRACKED — these are used in
+      load→modify→save write patterns throughout the services.
+    - ExistsAsync / CountAsync: unchanged — aggregate operations never load entities into the
+      change tracker regardless.
+*/
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,12 +43,12 @@ namespace taskflow.Repositories
 
         public async Task<IEnumerable<T>> GetAllAsync()
         {
-            return await _dbSet.ToListAsync();
+            return await _dbSet.AsNoTracking().ToListAsync();
         }
 
         public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
         {
-            return await _dbSet.Where(predicate).ToListAsync();
+            return await _dbSet.AsNoTracking().Where(predicate).ToListAsync();
         }
 
         public async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate)
@@ -70,7 +86,7 @@ namespace taskflow.Repositories
 
         public IQueryable<T> Query()
         {
-            return _dbSet.AsQueryable();
+            return _dbSet.AsNoTracking().AsQueryable();
         }
 
         public async Task SaveChangesAsync()

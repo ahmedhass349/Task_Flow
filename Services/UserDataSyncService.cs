@@ -1,4 +1,20 @@
-// FILE: Services/UserDataSyncService.cs  PHASE: 2  CHANGE: new service — pulls user's MongoDB tasks/projects/notifications/reminders into SQLite on login
+/*
+  FILE: Services/UserDataSyncService.cs
+  PHASE: 2
+  MISSION: 1-CrossMachine
+  CHANGES:
+    - PullForUserAsync: looks up the user's email from SQLite at the start; passes it to all
+      Pull methods. This fixes the critical cross-machine bug where MongoDB was queried with a
+      device-local integer PK (P2.1).
+    - PullTasksAsync: filter changed from "assigneeId" (int) → "assigneeEmail" (string); sets
+      AssigneeEmail on the mapped TaskItem.
+    - PullProjectsAsync: filter changed from "ownerId" (int) → "ownerEmail" (string); sets
+      OwnerEmail on the mapped Project.
+    - Added PullNotificationsAsync: filter by "userEmail"; inserts missing notifications; updates
+      read-status (IsRead, ReadAt) when MongoDB shows read=true and local shows read=false (P2.2).
+    - Added PullCalendarEventsAsync: filter by "ownerEmail"; inserts missing events by SyncId (P2.3).
+    - Added MapToNotification and MapToCalendarEvent helpers.
+*/
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,8 +53,27 @@ namespace taskflow.Services
         {
             try
             {
-                await PullTasksAsync(userId, ct);
-                await PullProjectsAsync(userId, ct);
+                // Phase 2: resolve stable cross-device key (email) once for all Pull methods.
+                // All downstream MongoDB filters use email, not the device-local integer PK.
+                string? userEmail = null;
+                using (var scope = _scopeFactory.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var user = await db.AppUsers.AsNoTracking()
+                        .FirstOrDefaultAsync(u => u.Id == userId, ct);
+                    userEmail = user?.Email;
+                }
+
+                if (string.IsNullOrEmpty(userEmail))
+                {
+                    _logger.LogWarning("UserDataSyncService: could not resolve email for userId={UserId}; skipping pull.", userId);
+                    return;
+                }
+
+                await PullTasksAsync(userId, userEmail, ct);
+                await PullProjectsAsync(userId, userEmail, ct);
+                await PullNotificationsAsync(userId, userEmail, ct);
+                await PullCalendarEventsAsync(userId, userEmail, ct);
             }
             catch (Exception ex)
             {
@@ -48,10 +83,10 @@ namespace taskflow.Services
 
         // ── Tasks ─────────────────────────────────────────────────────────────
 
-        private async Task PullTasksAsync(int userId, CancellationToken ct)
+        private async Task PullTasksAsync(int userId, string userEmail, CancellationToken ct)
         {
-            // Query MongoDB for tasks belonging to this user
-            var filter = new BsonDocument("assigneeId", userId);
+            // Phase 2 fix: query by email (stable cross-device key) not integer id
+            var filter = new BsonDocument("assigneeEmail", userEmail);
             var docs = await _mongo.FindDocumentsAsync("tasks", filter, ct);
 
             if (docs.Count == 0) return;
@@ -71,7 +106,7 @@ namespace taskflow.Services
                 bool exists = await db.TaskItems.AnyAsync(t => t.SyncId == syncId, ct);
                 if (exists) continue;
 
-                var task = MapToTaskItem(doc, syncId, userId);
+                var task = MapToTaskItem(doc, syncId, userId, userEmail);
                 db.TaskItems.Add(task);
             }
 
@@ -80,9 +115,10 @@ namespace taskflow.Services
 
         // ── Projects ──────────────────────────────────────────────────────────
 
-        private async Task PullProjectsAsync(int userId, CancellationToken ct)
+        private async Task PullProjectsAsync(int userId, string userEmail, CancellationToken ct)
         {
-            var filter = new BsonDocument("ownerId", userId);
+            // Phase 2 fix: query by email (stable cross-device key) not integer id
+            var filter = new BsonDocument("ownerEmail", userEmail);
             var docs = await _mongo.FindDocumentsAsync("projects", filter, ct);
 
             if (docs.Count == 0) return;
@@ -101,8 +137,80 @@ namespace taskflow.Services
                 bool exists = await db.Projects.AnyAsync(p => p.SyncId == syncId, ct);
                 if (exists) continue;
 
-                var project = MapToProject(doc, syncId, userId);
+                var project = MapToProject(doc, syncId, userId, userEmail);
                 db.Projects.Add(project);
+            }
+
+            await db.SaveChangesAsync(ct);
+        }
+
+        // ── Notifications ─────────────────────────────────────────────────────
+
+        private async Task PullNotificationsAsync(int userId, string userEmail, CancellationToken ct)
+        {
+            var filter = new BsonDocument("userEmail", userEmail);
+            var docs = await _mongo.FindDocumentsAsync("notifications", filter, ct);
+
+            if (docs.Count == 0) return;
+
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            foreach (var doc in docs)
+            {
+                if (ct.IsCancellationRequested) break;
+
+                if (!doc.Contains("_id") || doc["_id"].BsonType != BsonType.String) continue;
+
+                if (!Guid.TryParse(doc["_id"].AsString, out var syncId)) continue;
+
+                var existing = await db.Notifications
+                    .FirstOrDefaultAsync(n => n.SyncId == syncId, ct);
+
+                if (existing != null)
+                {
+                    // Sync read-status: if MongoDB says read but local still unread, update local
+                    bool mongoIsRead = GetBool(doc, "isRead");
+                    if (mongoIsRead && !existing.IsRead)
+                    {
+                        existing.IsRead = true;
+                        existing.ReadAt = GetDateTimeOrNull(doc, "readAt") ?? DateTime.UtcNow;
+                    }
+                    continue;
+                }
+
+                var notification = MapToNotification(doc, syncId, userId, userEmail);
+                db.Notifications.Add(notification);
+            }
+
+            await db.SaveChangesAsync(ct);
+        }
+
+        // ── Calendar Events ───────────────────────────────────────────────────
+
+        private async Task PullCalendarEventsAsync(int userId, string userEmail, CancellationToken ct)
+        {
+            var filter = new BsonDocument("ownerEmail", userEmail);
+            var docs = await _mongo.FindDocumentsAsync("calendar_events", filter, ct);
+
+            if (docs.Count == 0) return;
+
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            foreach (var doc in docs)
+            {
+                if (ct.IsCancellationRequested) break;
+
+                if (!doc.Contains("_id") || doc["_id"].BsonType != BsonType.String) continue;
+
+                if (!Guid.TryParse(doc["_id"].AsString, out var syncId)) continue;
+
+                bool exists = await db.CalendarEvents.AnyAsync(e => e.SyncId == syncId, ct);
+                if (exists) continue;
+
+                var calendarEvent = MapToCalendarEvent(doc, syncId, userId, userEmail);
+                db.CalendarEvents.Add(calendarEvent);
             }
 
             await db.SaveChangesAsync(ct);
@@ -110,37 +218,80 @@ namespace taskflow.Services
 
         // ── Mappers ───────────────────────────────────────────────────────────
 
-        private static TaskItem MapToTaskItem(BsonDocument doc, Guid syncId, int userId)
+        private static TaskItem MapToTaskItem(BsonDocument doc, Guid syncId, int userId, string userEmail)
         {
             return new TaskItem
             {
-                SyncId        = syncId,
-                Title         = GetString(doc, "title", "Untitled"),
-                Description   = GetStringOrNull(doc, "description"),
-                AssigneeId    = userId,
-                ProjectId     = GetIntOrNull(doc, "projectId"),
-                Priority      = GetEnum(doc, "priority", TaskPriority.Medium),
-                Status        = GetEnum(doc, "status", taskflow.Data.Entities.TaskStatus.Todo),
-                DueDate       = GetDateTimeOrNull(doc, "dueDate"),
-                IsStarred     = GetBool(doc, "isStarred"),
-                CreatedAt     = GetDateTime(doc, "createdAt"),
-                UpdatedAt     = GetDateTime(doc, "updatedAt"),
-                IsSynced      = true,
+                SyncId         = syncId,
+                Title          = GetString(doc, "title", "Untitled"),
+                Description    = GetStringOrNull(doc, "description"),
+                AssigneeId     = userId,
+                AssigneeEmail  = userEmail,  // Phase 2
+                ProjectId      = GetIntOrNull(doc, "projectId"),
+                Priority       = GetEnum(doc, "priority", TaskPriority.Medium),
+                Status         = GetEnum(doc, "status", taskflow.Data.Entities.TaskStatus.Todo),
+                DueDate        = GetDateTimeOrNull(doc, "dueDate"),
+                IsStarred      = GetBool(doc, "isStarred"),
+                CreatedAt      = GetDateTime(doc, "createdAt"),
+                UpdatedAt      = GetDateTime(doc, "updatedAt"),
+                IsSynced       = true,
                 LastModifiedBy = GetStringOrNull(doc, "lastModifiedBy"),
             };
         }
 
-        private static Project MapToProject(BsonDocument doc, Guid syncId, int userId)
+        private static Project MapToProject(BsonDocument doc, Guid syncId, int userId, string userEmail)
         {
             return new Project
             {
-                SyncId     = syncId,
-                Name       = GetString(doc, "name", "Untitled Project"),
+                SyncId      = syncId,
+                Name        = GetString(doc, "name", "Untitled Project"),
                 Description = GetStringOrNull(doc, "description"),
-                OwnerId    = userId,
-                CreatedAt  = GetDateTime(doc, "createdAt"),
-                UpdatedAt  = GetDateTime(doc, "updatedAt"),
-                IsSynced   = true,
+                OwnerId     = userId,
+                OwnerEmail  = userEmail,  // Phase 2
+                Color       = GetStringOrNull(doc, "color"),
+                CreatedAt   = GetDateTime(doc, "createdAt"),
+                UpdatedAt   = GetDateTime(doc, "updatedAt"),
+                IsSynced    = true,
+            };
+        }
+
+        private static Notification MapToNotification(BsonDocument doc, Guid syncId, int userId, string userEmail)
+        {
+            return new Notification
+            {
+                SyncId        = syncId,
+                UserId        = userId,
+                UserEmail     = userEmail,  // Phase 2
+                Title         = GetString(doc, "title", "Notification"),
+                Message       = GetString(doc, "message", string.Empty),
+                Type          = GetEnum(doc, "type", NotificationType.TaskCreated),
+                Priority      = GetEnum(doc, "priority", NotificationPriority.Low),
+                IsRead        = GetBool(doc, "isRead"),
+                ReadAt        = GetDateTimeOrNull(doc, "readAt"),
+                ActionUrl     = GetStringOrNull(doc, "actionUrl"),
+                RelatedTaskId = GetIntOrNull(doc, "relatedTaskId"),
+                CreatedAt     = GetDateTime(doc, "createdAt"),
+                UpdatedAt     = GetDateTime(doc, "updatedAt"),
+                IsSynced      = true,
+            };
+        }
+
+        private static CalendarEvent MapToCalendarEvent(BsonDocument doc, Guid syncId, int userId, string userEmail)
+        {
+            return new CalendarEvent
+            {
+                SyncId      = syncId,
+                OwnerId     = userId,
+                OwnerEmail  = userEmail,  // Phase 2
+                Title       = GetString(doc, "title", "Untitled Event"),
+                Description = GetStringOrNull(doc, "description"),
+                StartAt     = GetDateTime(doc, "startAt"),
+                EndAt       = GetDateTime(doc, "endAt"),
+                Color       = GetStringOrNull(doc, "color"),
+                MeetingLink = GetStringOrNull(doc, "meetingLink"),
+                CreatedAt   = GetDateTime(doc, "createdAt"),
+                UpdatedAt   = GetDateTime(doc, "updatedAt"),
+                IsSynced    = true,
             };
         }
 

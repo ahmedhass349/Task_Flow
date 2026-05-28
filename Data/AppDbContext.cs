@@ -278,6 +278,8 @@ namespace taskflow.Data
                 entity.Property(e => e.Title).HasMaxLength(500).IsRequired();
                 entity.Property(e => e.Color).HasMaxLength(20);
                 entity.Property(e => e.MeetingLink).HasMaxLength(2048);
+                entity.Property(e => e.OwnerEmail).HasMaxLength(320); // Phase 2
+                entity.HasIndex(e => e.SyncId).IsUnique();             // Phase 2: cross-device dedup
 
                 entity.HasOne(ce => ce.Owner)
                       .WithMany(u => u.CalendarEvents)

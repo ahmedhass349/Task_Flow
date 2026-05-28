@@ -261,7 +261,10 @@ export const useChatbot = (): UseChatbotReturn => {
         throw new Error(`Stream request failed: ${response.status}`);
       }
 
-      const reader = response.body!.getReader();
+      if (!response.body) {
+        throw new Error("Stream response body is null — cannot read SSE stream.");
+      }
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let partial = "";
       let accumulated = "";
@@ -382,7 +385,10 @@ export const useChatbot = (): UseChatbotReturn => {
         throw new Error(`Edit-stream request failed: ${response.status}`);
       }
 
-      const reader = response.body!.getReader();
+      if (!response.body) {
+        throw new Error("Edit-stream response body is null — cannot read SSE stream.");
+      }
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let partial = "";
       let accumulated = "";

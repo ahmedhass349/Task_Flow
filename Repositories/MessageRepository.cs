@@ -100,5 +100,19 @@ namespace taskflow.Repositories
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task DeleteMessageAsync(int messageId, int userId)
+        {
+            var message = await _dbSet.FindAsync(messageId);
+            if (message == null || message.SenderId != userId) return;
+
+            message.IsDeletedBySender = true;
+
+            // Hard-delete once both sides have dismissed the message (keeps DB clean)
+            if (message.IsDeletedByReceiver)
+                _dbSet.Remove(message);
+
+            await _context.SaveChangesAsync();
+        }
     }
 }

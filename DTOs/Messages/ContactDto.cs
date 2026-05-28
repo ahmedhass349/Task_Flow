@@ -1,7 +1,3 @@
-// FILE: DTOs/Messages/ContactDto.cs
-// STATUS: UPDATED
-// CHANGES: Added Initials, IsStarred fields for frontend compatibility (#29)
-
 using System;
 
 namespace taskflow.DTOs.Messages
@@ -16,5 +12,7 @@ namespace taskflow.DTOs.Messages
         public DateTime LastMessageTime { get; set; }
         public int UnreadCount { get; set; }
         public bool IsStarred { get; set; }                        // For frontend compatibility (#29)
+        // A-02: last presence heartbeat from MongoDB user_presence; null when user has no presence record
+        public DateTime? LastSeen { get; set; }
     }
 }

@@ -57,6 +57,30 @@ namespace taskflow.Controllers.Api
         {
             if (!_env.IsDevelopment()) return NotFound();
 
+            await ClearSqliteTablesAsync(users);
+            return Ok(ApiResponse<string>.Ok("Cleared", users
+                ? "SQLite fully cleared (including users)"
+                : "SQLite cleared (users preserved)"));
+        }
+
+        /// <summary>
+        /// Clears both SQLite and MongoDB in one call.
+        /// Pass ?users=true to also wipe all user accounts.
+        /// </summary>
+        [HttpPost("reset-all")]
+        public async Task<IActionResult> ResetAll([FromQuery] bool users = false)
+        {
+            if (!_env.IsDevelopment()) return NotFound();
+
+            await _mongo.ClearAllAsync();
+            await ClearSqliteTablesAsync(users);
+            return Ok(ApiResponse<string>.Ok("Cleared", users
+                ? "Both databases fully cleared"
+                : "Both databases cleared (users preserved)"));
+        }
+        // Extracted from ResetSqlite and ResetAll to eliminate duplication.
+        private async Task ClearSqliteTablesAsync(bool users = false)
+        {
             // Delete in FK-safe order (children before parents)
             await _db.Database.ExecuteSqlRawAsync("DELETE FROM ChatbotMessages");
             await _db.Database.ExecuteSqlRawAsync("DELETE FROM ChatbotConversations");
@@ -73,50 +97,8 @@ namespace taskflow.Controllers.Api
             await _db.Database.ExecuteSqlRawAsync("DELETE FROM LocalTeamMembers");
             await _db.Database.ExecuteSqlRawAsync("DELETE FROM LocalInvitations");
             await _db.Database.ExecuteSqlRawAsync("DELETE FROM SyncOutboxEntries");
-
             if (users)
                 await _db.Database.ExecuteSqlRawAsync("DELETE FROM AppUsers");
-
-            return Ok(ApiResponse<string>.Ok("Cleared", users
-                ? "SQLite fully cleared (including users)"
-                : "SQLite cleared (users preserved)"));
-        }
-
-        /// <summary>
-        /// Clears both SQLite and MongoDB in one call.
-        /// Pass ?users=true to also wipe all user accounts.
-        /// </summary>
-        [HttpPost("reset-all")]
-        public async Task<IActionResult> ResetAll([FromQuery] bool users = false)
-        {
-            if (!_env.IsDevelopment()) return NotFound();
-
-            // MongoDB
-            await _mongo.ClearAllAsync();
-
-            // SQLite
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM ChatbotMessages");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM ChatbotConversations");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM TaskComments");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM TaskItems");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM ProjectMembers");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Projects");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM TeamMembers");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Teams");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Messages");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Notifications");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Reminders");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM CalendarEvents");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM LocalTeamMembers");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM LocalInvitations");
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM SyncOutboxEntries");
-
-            if (users)
-                await _db.Database.ExecuteSqlRawAsync("DELETE FROM AppUsers");
-
-            return Ok(ApiResponse<string>.Ok("Cleared", users
-                ? "Both databases fully cleared"
-                : "Both databases cleared (users preserved)"));
         }
     }
 }

@@ -43,7 +43,6 @@ namespace taskflow.Services
         }
 
         // ── Connectivity ping ─────────────────────────────────────────────────
-        // FILE: Services/OfflineAwareMongoService.cs  PHASE: 1  CHANGE: implement PingAsync from IMongoService
 
         public Task<bool> PingAsync(CancellationToken ct = default)
             => _mongo.PingAsync(ct);
@@ -683,14 +682,24 @@ namespace taskflow.Services
             JoinedAt = m.JoinedAt,
         };
 
+        // ── Presence batch lookup ─────────────────────────────────────────────
+
+        public async Task<Dictionary<string, DateTime>> GetLastSeenBatchAsync(IEnumerable<string> emails)
+        {
+            if (_connectivity.IsEffectivelyOnline)
+                return await _mongo.GetLastSeenBatchAsync(emails);
+
+            _logger.LogDebug("GetLastSeenBatchAsync: offline — returning empty.");
+            return new Dictionary<string, DateTime>();
+        }
+
         // ── Dev / testing ─────────────────────────────────────────────────────
 
         public Task ClearAllAsync() => _mongo.ClearAllAsync();
 
         // ── Cross-machine notification bus ────────────────────────────────────
-        // FILE: Services/OfflineAwareMongoService.cs  PHASE: 6  CHANGES: P6-O1 — queue
-        //       WriteCrossNotification in outbox when offline so it's delivered on reconnect
-        //       instead of being silently dropped.
+        // WriteCrossNotification is queued in outbox when offline so it's delivered on reconnect
+        // instead of being silently dropped.
 
         public async Task WriteCrossNotificationAsync(CrossNotification notification)
         {
@@ -761,10 +770,9 @@ namespace taskflow.Services
             _connectivity.IncrementPending();
         }
 
-        // ── Announcements (Phase 2) ───────────────────────────────────────────
-        // FILE: Services/OfflineAwareMongoService.cs  PHASE: 6  CHANGES: P6-O2 — queue
-        //       WriteAnnouncement in outbox when offline so the MongoDB feed is updated
-        //       on reconnect (local notifications are delivered immediately by the controller).
+        // ── Announcements ─────────────────────────────────────────────────────
+        // WriteAnnouncement is queued in outbox when offline so the MongoDB feed is updated
+        // on reconnect (local notifications are delivered immediately by the controller).
 
         public async Task<TeamAnnouncement> WriteAnnouncementAsync(TeamAnnouncement announcement)
         {

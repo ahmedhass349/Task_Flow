@@ -4,7 +4,7 @@
 // Provides loading, error, data, and refetch states.
 
 import { useState, useEffect, useCallback } from "react";
-import { api, ApiRequestError } from "../services/api";
+import { api, extractErrorMessage } from "../services/api";
 
 // Notification interface matching backend DTO
 interface Notification {
@@ -41,71 +41,40 @@ export const useNotifications = (): UseNotificationsReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    let cancelled = false;
     setIsLoading(true);
     setError(null);
 
     try {
       const data = await api.get<Notification[]>("/api/notifications?page=1&pageSize=50");
-      if (!cancelled) {
-        setNotifications((data ?? []).filter(n => n.type?.toLowerCase() !== "messagereceived"));
-      }
+      setNotifications((data ?? []).filter(n => n.type?.toLowerCase() !== "messagereceived"));
     } catch (err) {
-      if (!cancelled) {
-        const message =
-          err instanceof ApiRequestError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : "Failed to load notifications";
-        setError(message);
-      }
+      setError(extractErrorMessage(err, "Failed to load notifications"));
     } finally {
-      if (!cancelled) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const markAsRead = useCallback(async (id: number) => {
     try {
       await api.patch(`/api/notifications/${id}/read`);
-      // Update local state to reflect change
       setNotifications(prev =>
         prev.map(notification =>
           notification.id === id ? { ...notification, isRead: true } : notification
         )
       );
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to mark notification as read";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to mark notification as read"));
     }
   }, []);
 
   const markAllAsRead = useCallback(async () => {
     try {
       await api.patch("/api/notifications/read-all");
-      // Update local state to reflect change
       setNotifications(prev =>
         prev.map(notification => ({ ...notification, isRead: true }))
       );
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to mark all notifications as read";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to mark all notifications as read"));
       throw err;
     }
   }, []);
@@ -113,18 +82,11 @@ export const useNotifications = (): UseNotificationsReturn => {
   const deleteNotification = useCallback(async (id: number) => {
     try {
       await api.delete(`/api/notifications/${id}`);
-      // Update local state to reflect change
       setNotifications(prev =>
         prev.filter(notification => notification.id !== id)
       );
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to delete notification";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to delete notification"));
       throw err;
     }
   }, []);
@@ -134,20 +96,26 @@ export const useNotifications = (): UseNotificationsReturn => {
       await api.delete(`/api/notifications`);
       setNotifications([]);
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to delete all notifications";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to delete all notifications"));
       throw err;
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+    api.get<Notification[]>("/api/notifications?page=1&pageSize=50")
+      .then(data => {
+        if (!cancelled)
+          setNotifications((data ?? []).filter(n => n.type?.toLowerCase() !== "messagereceived"));
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(extractErrorMessage(err, "Failed to load notifications"));
+      })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const onNotificationReceived = (event: Event) => {

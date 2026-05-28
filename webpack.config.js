@@ -1,3 +1,14 @@
+/*
+  FILE: webpack.config.js
+  PHASE: 3
+  MISSION: 2-Performance
+  CHANGES:
+    - splitChunks.cacheGroups.vendor.chunks: 'initial' → 'all'
+      Previously only synchronously-imported node_modules were split into vendor.js.
+      With 'all', webpack also includes node_modules imported by async (lazy) chunks
+      in the vendor bundle, so each page chunk does not re-bundle its own copy of
+      react, react-dom, lucide-react etc. — shared vendor code is loaded once.
+*/
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CompressionPlugin = require('compression-webpack-plugin');
@@ -61,7 +72,7 @@ module.exports = (env) => {
                     vendor: {
                         test: /[\\/]node_modules[\\/]/,
                         name: 'vendor',
-                        chunks: 'initial'
+                        chunks: 'all'
                     }
                 }
             }

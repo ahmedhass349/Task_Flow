@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,12 +9,13 @@ namespace taskflow.Services.Interfaces
 {
     public interface IMongoService
     {
-        // FILE: Services/Interfaces/IMongoService.cs  PHASE: 1  CHANGE: added PingAsync
         Task<bool> PingAsync(CancellationToken ct = default);
 
         // ── Presence ──────────────────────────────────────────────────────────
         Task UpsertPresenceAsync(string email, string fullName, string avatarUrl);
         Task<List<UserSearchResultDto>> SearchUsersAsync(string query, string excludeEmail);
+        // A-02: batch-fetch last-seen timestamps from user_presence by email list
+        Task<Dictionary<string, DateTime>> GetLastSeenBatchAsync(IEnumerable<string> emails);
 
         // ── Invitations ───────────────────────────────────────────────────────
         Task<TeamInvitation> SendInvitationAsync(

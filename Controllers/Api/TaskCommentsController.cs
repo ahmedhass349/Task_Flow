@@ -1,7 +1,3 @@
-// FILE: Controllers/Api/TaskCommentsController.cs
-// STATUS: NEW
-// CHANGES: Full CRUD controller for TaskComments (#21)
-
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;

@@ -1,7 +1,3 @@
-// FILE: Data/Entities/AppUser.cs
-// STATUS: UPDATED
-// CHANGES: Added FirstName, LastName, ResetToken, ResetTokenExpiry fields for #24 and #1
-
 using System;
 using System.Collections.Generic;
 

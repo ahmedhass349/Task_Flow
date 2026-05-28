@@ -1,5 +1,3 @@
-// FILE: Controllers/Api/MessagesController.cs
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -98,6 +96,9 @@ namespace taskflow.Controllers.Api
             if (!AllowedExtensions.Contains(ext))
                 return BadRequest(ApiResponse<object>.Fail("File type not allowed."));
 
+            if (!await FileSignatureValidator.IsValidAsync(file, ext))
+                return BadRequest(ApiResponse<object>.Fail("File content does not match the declared file type."));
+
             var uploadsDir = Path.Combine(_env.WebRootPath, "uploads", "messages");
             Directory.CreateDirectory(uploadsDir);
 
@@ -173,6 +174,17 @@ namespace taskflow.Controllers.Api
             var userId = GetUserId();
             await _messageService.DeleteConversationAsync(userId, contactId);
             return Ok(ApiResponse<object>.Ok((object?)null, "Conversation deleted"));
+        }
+        /// <summary>
+        /// Deletes a single message sent by the authenticated user.
+        /// If the receiver has already dismissed their copy, the row is hard-deleted.
+        /// </summary>
+        [HttpDelete("{messageId:int}")]
+        public async Task<IActionResult> DeleteMessage(int messageId)
+        {
+            var userId = GetUserId();
+            await _messageService.DeleteMessageAsync(messageId, userId);
+            return Ok(ApiResponse<object>.Ok((object?)null, "Message deleted"));
         }
     }
 }

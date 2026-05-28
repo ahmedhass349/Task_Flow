@@ -1,16 +1,3 @@
-// FILE: Services/AccountRestorationService.cs
-// PURPOSE: Restores a user account into the local SQLite database from MongoDB credentials.
-//          Called by AuthService.LoginAsync when the user is not found locally (e.g. after reinstall).
-//
-// FLOW:
-//   1. Query MongoDB user_accounts collection for a credential record matching the email.
-//   2. If no record found → return null (unknown user, or offline).
-//   3. Verify the supplied plaintext password against the stored BCrypt hash.
-//   4. If mismatch → throw UnauthorizedAccessException (wrong password, not a restoration issue).
-//   5. If match → look up the public profile from MongoDB user_presence (or users collection)
-//      to populate name/avatar/etc., then recreate the AppUser row in SQLite.
-//   6. Return the new AppUser so AuthService can generate a JWT immediately.
-
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;

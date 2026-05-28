@@ -1,4 +1,11 @@
-// FILE: Data/Entities/TaskItem.cs  PHASE: 4  CHANGES: Added CreatedById (int?) to distinguish self-created vs leader-assigned tasks
+/*
+  FILE: Data/Entities/TaskItem.cs
+  PHASE: 2
+  MISSION: 1-CrossMachine
+  CHANGES:
+    - Added AssigneeEmail (string?) — stable cross-device identifier for MongoDB queries; fixes
+      the device-local integer assigneeId cross-machine query bug (P2.1).
+*/
 using System;
 using System.Collections.Generic;
 
@@ -21,6 +28,8 @@ namespace taskflow.Data.Entities
         public string? Description { get; set; }
         public int? ProjectId { get; set; }
         public int? AssigneeId { get; set; }
+        /// <summary>Email of the assigned user — stable cross-device key used in MongoDB pull queries.</summary>
+        public string? AssigneeEmail { get; set; }
         /// <summary>Id of the user who originally created this task. Null for legacy rows (treated as self-created).</summary>
         public int? CreatedById { get; set; }
         public TaskPriority Priority { get; set; } = TaskPriority.Medium;

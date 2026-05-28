@@ -13,5 +13,6 @@ namespace taskflow.Services.Interfaces
         Task MarkConversationAsReadAsync(int userId, int contactId);
         Task MarkAllAsReadAsync(int userId);
         Task DeleteConversationAsync(int userId, int contactId);
+        Task DeleteMessageAsync(int messageId, int userId);
     }
 }

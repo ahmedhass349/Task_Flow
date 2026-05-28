@@ -1,7 +1,3 @@
-// FILE: Repositories/Interfaces/ITaskCommentRepository.cs
-// STATUS: NEW
-// CHANGES: Created for fully exposing TaskComment entity (#21)
-
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using taskflow.Data.Entities;

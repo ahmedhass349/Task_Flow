@@ -32,7 +32,6 @@ namespace taskflow.BackgroundServices
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<OfflineSyncService> _logger;
 
-        // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 1  CHANGE: reduced ping interval from 30s to 10s
         private const int PingIntervalSeconds = 10;
 
         // B-05: prevents concurrent replay when both the timer loop and the connectivity-changed
@@ -249,7 +248,6 @@ namespace taskflow.BackgroundServices
                 }
                 case "LeaveTeam":
                 {
-                    // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 4  CHANGE: added missing LeaveTeam case
                     var x = Deserialize<LeaveTeamPayload>(p);
                     await _mongoService.LeaveTeamAsync(x.TeamId, x.UserEmail);
                     break;
@@ -276,7 +274,6 @@ namespace taskflow.BackgroundServices
                 }
                 case "MirrorUpsert":
                 {
-                    // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 2  CHANGE: routes to SyncId-keyed upsert when syncId is present
                     var x = Deserialize<MirrorUpsertPayload>(p);
                     var doc = MongoDB.Bson.BsonDocument.Parse(x.ExtJson);
                     if (!string.IsNullOrEmpty(x.SyncId))
@@ -294,7 +291,6 @@ namespace taskflow.BackgroundServices
                 }
                 case "MirrorDelete":
                 {
-                    // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 2  CHANGE: routes to SyncId-keyed delete when syncId is present
                     var x = Deserialize<MirrorDeletePayload>(p);
                     if (!string.IsNullOrEmpty(x.SyncId))
                         await _mongoService.DeleteDocumentBySyncIdAsync(x.Collection, x.SyncId);
@@ -327,7 +323,6 @@ namespace taskflow.BackgroundServices
                     }
                     break;
                 }
-                // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 6  CHANGES: P6-O1+P6-O2
                 // Dispatch cases for cross-notifications and announcements queued while offline.
                 case "WriteCrossNotification":
                 {

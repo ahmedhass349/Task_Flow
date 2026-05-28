@@ -1,5 +1,13 @@
-import { useState, useEffect } from "react";
-import { Clock, CheckSquare, Calendar, Users, FileText, TrendingUp } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+/*
+  FILE: ReactApp/pages/Dashboard.tsx
+  MISSION: 6-Scan
+  CHANGES:
+    - A-03: Import TrendingDown alongside TrendingUp.
+    - A-03: Trend indicator now conditionally shows red/down arrow when
+      tasksTrend < 0 instead of always showing green/up regardless of sign.
+*/
+import { Clock, CheckSquare, Calendar, Users, FileText, TrendingUp, TrendingDown } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import DashboardCard from "../Components/DashboardCard";
@@ -10,7 +18,7 @@ import Footer from "../Components/Footer";
 import { PageLoading, PageError } from "../Components/PageState";
 import { useAuth } from "../context/AuthContext";
 import { useDashboard } from "../hooks/useDashboard";
-import { useTasks } from "../hooks/useTasks";
+import { useTasks, type Task } from "../hooks/useTasks";
 import { useToast } from "../context/ToastContext";
 
 export default function Dashboard() {
@@ -19,13 +27,13 @@ export default function Dashboard() {
   const { stats, recentActivity, isLoading: isDashboardLoading, error, refetch } = useDashboard();
   const { tasks, isLoading: isTasksLoading } = useTasks();
 
-  const activeTasks = tasks.filter((t: any) => t.status !== "Completed");
+  const activeTasks = tasks.filter((t: Task) => t.status !== "Completed");
   const now = new Date();
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [calMonth, setCalMonth] = useState(now.getMonth()); 
   const [calDay, setCalDay] = useState(now.getDate());
 
-  const currentTime = new Date().getHours();
+  const currentTime = useMemo(() => new Date().getHours(), []);
   const greeting = currentTime < 12 ? "Good Morning" : currentTime < 18 ? "Good Afternoon" : "Good Evening";
   const firstName = user ? (user.firstName || user.fullName?.split(" ")[0] || "there") : "there";
 
@@ -34,7 +42,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -64,9 +72,11 @@ export default function Dashboard() {
                     <CheckSquare className="size-6 text-blue-600" />
                   </div>
                 </div>
-                <div className="flex items-center gap-1 mt-4 text-sm text-green-600">
-                  <TrendingUp className="size-4" />
-                  <span>{stats.tasksTrend}% from last week</span>
+                <div className={`flex items-center gap-1 mt-4 text-sm ${(stats.tasksTrend ?? 0) >= 0 ? "text-green-600" : "text-red-500"}`}>
+                  {(stats.tasksTrend ?? 0) >= 0
+                    ? <TrendingUp className="size-4" />
+                    : <TrendingDown className="size-4" />}
+                  <span>{Math.abs(stats.tasksTrend ?? 0)}% {(stats.tasksTrend ?? 0) >= 0 ? "more" : "fewer"} than last week</span>
                 </div>
               </div>
 
@@ -128,8 +138,8 @@ export default function Dashboard() {
                   <p className="text-sm text-gray-500 py-4 text-center">No tasks assigned yet</p>
                 ) : (
                   <div className="space-y-4 mt-2">
-                    {activeTasks.slice(0, 4).map((t: any) => (
-                      <div key={`mywork-${t.id}`} className="flex items-start gap-3">
+                    {activeTasks.slice(0, 4).map((t: Task) => (
+                      <div key={`mywork-${t.id}`}className="flex items-start gap-3">
                         <div className={`mt-0.5 size-4 rounded-full border flex-shrink-0 ${t.priority === 'High' ? 'border-red-500 bg-red-50' : t.priority === 'Medium' ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300 bg-gray-50'}`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">{t.title}</p>
@@ -153,8 +163,8 @@ export default function Dashboard() {
                   <p className="text-sm text-gray-500 py-4 text-center">Nothing assigned to you</p>
                 ) : (
                   <div className="space-y-4 mt-2">
-                    {activeTasks.slice(0, 4).map((t: any) => (
-                      <div key={`assigned-${t.id}`} className="flex items-start gap-3">
+                    {activeTasks.slice(0, 4).map((t: Task) => (
+                      <div key={`assigned-${t.id}`}className="flex items-start gap-3">
                         <div className={`mt-0.5 size-4 rounded-full border flex-shrink-0 ${t.priority === 'High' ? 'border-red-500 bg-red-50' : t.priority === 'Medium' ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300 bg-gray-50'}`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">{t.title}</p>

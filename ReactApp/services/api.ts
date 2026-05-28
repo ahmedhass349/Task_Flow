@@ -5,8 +5,6 @@
 // - Automatic auth token injection
 // - Consistent error handling
 // - Typed request/response helpers
-//
-// Usage example available in repository docs or README.
 
 import type { ApiError, ApiResponse } from "../types";
 import { getApiBaseUrl } from "../config/api";
@@ -120,6 +118,11 @@ export class ApiRequestError extends Error {
   }
 }
 
+/** Extracts a human-readable message from any thrown value. */
+export function extractErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
+
 // ── Core fetch wrapper ───────────────────────────────────────────────────
 
 interface RequestOptions {
@@ -130,7 +133,7 @@ interface RequestOptions {
 }
 
 async function request<T>(endpoint: string, options: RequestOptions): Promise<T> {
-  const baseUrl = getApiBaseUrl() || (import.meta as any).env?.VITE_API_BASE_URL || "";
+  const baseUrl = getApiBaseUrl() || "";
   // If endpoint is already an absolute URL (e.g. built by ENDPOINTS via buildUrl),
   // use it directly to avoid double-prepending the base URL.
   const url = endpoint.startsWith("http://") || endpoint.startsWith("https://")
@@ -188,9 +191,9 @@ async function request<T>(endpoint: string, options: RequestOptions): Promise<T>
     }
 
     throw new ApiRequestError({
-      message: (errorData as any)?.message || `Request failed with status ${response.status}`,
+      message: (errorData as { message?: string } | null)?.message || `Request failed with status ${response.status}`,
       status: response.status,
-      errors: (errorData as any)?.errors,
+      errors: (errorData as { errors?: Record<string, string[]> } | null)?.errors,
     });
   }
 
@@ -205,7 +208,6 @@ async function request<T>(endpoint: string, options: RequestOptions): Promise<T>
     });
   }
 
-  // Successful HTTP status. Most backend endpoints wrap payload in ApiResponse<T>.
   const maybeWrapped = data as ApiResponse<T> | T;
 
   if (typeof maybeWrapped === "object" && maybeWrapped !== null && "success" in maybeWrapped) {
@@ -248,7 +250,7 @@ export const api = {
 
   /** Upload FormData (multipart) — does NOT set Content-Type so the browser adds the boundary. */
   postForm<T>(endpoint: string, formData: FormData, signal?: AbortSignal): Promise<T> {
-    const baseUrl = getApiBaseUrl() || (import.meta as any).env?.VITE_API_BASE_URL || "";
+    const baseUrl = getApiBaseUrl() || "";
     const url = `${baseUrl}${endpoint}`;
     const token = getAuthToken();
     const headers: HeadersInit = {};
@@ -260,14 +262,14 @@ export const api = {
         const data: unknown = await response.json().catch(() => null);
         if (!response.ok) {
           throw new ApiRequestError({
-            message: (data as any)?.message || `Upload failed with status ${response.status}`,
+            message: (data as { message?: string } | null)?.message || `Upload failed with status ${response.status}`,
             status: response.status,
           });
         }
-        const maybe = data as any;
-        if (maybe && "success" in maybe) {
-          if (!maybe.success) throw new ApiRequestError({ message: maybe.message || "Upload failed", status: response.status });
-          return (maybe.data ?? null) as T;
+        if (typeof data === "object" && data !== null && "success" in data) {
+          const wrapped = data as ApiResponse<T>;
+          if (!wrapped.success) throw new ApiRequestError({ message: wrapped.message || "Upload failed", status: response.status });
+          return (wrapped.data ?? null) as T;
         }
         return data as T;
       });

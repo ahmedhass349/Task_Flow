@@ -1,5 +1,5 @@
-// FILE: Services/MirrorService.cs  PHASE: 2  CHANGE: uses SyncId as MongoDB _id for ISyncableEntity; adds EraseSync
 using System;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -114,10 +114,24 @@ namespace taskflow.Services
             }
         }
 
+        /*
+          FILE: Services/MirrorService.cs
+          MISSION: 6-Scan
+          CHANGES:
+            - D-04: EraseAsync now prunes pending MirrorUpsert outbox entries for the
+              same collection+id before deleting, preventing outbox replay from
+              re-creating a document that has already been deleted.
+            - D-04: EraseSyncAsync applies the same pruning by syncId (GUID match is
+              globally unique, so Contains is safe and avoids raw SQL).
+        */
         private async Task EraseAsync(string collection, int id)
         {
             try
             {
+                // D-04: Cancel any pending upsert for this entity so outbox replay
+                // cannot re-create it after the hard delete.
+                await PrunePendingUpsertsByIntIdAsync(collection, id);
+
                 if (_connectivity.IsEffectivelyOnline)
                 {
                     await _mongo.DeleteDocumentAsync(collection, id);
@@ -138,6 +152,10 @@ namespace taskflow.Services
         {
             try
             {
+                // D-04: Cancel any pending upsert for this syncId so outbox replay
+                // cannot re-create it after the hard delete.
+                await PrunePendingUpsertsBySyncIdAsync(syncId.ToString());
+
                 if (_connectivity.IsEffectivelyOnline)
                 {
                     await _mongo.DeleteDocumentBySyncIdAsync(collection, syncId.ToString());
@@ -157,7 +175,46 @@ namespace taskflow.Services
             {
                 _logger.LogWarning(ex, "MirrorService.EraseSyncAsync failed: col={Col} syncId={SyncId}", collection, syncId);
             }
-}
+        }
+
+        /// <summary>
+        /// D-04: Removes pending MirrorUpsert entries whose GUID syncId appears in the
+        /// payload. GUID uniqueness makes a plain Contains match precise enough.
+        /// </summary>
+        private async Task PrunePendingUpsertsBySyncIdAsync(string syncId)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var pruned = await db.SyncOutboxEntries
+                .Where(e => e.Status == "Pending"
+                         && e.OperationName == "MirrorUpsert"
+                         && e.PayloadJson.Contains(syncId))
+                .ExecuteDeleteAsync();
+            if (pruned > 0)
+                _logger.LogDebug("D-04: pruned {Count} stale upsert(s) for syncId={SyncId}", pruned, syncId);
+        }
+
+        /// <summary>
+        /// D-04: Removes pending MirrorUpsert entries matching collection + int id.
+        /// JSON field order from anonymous-type serialisation is deterministic, so
+        /// the combined Contains checks are precise.
+        /// </summary>
+        private async Task PrunePendingUpsertsByIntIdAsync(string collection, int id)
+        {
+            var colFragment = $"\"collection\":\"{collection}\"";
+            var idFragment  = $"\"id\":{id},";
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var pruned = await db.SyncOutboxEntries
+                .Where(e => e.Status == "Pending"
+                         && e.OperationName == "MirrorUpsert"
+                         && e.PayloadJson.Contains(colFragment)
+                         && e.PayloadJson.Contains(idFragment)
+                         && e.PayloadJson.Contains("\"syncId\":null"))
+                .ExecuteDeleteAsync();
+            if (pruned > 0)
+                _logger.LogDebug("D-04: pruned {Count} stale upsert(s) for col={Col} id={Id}", pruned, collection, id);
+        }
 
         private static BsonDocument ToSafeBsonDocument<T>(T entity, int id) where T : class
         {

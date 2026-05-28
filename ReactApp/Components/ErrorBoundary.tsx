@@ -1,4 +1,4 @@
-import { useRouteError, isRouteErrorResponse } from "react-router";
+import { useRouteError, isRouteErrorResponse, Link } from "react-router";
 
 export default function ErrorBoundary() {
   const error = useRouteError();
@@ -21,12 +21,12 @@ export default function ErrorBoundary() {
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Oops!</h1>
         <p className="text-gray-600 mb-2">Something went wrong.</p>
         <p className="text-sm text-gray-500 mb-6">{errorMessage}</p>
-        <a 
-          href="/" 
+        <Link
+          to="/"
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 inline-block transition-colors"
         >
           Go back home
-        </a>
+        </Link>
       </div>
     </div>
   );

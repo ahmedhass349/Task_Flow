@@ -1,6 +1,3 @@
-// FILE: Validators/CreateTaskRequestValidator.cs
-// PHASE: Phase 5
-// CHANGES: S-05 — added MaximumLength(4000) on Description to bound optional free-text input.
 using FluentValidation;
 using taskflow.DTOs.Tasks;
 using taskflow.Data.Entities;

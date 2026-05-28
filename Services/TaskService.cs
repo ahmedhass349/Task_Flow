@@ -1,10 +1,3 @@
-// FILE: Services/TaskService.cs
-// STATUS: UPDATED
-// CHANGES: Added userId ownership checks to Update/Delete/ToggleStar/UpdateStatus (#2),
-//          Fixed in-memory search to DB query (#8),
-//          Fixed double-fetch pattern (#13)
-// PHASE: 3  CHANGES: Added IUserRepository dependency + AssignTaskAsync for leader task assignment
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -112,12 +105,17 @@ namespace taskflow.Services
             if (request.DueDate.HasValue && request.DueDate.Value.Date < DateTime.UtcNow.Date)
                 throw new ArgumentException("Due date cannot be before today.");
 
+            // Phase 2: look up assignee email for cross-device MongoDB queries
+            int effectiveAssigneeId = request.AssigneeId ?? userId;
+            var assignee = await _userRepository.GetByIdAsync(effectiveAssigneeId);
+
             var task = new TaskItem
             {
                 Title = request.Title,
                 Description = request.Description,
                 ProjectId = request.ProjectId,
-                AssigneeId = request.AssigneeId ?? userId,
+                AssigneeId = effectiveAssigneeId,
+                AssigneeEmail = assignee?.Email,  // Phase 2
                 CreatedById = userId,  // Phase 4: track creator
                 Priority = request.Priority,
                 Status = request.Status,
@@ -180,6 +178,7 @@ namespace taskflow.Services
                 Description = request.Description,
                 ProjectId = request.ProjectId,
                 AssigneeId = assignee.Id,
+                AssigneeEmail = assignee.Email,  // Phase 2
                 CreatedById = assignerUserId,  // Phase 4: track who assigned
                 Priority = request.Priority,
                 Status = request.Status,
@@ -267,6 +266,12 @@ namespace taskflow.Services
 
             task.Title = request.Title;
             task.Description = request.Description;
+            // Phase 2: update AssigneeEmail when AssigneeId changes for cross-device sync
+            if (request.AssigneeId.HasValue && request.AssigneeId.Value != task.AssigneeId)
+            {
+                var newAssignee = await _userRepository.GetByIdAsync(request.AssigneeId.Value);
+                task.AssigneeEmail = newAssignee?.Email;
+            }
             task.AssigneeId = request.AssigneeId ?? task.AssigneeId;
             task.Priority = request.Priority;
             task.Status = request.Status;

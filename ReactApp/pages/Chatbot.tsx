@@ -332,7 +332,7 @@ export default function Chatbot() {
   /* ── Page states ── */
   if (isLoading) {
     return (
-      <div className="flex h-screen overflow-hidden bg-gray-50">
+      <div className="flex h-screen overflow-hidden bg-background">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header />
@@ -344,7 +344,7 @@ export default function Chatbot() {
 
   if (error) {
     return (
-      <div className="flex h-screen overflow-hidden bg-gray-50">
+      <div className="flex h-screen overflow-hidden bg-background">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header />
@@ -358,7 +358,7 @@ export default function Chatbot() {
   const hasMessages = uiMessages.length > 0;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">

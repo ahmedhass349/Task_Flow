@@ -1,9 +1,3 @@
-// FILE: Controllers/Api/AuthController.cs
-// STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() to return 401 (#3), removed try-catch blocks (#15), cleaned usings (#17),
-//          added fire-and-forget presence upsert to MongoDB relay on login/register (Phase 2);
-//          S-09 (Phase 5): [EnableRateLimiting("auth")] on all four anonymous auth actions.
-
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;

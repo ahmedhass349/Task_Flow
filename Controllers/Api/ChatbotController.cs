@@ -1,8 +1,3 @@
-// FILE: Controllers/Api/ChatbotController.cs
-// STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() (#3), removed try-catch (#15), pass userId to Get/Send/Delete (#2), cleaned usings (#17)
-//          Phase 4: SSE error handling, logger, clear-all endpoint
-
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;

@@ -1,9 +1,3 @@
-// FILE: BackgroundServices/CrossNotificationPollerService.cs
-// PHASE: 6
-// CHANGES: P6-C1 — added SemaphoreSlim(1,1) guard to prevent concurrent poll cycles
-//          from delivering the same cross-notifications more than once when a poll
-//          takes longer than the 15-second interval.
-
 using System;
 using System.Linq;
 using System.Threading;
@@ -33,7 +27,6 @@ namespace taskflow.BackgroundServices
     /// </summary>
     public class CrossNotificationPollerService : BackgroundService
     {
-        // FILE: BackgroundServices/CrossNotificationPollerService.cs  PHASE: 3  CHANGE: reduced interval from 30s to 15s for faster invitation response UX
         private static readonly TimeSpan _interval = TimeSpan.FromSeconds(15);
 
         // P6-C1: prevents concurrent polls if a cycle takes longer than the interval.

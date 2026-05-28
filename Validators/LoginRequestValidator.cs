@@ -1,6 +1,3 @@
-// FILE: Validators/LoginRequestValidator.cs
-// PHASE: Phase 5
-// CHANGES: S-05 — added MaximumLength(200) on Password to bound input at the API boundary.
 using FluentValidation;
 using taskflow.DTOs.Auth;
 

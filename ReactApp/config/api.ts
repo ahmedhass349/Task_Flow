@@ -32,11 +32,12 @@ const initializeApiBaseUrl = async (): Promise<string> => {
     }
   }
 
-  // Web context: use environment variable or empty string (will use relative URLs via webpack proxy)
-  const envUrl = (import.meta as any).env?.VITE_API_BASE_URL || "";
-  API_BASE_URL = envUrl;
+  // Web context: no VITE_API_BASE_URL in this webpack build — relative URLs are used
+  // and webpack-dev-server proxy forwards /api/* to the ASP.NET Core backend.
+  // The cast `(import.meta as any).env` was dead code (Vite-ism, not applicable here).
+  API_BASE_URL = "";
   apiBaseUrlInitialized = true;
-  return envUrl;
+  return "";
 };
 
 // Helper function to build endpoint URL
