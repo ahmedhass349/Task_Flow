@@ -44,7 +44,7 @@ namespace taskflow.Controllers.Api
         {
             if (!_env.IsDevelopment()) return NotFound();
 
-            await _mongo.ClearAllAsync();
+            await _mongo.ClearAllAsync(includeUsers: false);
             return Ok(ApiResponse<string>.Ok("Cleared", "MongoDB collections cleared"));
         }
 
@@ -72,7 +72,7 @@ namespace taskflow.Controllers.Api
         {
             if (!_env.IsDevelopment()) return NotFound();
 
-            await _mongo.ClearAllAsync();
+            await _mongo.ClearAllAsync(includeUsers: users);
             await ClearSqliteTablesAsync(users);
             return Ok(ApiResponse<string>.Ok("Cleared", users
                 ? "Both databases fully cleared"

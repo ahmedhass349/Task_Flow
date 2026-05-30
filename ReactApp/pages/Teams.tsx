@@ -64,6 +64,10 @@ const avatarColor = (str: string) =>
 
 /** Normalise legacy "Admin" role label to "Leader" for display. */
 const displayRole = (role: string) => role === "Admin" ? "Leader" : role;
+const isLeadershipRole = (role: string) => {
+  const normalized = role.trim().toLowerCase();
+  return normalized === "leader" || normalized === "owner" || normalized === "admin";
+};
 
 const statusBadge: Record<string, string> = {
   Pending:   "bg-yellow-100 text-yellow-700",
@@ -606,6 +610,8 @@ interface SharedMemberCardProps {
 
 function SharedMemberCard({ member, onRemove, showTeam, onAssignTask }: SharedMemberCardProps) {
   const [busy, setBusy] = useState(false);
+  const isOwnerRecord =
+    member.userEmail.trim().toLowerCase() === member.ownerEmail.trim().toLowerCase();
   return (
     <div className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
       <div className="relative flex-shrink-0">
@@ -644,7 +650,7 @@ function SharedMemberCard({ member, onRemove, showTeam, onAssignTask }: SharedMe
         </p>
       </div>
       {/* PHASE 3: Assign Task button — only visible when handler is provided (i.e. current user is a leader) */}
-      {onAssignTask && (
+      {onAssignTask && !isLeadershipRole(member.role) && (
         <button
           type="button"
           onClick={() => onAssignTask(member)}
@@ -655,14 +661,16 @@ function SharedMemberCard({ member, onRemove, showTeam, onAssignTask }: SharedMe
           <ClipboardList className="size-4" />
         </button>
       )}
-      <button
-        onClick={async () => { setBusy(true); try { await onRemove(member.userEmail); } finally { setBusy(false); } }}
-        disabled={busy}
-        aria-label="Remove member"
-        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
-      >
-        <Trash2 className="size-4" />
-      </button>
+      {!isOwnerRecord && (
+        <button
+          onClick={async () => { setBusy(true); try { await onRemove(member.userEmail); } finally { setBusy(false); } }}
+          disabled={busy}
+          aria-label="Remove member"
+          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
+        >
+          <Trash2 className="size-4" />
+        </button>
+      )}
     </div>
   );
 }
@@ -971,7 +979,7 @@ function ProgressDashboard({ members, loading, onRefresh, onAssignTask }: Progre
                   <p className="text-sm font-bold text-gray-700">{completionPct}%</p>
                   <p className="text-xs text-gray-400">{m.tasksCompleted}/{memberTotal}</p>
                 </div>
-                {onAssignTask && (
+                {onAssignTask && !isLeadershipRole(m.role) && (
                   <button
                     type="button"
                     onClick={() => onAssignTask(m.email, m.userName)}
@@ -1126,6 +1134,35 @@ export default function Teams() {
 
   const pendingIn = incomingInvitations.filter(i => i.status === "Pending").length;
   const pendingOut = outgoingInvitations.filter(i => i.status === "Pending").length;
+
+  const mergedProgressMembers = useMemo<MemberProgressStat[]>(() => {
+    const byEmail = new Map<string, MemberProgressStat>();
+
+    for (const m of memberProgress) {
+      byEmail.set(m.email.trim().toLowerCase(), m);
+    }
+
+    let syntheticUserId = -1;
+    for (const shared of sharedMembers) {
+      const key = shared.userEmail.trim().toLowerCase();
+      if (byEmail.has(key)) continue;
+
+      byEmail.set(key, {
+        userId: syntheticUserId--,
+        userName: shared.userFullName || shared.userEmail,
+        initials: getInitials(shared.userFullName || shared.userEmail),
+        email: shared.userEmail,
+        avatarUrl: shared.avatarUrl || undefined,
+        role: displayRole(shared.role),
+        tasksTodo: 0,
+        tasksInProgress: 0,
+        tasksCompleted: 0,
+        tasksOverdue: 0,
+      });
+    }
+
+    return Array.from(byEmail.values());
+  }, [memberProgress, sharedMembers]);
 
   const handleSelectTeam = (teamId: string) => {
     setSelectedTeamId(teamId);
@@ -1493,7 +1530,7 @@ export default function Teams() {
                           {/* PHASE 5: Progress tab */}
                           {teamPanelTab === "progress" && (
                             <ProgressDashboard
-                              members={memberProgress}
+                              members={mergedProgressMembers}
                               loading={memberProgressLoading}
                               onRefresh={() => fetchMemberProgress(selectedTeamId)}
                               onAssignTask={(email, _name) => {

@@ -1,3 +1,20 @@
+/*
+  FILE: BackgroundServices/BulkSyncStartupService.cs
+  PHASE: 2 & 3
+  DEFECT: 3-Persistence, 1-Injection
+  CHANGES:
+    - PullSyncableAsync: added empty-list deletion guard. If MongoDB returns 0 GUID-keyed
+      documents but SQLite has records with valid SyncIds, the response is treated as a
+      suspicious partial/empty result (common on Machine B flaky connection) and the entire
+      reconciliation step is skipped, preventing mass deletion of local data.
+    - ReconcileUsersAsync: extended candidates to also include IsBackedUpToMongo == false
+      users older than 2 hours. These are restored+deleted ghost accounts that would otherwise
+      escape the reconciliation and remain in SQLite after MongoDB deletion.
+    - BackupUnbackedUsersAsync: added AccountExistsInMongoAsync check before each push.
+      If the account already exists in MongoDB (e.g. restored from another machine), only
+      the local flag is updated — no duplicate push. If absent AND created ≥ 2 hours ago,
+      the push is skipped entirely to prevent resurrecting an externally deleted account.
+*/
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -173,9 +190,20 @@ namespace taskflow.BackgroundServices
                 // Only consider users that have previously been backed up to MongoDB.
                 // IsBackedUpToMongo == false means the account was created while offline and
                 // hasn't been pushed yet — BackupUnbackedUsersAsync will handle that shortly.
-                var candidates = await db.AppUsers
+                var backedUpCandidates = await db.AppUsers
                     .Where(u => u.IsBackedUpToMongo)
                     .ToListAsync(ct);
+
+                // DEFECT 1 FIX: also check offline-registered users older than 2 hours.
+                // Scenario: account created offline → restored on Machine B (sets flag = false) →
+                // admin deletes from MongoDB → Machine B startup still has the local record.
+                // These are stale ghost accounts — reconcile them against MongoDB too.
+                var cutoff = DateTime.UtcNow.AddHours(-2);
+                var unsyncedOld = await db.AppUsers
+                    .Where(u => !u.IsBackedUpToMongo && u.CreatedAt < cutoff)
+                    .ToListAsync(ct);
+
+                var candidates = backedUpCandidates.Concat(unsyncedOld).ToList();
 
                 var toDelete = candidates
                     .Where(u => !validEmails.Contains(u.Email.Trim().ToLowerInvariant()))
@@ -220,9 +248,33 @@ namespace taskflow.BackgroundServices
                     if (ct.IsCancellationRequested) break;
                     try
                     {
-                        await _mongo.BackupUserAccountAsync(u.Email, u.PasswordHash, u.Id);
+                        // DEFECT 1 INJECTION GUARD: check whether the account already exists in
+                        // MongoDB before pushing.  Three cases:
+                        // 1. Exists → already backed up (e.g. restored from another machine).
+                        //    Just flip the local flag; no write needed.
+                        // 2. Absent AND created < 2 hours ago → genuinely new offline registration.
+                        //    Push credentials to MongoDB as normal.
+                        // 3. Absent AND created ≥ 2 hours ago → likely a restored+deleted account.
+                        //    Skip to avoid resurrecting an account that was externally deleted.
+                        bool existsInMongo = await _mongo.AccountExistsInMongoAsync(u.Email);
 
-                        // Update the flag inside a fresh tracked context
+                        if (!existsInMongo && u.CreatedAt < DateTime.UtcNow.AddHours(-2))
+                        {
+                            _logger.LogWarning(
+                                "BulkSync: skipping credential backup for user {Id} ({Email}) — " +
+                                "account absent from MongoDB and was created {Age:F0}h ago " +
+                                "(possible external deletion).",
+                                u.Id, u.Email, (DateTime.UtcNow - u.CreatedAt).TotalHours);
+                            continue;
+                        }
+
+                        if (!existsInMongo)
+                        {
+                            await _mongo.BackupUserAccountAsync(u.Email, u.PasswordHash, u.Id);
+                        }
+
+                        // Update the flag inside a fresh tracked context (covers both push and
+                        // already-existed cases so we don't re-check on every subsequent startup).
                         using var scope = _scopeFactory.CreateScope();
                         var tracked = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                         var entity = await tracked.AppUsers.FindAsync(new object[] { u.Id }, ct);
@@ -293,6 +345,22 @@ namespace taskflow.BackgroundServices
                 var sqliteEntities = await dbSet.ToListAsync(ct);
                 var sqliteBySyncId = sqliteEntities.ToDictionary(
                     e => e.SyncId.ToString(), StringComparer.OrdinalIgnoreCase);
+
+                // DEFECT 3 INJECTION GUARD: if MongoDB returned zero GUID-keyed documents but
+                // SQLite has records with valid SyncIds, this is a suspicious empty response.
+                // On Machine B with a flaky connection, GetAllDocumentsAsync can succeed (return
+                // an empty list, not null) while a real collection has data.  Deleting all local
+                // records in this case would wipe the user's data.  Skip the reconciliation step
+                // entirely — no inserts, no updates, no deletions.
+                int localWithSyncIds = sqliteEntities.Count(e => e.SyncId != Guid.Empty);
+                if (mongoSyncIds.Count == 0 && localWithSyncIds > 0)
+                {
+                    _logger.LogWarning(
+                        "PullSync: {Col} — MongoDB returned 0 documents but SQLite has {N} record(s) " +
+                        "with valid SyncIds.  Skipping reconciliation (suspicious empty response).",
+                        collectionName, localWithSyncIds);
+                    return;
+                }
 
                 // 1. Delete SQLite records whose SyncId is absent from MongoDB
                 var toDelete = sqliteEntities

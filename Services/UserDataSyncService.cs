@@ -6,14 +6,21 @@
     - PullForUserAsync: looks up the user's email from SQLite at the start; passes it to all
       Pull methods. This fixes the critical cross-machine bug where MongoDB was queried with a
       device-local integer PK (P2.1).
-    - PullTasksAsync: filter changed from "assigneeId" (int) → "assigneeEmail" (string); sets
-      AssigneeEmail on the mapped TaskItem.
+    - PullTasksAsync: filter changed from "assigneeId" (int) → OR filter covering assigneeEmail
+      AND createdByEmail (both camelCase for new docs and PascalCase for pre-fix legacy docs).
+      Sets AssigneeEmail on the mapped TaskItem.
+    - MapToTaskItem: added CreatedByEmail field read (tries camelCase first, then PascalCase
+      for backward compatibility with documents written before [JsonPropertyName] was added).
     - PullProjectsAsync: filter changed from "ownerId" (int) → "ownerEmail" (string); sets
       OwnerEmail on the mapped Project.
     - Added PullNotificationsAsync: filter by "userEmail"; inserts missing notifications; updates
       read-status (IsRead, ReadAt) when MongoDB shows read=true and local shows read=false (P2.2).
     - Added PullCalendarEventsAsync: filter by "ownerEmail"; inserts missing events by SyncId (P2.3).
     - Added MapToNotification and MapToCalendarEvent helpers.
+    - Email normalization: Trim + ToLowerInvariant applied to all per-login queries so case
+      mismatches between machines never silently drop results.
+    - PullTasksAsync AssigneeId FK repair: after finding a task by SyncId, repair the integer
+      AssigneeId to the local machine's user Id (fixes Machine A int PK copied to Machine B).
 */
 using System;
 using System.Threading;
@@ -61,7 +68,10 @@ namespace taskflow.Services
                     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                     var user = await db.AppUsers.AsNoTracking()
                         .FirstOrDefaultAsync(u => u.Id == userId, ct);
-                    userEmail = user?.Email;
+                    // DEFECT 3 FIX: normalize email before using as MongoDB filter.
+                    // Without normalization, whitespace or mixed-case from SQLite can
+                    // cause MongoDB string filters to return no results on Machine B.
+                    userEmail = user?.Email?.Trim().ToLowerInvariant();
                 }
 
                 if (string.IsNullOrEmpty(userEmail))
@@ -85,8 +95,19 @@ namespace taskflow.Services
 
         private async Task PullTasksAsync(int userId, string userEmail, CancellationToken ct)
         {
-            // Phase 2 fix: query by email (stable cross-device key) not integer id
-            var filter = new BsonDocument("assigneeEmail", userEmail);
+            // Phase 2 fix: query by email (stable cross-device key) not integer id.
+            // OR filter covers:
+            //   - assigneeEmail / AssigneeEmail — tasks assigned to this user
+            //   - createdByEmail / CreatedByEmail — tasks created by this user (may be assigned to a team member)
+            // The dual casing (camel + Pascal) provides backward compatibility with documents written
+            // before [JsonPropertyName] attributes were added to TaskItem (MirrorService used PascalCase).
+            var filter = new BsonDocument("$or", new BsonArray
+            {
+                new BsonDocument("assigneeEmail", userEmail),
+                new BsonDocument("AssigneeEmail", userEmail),
+                new BsonDocument("createdByEmail", userEmail),
+                new BsonDocument("CreatedByEmail", userEmail),
+            });
             var docs = await _mongo.FindDocumentsAsync("tasks", filter, ct);
 
             if (docs.Count == 0) return;
@@ -102,9 +123,17 @@ namespace taskflow.Services
 
                 if (!Guid.TryParse(doc["_id"].AsString, out var syncId)) continue;
 
-                // Skip if already present locally
-                bool exists = await db.TaskItems.AnyAsync(t => t.SyncId == syncId, ct);
-                if (exists) continue;
+                // DEFECT 3 FIX: repair the machine-local AssigneeId FK that BulkSync may have
+                // copied verbatim from MongoDB (where it was Machine A's integer PK, e.g. 5).
+                // On Machine B the same user has a different integer Id (e.g. 3).
+                // Tasks with the wrong FK don't appear in Machine B's task queries.
+                var existing = await db.TaskItems.FirstOrDefaultAsync(t => t.SyncId == syncId, ct);
+                if (existing != null)
+                {
+                    if (existing.AssigneeId != userId)
+                        existing.AssigneeId = userId;
+                    continue;
+                }
 
                 var task = MapToTaskItem(doc, syncId, userId, userEmail);
                 db.TaskItems.Add(task);
@@ -227,6 +256,7 @@ namespace taskflow.Services
                 Description    = GetStringOrNull(doc, "description"),
                 AssigneeId     = userId,
                 AssigneeEmail  = userEmail,  // Phase 2
+                CreatedByEmail = GetStringOrNull(doc, "createdByEmail") ?? GetStringOrNull(doc, "CreatedByEmail"),
                 ProjectId      = GetIntOrNull(doc, "projectId"),
                 Priority       = GetEnum(doc, "priority", TaskPriority.Medium),
                 Status         = GetEnum(doc, "status", taskflow.Data.Entities.TaskStatus.Todo),

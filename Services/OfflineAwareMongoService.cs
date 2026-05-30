@@ -695,7 +695,7 @@ namespace taskflow.Services
 
         // ── Dev / testing ─────────────────────────────────────────────────────
 
-        public Task ClearAllAsync() => _mongo.ClearAllAsync();
+        public Task ClearAllAsync(bool includeUsers = false) => _mongo.ClearAllAsync(includeUsers);
 
         // ── Cross-machine notification bus ────────────────────────────────────
         // WriteCrossNotification is queued in outbox when offline so it's delivered on reconnect
@@ -806,6 +806,11 @@ namespace taskflow.Services
         {
             if (!_connectivity.IsEffectivelyOnline) return Task.CompletedTask;
             return _mongo.MarkAnnouncementReadAsync(announcementId, userEmail);
+        }
+
+        public Task<bool> AccountExistsInMongoAsync(string email)
+        {
+            return _mongo.AccountExistsInMongoAsync(email);
         }
     }
 }

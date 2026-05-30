@@ -10,6 +10,7 @@ import { api, ApiRequestError } from "../services/api";
 
 export interface Contact {
   id: number;
+  email: string;
   name: string;
   initials: string;
   avatarUrl?: string;
@@ -83,6 +84,7 @@ function toContact(raw: any): Contact {
   }
   return {
     id: raw.id,
+    email: raw.email ?? "",
     name: raw.name,
     initials: raw.initials ?? "",
     avatarUrl: raw.avatarUrl,

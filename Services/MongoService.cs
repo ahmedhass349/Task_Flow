@@ -277,6 +277,28 @@ namespace taskflow.Services
         }
 
         /// <summary>
+        /// Returns <c>true</c> when a document with the given GUID string <c>_id</c> exists in
+        /// <paramref name="collectionName"/>.  Returns <c>false</c> on any error so that callers
+        /// treat "unknown" as "not exists" — this is the safe default for injection prevention.
+        /// </summary>
+        internal async Task<bool> DocumentExistsBySyncIdAsync(
+            string collectionName, string syncId, CancellationToken ct = default)
+        {
+            if (_db == null) return false;
+            try
+            {
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>(collectionName);
+                var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", syncId);
+                return await collection.Find(filter).AnyAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "DocumentExistsBySyncIdAsync failed: col={Col} syncId={SyncId}", collectionName, syncId);
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Deletes a document whose <c>_id</c> is the given GUID string.
         /// </summary>
         internal async Task DeleteDocumentBySyncIdAsync(string collectionName, string syncId)
@@ -337,7 +359,7 @@ namespace taskflow.Services
         // ── Connectivity ping ─────────────────────────────────────────────────
 
         /// <summary>
-        /// Pings the MongoDB admin database with a 5-second timeout.
+        /// Pings the MongoDB admin database with a 10-second timeout.
         /// Returns true when MongoDB is reachable.
         /// </summary>
         public async Task<bool> PingAsync(CancellationToken ct = default)
@@ -346,7 +368,7 @@ namespace taskflow.Services
             try
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                cts.CancelAfter(TimeSpan.FromSeconds(5));
+                cts.CancelAfter(TimeSpan.FromSeconds(10));
                 await _client.GetDatabase(DatabaseName)
                     .RunCommandAsync<MongoDB.Bson.BsonDocument>(
                         new MongoDB.Bson.BsonDocument("ping", 1),
@@ -1080,6 +1102,31 @@ namespace taskflow.Services
             }
         }
 
+        /// <summary>
+        /// Returns <c>true</c> when a credential record for <paramref name="email"/> exists in
+        /// the <c>user_accounts</c> collection.  Returns <c>false</c> on any error or when
+        /// MongoDB is unreachable, so callers treat "unknown" as "not exists" (safe default).
+        /// Used as an injection guard: if the account is absent from MongoDB it must not be
+        /// re-created by login-time fire-and-forget writes or stale outbox replays.
+        /// </summary>
+        public async Task<bool> AccountExistsInMongoAsync(string email)
+        {
+            if (_userAccountsCollection == null) return false;
+            try
+            {
+                using var cts = new System.Threading.CancellationTokenSource(
+                    TimeSpan.FromSeconds(6));
+                var normalized = email.Trim().ToLowerInvariant();
+                var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, normalized);
+                return await _userAccountsCollection.Find(filter).AnyAsync(cts.Token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MongoService.AccountExistsInMongoAsync failed for {Email}", email);
+                return false;
+            }
+        }
+
         // ── Cross-machine notification bus ────────────────────────────────────
 
         /// <summary>
@@ -1131,15 +1178,32 @@ namespace taskflow.Services
         // ── Dev / testing ─────────────────────────────────────────────────────
 
         /// <summary>Drops every document from all three MongoDB collections.</summary>
-        public async Task ClearAllAsync()
+        public async Task ClearAllAsync(bool includeUsers = false)
         {
+            if (_db == null) return;
             var empty = Builders<MongoDB.Bson.BsonDocument>.Filter.Empty;
-            if (_presenceCollection != null)
-                await _db!.GetCollection<MongoDB.Bson.BsonDocument>("user_presence").DeleteManyAsync(empty);
-            if (_invitationsCollection != null)
-                await _db!.GetCollection<MongoDB.Bson.BsonDocument>("team_invitations").DeleteManyAsync(empty);
-            if (_membersCollection != null)
-                await _db!.GetCollection<MongoDB.Bson.BsonDocument>("team_members").DeleteManyAsync(empty);
+
+            // Relay / cross-device collections
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("user_presence").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("team_invitations").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("team_members").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("cross_notifications").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("team_announcements").DeleteManyAsync(empty);
+
+            // Mirror collections (BulkSyncStartupService pulls these into SQLite on every
+            // startup — they must be cleared together with SQLite to prevent re-injection).
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("projects").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("tasks").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("notifications").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("reminders").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("calendar_events").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("users").DeleteManyAsync(empty);
+
+            // Credential backup — only cleared when explicitly requested (users=true).
+            // Omitting this while keeping SQLite users would cause ReconcileUsersAsync to
+            // delete them on the next startup (they'd be absent from user_accounts).
+            if (includeUsers)
+                await _db.GetCollection<MongoDB.Bson.BsonDocument>("user_accounts").DeleteManyAsync(empty);
         }
     }
 }

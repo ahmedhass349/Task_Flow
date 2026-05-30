@@ -72,6 +72,7 @@ namespace taskflow.Services
                 result.Add(new ContactDto
                 {
                     Id = contact.Id,
+                    Email = contact.Email ?? string.Empty,
                     Name = contact.FullName ?? string.Empty,
                     AvatarUrl = contact.AvatarUrl,
                     Initials = initials,
@@ -190,6 +191,7 @@ namespace taskflow.Services
             return new ContactDto
             {
                 Id = user.Id,
+                Email = user.Email ?? string.Empty,
                 Name = user.FullName ?? string.Empty,
                 Initials = initials,
                 AvatarUrl = user.AvatarUrl,

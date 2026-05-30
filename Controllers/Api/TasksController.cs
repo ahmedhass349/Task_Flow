@@ -79,9 +79,20 @@ namespace taskflow.Controllers.Api
         [HttpPost("assign")]
         public async Task<IActionResult> AssignTask([FromBody] AssignTaskRequest request)
         {
-            var assignerUserId = GetUserId();
-            var task = await _taskService.AssignTaskAsync(assignerUserId, request);
-            return StatusCode(201, ApiResponse<TaskDto>.Ok(task, "Task assigned successfully"));
+            try
+            {
+                var assignerUserId = GetUserId();
+                var task = await _taskService.AssignTaskAsync(assignerUserId, request);
+                return StatusCode(201, ApiResponse<TaskDto>.Ok(task, "Task assigned successfully"));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
         }
 
         /// <summary>

@@ -13,6 +13,12 @@ import { useGroupChats, type GroupMessage } from "../hooks/useGroupChats";
 import { useTeams, type SharedMember } from "../hooks/useTeams";
 import { useAuth } from "../context/AuthContext";
 
+interface ConversationCandidate {
+  email: string;
+  fullName: string;
+  avatarUrl?: string;
+}
+
 // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const AVATAR_COLORS = [
@@ -239,33 +245,33 @@ function Avatar({ name, avatarUrl, size = "md" }: { name: string; avatarUrl?: st
 // â”€â”€ Start Conversation Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface StartConversationModalProps {
-  allSharedMembers: SharedMember[];
-  existingContactIds: Set<number>;
+  candidates: ConversationCandidate[];
   currentUserEmail: string;
   onStart: (email: string) => Promise<void>;
   onClose: () => void;
 }
 
-function StartConversationModal({ allSharedMembers, existingContactIds, currentUserEmail, onStart, onClose }: StartConversationModalProps) {
+function StartConversationModal({ candidates, currentUserEmail, onStart, onClose }: StartConversationModalProps) {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Deduplicate members by email, exclude ones already in contacts, exclude self
+  // Deduplicate candidates by email and exclude self.
   const members = useMemo(() => {
     const seen = new Set<string>();
-    return allSharedMembers.filter(m => {
-      if (m.userEmail === currentUserEmail) return false;
-      if (seen.has(m.userEmail)) return false;
-      seen.add(m.userEmail);
+    return candidates.filter(m => {
+      const email = m.email.trim().toLowerCase();
+      if (email === currentUserEmail.trim().toLowerCase()) return false;
+      if (seen.has(email)) return false;
+      seen.add(email);
       return true;
     });
-  }, [allSharedMembers, currentUserEmail]);
+  }, [candidates, currentUserEmail]);
 
   const filtered = search
     ? members.filter(m =>
-        m.userFullName.toLowerCase().includes(search.toLowerCase()) ||
-        m.userEmail.toLowerCase().includes(search.toLowerCase())
+        m.fullName.toLowerCase().includes(search.toLowerCase()) ||
+        m.email.toLowerCase().includes(search.toLowerCase())
       )
     : members;
 
@@ -346,19 +352,17 @@ function StartConversationModal({ allSharedMembers, existingContactIds, currentU
           ) : filtered.length > 0 ? (
             filtered.map(m => (
               <button
-                key={m.userEmail}
-                onClick={() => handleSelect(m.userEmail)}
+                key={m.email}
+                onClick={() => handleSelect(m.email)}
                 disabled={loading}
                 className="w-full flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 text-left"
               >
-                <Avatar name={m.userFullName || m.userEmail} avatarUrl={m.avatarUrl} size="sm" />
+                <Avatar name={m.fullName || m.email} avatarUrl={m.avatarUrl} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{m.userFullName || m.userEmail}</p>
-                  <p className="text-xs text-gray-400 truncate">{m.userEmail}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{m.fullName || m.email}</p>
+                  <p className="text-xs text-gray-400 truncate">{m.email}</p>
                 </div>
-                {existingContactIds.has(0) && (
-                  <span className="text-xs text-blue-500 flex-shrink-0">Chat</span>
-                )}
+                <span className="text-xs text-blue-500 flex-shrink-0">Chat</span>
               </button>
             ))
           ) : null}
@@ -562,7 +566,12 @@ export default function Message() {
   const groupFileInputRef = useRef<HTMLInputElement>(null);
   const groupTextInputRef = useRef<HTMLInputElement>(null);
 
-  const { allSharedMembers, fetchAllSharedMembers } = useTeams();
+  const {
+    allSharedMembers,
+    fetchAllSharedMembers,
+    incomingInvitations,
+    outgoingInvitations,
+  } = useTeams();
 
   // Fetch team members once for Start Conversation modal
   useEffect(() => {
@@ -638,7 +647,57 @@ export default function Message() {
     }
   }, [activeContactId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const existingContactIds = useMemo(() => new Set(contacts.map(c => c.id)), [contacts]);
+  const startConversationCandidates = useMemo<ConversationCandidate[]>(() => {
+    const byEmail = new Map<string, ConversationCandidate>();
+
+    for (const contact of contacts) {
+      const normalizedEmail = contact.email.trim().toLowerCase();
+      if (!normalizedEmail) continue;
+      byEmail.set(normalizedEmail, {
+        email: contact.email,
+        fullName: contact.name || contact.email,
+        avatarUrl: contact.avatarUrl || undefined,
+      });
+    }
+
+    for (const member of allSharedMembers) {
+      const normalizedEmail = member.userEmail.trim().toLowerCase();
+      if (!normalizedEmail) continue;
+      if (!byEmail.has(normalizedEmail)) {
+        byEmail.set(normalizedEmail, {
+        email: member.userEmail,
+        fullName: member.userFullName || member.userEmail,
+        avatarUrl: member.avatarUrl || undefined,
+        });
+      }
+    }
+
+    for (const inv of outgoingInvitations) {
+      if (inv.status !== "Accepted") continue;
+      const normalizedEmail = inv.recipientEmail.trim().toLowerCase();
+      if (!normalizedEmail) continue;
+      if (!byEmail.has(normalizedEmail)) {
+        byEmail.set(normalizedEmail, {
+          email: inv.recipientEmail,
+          fullName: inv.recipientFullName || inv.recipientEmail,
+        });
+      }
+    }
+
+    for (const inv of incomingInvitations) {
+      if (inv.status !== "Accepted") continue;
+      const normalizedEmail = inv.senderEmail.trim().toLowerCase();
+      if (!normalizedEmail) continue;
+      if (!byEmail.has(normalizedEmail)) {
+        byEmail.set(normalizedEmail, {
+          email: inv.senderEmail,
+          fullName: inv.senderFullName || inv.senderEmail,
+        });
+      }
+    }
+
+    return Array.from(byEmail.values());
+  }, [contacts, allSharedMembers, outgoingInvitations, incomingInvitations]);
 
   // â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -1376,8 +1435,7 @@ export default function Message() {
       {/* Start Conversation Modal */}
       {showStartModal && (
         <StartConversationModal
-          allSharedMembers={allSharedMembers}
-          existingContactIds={existingContactIds}
+          candidates={startConversationCandidates}
           currentUserEmail={user?.email ?? ""}
           onStart={handleStartConversation}
           onClose={() => setShowStartModal(false)}

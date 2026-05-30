@@ -1,3 +1,15 @@
+/*
+  FILE: Services/ConnectivityService.cs
+  PHASE: 1
+  DEFECT: 2-Connection
+  CHANGES:
+    - Added _consecutiveFailures int counter and OfflineFailureThreshold = 2 constant.
+      A single ping failure no longer immediately declares the app offline.
+      Only after two consecutive ping failures is _isOnline set to false.
+      This prevents transient network blips (prevalent on Machine B's slower connection)
+      from triggering the perpetual connect/disconnect flip-flop.
+    - On ping success _consecutiveFailures resets to 0 and _isOnline is set true immediately.
+*/
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +35,11 @@ namespace taskflow.Services
 
         // Tracks the "effective" state so we only fire the event on actual changes.
         private volatile bool _lastEffective = false;
+
+        // DEFECT 2 FIX: require this many consecutive ping failures before declaring offline.
+        // One dropped ping on a slow connection (Machine B) must not flip the UI to offline.
+        private int _consecutiveFailures = 0;
+        private const int OfflineFailureThreshold = 3;
 
         public event Action<bool>? ConnectivityChanged;
 
@@ -60,13 +77,31 @@ namespace taskflow.Services
         {
             bool wasEffective = IsEffectivelyOnline;
             bool ping = await _mongoService.PingAsync(cancellationToken);
-            _isOnline = ping;
             _lastCheckedAt = DateTime.UtcNow;
 
             if (ping)
+            {
+                _consecutiveFailures = 0;
+                _isOnline = true;
                 _logger.LogDebug("Connectivity: MongoDB ping succeeded.");
+            }
             else
-                _logger.LogDebug("Connectivity: MongoDB ping failed — marking offline.");
+            {
+                _consecutiveFailures++;
+                if (_consecutiveFailures >= OfflineFailureThreshold)
+                {
+                    _isOnline = false;
+                    _logger.LogDebug(
+                        "Connectivity: MongoDB ping failed {N} consecutive time(s) — marking offline.",
+                        _consecutiveFailures);
+                }
+                else
+                {
+                    _logger.LogDebug(
+                        "Connectivity: MongoDB ping failed ({N}/{Threshold}) — not yet offline.",
+                        _consecutiveFailures, OfflineFailureThreshold);
+                }
+            }
 
             NotifyIfChanged(wasEffective);
         }

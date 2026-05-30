@@ -51,12 +51,21 @@ namespace taskflow.Controllers.Api
         {
             var result = await _authService.LoginAsync(request);
 
-            // Fire-and-forget presence upsert — MongoDB failure must not block login
-            _ = Task.Run(async () =>
+        // Fire-and-forget presence upsert — MongoDB failure must not block login
+        _ = Task.Run(async () =>
+        {
+            try
             {
-                try { await _mongoService.UpsertPresenceAsync(result.User.Email, result.User.FullName, result.User.AvatarUrl ?? string.Empty); }
-                catch { /* intentionally swallowed */ }
-            });
+                // DEFECT 1 INJECTION GUARD (Pathway C): only upsert presence if the account
+                // backup already exists in MongoDB.  If the account was deleted from MongoDB
+                // (e.g. via Atlas admin) but the local SQLite record is still present, this
+                // login would otherwise resurrect the user_presence document, violating RULE 2/3.
+                bool accountExists = await _mongoService.AccountExistsInMongoAsync(result.User.Email);
+                if (!accountExists) return;
+                await _mongoService.UpsertPresenceAsync(result.User.Email, result.User.FullName, result.User.AvatarUrl ?? string.Empty);
+            }
+            catch { /* intentionally swallowed */ }
+        });
 
             // Phase 2: pull down cross-device data for this user (fire-and-forget)
             _ = Task.Run(async () =>

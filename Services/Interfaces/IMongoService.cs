@@ -60,6 +60,15 @@ namespace taskflow.Services.Interfaces
         /// </summary>
         Task<UserAccount?> FindAccountForRestorationAsync(string email);
 
+        /// <summary>
+        /// Returns <c>true</c> when a credential record for <paramref name="email"/> exists in
+        /// the <c>user_accounts</c> MongoDB collection.  Returns <c>false</c> on any error or
+        /// when MongoDB is unreachable (safe default — treat unknown as absent).
+        /// Used as an injection guard before fire-and-forget writes at login time, and before
+        /// replaying stale outbox entries that could resurrect deleted accounts.
+        /// </summary>
+        Task<bool> AccountExistsInMongoAsync(string email);
+
         // ── Cross-machine notification bus ────────────────────────────────────
 
         /// <summary>Writes a pending notification into MongoDB for a user on a different machine.</summary>
@@ -83,6 +92,6 @@ namespace taskflow.Services.Interfaces
         Task MarkAnnouncementReadAsync(string announcementId, string userEmail);
 
         // ── Dev / testing ─────────────────────────────────────────────────────
-        Task ClearAllAsync();
+        Task ClearAllAsync(bool includeUsers = false);
     }
 }

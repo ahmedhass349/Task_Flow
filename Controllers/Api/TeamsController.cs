@@ -218,7 +218,7 @@ namespace taskflow.Controllers.Api
             }
             catch (Exception ex) when (ex is not UnauthorizedAccessException)
             {
-                return StatusCode(503, ApiResponse<List<UserSearchResultDto>>.Fail("Search service temporarily unavailable. Please check your connection and try again."));
+                return StatusCode(503, ApiResponse<List<UserSearchResultDto>>.Fail("Search service is temporarily unavailable. Please try again shortly."));
             }
         }
 

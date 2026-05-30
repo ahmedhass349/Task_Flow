@@ -5,9 +5,16 @@
   CHANGES:
     - Added AssigneeEmail (string?) — stable cross-device identifier for MongoDB queries; fixes
       the device-local integer assigneeId cross-machine query bug (P2.1).
+    - Added [JsonPropertyName("assigneeEmail")] attribute — makes MongoDB field name explicit
+      and ensures System.Text.Json (used by MirrorService) writes the camelCase field name that
+      UserDataSyncService's filter expects.
+    - Added CreatedByEmail (string?) with [JsonPropertyName("createdByEmail")] — allows
+      UserDataSyncService to pull tasks the user CREATED but did not assign to themselves
+      (e.g. tasks assigned to team members on Machine A, visible on Machine B for the creator).
 */
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace taskflow.Data.Entities
 {
@@ -29,9 +36,15 @@ namespace taskflow.Data.Entities
         public int? ProjectId { get; set; }
         public int? AssigneeId { get; set; }
         /// <summary>Email of the assigned user — stable cross-device key used in MongoDB pull queries.</summary>
+        [JsonPropertyName("assigneeEmail")]
         public string? AssigneeEmail { get; set; }
         /// <summary>Id of the user who originally created this task. Null for legacy rows (treated as self-created).</summary>
         public int? CreatedById { get; set; }
+        /// <summary>Email of the user who originally created this task — stable cross-device key so
+        /// UserDataSyncService can pull tasks created on another machine even when they are assigned
+        /// to a different user.</summary>
+        [JsonPropertyName("createdByEmail")]
+        public string? CreatedByEmail { get; set; }
         public TaskPriority Priority { get; set; } = TaskPriority.Medium;
         public TaskStatus Status { get; set; } = TaskStatus.Todo;
         public DateTime? DueDate { get; set; }
