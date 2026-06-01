@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { CheckSquare, FileText, Users } from "lucide-react";
 import { api, extractErrorMessage } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 // Dashboard stats from backend DTO
 interface DashboardStatsDto {
@@ -140,7 +141,15 @@ export const useDashboard = (): UseDashboardReturn => {
     }
   }, []);
 
+  const { isInitialized, isAuthenticated } = useAuth();
+
   useEffect(() => {
+    if (!isInitialized) return;
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setIsLoading(true);
     setError(null);
@@ -159,7 +168,7 @@ export const useDashboard = (): UseDashboardReturn => {
       })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [isInitialized, isAuthenticated]);
 
   return {
     stats,

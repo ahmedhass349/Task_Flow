@@ -45,7 +45,6 @@ namespace taskflow.Controllers.Api
         /// Authenticates a user with email and password credentials.
         /// </summary>
         [HttpPost("login")]
-        [AllowAnonymous]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -81,7 +80,6 @@ namespace taskflow.Controllers.Api
         /// Registers a new user account.
         /// </summary>
         [HttpPost("register")]
-        [AllowAnonymous]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
@@ -101,7 +99,6 @@ namespace taskflow.Controllers.Api
         /// Initiates a password reset flow by sending an email with a reset token.
         /// </summary>
         [HttpPost("forgot-password")]
-        [AllowAnonymous]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
@@ -113,7 +110,6 @@ namespace taskflow.Controllers.Api
         /// Resets a user's password using a previously issued reset token.
         /// </summary>
         [HttpPost("reset-password")]
-        [AllowAnonymous]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
@@ -125,7 +121,6 @@ namespace taskflow.Controllers.Api
         /// Retrieves the currently authenticated user's profile information.
         /// </summary>
         [HttpGet("me")]
-        [Authorize]
         public async Task<IActionResult> GetCurrentUser()
         {
             var userId = GetUserId();
@@ -147,7 +142,6 @@ namespace taskflow.Controllers.Api
         /// Logs out the current user. Since JWT is stateless, this endpoint simply acknowledges the logout request.
         /// </summary>
         [HttpPost("logout")]
-        [Authorize]
         public IActionResult Logout()
         {
             return Ok(ApiResponse<string>.Ok("Logged out", "Logout successful"));

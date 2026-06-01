@@ -1,15 +1,18 @@
 /*
   FILE: webpack.config.js
-  PHASE: 3
-  MISSION: 2-Performance
+  PHASE: 1
+  MISSION: 1-Tauri
   CHANGES:
-    - splitChunks.cacheGroups.vendor.chunks: 'initial' → 'all'
-      Previously only synchronously-imported node_modules were split into vendor.js.
-      With 'all', webpack also includes node_modules imported by async (lazy) chunks
-      in the vendor bundle, so each page chunk does not re-bundle its own copy of
-      react, react-dom, lucide-react etc. — shared vendor code is loaded once.
+    - R-05: Added src-tauri/ as an additional devServer static directory so
+      splashscreen.html is served at http://localhost:3000/splashscreen.html
+      during `tauri dev`, matching the Tauri window URL "splashscreen.html"
+    - R-05: Added afterEmit plugin hook that copies src-tauri/splashscreen.html
+      → wwwroot/dist/splashscreen.html on every production build so Tauri's
+      frontendDist bundle contains the file it loads for the splash window
+    - splitChunks.cacheGroups.vendor.chunks: 'all' (from Phase 3)
 */
 const path = require('path');
+const fs = require('fs');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CompressionPlugin = require('compression-webpack-plugin');
 
@@ -62,8 +65,8 @@ module.exports = (env) => {
         output: {
             path: path.join(__dirname, 'wwwroot', 'dist'),
             filename: '[name].js',
-            // Phase 7: relative publicPath so webpack chunks resolve correctly
-            // under both http:// (dev server) and file:// (Electron production).
+            // Relative publicPath so webpack chunks resolve correctly under both
+            // http:// (dev server) and tauri://localhost (Tauri production).
             publicPath: './dist/'
         },
         optimization: {
@@ -78,7 +81,12 @@ module.exports = (env) => {
             }
         },
         devServer: {
-            static: path.join(__dirname, 'wwwroot'),
+            static: [
+                // Primary static root — serves index.html and dist/ assets
+                path.join(__dirname, 'wwwroot'),
+                // Secondary static root — serves splashscreen.html for Tauri dev window
+                { directory: path.join(__dirname, 'src-tauri'), publicPath: '/' }
+            ],
             port: 3000,
             historyApiFallback: true,
             headers: {
@@ -95,16 +103,16 @@ module.exports = (env) => {
             proxy: [
                 {
                     context: ['/api'],
-                    target: 'http://localhost:5000',
+                    target: 'http://127.0.0.1:5000',
                     changeOrigin: true,
                     secure: false,
                 },
                 {
                     context: ['/hubs'],
-                    target: 'http://localhost:5000',
+                    target: 'http://127.0.0.1:5000',
                     changeOrigin: true,
                     secure: false,
-                    ws: true // WebSocket support for SignalR
+                    ws: true
                 }
             ]
         },
@@ -112,7 +120,22 @@ module.exports = (env) => {
             new MiniCssExtractPlugin({ filename: 'main.css' }),
             ...(isDevBuild ? [] : [
                 new CompressionPlugin({ test: /\.(js|css)/ })
-            ])
+            ]),
+            // Copy splashscreen.html into the dist bundle so Tauri's frontendDist
+            // can serve it for the splash window in production builds.
+            {
+                apply(compiler) {
+                    compiler.hooks.afterEmit.tap('CopySplashscreen', () => {
+                        const src = path.join(__dirname, 'src-tauri', 'splashscreen.html');
+                        const dest = path.join(__dirname, 'wwwroot', 'dist', 'splashscreen.html');
+                        try {
+                            fs.copyFileSync(src, dest);
+                        } catch (e) {
+                            console.warn('[CopySplashscreen] Could not copy splashscreen.html:', e.message);
+                        }
+                    });
+                }
+            }
         ]
     };
 };

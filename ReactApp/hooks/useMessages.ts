@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { api, ApiRequestError } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -271,7 +272,15 @@ export const useMessages = (): UseMessagesReturn => {
   }, [activeContactId, fetchMessages]);
 
   // ── Initial load ─────────────────────────────────────────────────────────
+  const { isInitialized, isAuthenticated } = useAuth();
+
   useEffect(() => {
+    if (!isInitialized) return;
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setIsLoading(true);
     api.get<any[]>("/api/messages/contacts")
@@ -285,7 +294,7 @@ export const useMessages = (): UseMessagesReturn => {
       })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [isInitialized, isAuthenticated]);
 
   // ── Load messages when active contact changes ────────────────────────────
   useEffect(() => {

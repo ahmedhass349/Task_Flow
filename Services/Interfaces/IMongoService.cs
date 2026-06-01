@@ -61,6 +61,13 @@ namespace taskflow.Services.Interfaces
         Task<UserAccount?> FindAccountForRestorationAsync(string email);
 
         /// <summary>
+        /// Fetches the profile fields (Company, Country, Phone, Timezone) from the
+        /// mirrored <c>users</c> MongoDB collection for <paramref name="email"/>.
+        /// Returns <c>null</c> when no document exists or MongoDB is unreachable.
+        /// </summary>
+        Task<taskflow.Models.Mongo.MongoUserProfile?> FindUserProfileFromUsersAsync(string email);
+
+        /// <summary>
         /// Returns <c>true</c> when a credential record for <paramref name="email"/> exists in
         /// the <c>user_accounts</c> MongoDB collection.  Returns <c>false</c> on any error or
         /// when MongoDB is unreachable (safe default — treat unknown as absent).

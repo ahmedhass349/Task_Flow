@@ -7,6 +7,9 @@ namespace taskflow.Services.Interfaces
 {
     public interface IMistralChatService
     {
+        /// <summary>True when a valid API key is configured and the service can be used.</summary>
+        bool IsAvailable { get; }
+
         /// <summary>Send a multi-turn conversation to Mistral and return the full assistant reply.</summary>
         Task<string> ChatAsync(IEnumerable<(string Role, string Content)> history, string? systemPrompt = null, CancellationToken ct = default);
 

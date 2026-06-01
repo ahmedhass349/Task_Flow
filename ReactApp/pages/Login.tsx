@@ -6,7 +6,7 @@ import LoginPromotion from "../imports/LoginPromotion1";
 import PromotionBg from "../imports/PromotionBg";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { getRememberMePreference } from "../services/api";
+
 
 // ── Validation helpers ───────────────────────────────────────────────────
 
@@ -43,7 +43,6 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(getRememberMePreference());
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -64,7 +63,7 @@ export default function Login() {
 
     setIsSubmitting(true);
     try {
-      const { user: signedInUser, isRestored } = await login({ email, password }, rememberMe);
+      const { user: signedInUser, isRestored } = await login({ email, password });
       const firstName = signedInUser?.firstName || signedInUser?.fullName?.split(" ")[0] || "there";
       if (isRestored) {
         addToast({
@@ -172,20 +171,6 @@ export default function Login() {
                   {fieldErrors.password}
                 </p>
               )}
-            </div>
-
-            {/* Login button + Forgot password row */}
-            <div className="flex items-center mb-[16px] w-[345px]">
-              <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 accent-[#0969DA]"
-                  disabled={isSubmitting}
-                />
-                <span className="text-sm text-foreground">Remember Me</span>
-              </label>
             </div>
 
             {/* Login button + Forgot password row */}

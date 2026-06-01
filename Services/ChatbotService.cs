@@ -156,8 +156,15 @@ namespace taskflow.Services
             string replyText;
             try
             {
-                var systemPrompt = await BuildSystemPromptAsync(userId);
-                replyText = await _mistral.ChatAsync(windowedHistory, systemPrompt);
+                if (!_mistral.IsAvailable)
+                {
+                    replyText = "I'm sorry, the AI assistant is not configured. Please set up your Mistral API key.";
+                }
+                else
+                {
+                    var systemPrompt = await BuildSystemPromptAsync(userId);
+                    replyText = await _mistral.ChatAsync(windowedHistory, systemPrompt);
+                }
             }
             catch (Exception)
             {
@@ -299,7 +306,8 @@ namespace taskflow.Services
             {
                 try
                 {
-                    conversation.Title = await _mistral.GenerateTitleAsync(firstUserMsg);
+                    if (_mistral.IsAvailable)
+                        conversation.Title = await _mistral.GenerateTitleAsync(firstUserMsg);
                 }
                 catch
                 {

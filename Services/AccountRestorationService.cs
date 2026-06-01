@@ -1,3 +1,12 @@
+/*
+  FILE: Services/AccountRestorationService.cs
+  PHASE: 1
+  MISSION: 3-Backend
+  CHANGES:
+    - C-02: Restored company/country/phone/timezone from the mirrored users
+      MongoDB collection. Previously these fields were always null after
+      account restoration, causing profile data loss on fresh installs.
+*/
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -43,13 +52,9 @@ namespace taskflow.Services
                 throw new UnauthorizedAccessException("Invalid email or password.");
             }
 
-            // Step 3 — fetch public profile from user_presence to populate name/avatar fields
+            // Step 3a — fetch public profile from user_presence for name/avatar
             string fullName = string.Empty;
             string? avatarUrl = null;
-            string? company = null;
-            string? country = null;
-            string? phone = null;
-            string? timezone = null;
 
             var presenceResults = await _mongo.SearchUsersAsync(email, excludeEmail: "__no_match__");
             foreach (var p in presenceResults)
@@ -62,6 +67,9 @@ namespace taskflow.Services
                 }
             }
 
+            // Step 3b — fetch extended profile from mirrored users collection for remaining fields
+            var profile = await _mongo.FindUserProfileFromUsersAsync(email);
+
             // Step 4 — recreate the AppUser in SQLite
             var nameParts = fullName.Trim().Split(' ', 2);
             string firstName = nameParts[0];
@@ -69,16 +77,16 @@ namespace taskflow.Services
 
             var restored = new AppUser
             {
-                FullName = fullName,
+                FullName  = fullName,
                 FirstName = firstName,
-                LastName = lastName,
-                Email = email.Trim().ToLowerInvariant(),
+                LastName  = lastName,
+                Email     = email.Trim().ToLowerInvariant(),
                 PasswordHash = account.PasswordHash,   // re-use the stored BCrypt hash — no rehash needed
                 AvatarUrl = avatarUrl,
-                Company = company,
-                Country = country,
-                Phone = phone,
-                Timezone = timezone,
+                Company   = profile?.Company,
+                Country   = profile?.Country,
+                Phone     = profile?.Phone,
+                Timezone  = profile?.Timezone,
                 CreatedAt = DateTime.UtcNow,            // local device creation time
                 IsBackedUpToMongo = true                // already in MongoDB
             };

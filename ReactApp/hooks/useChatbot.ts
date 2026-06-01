@@ -4,7 +4,7 @@
 // Provides loading, error, data, streaming, and refetch states.
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { api, ApiRequestError, getAuthToken } from "../services/api";
+import { api, ApiRequestError } from "../services/api";
 import { getApiBaseUrl } from "../config/api";
 
 // Chatbot message interface matching backend DTO
@@ -236,7 +236,6 @@ export const useChatbot = (): UseChatbotReturn => {
     setStreamingText("");
 
     const baseUrl = getApiBaseUrl() || "";
-    const token = getAuthToken();
     const url = `${baseUrl}/api/chatbot/conversations/${conversationId}/messages/stream`;
 
     try {
@@ -244,7 +243,6 @@ export const useChatbot = (): UseChatbotReturn => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           text,
@@ -367,7 +365,6 @@ export const useChatbot = (): UseChatbotReturn => {
     setStreamingText("");
 
     const baseUrl = getApiBaseUrl() || "";
-    const token = getAuthToken();
     const url = `${baseUrl}/api/chatbot/conversations/${conversationId}/messages/${messageId}/edit-stream`;
 
     try {
@@ -375,7 +372,6 @@ export const useChatbot = (): UseChatbotReturn => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ text: newText, chatMode: chatMode ?? "general" }),
         signal: controller.signal,

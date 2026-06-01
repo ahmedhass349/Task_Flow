@@ -15,12 +15,8 @@ using taskflow.Services.Interfaces;
 
 namespace taskflow.Controllers.Api
 {
-    /// <summary>
-    /// API controller for managing chatbot conversations and messages.
-    /// </summary>
     [ApiController]
     [Route("api/chatbot")]
-    [Authorize]
     public class ChatbotController : ControllerBase
     {
         private readonly IChatbotService _chatbotService;
@@ -42,9 +38,6 @@ namespace taskflow.Controllers.Api
             return userId;
         }
 
-        /// <summary>
-        /// Retrieves all conversations for the authenticated user.
-        /// </summary>
         [HttpGet("conversations")]
         public async Task<IActionResult> GetConversations()
         {
@@ -53,9 +46,6 @@ namespace taskflow.Controllers.Api
             return Ok(ApiResponse<IEnumerable<ConversationListDto>>.Ok(conversations));
         }
 
-        /// <summary>
-        /// Retrieves a specific conversation by its identifier, including all messages.
-        /// </summary>
         [HttpGet("conversations/{id}")]
         public async Task<IActionResult> GetConversation(int id)
         {
@@ -64,9 +54,6 @@ namespace taskflow.Controllers.Api
             return Ok(ApiResponse<ConversationDto>.Ok(conversation));
         }
 
-        /// <summary>
-        /// Creates a new conversation for the authenticated user.
-        /// </summary>
         [HttpPost("conversations")]
         public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request)
         {
@@ -75,9 +62,6 @@ namespace taskflow.Controllers.Api
             return StatusCode(201, ApiResponse<ConversationDto>.Ok(conversation, "Conversation created successfully."));
         }
 
-        /// <summary>
-        /// Sends a message to an existing conversation and receives a chatbot response.
-        /// </summary>
         [HttpPost("conversations/{id}/messages")]
         public async Task<IActionResult> SendMessage(int id, [FromBody] SendChatbotMessageRequest request)
         {
@@ -86,9 +70,6 @@ namespace taskflow.Controllers.Api
             return StatusCode(201, ApiResponse<ChatbotMessageDto>.Ok(message, "Message sent successfully."));
         }
 
-        /// <summary>
-        /// Deletes a conversation and all its messages.
-        /// </summary>
         [HttpDelete("conversations/{id}")]
         public async Task<IActionResult> DeleteConversation(int id)
         {
@@ -97,20 +78,23 @@ namespace taskflow.Controllers.Api
             return NoContent();
         }
 
-        /// <summary>
-        /// Streams a Mistral response token-by-token via Server-Sent Events (SSE).
-        /// Each token event:  data: {"token":"…"}\n\n
-        /// Final event:       data: {"done":true,"message":{…}}\n\n
-        /// Error event:       data: {"error":"…"}\n\n
-        /// </summary>
         [HttpPost("conversations/{id}/messages/stream")]
         public async Task StreamMessage(int id, [FromBody] SendChatbotMessageRequest request, CancellationToken ct)
         {
             var userId = GetUserId();
 
-            // BeginStreamAsync validates ownership and persists the user message.
-            // If it throws here (before headers are sent), ExceptionHandlingMiddleware
-            // handles it and returns a proper JSON error response.
+            if (!_mistral.IsAvailable)
+            {
+                Response.ContentType = "text/event-stream; charset=utf-8";
+                Response.Headers["Cache-Control"] = "no-cache";
+                Response.Headers["X-Accel-Buffering"] = "no";
+                Response.Headers["Connection"] = "keep-alive";
+                var errorPayload = JsonSerializer.Serialize(new { error = "Mistral AI is not configured." });
+                await Response.WriteAsync($"data: {errorPayload}\n\n", ct);
+                await Response.Body.FlushAsync(ct);
+                return;
+            }
+
             var state = await _chatbotService.BeginStreamAsync(userId, id, request);
 
             Response.ContentType = "text/event-stream; charset=utf-8";
@@ -137,7 +121,6 @@ namespace taskflow.Controllers.Api
             }
             catch (OperationCanceledException)
             {
-                // Client disconnected — commit whatever was accumulated so far (best-effort).
                 if (accumulated.Length > 0)
                 {
                     try { await _chatbotService.CommitStreamAsync(userId, id, accumulated.ToString()); }
@@ -160,9 +143,6 @@ namespace taskflow.Controllers.Api
             }
         }
 
-        /// <summary>
-        /// Renames a conversation's title.
-        /// </summary>
         [HttpPatch("conversations/{id}/title")]
         public async Task<IActionResult> UpdateTitle(int id, [FromBody] UpdateConversationTitleRequest request)
         {
@@ -171,9 +151,6 @@ namespace taskflow.Controllers.Api
             return NoContent();
         }
 
-        /// <summary>
-        /// Deletes all conversations for the authenticated user.
-        /// </summary>
         [HttpDelete("conversations")]
         public async Task<IActionResult> ClearAllConversations()
         {
@@ -182,14 +159,22 @@ namespace taskflow.Controllers.Api
             return Ok(ApiResponse<object>.Ok(new { deleted = count }, $"{count} conversation(s) deleted."));
         }
 
-        /// <summary>
-        /// Edits an existing user message, deletes subsequent messages, and streams a new AI response.
-        /// Reuses the same SSE format as StreamMessage.
-        /// </summary>
         [HttpPost("conversations/{id}/messages/{msgId}/edit-stream")]
         public async Task EditAndRestream(int id, int msgId, [FromBody] EditMessageRequest request, CancellationToken ct)
         {
             var userId = GetUserId();
+
+            if (!_mistral.IsAvailable)
+            {
+                Response.ContentType = "text/event-stream; charset=utf-8";
+                Response.Headers["Cache-Control"] = "no-cache";
+                Response.Headers["X-Accel-Buffering"] = "no";
+                Response.Headers["Connection"] = "keep-alive";
+                var errorPayload = JsonSerializer.Serialize(new { error = "Mistral AI is not configured." });
+                await Response.WriteAsync($"data: {errorPayload}\n\n", ct);
+                await Response.Body.FlushAsync(ct);
+                return;
+            }
 
             var state = await _chatbotService.EditMessageAndBeginStreamAsync(userId, id, msgId, request);
 

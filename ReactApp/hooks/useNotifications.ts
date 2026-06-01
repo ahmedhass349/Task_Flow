@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api, extractErrorMessage } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 // Notification interface matching backend DTO
 interface Notification {
@@ -101,7 +102,15 @@ export const useNotifications = (): UseNotificationsReturn => {
     }
   }, []);
 
+  const { isInitialized, isAuthenticated } = useAuth();
+
   useEffect(() => {
+    if (!isInitialized) return;
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setIsLoading(true);
     setError(null);
@@ -115,7 +124,7 @@ export const useNotifications = (): UseNotificationsReturn => {
       })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [isInitialized, isAuthenticated]);
 
   useEffect(() => {
     const onNotificationReceived = (event: Event) => {

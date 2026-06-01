@@ -12,8 +12,8 @@ export const useSettings = () => {
 
   const updateProfile = async (data: UpdateProfileRequest) => {
     try {
-      const response = await api.put<{ token: string; user: User }>("/api/settings/profile", data);
-      updateUser(response.user, response.token);
+      const response = await api.put<{ user: User }>("/api/settings/profile", data);
+      updateUser(response.user);
     } catch (err) {
       const message =
         err instanceof ApiRequestError

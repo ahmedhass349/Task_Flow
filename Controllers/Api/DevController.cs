@@ -18,7 +18,6 @@ namespace taskflow.Controllers.Api
     /// </summary>
     [ApiController]
     [Route("api/dev")]
-    [Authorize]
     // D-03: hidden from API explorer/Swagger; every action returns 404 outside Development.
     [ApiExplorerSettings(IgnoreApi = true)]
     public class DevController : ControllerBase

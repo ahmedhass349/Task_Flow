@@ -15,7 +15,6 @@ namespace taskflow.Controllers.Api
     /// Comments are nested under tasks for retrieval/creation, but addressed directly for update/delete.
     /// </summary>
     [ApiController]
-    [Authorize]
     public class TaskCommentsController : ControllerBase
     {
         private readonly ITaskCommentService _taskCommentService;

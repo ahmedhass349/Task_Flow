@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api, extractErrorMessage } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 // Task interface matching backend TaskDto
 export interface Task {
@@ -147,7 +148,20 @@ export const useTasks = (): UseTasksReturn => {
     }
   }, []);
 
+  const { isInitialized, isAuthenticated } = useAuth();
+
   useEffect(() => {
+    // Guard: do not fetch until auth state is initialized from storage.
+    // Without this guard, the effect fires on mount before localStorage
+    // has been read, so the token would be missing, and the request gets 401.
+    if (!isInitialized) return;
+
+    // Guard: if not authenticated, skip API call (avoid 401 on public pages)
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setIsLoading(true);
     setError(null);
@@ -158,7 +172,7 @@ export const useTasks = (): UseTasksReturn => {
       })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [isInitialized, isAuthenticated]);
 
   return {
     tasks,

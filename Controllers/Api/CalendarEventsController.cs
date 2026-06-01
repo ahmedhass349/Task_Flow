@@ -15,7 +15,6 @@ namespace taskflow.Controllers.Api
     /// </summary>
     [ApiController]
     [Route("api/calendar-events")]
-    [Authorize]
     public class CalendarEventsController : ControllerBase
     {
         private readonly ICalendarService _calendarService;

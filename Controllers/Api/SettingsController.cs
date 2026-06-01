@@ -15,7 +15,6 @@ namespace taskflow.Controllers.Api
     /// </summary>
     [ApiController]
     [Route("api/settings")]
-    [Authorize]
     public class SettingsController : ControllerBase
     {
         private readonly ISettingsService _settingsService;

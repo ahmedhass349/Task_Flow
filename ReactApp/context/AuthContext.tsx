@@ -1,32 +1,19 @@
-// ── Auth Context ─────────────────────────────────────────────────────────
-//
-// Provides app-wide authentication state:
-// - Current user object (null when logged out)
-// - login / signup / logout actions
-// - Loading state for initial auth check
-// - isAuthenticated derived boolean
-//
-// Wraps the entire app so every component can access auth via useAuth().
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { User, AuthResponse, LoginRequest, SignupRequest } from "../types";
-import { api, setAuthToken, getAuthToken, clearAuthToken, getRememberMePreference, setUnauthorizedHandler, clearUnauthorizedHandler, ApiRequestError } from "../services/api";
-import { saveAccount } from "../hooks/useAccountSwitcher";
-
-const USER_CACHE_KEY = "taskflow_cached_user";
+import { api, ApiRequestError } from "../services/api";
 
 interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  token: string | null;
-  login: (credentials: LoginRequest, rememberMe?: boolean) => Promise<{ user: User | null; isRestored: boolean }>;
+  isInitialized: boolean;
+  login: (credentials: LoginRequest) => Promise<{ user: User | null; isRestored: boolean }>;
   signup: (data: SignupRequest) => Promise<void>;
   logout: () => void;
   error: string | null;
   clearError: () => void;
   refreshUser: () => Promise<void>;
-  updateUser: (user: User, newToken: string) => void;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -34,88 +21,34 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Register a global 401 handler so any expired-token response anywhere in the
-  // app immediately clears the session and sends the user back to the login page,
-  // rather than leaving the UI in a broken / partially-loaded state.
   useEffect(() => {
-    setUnauthorizedHandler(() => {
-      clearAuthToken();
-      localStorage.removeItem(USER_CACHE_KEY);
-      setUser(null);
-    });
-    return () => clearUnauthorizedHandler();
-  }, []);
-
-  // On mount, check if we have a stored token and validate it
-  useEffect(() => {
-    const token = getAuthToken();
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
-
-    // If rememberMe is active, immediately restore the cached user to prevent
-    // a redirect to /login while the backend validation request is in-flight
-    // (e.g. when Electron restarts and the backend hasn't responded yet).
-    if (getRememberMePreference()) {
-      try {
-        const raw = localStorage.getItem(USER_CACHE_KEY);
-        if (raw) setUser(JSON.parse(raw) as User);
-      } catch { /* ignore corrupt cache */ }
-    }
-
-    // Validate the stored token by fetching the current user
-    let cancelled = false;
-    api
-      .get<User>("/api/auth/me")
+    api.get<User>("/api/auth/me")
       .then((userData) => {
-        if (!cancelled) {
-          setUser(userData);
-          // Keep cache up to date for next startup
-          if (getRememberMePreference()) {
-            localStorage.setItem(USER_CACHE_KEY, JSON.stringify(userData));
-          }
-        }
+        setUser(userData);
       })
-      .catch((err) => {
-        // Clear auth on explicit auth failures (401/403).
-        // 404 is intentionally excluded: a genuine route-not-found should not log the user out,
-        // and the backend now returns 401 when the account no longer exists.
-        // Network/transient server errors also keep the cached user so the session
-        // survives a slow startup.
-        if (!cancelled && err instanceof ApiRequestError && (err.status === 401 || err.status === 403)) {
-          clearAuthToken();
-          localStorage.removeItem(USER_CACHE_KEY);
-          setUser(null);
-        }
+      .catch(() => {
+        setUser(null);
       })
       .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
+        setIsInitialized(true);
       });
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
-  const login = useCallback(async (credentials: LoginRequest, rememberMe = false) => {
+  const login = useCallback(async (credentials: LoginRequest) => {
     setError(null);
     try {
       const response = await api.post<AuthResponse>("/api/auth/login", credentials);
-      const token = (response as any).token ?? (response as any).Token ?? null;
-      const user = (response as any).user ?? (response as any).User ?? null;
+      const userData = (response as any).user ?? (response as any).User ?? null;
       const isRestored: boolean = (response as any).isRestored ?? (response as any).IsRestored ?? false;
-      setAuthToken(token, rememberMe);
-      setUser(user);
-      if (token && user) {
-        saveAccount(user.email, user.fullName, token, user.avatarUrl ?? undefined);
-        if (rememberMe) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
-      }
-      return { user, isRestored };
+
+      setUser(userData);
+      setIsInitialized(true);
+
+      return { user: userData, isRestored };
     } catch (err) {
       const message =
         err instanceof ApiRequestError
@@ -130,11 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       const response = await api.post<AuthResponse>("/api/auth/register", data);
-      const token = (response as any).token ?? (response as any).Token ?? null;
-      const user = (response as any).user ?? (response as any).User ?? null;
-      setAuthToken(token);
-      setUser(user);
-      if (token && user) saveAccount(user.email, user.fullName, token, user.avatarUrl ?? undefined);
+      const userData = (response as any).user ?? (response as any).User ?? null;
+      setUser(userData);
     } catch (err) {
       const message =
         err instanceof ApiRequestError
@@ -146,8 +76,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    clearAuthToken();
-    localStorage.removeItem(USER_CACHE_KEY);
     setUser(null);
     setError(null);
   }, []);
@@ -161,19 +89,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(userData);
   }, []);
 
-  const updateUser = useCallback((updatedUser: User, newToken: string) => {
-    setAuthToken(newToken);
+  const updateUser = useCallback((updatedUser: User) => {
     setUser(updatedUser);
-    if (getRememberMePreference()) {
-      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(updatedUser));
-    }
   }, []);
 
   const value: AuthContextValue = {
     user,
     isAuthenticated: user !== null,
     isLoading,
-    token: getAuthToken(),
+    isInitialized,
     login,
     signup,
     logout,

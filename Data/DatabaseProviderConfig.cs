@@ -1,8 +1,10 @@
 /*
   FILE: Data/DatabaseProviderConfig.cs
-  PHASE: Phase 1
-  PURPOSE: Provides configurable EF Core provider selection between SQLite and SQL Server.
-  CHANGED FROM: New file
+  PHASE: 1
+  MISSION: 3-Backend
+  CHANGES:
+    - Removed SqlServer branch (Microsoft.EntityFrameworkCore.SqlServer was a dead
+      dependency — this project is SQLite-only; the package is no longer referenced)
 */
 
 using System;
@@ -13,33 +15,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace taskflow.Data
 {
-    public enum DatabaseProvider
-    {
-        SQLite,
-        SqlServer
-    }
-
     public static class DatabaseProviderExtensions
     {
         public static IServiceCollection AddConfiguredDatabase(
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            var provider = configuration.GetValue<string>("DatabaseProvider") ?? "SQLite";
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-
-            if (provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
-            {
-                services.AddDbContext<AppDbContext>(options =>
-                    options.UseSqlServer(connectionString));
-            }
-            else
-            {
-                var dbPath = ResolveSqlitePath(connectionString, configuration);
-                services.AddDbContext<AppDbContext>(options =>
-                    options.UseSqlite($"Data Source={dbPath}"));
-            }
-
+            var dbPath = ResolveSqlitePath(connectionString, configuration);
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlite($"Data Source={dbPath}"));
             return services;
         }
 
@@ -47,7 +32,7 @@ namespace taskflow.Data
             string? connectionString,
             IConfiguration configuration)
         {
-            // P-04: Electron sets TASKFLOW_DB_PATH to app.getPath('userData') in production
+            // Tauri sets TASKFLOW_DB_PATH to app.path().appDataDir() in production
             // so the SQLite database is written to the user's profile, not the read-only install dir.
             var envDbPath = Environment.GetEnvironmentVariable("TASKFLOW_DB_PATH");
             if (!string.IsNullOrWhiteSpace(envDbPath))

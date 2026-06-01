@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "../context/ToastContext";
 import { getApiBaseUrl } from "../config/api";
-import { getAuthToken } from "../services/api";
+
 
 export interface ConnectivityStatus {
   isOnline: boolean;
@@ -52,12 +52,8 @@ export const useConnectivity = (): UseConnectivityReturn => {
     const fetchStatus = async () => {
       try {
         const baseUrl = getApiBaseUrl() || "";
-        const token = getAuthToken();
-        if (!token) return;
 
-        const res = await fetch(`${baseUrl}/api/connectivity/status`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${baseUrl}/api/connectivity/status`);
 
         if (!res.ok) return;
 
@@ -132,14 +128,11 @@ export const useConnectivity = (): UseConnectivityReturn => {
 
     try {
       const baseUrl = getApiBaseUrl() || "";
-      const token = getAuthToken();
-      if (!token) return;
 
       const res = await fetch(`${baseUrl}/api/connectivity/mode`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ forceOffline }),
       });

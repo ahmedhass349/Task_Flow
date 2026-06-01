@@ -1,6 +1,5 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -14,7 +13,6 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Newtonsoft.Json;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System;
@@ -85,93 +83,8 @@ namespace taskflow
             // ── AutoMapper ───────────────────────────────────────────────────
             services.AddAutoMapper(_ => { }, typeof(MappingProfile).Assembly);
 
-            // ── JWT Authentication ───────────────────────────────────────────
-            // Read JWT key from env var (set by Electron before spawning backend),
-            // fall back to appsettings, and if still absent auto-generate a random key
-            // that is valid only for the lifetime of this process.
-            var jwtKey = System.Environment.GetEnvironmentVariable("TASKFLOW_JWT_KEY")
-                         ?? Configuration["Jwt:Key"]
-                         ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
-            {
-                // Auto-generate a cryptographically-random key (64 hex chars = 32 bytes)
-                jwtKey = Convert.ToHexString(
-                    System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
-            }
-
-            // Write the resolved key back so JwtHelper (which reads IConfiguration) sees it.
-            ((IConfigurationRoot)Configuration)["Jwt:Key"] = jwtKey;
-
-            var jwtIssuer = Configuration["Jwt:Issuer"]!;
-            var jwtAudience = Configuration["Jwt:Audience"]!;
-
-            services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtIssuer,
-                    ValidAudience = jwtAudience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-                    // S-07: explicitly zero the default 5-minute skew so tokens expire at the exact time.
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                // Return JSON for auth failures instead of default plain text
-                options.Events = new JwtBearerEvents
-                {
-                    OnChallenge = async context =>
-                    {
-                        context.HandleResponse();
-                        context.Response.StatusCode = 401;
-                        context.Response.ContentType = "application/json";
-                        var errorResponse = new
-                        {
-                            success = false,
-                            message = "Unauthorized. Please log in to continue."
-                        };
-                        var json = JsonConvert.SerializeObject(errorResponse);
-                        await context.Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes(json));
-                    },
-                    OnForbidden = async context =>
-                    {
-                        context.Response.StatusCode = 403;
-                        context.Response.ContentType = "application/json";
-                        var errorResponse = new
-                        {
-                            success = false,
-                            message = "You do not have permission to perform this action."
-                        };
-                        var json = JsonConvert.SerializeObject(errorResponse);
-                        await context.Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes(json));
-                    },
-                    // Read JWT from query string for SignalR hub connections
-                    OnMessageReceived = context =>
-                    {
-                        var accessToken = context.Request.Query["access_token"];
-                        var path = context.HttpContext.Request.Path;
-                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
-                        {
-                            context.Token = accessToken;
-                        }
-                        return System.Threading.Tasks.Task.CompletedTask;
-                    }
-                };
-            });
-
-            services.AddAuthorization();
-
             // ── CORS ─────────────────────────────────────────────────────────
-            // In Electron production the React renderer loads from file:// origin.
+            // In Tauri production the React renderer loads from tauri://localhost origin.
             // The backend only binds to 127.0.0.1 so permitting any origin is safe —
             // no external machine can reach the API.
             // SetIsOriginAllowed (not AllowAnyOrigin) is used so AllowCredentials()
@@ -191,6 +104,8 @@ namespace taskflow
             services.AddControllersWithViews()
                 .AddNewtonsoftJson(options =>
                 {
+                    options.SerializerSettings.ContractResolver =
+                        new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
                     options.SerializerSettings.ReferenceLoopHandling =
                         Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                 });
@@ -340,7 +255,6 @@ namespace taskflow
             services.AddHostedService<BackgroundServices.CrossNotificationPollerService>();
 
             // ── Helpers (DI) ─────────────────────────────────────────────────
-            services.AddScoped<JwtHelper>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, IHostApplicationLifetime appLifetime)
@@ -364,10 +278,11 @@ namespace taskflow
                 var address = app.ServerFeatures.Get<IServerAddressesFeature>()?.Addresses.FirstOrDefault();
                 if (!string.IsNullOrWhiteSpace(address))
                 {
-                    var electronFriendlyAddress = address
-                        .Replace("127.0.0.1", "localhost", StringComparison.OrdinalIgnoreCase)
-                        .Replace("[::1]", "localhost", StringComparison.OrdinalIgnoreCase);
-                    Console.WriteLine($"TASKFLOW_BACKEND_READY:{electronFriendlyAddress}");
+                    // Emit the bound address verbatim — ASPNETCORE_URLS is always set to
+                    // "http://127.0.0.1:0" so the address is already an IPv4 loopback URL.
+                    // Normalising to "localhost" is avoided because on Windows it can resolve
+                    // to ::1 (IPv6), causing Tauri's WebView to connect to the wrong interface.
+                    Console.WriteLine($"TASKFLOW_BACKEND_READY:{address}");
                     Console.Out.Flush();
                 }
             });
@@ -448,9 +363,34 @@ namespace taskflow
             // S-09: Rate limiter must sit after routing so endpoint metadata is resolved.
             app.UseRateLimiter();
 
-            // ── Auth middleware (order matters: after routing, before endpoints)
-            app.UseAuthentication();
-            app.UseAuthorization();
+            // ── Default user identity (replaces JWT auth) ────────────────────
+            app.Use(async (context, next) =>
+            {
+                if (context.User.Identity?.IsAuthenticated != true)
+                {
+                    var userId = "1";
+                    try
+                    {
+                        var userRepo = context.RequestServices.GetRequiredService<taskflow.Repositories.Interfaces.IUserRepository>();
+                        var firstUser = (await userRepo.GetAllAsync()).FirstOrDefault();
+                        if (firstUser != null)
+                            userId = firstUser.Id.ToString();
+                    }
+                    catch { /* use default */ }
+                    var claims = new[]
+                    {
+                        new System.Security.Claims.Claim(
+                            System.Security.Claims.ClaimTypes.NameIdentifier, userId),
+                        new System.Security.Claims.Claim(
+                            System.Security.Claims.ClaimTypes.Email, "user@local"),
+                        new System.Security.Claims.Claim(
+                            System.Security.Claims.ClaimTypes.Name, "Local User"),
+                    };
+                    var identity = new System.Security.Claims.ClaimsIdentity(claims, "local");
+                    context.User = new System.Security.Claims.ClaimsPrincipal(identity);
+                }
+                await next();
+            });
 
             app.UseEndpoints(endpoints =>
             {

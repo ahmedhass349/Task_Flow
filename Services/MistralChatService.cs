@@ -18,7 +18,7 @@ namespace taskflow.Services
 {
     public class MistralChatService : IMistralChatService
     {
-        private readonly string _apiKey;
+        private readonly string? _apiKey;
         private readonly string _chatModel;
         private readonly string _coderModel;
         private readonly string _ocrModel;
@@ -26,13 +26,13 @@ namespace taskflow.Services
         private readonly IHttpClientFactory _httpFactory;
         private readonly ILogger<MistralChatService> _logger;
 
+        public bool IsAvailable => !string.IsNullOrWhiteSpace(_apiKey);
+
         public MistralChatService(IHttpClientFactory httpFactory, ILogger<MistralChatService> logger, IConfiguration configuration)
         {
             _httpFactory = httpFactory;
             _logger = logger;
-            _apiKey = configuration["Mistral:ApiKey"]
-                      ?? throw new InvalidOperationException(
-                          "Mistral:ApiKey is not configured. Set it via environment variable or user-secrets.");
+            _apiKey = configuration["Mistral:ApiKey"];
             _chatModel = configuration["Mistral:Model"] ?? "mistral-small-latest";
             _coderModel = configuration["Mistral:CoderModel"] ?? "codestral-latest";
             _ocrModel = configuration["Mistral:OcrModel"] ?? "mistral-ocr-latest";

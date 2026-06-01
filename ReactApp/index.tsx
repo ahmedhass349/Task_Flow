@@ -11,7 +11,7 @@ import { initializeApi, refreshEndpoints } from './config/api';
   MISSION: 3-Startup
   CHANGES:
     - P1.6: Removed the initializeApi() block on root.render().
-      Previously the app waited for an Electron IPC round-trip before the
+      Previously the app waited for a Tauri invoke() round-trip before the
       first paint, causing a blank white screen for ~100–200ms.
       In production, index.html is served by the backend itself, so all
       relative API paths (/api/...) resolve correctly without an explicit

@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiRequestError } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 // â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -415,12 +416,16 @@ export const useTeams = (): UseTeamsReturn => {
 
   // â”€â”€ Initial load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+  const { isInitialized, isAuthenticated } = useAuth();
+
   useEffect(() => {
+    if (!isInitialized) return;
+    if (!isAuthenticated) return;
     fetchData();
     fetchInvitations();
     fetchAllSharedMembers();
     fetchMembershipsByMe();
-  }, [fetchData, fetchInvitations, fetchAllSharedMembers, fetchMembershipsByMe]);
+  }, [isInitialized, isAuthenticated, fetchData, fetchInvitations, fetchAllSharedMembers, fetchMembershipsByMe]);
 
   // ── Refresh on page visibility / window focus ─────────────────────────────
 
@@ -463,11 +468,12 @@ export const useTeams = (): UseTeamsReturn => {
   // Called once on mount and every 2 minutes while the app is open.
 
   useEffect(() => {
+    if (!isInitialized || !isAuthenticated) return;
     const ping = () => { api.post("/api/teams/presence", {}).catch(() => {}); };
     ping();
     const heartbeatId = setInterval(ping, 60_000);
     return () => clearInterval(heartbeatId);
-  }, []);
+  }, [isInitialized, isAuthenticated]);
 
   // ── 15-second safety-net polling (fallback when SignalR events are missed) ─
 

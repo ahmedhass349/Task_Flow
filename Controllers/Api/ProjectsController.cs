@@ -15,7 +15,6 @@ namespace taskflow.Controllers.Api
     /// </summary>
     [ApiController]
     [Route("api/projects")]
-    [Authorize]
     public class ProjectsController : ControllerBase
     {
         private readonly IProjectService _projectService;

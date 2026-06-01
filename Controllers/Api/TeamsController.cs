@@ -20,7 +20,6 @@ namespace taskflow.Controllers.Api
     /// </summary>
     [ApiController]
     [Route("api/teams")]
-    [Authorize]
     public class TeamsController : ControllerBase
     {
         private readonly ITeamService _teamService;

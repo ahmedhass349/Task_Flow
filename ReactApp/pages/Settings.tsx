@@ -9,7 +9,7 @@ import Header from "../Components/Header";
 import Footer from "../Components/Footer";
 import { useSettings } from "../hooks/useSettings";
 import { useAuth } from "../context/AuthContext";
-import { api, clearAuthToken, getRememberMePreference, setRememberMePreference } from "../services/api";
+import { api } from "../services/api";
 import { removeAccount } from "../hooks/useAccountSwitcher";
 
 /* ─────── types ─────── */
@@ -95,7 +95,7 @@ const NAV_ITEMS: { id: Section; label: string; icon: React.ElementType }[] = [
 ═══════════════════════════════════════════════ */
 type ResetTarget = "mongo" | "sqlite" | "all";
 
-function DevResetPanel() {
+function DevResetPanel({ onLogout }: { onLogout: () => void }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -120,7 +120,7 @@ function DevResetPanel() {
         target === "sqlite" ? `/api/dev/reset-sqlite?users=${includeUsers}` :
                               `/api/dev/reset-all?users=${includeUsers}`;
       await api.post<{ message?: string }>(endpoint);
-      clearAuthToken();
+      onLogout();
       localStorage.removeItem("taskflow_saved_accounts");
       navigate("/login");
     } catch (err: unknown) {
@@ -197,7 +197,7 @@ export default function Settings() {
   }, [refreshUser]);
 
   const [activeSection, setActiveSection] = useState<Section>("profile");
-  const [rememberMeEnabled, setRememberMeEnabled] = useState<boolean>(getRememberMePreference());
+
 
   // Convert backend profile to form state
   const [profileForm, setProfileForm] = useState({
@@ -240,11 +240,6 @@ export default function Settings() {
     } catch (err) {
       // Error is handled by the hook
     }
-  };
-
-  const handleRememberMeChange = (enabled: boolean) => {
-    setRememberMeEnabled(enabled);
-    setRememberMePreference(enabled);
   };
 
   /* ── Notifications state ── */
@@ -596,15 +591,6 @@ export default function Settings() {
                       </div>
                     </SectionCard>
 
-                      <SectionCard title="Sign-in Preference">
-                        <ToggleRow
-                          label="Remember Me"
-                          description="Keep me signed in on this device between app restarts"
-                          value={rememberMeEnabled}
-                          onChange={handleRememberMeChange}
-                        />
-                      </SectionCard>
-
                     <SectionCard title="Danger Zone">
                       <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
                         <div>
@@ -835,7 +821,7 @@ export default function Settings() {
 
                 {/* ══════════ DEV TOOLS ══════════ */}
                 {activeSection === "developer" && (
-                  <DevResetPanel />
+                  <DevResetPanel onLogout={logout} />
                 )}
 
               </div>{/* /right content */}

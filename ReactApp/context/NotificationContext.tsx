@@ -109,15 +109,11 @@ interface NotificationProviderProps {
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(notificationReducer, initialState);
-  const { token, isLoading } = useAuth();
+  const { isInitialized, isAuthenticated } = useAuth();
   const { addToast, clearAllToasts } = useToast();
   const connectionRef = useRef<HubConnection | null>(null);
 
-  // DEFECT 2 FIX: reconnectEpoch is bumped by the onclose handler after all automatic
-  // retries are exhausted, causing the useEffect to re-run and build a fresh connection.
-  // This prevents the SignalR hub from becoming permanently dead after 6 failed retries.
   const [reconnectEpoch, setReconnectEpoch] = useState(0);
-  // Holds the timeout that schedules the next re-initialisation attempt.
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -126,26 +122,28 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       connectionRef.current = null;
     }
 
-    if (!token || isLoading) {
+    if (!isInitialized) return;
+
+    if (!isAuthenticated) {
       dispatch({ type: "SET_CONNECTION_STATUS", payload: false });
-      if (!token) {
-        dispatch({ type: "SET_NOTIFICATIONS", payload: [] });
-        dispatch({ type: "SET_UNREAD_COUNT", payload: 0 });
-        dispatch({ type: "SET_LATEST_NOTIFICATION", payload: null });
-        clearAllToasts();
-      }
+      dispatch({ type: "SET_NOTIFICATIONS", payload: [] });
+      dispatch({ type: "SET_UNREAD_COUNT", payload: 0 });
+      dispatch({ type: "SET_LATEST_NOTIFICATION", payload: null });
+      clearAllToasts();
       return;
     }
 
     const baseUrl = getApiBaseUrl();
     const connection = new HubConnectionBuilder()
-      .withUrl(`${baseUrl || ""}/hubs/notifications`, {
-        accessTokenFactory: () => token,
+      .withUrl(`${baseUrl || ""}/hubs/notifications`)
+      .withAutomaticReconnect({
+        nextRetryDelayInMilliseconds: (ctx) => {
+          const delays = [1000, 3000, 7000, 15000, 30000, 60000];
+          return ctx.previousRetryCount < delays.length
+            ? delays[ctx.previousRetryCount]
+            : null;
+        },
       })
-      // DEFECT 2 FIX: custom retry delays instead of the default [0, 2s, 10s, 30s] policy
-      // which permanently stops after 4 attempts.  Six retries with increasing delays give
-      // Machine B's slower connection time to recover without giving up permanently.
-      .withAutomaticReconnect([1000, 3000, 7000, 15000, 30000, 30000])
       .configureLogging(LogLevel.Warning)
       .build();
 
@@ -155,9 +153,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     connection.onreconnected(() => dispatch({ type: "SET_CONNECTION_STATUS", payload: true }));
     connection.onclose(() => {
       dispatch({ type: "SET_CONNECTION_STATUS", payload: false });
-      // DEFECT 2 FIX: after all automatic retries are exhausted SignalR fires onclose.
-      // Schedule a full re-initialisation after 30 s by bumping reconnectEpoch.
-      // This ensures the hub never stays permanently dead on Machine B.
       reconnectTimerRef.current = setTimeout(
         () => setReconnectEpoch(e => e + 1),
         30_000
@@ -165,9 +160,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     });
 
     connection.on("ReceiveNotification", (notification: NotificationType) => {
-      // Message-received alerts are transient (not persisted) and belong only in the
-      // Messages tab — skip adding them to the notification bell/store/toast.
-      // Still fire the custom event so useMessages can refresh contacts in real time.
       if (notification.type?.toLowerCase() === "messagereceived") {
         window.dispatchEvent(new CustomEvent("taskflow:notification-received", { detail: notification }));
         return;
@@ -222,33 +214,27 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       .then(async () => {
         dispatch({ type: "SET_CONNECTION_STATUS", payload: true });
 
-        const sessionKey = `notif_popup_${token.slice(-16)}`;
-        if (!sessionStorage.getItem(sessionKey)) {
-          sessionStorage.setItem(sessionKey, "1");
-          try {
-            const unread = await api.get<NotificationType[]>("/api/notifications?page=1&pageSize=20");
-            const pending = (unread ?? []).filter(n => !n.isRead).slice(0, 7);
-            pending.forEach((notif, idx) => {
-              setTimeout(() => {
-                // Don't show startup toasts on auth pages
-                const path = window.location.pathname;
-                if (path === "/login" || path === "/signup" || path === "/forgot-password") return;
-                const priority = notif.priority.toLowerCase();
-                addToast({
-                  title: notif.title,
-                  message: notif.message,
-                  type: priority === "high" || priority === "critical" ? "warning" : "info",
-                  duration: 6000,
-                });
-              }, (idx + 1) * 900);
-            });
-          } catch { /* non-critical */ }
-        }
+        try {
+          const unread = await api.get<NotificationType[]>("/api/notifications?page=1&pageSize=20");
+          const pending = (unread ?? []).filter(n => !n.isRead).slice(0, 7);
+          pending.forEach((notif, idx) => {
+            setTimeout(() => {
+              const path = window.location.pathname;
+              if (path === "/login" || path === "/signup" || path === "/forgot-password") return;
+              const priority = notif.priority.toLowerCase();
+              addToast({
+                title: notif.title,
+                message: notif.message,
+                type: priority === "high" || priority === "critical" ? "warning" : "info",
+                duration: 6000,
+              });
+            }, (idx + 1) * 900);
+          });
+        } catch { /* non-critical */ }
       })
       .catch(() => dispatch({ type: "SET_CONNECTION_STATUS", payload: false }));
 
     return () => {
-      // DEFECT 2 FIX: cancel any pending re-init timer so it doesn't fire after unmount.
       if (reconnectTimerRef.current !== null) {
         clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;
@@ -257,7 +243,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       connectionRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isLoading, reconnectEpoch]);
+  }, [isInitialized, isAuthenticated, reconnectEpoch]);
 
   const markAsRead = useCallback(async (id: number) => {
     if (connectionRef.current) await connectionRef.current.invoke("MarkAsRead", id);

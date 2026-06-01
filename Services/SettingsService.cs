@@ -10,7 +10,6 @@ using taskflow.DTOs.Settings;
 using taskflow.DTOs.Auth;
 using taskflow.Repositories.Interfaces;
 using taskflow.Services.Interfaces;
-using taskflow.Helpers;
 
 namespace taskflow.Services
 {
@@ -18,15 +17,13 @@ namespace taskflow.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
-        private readonly JwtHelper _jwtHelper;
         private readonly IMongoService _mongoService;
         private readonly AppDbContext _context;
 
-        public SettingsService(IUserRepository userRepository, IMapper mapper, JwtHelper jwtHelper, IMongoService mongoService, AppDbContext context)
+        public SettingsService(IUserRepository userRepository, IMapper mapper, IMongoService mongoService, AppDbContext context)
         {
             _userRepository = userRepository;
             _mapper = mapper;
-            _jwtHelper = jwtHelper;
             _mongoService = mongoService;
             _context = context;
         }
@@ -72,13 +69,11 @@ namespace taskflow.Services
             // Push updated profile to MongoDB presence so other users see the new name/avatar
             _ = _mongoService.UpsertPresenceAsync(user.Email, user.FullName ?? string.Empty, user.AvatarUrl ?? string.Empty);
 
-            // Generate new token with updated claims
-            var newToken = _jwtHelper.GenerateToken(user);
             var userDto = _mapper.Map<UserDto>(user);
 
             return new AuthResponse
             {
-                Token = newToken,
+                Token = "",
                 User = userDto
             };
         }

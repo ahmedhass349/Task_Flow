@@ -1102,6 +1102,35 @@ namespace taskflow.Services
             }
         }
 
+        public async Task<Models.Mongo.MongoUserProfile?> FindUserProfileFromUsersAsync(string email)
+        {
+            if (_db == null) return null;
+            try
+            {
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(6));
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>("users");
+                var normalized = email.Trim().ToLowerInvariant();
+                // Case-insensitive regex match on the Email field
+                var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter
+                    .Regex("Email", new MongoDB.Bson.BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(normalized)}$", "i"));
+                var doc = await collection.Find(filter).FirstOrDefaultAsync(cts.Token);
+                if (doc == null) return null;
+
+                return new Models.Mongo.MongoUserProfile
+                {
+                    Company  = doc.Contains("Company")  && !doc["Company"].IsBsonNull  ? doc["Company"].AsString  : null,
+                    Country  = doc.Contains("Country")  && !doc["Country"].IsBsonNull  ? doc["Country"].AsString  : null,
+                    Phone    = doc.Contains("Phone")    && !doc["Phone"].IsBsonNull    ? doc["Phone"].AsString    : null,
+                    Timezone = doc.Contains("Timezone") && !doc["Timezone"].IsBsonNull ? doc["Timezone"].AsString : null,
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MongoService.FindUserProfileFromUsersAsync failed for {Email}", email);
+                return null;
+            }
+        }
+
         /// <summary>
         /// Returns <c>true</c> when a credential record for <paramref name="email"/> exists in
         /// the <c>user_accounts</c> collection.  Returns <c>false</c> on any error or when

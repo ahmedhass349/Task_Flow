@@ -18,7 +18,6 @@ namespace taskflow.Controllers.Api
     /// </summary>
     [ApiController]
     [Route("api/messages")]
-    [Authorize]
     public class MessagesController : ControllerBase
     {
         private readonly IMessageService _messageService;

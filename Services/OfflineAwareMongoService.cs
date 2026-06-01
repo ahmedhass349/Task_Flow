@@ -759,6 +759,13 @@ namespace taskflow.Services
             return _mongo.FindAccountForRestorationAsync(email);
         }
 
+        public Task<Models.Mongo.MongoUserProfile?> FindUserProfileFromUsersAsync(string email)
+        {
+            // Profile reads are safe to attempt regardless of cached connectivity state;
+            // MongoService already catches all exceptions and returns null on failure.
+            return _mongo.FindUserProfileFromUsersAsync(email);
+        }
+
         public async Task DeleteUserDataAsync(string userEmail)
         {
             if (_connectivity.IsEffectivelyOnline)

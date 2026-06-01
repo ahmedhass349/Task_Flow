@@ -15,7 +15,6 @@ namespace taskflow.Controllers.Api
 {
     [ApiController]
     [Route("api/group-chats")]
-    [Authorize]
     public class GroupChatsController : ControllerBase
     {
         private readonly IGroupChatService _groupChatService;
