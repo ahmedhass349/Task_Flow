@@ -1,0 +1,104 @@
+2026-06-01 18:50:37.547 +03:00 [INF] Running 14 pending migration(s): 20260406120911_InitialCreate, 20260411231949_AddOfflineSync, 20260414000000_AddMessageSoftDelete, 20260414123705_AddMessageAttachments, 20260414210710_AddGroupChats, 20260415203433_AddSyncFields, 20260415213408_FixUpdatedAtDefaults, 20260421000000_DropDocumentJobsTable, 20260422134647_AddMessageIsEdited, 20260513185738_AddIsBackedUpToMongo, 20260522145109_Phase1_RenameAdminToLeader, 20260522152153_Phase4_AddCreatedById, 20260526120000_Phase2_CrossMachineConsistency, 20260528000000_AddCreatedByEmailToTaskItems
+2026-06-01 18:50:38.280 +03:00 [INF] Executed DbCommand (55ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+PRAGMA journal_mode = 'wal';
+2026-06-01 18:50:38.314 +03:00 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-06-01 18:50:38.349 +03:00 [INF] Executed DbCommand (20ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsLock' AND "type" = 'table';
+2026-06-01 18:50:38.360 +03:00 [INF] Executed DbCommand (9ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE IF NOT EXISTS "__EFMigrationsLock" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK___EFMigrationsLock" PRIMARY KEY,
+    "Timestamp" TEXT NOT NULL
+);
+2026-06-01 18:50:38.367 +03:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:50:38.3629993+00:00');
+SELECT changes();
+2026-06-01 18:51:49.844 +03:00 [INF] Executed DbCommand (88ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+2026-06-01 18:51:49.924 +03:00 [INF] Running 14 pending migration(s): 20260406120911_InitialCreate, 20260411231949_AddOfflineSync, 20260414000000_AddMessageSoftDelete, 20260414123705_AddMessageAttachments, 20260414210710_AddGroupChats, 20260415203433_AddSyncFields, 20260415213408_FixUpdatedAtDefaults, 20260421000000_DropDocumentJobsTable, 20260422134647_AddMessageIsEdited, 20260513185738_AddIsBackedUpToMongo, 20260522145109_Phase1_RenameAdminToLeader, 20260522152153_Phase4_AddCreatedById, 20260526120000_Phase2_CrossMachineConsistency, 20260528000000_AddCreatedByEmailToTaskItems
+2026-06-01 18:51:50.260 +03:00 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-06-01 18:51:50.262 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsLock' AND "type" = 'table';
+2026-06-01 18:51:50.264 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:51:50.2632915+00:00');
+SELECT changes();
+2026-06-01 18:51:51.269 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:51:51.2686876+00:00');
+SELECT changes();
+2026-06-01 18:51:53.283 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:51:53.2832557+00:00');
+SELECT changes();
+2026-06-01 18:51:57.298 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:51:57.2976437+00:00');
+SELECT changes();
+2026-06-01 18:52:05.307 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:52:05.306882+00:00');
+SELECT changes();
+2026-06-01 18:52:21.315 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:52:21.3149283+00:00');
+SELECT changes();
+2026-06-01 18:52:53.326 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:52:53.3258678+00:00');
+SELECT changes();
+2026-06-01 18:53:57.372 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:53:57.3714282+00:00');
+SELECT changes();
+2026-06-01 18:55:01.385 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:55:01.3852408+00:00');
+SELECT changes();
+2026-06-01 18:56:05.395 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:56:05.3954018+00:00');
+SELECT changes();
+2026-06-01 18:57:09.405 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:57:09.4038593+00:00');
+SELECT changes();
+2026-06-01 18:58:13.416 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:58:13.4152954+00:00');
+SELECT changes();
+2026-06-01 18:59:17.419 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 15:59:17.4182224+00:00');
+SELECT changes();
+2026-06-01 19:00:21.423 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:00:21.4228159+00:00');
+SELECT changes();
+2026-06-01 19:01:25.432 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:01:25.4318215+00:00');
+SELECT changes();
+2026-06-01 19:02:29.449 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:02:29.4483139+00:00');
+SELECT changes();
+2026-06-01 19:03:33.457 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:03:33.4560412+00:00');
+SELECT changes();
+2026-06-01 19:04:37.464 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:04:37.4636162+00:00');
+SELECT changes();
+2026-06-01 19:05:41.479 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:05:41.4791902+00:00');
+SELECT changes();
+2026-06-01 19:06:45.488 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:06:45.4885778+00:00');
+SELECT changes();
+2026-06-01 19:07:49.504 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:07:49.5032368+00:00');
+SELECT changes();
+2026-06-01 19:08:53.513 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:08:53.5126573+00:00');
+SELECT changes();
+2026-06-01 19:09:57.520 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:09:57.5197312+00:00');
+SELECT changes();
+2026-06-01 19:11:01.530 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:11:01.5293107+00:00');
+SELECT changes();
+2026-06-01 19:12:05.534 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:12:05.5335289+00:00');
+SELECT changes();
+2026-06-01 19:13:09.542 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:13:09.5421926+00:00');
+SELECT changes();
+2026-06-01 19:14:13.558 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:14:13.5575223+00:00');
+SELECT changes();
+2026-06-01 19:15:17.585 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-01 16:15:17.5832443+00:00');
+SELECT changes();
