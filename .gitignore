@@ -13,3 +13,16 @@ publish/
 *.sqlite
 .vs/
 .vscode/
+
+# Rust
+/target/
+**/target/
+
+# Tauri
+src-tauri/target/
+
+# Build outputs
+*.lib
+*.pdb
+*.dll
+*.exe
