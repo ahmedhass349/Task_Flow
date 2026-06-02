@@ -42,7 +42,8 @@ export default function Projects() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto w-full">
           <div className="max-w-7xl mx-auto p-6 space-y-6">
             {/* Page Header */}
             <div className="flex items-center justify-between">
@@ -148,6 +149,7 @@ export default function Projects() {
               ))}
             </div>
             )}
+          </div>
           </div>
           <Footer />
         </main>

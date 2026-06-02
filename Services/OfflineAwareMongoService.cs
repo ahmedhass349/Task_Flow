@@ -693,6 +693,10 @@ namespace taskflow.Services
             return new Dictionary<string, DateTime>();
         }
 
+        // ── Settings ──────────────────────────────────────────────────────────
+
+        public Task<string?> GetSettingAsync(string key) => _mongo.GetSettingAsync(key);
+
         // ── Dev / testing ─────────────────────────────────────────────────────
 
         public Task ClearAllAsync(bool includeUsers = false) => _mongo.ClearAllAsync(includeUsers);

@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Plus, X, Trash2 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
+import Footer from "../Components/Footer";
 import { PageLoading, PageError } from "../Components/PageState";
 import { api } from "../services/api";
 
@@ -377,7 +378,8 @@ export default function CalendarEvents() {
       <div className="flex flex-col flex-1 overflow-hidden">
         <Header />
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 w-full">
           {/* ── Toolbar ── */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -474,6 +476,8 @@ export default function CalendarEvents() {
               })}
             </div>
           </div>
+          </div>
+          <Footer />
         </main>
       </div>
 

@@ -307,7 +307,8 @@ export default function MyWork() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto w-full">
           <div className="max-w-7xl mx-auto p-6 space-y-6">
             {/* Page header */}
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -480,6 +481,7 @@ export default function MyWork() {
                 {renderView()}
               </>
             )}
+          </div>
           </div>
           <Footer />
         </main>

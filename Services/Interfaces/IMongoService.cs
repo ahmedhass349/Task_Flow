@@ -98,6 +98,12 @@ namespace taskflow.Services.Interfaces
         /// <summary>Adds <paramref name="userEmail"/> to the ReadBy list of an announcement (idempotent).</summary>
         Task MarkAnnouncementReadAsync(string announcementId, string userEmail);
 
+        // ── Settings (key-value config) ───────────────────────────────────────
+        /// <summary>Returns the setting value for <paramref name="key"/> from the
+        /// <c>app_settings</c> collection, or <c>null</c> when not found or when
+        /// MongoDB is unreachable.</summary>
+        Task<string?> GetSettingAsync(string key);
+
         // ── Dev / testing ─────────────────────────────────────────────────────
         Task ClearAllAsync(bool includeUsers = false);
     }

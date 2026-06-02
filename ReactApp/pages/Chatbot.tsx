@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
+import Footer from "../Components/Footer";
 import { PageLoading, PageError } from "../Components/PageState";
 import { useChatbot } from "../hooks/useChatbot";
 import { useAuth } from "../context/AuthContext";
@@ -793,6 +794,7 @@ export default function Chatbot() {
               </section>
             </div>
           </div>
+          <Footer />
         </main>
       </div>
     </div>

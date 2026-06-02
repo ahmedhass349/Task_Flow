@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
+import Footer from "../Components/Footer";
 import { PageLoading, PageError } from "../Components/PageState";
 import { useMessages, type Message as DmMessage } from "../hooks/useMessages";
 import { useGroupChats, type GroupMessage } from "../hooks/useGroupChats";
@@ -1430,6 +1431,8 @@ export default function Message() {
             ))}
           </div>
         </div>
+
+        <Footer />
       </div>
 
       {/* Start Conversation Modal */}

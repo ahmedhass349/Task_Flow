@@ -356,6 +356,26 @@ namespace taskflow.Services
             }
         }
 
+        // ── Settings (key-value config store in app_settings collection) ────────
+
+        /// <inheritdoc />
+        public async Task<string?> GetSettingAsync(string key)
+        {
+            if (_db == null) return null;
+            try
+            {
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>("app_settings");
+                var filter = Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", key);
+                var doc = await collection.Find(filter).FirstOrDefaultAsync();
+                return doc?.GetValue("value", MongoDB.Bson.BsonNull.Value)?.AsString;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetSettingAsync failed: key={Key}", key);
+                return null;
+            }
+        }
+
         // ── Connectivity ping ─────────────────────────────────────────────────
 
         /// <summary>

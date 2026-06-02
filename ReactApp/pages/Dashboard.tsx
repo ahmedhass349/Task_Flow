@@ -48,7 +48,8 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto w-full">
           {isDashboardLoading && <PageLoading message="Loading dashboard..." />}
           {error && <PageError message={error} onRetry={handleRetry} />}
           {!isDashboardLoading && !error && stats && (
@@ -234,6 +235,7 @@ export default function Dashboard() {
             </div>
           </div>
           )}
+          </div>
           <Footer />
         </main>
       </div>

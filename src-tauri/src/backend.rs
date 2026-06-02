@@ -66,14 +66,11 @@ pub fn spawn_backend(app: AppHandle) {
 
     let jwt_key = get_or_create_jwt_key(&app);
 
-    let mistral_key = std::env::var("MISTRAL_API_KEY").unwrap_or_default();
-
     let env_vars: Vec<(&str, String)> = vec![
         ("ASPNETCORE_ENVIRONMENT", (if is_dev { "Development" } else { "Production" }).to_string()),
         ("ASPNETCORE_URLS", (if is_dev { "http://127.0.0.1:5000" } else { "http://127.0.0.1:0" }).to_string()),
         ("TASKFLOW_DB_PATH", db_path),
         ("TASKFLOW_JWT_KEY", jwt_key),
-        ("MISTRAL_API_KEY", mistral_key),
         ("DOTNET_TieredCompilation", "1".to_string()),
         ("DOTNET_TC_QuickJit", "1".to_string()),
         ("DOTNET_TC_QuickJitForLoops", "1".to_string()),
