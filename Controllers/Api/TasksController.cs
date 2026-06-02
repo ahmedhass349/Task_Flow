@@ -154,7 +154,16 @@ namespace taskflow.Controllers.Api
                 "Examine every piece of text in this document or image thoroughly. Extract all task-relevant information and return it as a JSON object. " +
                 "Do not skip any text. Pay close attention to headings, labels, dates, names, and any prioritization keywords.";
 
-            var raw = await _mistral.ChatWithFileAsync(userPrompt, request.FileBase64, request.MimeType, systemPrompt, ct);
+            string raw;
+            try
+            {
+                raw = await _mistral.ChatWithFileAsync(userPrompt, request.FileBase64, request.MimeType, systemPrompt, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Mistral smart-fill API call failed");
+                return StatusCode(502, ApiResponse<SmartFillResult>.Fail("AI scanning service is temporarily unavailable. Please try again later."));
+            }
 
             var json = raw.Trim();
             if (json.StartsWith("```"))

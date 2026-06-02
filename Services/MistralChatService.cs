@@ -32,10 +32,14 @@ namespace taskflow.Services
         {
             _httpFactory = httpFactory;
             _logger = logger;
-            _apiKey = configuration["Mistral:ApiKey"];
+            _apiKey = configuration["Mistral:ApiKey"]
+                   ?? configuration["MISTRAL_API_KEY"]
+                   ?? configuration["MistralApiKey"]
+                   ?? Environment.GetEnvironmentVariable("MISTRAL_API_KEY");
             _chatModel = configuration["Mistral:Model"] ?? "mistral-small-latest";
             _coderModel = configuration["Mistral:CoderModel"] ?? "codestral-latest";
             _ocrModel = configuration["Mistral:OcrModel"] ?? "mistral-ocr-latest";
+            _logger.LogInformation("MistralChatService initialized. API key present: {HasKey}", !string.IsNullOrWhiteSpace(_apiKey));
         }
 
         public async Task<string> ChatAsync(

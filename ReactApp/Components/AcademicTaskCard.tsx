@@ -324,8 +324,9 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData, pref
       if (filled === 0) {
         setSmartFillError("No task details could be extracted from this file. Try a different document.");
       }
-    } catch {
-      setSmartFillError("Scanning failed. Please check your connection and try again.");
+    } catch (err: any) {
+      const msg = err?.message || "Scanning failed. Please check your connection and try again.";
+      setSmartFillError(msg);
     } finally {
       setSmartFillLoading(false);
     }
