@@ -1,6 +1,15 @@
 import type { ApiError } from "../types";
 import { getApiBaseUrl } from "../config/api";
 
+// ── Auth state for header-based user switching ───────────────────────────
+
+let currentUserEmail: string | null = null;
+
+/** Set the email of the currently active user.  Sent as X-User-Email on every request. */
+export function setCurrentUserEmail(email: string | null) {
+  currentUserEmail = email;
+}
+
 // ── Error class ──────────────────────────────────────────────────────────
 
 export class ApiRequestError extends Error {
@@ -39,6 +48,10 @@ async function request<T>(endpoint: string, options: RequestOptions): Promise<T>
     "Content-Type": "application/json",
     ...options.headers,
   };
+
+  if (currentUserEmail) {
+    headers["X-User-Email"] = currentUserEmail;
+  }
 
   const config: RequestInit = {
     method: options.method,

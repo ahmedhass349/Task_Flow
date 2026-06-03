@@ -480,8 +480,13 @@ namespace taskflow.Services
             if (_invitationsCollection == null)
                 throw new InvalidOperationException("MongoDB is unavailable.");
 
-            // Expire any pre-existing pending invitation from the same sender to the same recipient for the same team
+            // Prevent self-invitation
             var normalizedRecipient = request.RecipientEmail.Trim().ToLowerInvariant();
+            if (string.Equals(senderEmail.Trim().ToLowerInvariant(), normalizedRecipient))
+                throw new InvalidOperationException("You cannot invite yourself to a team.");
+
+            // Expire any pre-existing pending invitation from the same sender to the same recipient for the same team
+
             var expireFilter = Builders<TeamInvitation>.Filter.And(
                 Builders<TeamInvitation>.Filter.Eq(i => i.SenderEmail, senderEmail),
                 Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, normalizedRecipient),
@@ -759,6 +764,20 @@ namespace taskflow.Services
                 );
 
                 var members = await _membersCollection.Find(filter).ToListAsync();
+
+                // Fallback: if no members found with the given ownerEmail, try querying by
+                // teamId alone.  This handles the case where existing MongoDB records still
+                // carry "user@local" as OwnerEmail (from the pre-fix middleware).
+                if (members.Count == 0)
+                {
+                    var fallbackFilter = Builders<MongoTeamMember>.Filter.And(
+                        Builders<MongoTeamMember>.Filter.Eq(m => m.TeamId, teamId),
+                        Builders<MongoTeamMember>.Filter.Eq(m => m.IsActive, true),
+                        Builders<MongoTeamMember>.Filter.Ne(m => m.UserEmail, ownerEmail)
+                    );
+                    members = await _membersCollection.Find(fallbackFilter).ToListAsync();
+                }
+
                 var lastSeenMap = await GetLastSeenBatchAsync(members.Select(m => m.UserEmail));
                 return members.ConvertAll(m => new MongoTeamMemberDto
                 {

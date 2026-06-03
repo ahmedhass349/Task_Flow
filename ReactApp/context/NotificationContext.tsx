@@ -115,6 +115,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const [reconnectEpoch, setReconnectEpoch] = useState(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasShownStaleNotificationsRef = useRef(false);
 
   useEffect(() => {
     if (connectionRef.current) {
@@ -125,6 +126,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (!isInitialized) return;
 
     if (!isAuthenticated) {
+      hasShownStaleNotificationsRef.current = false;
       dispatch({ type: "SET_CONNECTION_STATUS", payload: false });
       dispatch({ type: "SET_NOTIFICATIONS", payload: [] });
       dispatch({ type: "SET_UNREAD_COUNT", payload: 0 });
@@ -214,23 +216,29 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       .then(async () => {
         dispatch({ type: "SET_CONNECTION_STATUS", payload: true });
 
-        try {
-          const unread = await api.get<NotificationType[]>("/api/notifications?page=1&pageSize=20");
-          const pending = (unread ?? []).filter(n => !n.isRead).slice(0, 7);
-          pending.forEach((notif, idx) => {
-            setTimeout(() => {
-              const path = window.location.pathname;
-              if (path === "/login" || path === "/signup" || path === "/forgot-password") return;
-              const priority = notif.priority.toLowerCase();
-              addToast({
-                title: notif.title,
-                message: notif.message,
-                type: priority === "high" || priority === "critical" ? "warning" : "info",
-                duration: 6000,
-              });
-            }, (idx + 1) * 900);
-          });
-        } catch { /* non-critical */ }
+        // Only re-popup stale notifications on the very first connection (initial sign-in),
+        // not on every SignalR reconnect.  Once shown, they stay suppressed until the
+        // next time the effect is torn down (app restart or sign-out → sign-in).
+        if (!hasShownStaleNotificationsRef.current) {
+          hasShownStaleNotificationsRef.current = true;
+          try {
+            const unread = await api.get<NotificationType[]>("/api/notifications?page=1&pageSize=20");
+            const pending = (unread ?? []).filter(n => !n.isRead).slice(0, 7);
+            pending.forEach((notif, idx) => {
+              setTimeout(() => {
+                const path = window.location.pathname;
+                if (path === "/login" || path === "/signup" || path === "/forgot-password") return;
+                const priority = notif.priority.toLowerCase();
+                addToast({
+                  title: notif.title,
+                  message: notif.message,
+                  type: priority === "high" || priority === "critical" ? "warning" : "info",
+                  duration: 6000,
+                });
+              }, (idx + 1) * 900);
+            });
+          } catch { /* non-critical */ }
+        }
       })
       .catch(() => dispatch({ type: "SET_CONNECTION_STATUS", payload: false }));
 

@@ -232,6 +232,10 @@ namespace taskflow.Controllers.Api
                 var userId = GetUserId();
                 var email = GetUserEmail();
                 var fullName = GetUserFullName();
+
+                // Prevent self-invitation
+                if (string.Equals(email, request.RecipientEmail?.Trim(), StringComparison.OrdinalIgnoreCase))
+                    return BadRequest(ApiResponse<string>.Fail("You cannot invite yourself to a team."));
                 var sender = await _userRepository.GetByIdAsync(userId);
                 var senderAvatarUrl = sender?.AvatarUrl ?? string.Empty;
                 var invitation = await _mongoService.SendInvitationAsync(

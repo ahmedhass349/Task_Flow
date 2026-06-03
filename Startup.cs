@@ -368,23 +368,34 @@ namespace taskflow
             {
                 if (context.User.Identity?.IsAuthenticated != true)
                 {
-                    var userId = "1";
+                    taskflow.Data.Entities.AppUser? appUser = null;
                     try
                     {
                         var userRepo = context.RequestServices.GetRequiredService<taskflow.Repositories.Interfaces.IUserRepository>();
-                        var firstUser = (await userRepo.GetAllAsync()).FirstOrDefault();
-                        if (firstUser != null)
-                            userId = firstUser.Id.ToString();
+
+                        // Support X-User-Email header for multi-user switching on the same machine.
+                        var headerEmail = context.Request.Headers["X-User-Email"].FirstOrDefault()?.Trim();
+                        if (!string.IsNullOrEmpty(headerEmail))
+                            appUser = await userRepo.GetByEmailAsync(headerEmail);
+
+                        // Fall back to the first user in the database.
+                        if (appUser == null)
+                            appUser = (await userRepo.GetAllAsync()).FirstOrDefault();
                     }
-                    catch { /* use default */ }
+                    catch { /* use defaults below */ }
+
+                    var userId = appUser?.Id.ToString() ?? "1";
+                    var email  = appUser?.Email  ?? "unknown@local";
+                    var name   = appUser?.FullName ?? "Local User";
+
                     var claims = new[]
                     {
                         new System.Security.Claims.Claim(
                             System.Security.Claims.ClaimTypes.NameIdentifier, userId),
                         new System.Security.Claims.Claim(
-                            System.Security.Claims.ClaimTypes.Email, "user@local"),
+                            System.Security.Claims.ClaimTypes.Email, email),
                         new System.Security.Claims.Claim(
-                            System.Security.Claims.ClaimTypes.Name, "Local User"),
+                            System.Security.Claims.ClaimTypes.Name, name),
                     };
                     var identity = new System.Security.Claims.ClaimsIdentity(claims, "local");
                     context.User = new System.Security.Claims.ClaimsPrincipal(identity);

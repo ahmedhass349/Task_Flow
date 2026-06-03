@@ -167,6 +167,9 @@ namespace taskflow.Services
 
             foreach (var member in team.Members)
             {
+                // Skip the team owner/leader — progress and member lists are for non-leader members only
+                if (member.UserId == team.OwnerId) continue;
+
                 var email = member.User?.Email ?? string.Empty;
                 if (string.IsNullOrWhiteSpace(email)) continue;
 

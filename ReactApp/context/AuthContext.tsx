@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { User, AuthResponse, LoginRequest, SignupRequest } from "../types";
-import { api, ApiRequestError } from "../services/api";
+import { api, ApiRequestError, setCurrentUserEmail } from "../services/api";
 
 interface AuthContextValue {
   user: User | null;
@@ -24,19 +24,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const syncUserEmail = useCallback((u: User | null) => {
+    setCurrentUserEmail(u?.email ?? null);
+  }, []);
+
   useEffect(() => {
     api.get<User>("/api/auth/me")
       .then((userData) => {
         setUser(userData);
+        syncUserEmail(userData);
       })
       .catch(() => {
         setUser(null);
+        syncUserEmail(null);
       })
       .finally(() => {
         setIsLoading(false);
         setIsInitialized(true);
       });
-  }, []);
+  }, [syncUserEmail]);
 
   const login = useCallback(async (credentials: LoginRequest) => {
     setError(null);
@@ -46,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isRestored: boolean = (response as any).isRestored ?? (response as any).IsRestored ?? false;
 
       setUser(userData);
+      syncUserEmail(userData);
       setIsInitialized(true);
 
       return { user: userData, isRestored };
@@ -57,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(message);
       throw err;
     }
-  }, []);
+  }, [syncUserEmail]);
 
   const signup = useCallback(async (data: SignupRequest) => {
     setError(null);
@@ -65,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await api.post<AuthResponse>("/api/auth/register", data);
       const userData = (response as any).user ?? (response as any).User ?? null;
       setUser(userData);
+      syncUserEmail(userData);
     } catch (err) {
       const message =
         err instanceof ApiRequestError
@@ -73,12 +81,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(message);
       throw err;
     }
-  }, []);
+  }, [syncUserEmail]);
 
   const logout = useCallback(() => {
     setUser(null);
+    syncUserEmail(null);
     setError(null);
-  }, []);
+  }, [syncUserEmail]);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -87,11 +96,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     const userData = await api.get<User>("/api/auth/me");
     setUser(userData);
-  }, []);
+    syncUserEmail(userData);
+  }, [syncUserEmail]);
 
   const updateUser = useCallback((updatedUser: User) => {
     setUser(updatedUser);
-  }, []);
+    syncUserEmail(updatedUser);
+  }, [syncUserEmail]);
 
   const value: AuthContextValue = {
     user,
