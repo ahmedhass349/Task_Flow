@@ -28,7 +28,7 @@ scope and the delivered system.
 As noted in Section~\ref{sec:concl_limitations}, the Mistral API key is currently a
 compile-time constant.
 The immediate remedy is to read the key from an environment variable
-(\texttt{TASKFLOW\_MISTRAL\_KEY}) at startup, falling back to the
+(\texttt{TASKFLOW\_}\cbrk\texttt{MISTRAL\_KEY}) at startup, falling back to the
 \texttt{appsettings.json} configuration value, and ultimately defaulting to the
 embedded constant only as a last resort.
 In a production distribution the key should be provisioned by the installer or entered
@@ -45,8 +45,8 @@ A practical test suite would consist of three layers:
   \item \textbf{API integration tests} using \texttt{WebApplicationFactory<Program>} to
         spin up an in-memory ASP.NET Core server backed by an in-memory SQLite database,
         covering all controller endpoints.
-  \item \textbf{End-to-end tests} using Playwright to exercise the packaged Electron
-        application, verifying that key user journeys (login, create task, go offline,
+  \item \textbf{End-to-end tests} using Playwright to exercise the packaged
+        desktop application, verifying that key user journeys (login, create task, go offline,
         create task, go online, confirm sync) complete correctly.
 \end{enumerate}
 Adding this suite would allow regressions to be detected automatically and would
@@ -62,12 +62,17 @@ concurrently.
 This would be a meaningful improvement for multi-device users who edit different
 properties of the same task on different machines while offline.
 
-\paragraph{macOS notarisation.}
-Submitting the macOS distribution to Apple's notarisation service would eliminate the
-Gatekeeper manual-override step described in Section~\ref{sec:res_distribution}.
-Notarisation requires an Apple Developer Programme membership and a CI pipeline step
-that submits the signed DMG to Apple and waits for approval, but the result is a
-significantly smoother first-launch experience for macOS users.
+\paragraph{Cross-platform Tauri builds.}
+The current Tauri build pipeline targets only Windows (NSIS and MSI).
+Extending the build to macOS and Linux would restore cross-platform
+coverage. The Rust source code in
+\texttt{src-tauri/} is already platform-independent; the main effort lies
+in configuring the build pipeline for each target triple
+(\texttt{aarch64-apple-darwin}, \texttt{x86\_64-unknown-linux-gnu}) and
+adapting the \texttt{BUILD\_WINDOWS.bat} script into a cross-platform CI
+pipeline. Once macOS and Linux builds are available, Apple notarisation would
+eliminate the Gatekeeper manual-override step described in
+Section~\ref{sec:res_distribution}.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Long-Term Enhancements}\label{sec:fw_longterm}
@@ -120,7 +125,7 @@ the core application decoupled from external service details.
 
 \paragraph{Cloud-hosted multi-tenant mode.}
 The current architecture is single-user and desktop-only.
-A future SaaS variant would replace the embedded Electron shell with a web-hosted
+A future SaaS variant would replace the embedded Tauri desktop shell with a web-hosted
 frontend, the per-user SQLite database with a per-organisation PostgreSQL instance
 managed by Entity Framework Core, and the MongoDB relay with a shared cluster.
 The ASP.NET Core service layer would require minimal changes because its business logic

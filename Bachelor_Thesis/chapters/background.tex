@@ -70,27 +70,86 @@ technology investments.
 per-platform development effort and cannot reuse the React/TypeScript frontend code
 already written for Task~Flow.
 
-\textbf{Tauri}~\cite{electrondocs2024} is a newer alternative to Electron that renders
-web content in the system's native WebView and uses Rust for the application shell,
-resulting in significantly smaller binaries.
-However, its Rust back-end integration would require a full rewrite of the .NET server
-component, and its ecosystem maturity is substantially lower than Electron's.
+\textbf{Tauri}~\cite{tauri_docs} is a Rust-based framework for building desktop
+applications using the operating system's native WebView rather than bundling
+a browser engine.
+On Windows, this WebView is provided by Microsoft WebView2, which is distributed
+as part of Windows~10 (version~1803 and later) and all versions of
+Windows~11~\cite{webview2}.
+A minimal Tauri application compiles to approximately 600~KB~\cite{tauri_docs},
+in contrast to the roughly 150~MB baseline of an Electron application.
+Tauri v2 employs a capabilities-based security model that granularly controls
+which system APIs each window may invoke~\cite{tauri_security}, and it supports
+a plugin architecture that provides shell access, file system operations,
+dialog boxes, and HTTP client functionality.
+The Rust language used for the Tauri core provides memory safety guarantees
+and thread safety at compile time~\cite{rust_lang}.
+
+For Task~Flow, the ASP.NET Core backend is bundled as a \emph{sidecar}
+binary~\cite{tauri_sidecar}: a self-contained executable that the Tauri
+application spawns as a child process via the shell plugin.
+The sidecar communicates its dynamically assigned port number by writing
+\texttt{TASKFLOW\_BACKEND\_}\cbrk\texttt{READY:\{address\}} to standard output, which the
+Rust backend manager (\texttt{backend.rs}) parses line by line.
+Once the address is received, the splashscreen window is closed and the main
+application window is displayed.
+This stdout-based port negotiation protocol decouples the frontend load
+from the backend start time, allowing the UI to display a splash state
+until the server is confirmed ready.
 
 \textbf{Electron}~\cite{electrondocs2024}, developed by GitHub and now maintained by
 the OpenJS Foundation, embeds a Chromium browser and a Node.js runtime in a single
 cross-platform binary.
 The web content layer communicates with the Node.js main process via inter-process
 communication (IPC).
-This architecture allows the complete React~+~TypeScript frontend to be reused without
+This architecture allows a complete React~+~TypeScript frontend to be reused without
 modification.
-For Task~Flow, the .NET backend is launched as a child process by the Electron main
-process, with port negotiation performed via a token on standard output
-(\texttt{TASKFLOW\_BACKEND\_READY:\{address\}}).
-The resulting installer sizes are larger than Tauri equivalents but remain well within
-acceptable bounds for a desktop application.
-Electron's comprehensive documentation, wide community adoption, and first-class support
-in \texttt{electron-builder}~\cite{electrondocs2024} made it the optimal choice for
-this project.
+Table~\ref{tab:electron_tauri_comparison} summarises the key differences between
+Electron and Tauri.
+The Task~Flow desktop shell uses Tauri v2, chosen for its significantly smaller
+binary footprint, OS-native WebView rendering, and declarative capabilities-based
+security model~\cite{tauri_security}.
+
+\begin{table}[H]
+\centering
+\caption{Comparison of Electron and Tauri v2 desktop application frameworks.}
+\label{tab:electron_tauri_comparison}
+\begin{tabular}{lll}
+\toprule
+\textbf{Characteristic} &
+\textbf{Electron} &
+\textbf{Tauri v2} \\
+\midrule
+Rendering engine &
+Bundled Chromium &
+OS native WebView \\
+System language &
+Node.js (JavaScript) &
+Rust \\
+Minimum bundle size &
+$\sim$150 MB &
+$\sim$600 KB (app only) \\
+IPC mechanism &
+contextBridge / preload &
+Tauri commands (\texttt{invoke}) \\
+Security model &
+Manual (sandbox flags) &
+Declarative capabilities system \\
+WebView on Windows &
+Chromium (bundled) &
+WebView2 (OS-provided) \\
+Memory footprint &
+High (Chromium process) &
+Low (native WebView) \\
+Frontend technology &
+Any web technology &
+Any web technology \\
+Plugin ecosystem &
+npm packages &
+Tauri plugins (Rust + JS) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Offline-First Architecture}\label{sec:bg_offline}
@@ -139,15 +198,11 @@ enhancement.
 
 \subsection*{SQLite as a Local Store}
 
-SQLite~\cite{hipp2022sqlite} is a self-contained, serverless, zero-configuration,
-transactional SQL database engine embedded as a library in the host application.
-It writes to a single file on disk, requires no background daemon process, and
-supports full ACID transactions.
+SQLite~\cite{hipp2022sqlite} is an embedded, serverless, ACID-compliant SQL
+database engine that stores data in a single file on disk.
 These properties make it the natural choice for a local persistence layer: the database
 travels with the application, survives process restarts, and performs all reads and
 writes without network round-trips.
-At the time of writing, SQLite is the most widely deployed database engine in the world,
-present in mobile operating systems, browsers, and billions of embedded devices.
 
 In Task~Flow, SQLite is the \emph{single source of truth}.
 All application features read from and write to SQLite first; MongoDB involvement is
@@ -155,10 +210,8 @@ entirely asynchronous and does not block the user-visible operation path.
 
 \subsection*{MongoDB as a Cloud Relay}
 
-MongoDB~\cite{chodorow2013mongodb} is a document-oriented database that stores data as
-BSON documents grouped in collections.
-Its flexible schema accommodates evolving data shapes without migration overhead and
-its horizontal scaling capabilities make it suitable for cloud deployment.
+MongoDB~\cite{chodorow2013mongodb} is a document-oriented database used as
+the cloud relay layer for cross-device synchronisation.
 
 In Task~Flow, MongoDB serves as a \emph{synchronisation relay} for the subset of data
 that must be visible across devices or shared among team members: mirrored tasks,
@@ -172,14 +225,10 @@ conflict probability is low and eventual consistency is acceptable.
 
 \subsection*{Entity Framework Core}
 
-Entity Framework Core~\cite{efcoredocs2024} is the official Object-Relational Mapper
-(ORM) for .NET.
-It provides a LINQ-based query API, change tracking, and migration tooling that
-translates strongly typed C\# entity classes into SQL DDL and DML statements.
-Its provider model allows the same application code to target SQLite in development and
-testing and PostgreSQL or SQL~Server in production deployment without code changes---a
-property exploited via the \texttt{DatabaseProviderConfig} switch in Task~Flow's
-\texttt{Startup.cs}.
+Entity Framework Core~\cite{efcoredocs2024} is the Object-Relational Mapper
+used by Task~Flow's backend. Its provider model allows the same application
+code to target SQLite locally or SQL~Server in production through a single
+configuration switch.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Real-Time Communication Patterns}\label{sec:bg_realtime}
@@ -213,33 +262,30 @@ notification payloads are all delivered to the React client via a single hub con
 Server-Sent Events (SSE) is a unidirectional streaming protocol built on standard
 HTTP: the server holds the response connection open and writes \texttt{text/event-stream}
 chunks as data becomes available~\cite{signalrdocs2024}.
-SSE is the appropriate choice for AI response streaming because the communication is
-inherently one-directional (server to client) and does not require the connection upgrade
+SSE is appropriate for AI response streaming because the communication is
+inherently one-directional and does not require the connection upgrade
 ceremony of WebSockets.
-Task~Flow's \texttt{ChatbotController} exposes a \texttt{POST
-/api/chatbot/conversations/\{id\}/messages/stream} endpoint that writes Mistral API
-response chunks directly to the SSE response as they arrive, enabling the React
-frontend to render the AI reply token by token.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Authentication and Security}\label{sec:bg_security}
 % ─────────────────────────────────────────────────────────────────────────────
 
-\subsection*{JSON Web Tokens}
+\subsection*{Local Identity Middleware}
 
-JSON Web Tokens (JWT)~\cite{rfc7519} are a compact, URL-safe means of representing
-claims between two parties.
-A JWT consists of three Base64URL-encoded sections---header, payload, and
-signature---concatenated with dots.
-The signature, computed using HMAC-SHA256 (HS256) over the header and payload,
-allows the receiving party to verify the token's integrity without querying a
-central session store.
-This stateless verification model is particularly valuable in a desktop application
-context where the backend is a local process: there is no shared session infrastructure
-between restarts.
-Task~Flow issues JWTs with a 24-hour expiry; the signing key is injected at runtime
-via the \texttt{TASKFLOW\_JWT\_KEY} environment variable, falling back to a random
-32-byte hex key generated at startup if none is provided.
+Because the ASP.NET Core backend runs exclusively on localhost and is
+accessible only from the local desktop application, Task~Flow does not
+require a remote authentication server or token-based session management.
+Instead, a custom local-identity middleware resolves the active user from
+the SQLite database on every request.
+The frontend identifies the current user by sending an \texttt{X-User-Email}
+HTTP header; the middleware looks up the corresponding \texttt{AppUser}
+record and constructs a \texttt{ClaimsPrincipal} with the user's identity,
+email, and display name.
+If no header is present, the middleware falls back to the first user in the
+database, which is sufficient for a single-user desktop deployment.
+This approach keeps the authentication layer stateless within a session
+while avoiding the complexity of JWT issuance, refresh, and revocation in
+a purely local context.
 
 \subsection*{Password Hashing with bcrypt}
 
@@ -258,10 +304,9 @@ does not directly expose user credentials.
 The Open Web Application Security Project (OWASP) publishes an annually updated list of
 the ten most critical web application security risks~\cite{owasp2021}.
 The most relevant to Task~Flow are:
-\emph{Broken Access Control}---mitigated by validating the JWT \texttt{sub} claim on
-every protected endpoint and checking entity ownership before returning or modifying
-data;
-\emph{Cryptographic Failures}---addressed by bcrypt hashing and HS256 JWT signing;
+\emph{Broken Access Control}---mitigated by validating the \texttt{X-User-Email}
+header identity against entity ownership on every protected endpoint;
+\emph{Cryptographic Failures}---addressed by bcrypt password hashing;
 \emph{Injection}---mitigated by EF Core's parameterised queries which eliminate raw SQL
 string concatenation; and
 \emph{Security Misconfiguration}---acknowledged in the context of the Mistral API key,
@@ -315,14 +360,7 @@ images and PDF files and returns extracted and structured text.
 The 20-message conversation history window provides conversational context while
 bounding the per-request token count.
 
-\subsection*{AI-Assisted Productivity Research}
 
-Recent studies examining AI coding assistants report productivity gains of 26--55\%
-on specific programming tasks, with larger gains on routine boilerplate generation
-and smaller gains on complex architectural reasoning.
-The integration of an AI assistant directly within the task-management interface---rather
-than requiring the user to switch to a separate tool---reduces context-switching overhead
-and allows the assistant to be consulted in the flow of work.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Project Visualisation Paradigms}\label{sec:bg_viz}
@@ -385,9 +423,12 @@ system.
 Server-Sent Events provide the appropriate transport mechanism for streaming AI
 responses to the client with minimal protocol overhead.
 
-Electron's maturity and React-reuse properties make it the most pragmatic desktop
-packaging choice, while JWT and bcrypt together provide a well-understood and
-academically grounded authentication and security foundation.
+The desktop application was built with Tauri v2, chosen for its
+significantly smaller binary footprint, OS-native WebView rendering,
+and declarative security model.
+The bcrypt password hashing algorithm and the local-identity middleware
+together provide a well-understood and academically grounded
+authentication and security foundation.
 
 The following chapter translates these theoretical foundations into a concrete system
 design, detailing the architecture, data model, and implementation of each subsystem

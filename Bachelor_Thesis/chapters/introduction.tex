@@ -112,11 +112,13 @@ The following specific objectives guide the work:
           time-grid.
 
     \item \textbf{Cross-platform desktop distribution.}
-          The completed application must be packaged as a native installer for Windows
-          (NSIS), macOS (DMG), and Linux (AppImage/DEB) using Electron and
-          electron-builder, bundling both the .NET backend and the React frontend into a
-          single self-contained executable that requires no external runtime installation
-          by the end user.
+          The completed application must be packaged as a native installer for
+          Windows (NSIS and MSI) using Tauri~v2, bundling both the .NET backend and
+          the React frontend into a single self-contained executable that requires
+          no external runtime installation by the end user.
+          The Tauri framework was chosen for its significantly smaller installer size
+          and faster cold-start performance, achieved by leveraging the operating
+          system's native WebView rather than bundling a browser engine.
 
     \item \textbf{Comprehensive collaboration feature set.}
           The system must include team management, one-to-one and group messaging with
@@ -132,8 +134,8 @@ The following specific objectives guide the work:
 The following capabilities were designed and implemented as part of this project:
 
 \begin{itemize}
-    \item Full user authentication with JWT, bcrypt password hashing, and email-based
-          password reset via MailKit.
+    \item Full user authentication with local-identity middleware, bcrypt password hashing, and
+          local file-based password-reset workflow.
     \item Task management with priority levels (Low, Medium, High), status workflow
           (To Do, In Progress, Review, Completed, Overdue), due-date tracking, starring,
           and assignment.
@@ -150,7 +152,8 @@ The following capabilities were designed and implemented as part of this project
     \item A dashboard with live statistics, activity feeds, and a calendar widget.
     \item Offline-first SQLite persistence and an outbox-based MongoDB synchronisation
           subsystem.
-    \item Cross-platform desktop packaging using Electron.
+    \item Cross-platform desktop packaging using Tauri~v2, producing a
+          self-contained Windows installer with a significantly reduced footprint.
 \end{itemize}
 
 \subsection*{Out of Scope}

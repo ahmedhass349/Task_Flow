@@ -22,12 +22,13 @@ The six objectives established in Section~\ref{sec:intro_aims} were all met:
 \begin{enumerate}
 
   \item \textbf{Cross-platform desktop application.}
-        An Electron~41 shell embeds the ASP.NET Core~10 backend and the React~19 frontend
+        A Tauri~v2 shell embeds the ASP.NET Core backend and the React~19 frontend
         in a single redistributable package.
-        Installers were produced and tested for Windows (NSIS), macOS (DMG), and
-        Linux (AppImage and DEB).
-        No prior installation of Node.js, .NET, or any other runtime is required on the
-        target machine (Section~\ref{sec:res_distribution}).
+        The application packages into a Windows installer of approximately
+        35~MB with a cold-start time of approximately 1.5~seconds.
+        Installers were produced for Windows (NSIS and MSI).
+        No prior installation of Node.js, .NET, Rust, or any other runtime is required
+        on the target machine (Section~\ref{sec:res_distribution}).
 
   \item \textbf{Offline-first task management.}
         Every write operation produces both an immediate SQLite record and a
@@ -49,8 +50,8 @@ The six objectives established in Section~\ref{sec:intro_aims} were all met:
         Project and team invitations flow through MongoDB as a relay layer.
         Direct messages and group chats are persisted in SQLite and delivered in real time
         via a SignalR hub.
-        File attachments up to 50~MB are supported.
-        Notification delivery was verified for all fifteen event types
+        File attachments up to 20~MB are supported.
+        Notification delivery was verified for all seventeen event types
         (Sections~\ref{sec:res_teams} and~\ref{sec:res_settings}).
 
   \item \textbf{Integrated AI assistant.}
@@ -75,7 +76,7 @@ The six objectives established in Section~\ref{sec:intro_aims} were all met:
 \section{Technical Contributions}\label{sec:concl_contributions}
 % ─────────────────────────────────────────────────────────────────────────────
 
-The project produced four technical contributions that go beyond assembling existing
+The project produced five technical contributions that go beyond assembling existing
 libraries.
 
 \paragraph{Outbox-pattern offline sync engine for a desktop .NET application.}
@@ -99,21 +100,39 @@ This design made it straightforward to add or modify syncable entities throughou
 development without changing the sync engine.
 
 \paragraph{SSE-streamed multi-modal AI chatbot in a desktop context.}
-Integrating a streaming HTTP response (SSE) inside an Electron-hosted application
-required ensuring that the Electron main process did not buffer or terminate the
+Integrating a streaming HTTP response (SSE) inside a Tauri-hosted application
+required ensuring that the native WebView did not buffer or terminate the
 long-lived HTTP connection before all tokens were delivered.
 The solution --- issuing the SSE request directly from the React renderer process to
-the local ASP.NET Core server --- bypassed the main process entirely and delivered
-correct streaming behaviour without any special Electron configuration.
+the local ASP.NET Core server --- bypassed the shell entirely and delivered
+correct streaming behaviour.
 
-\paragraph{Self-contained cross-platform packaging with embedded runtime.}
-Bundling an ASP.NET Core server, a React frontend, and an Electron shell into a single
-installer that starts all three processes transparently on Windows, macOS, and Linux
-required careful orchestration of the Electron main process.
+\paragraph{Self-contained desktop packaging with embedded runtime.}
+Bundling an ASP.NET Core server, a React frontend, and a Tauri shell into a single
+installer that starts all three processes transparently on Windows
+required careful orchestration of the Tauri main process.
 The stdout-signal protocol (\texttt{TASKFLOW\_BACKEND\_READY:\{address\}}) decouples
 the frontend load from the backend start time, allowing the UI to display a splash
 state until the server is confirmed ready regardless of machine speed.
 
+\paragraph{Tauri sidecar architecture with splashscreen lifecycle management.}
+The Tauri v2~\cite{tauri_docs} desktop shell packages the ASP.NET Core backend
+as a sidecar binary~\cite{tauri_sidecar}, launched and managed by Rust code
+in \texttt{backend.rs}.
+A two-window lifecycle (undecorated splashscreen during backend startup, then
+main window with the full application) provides visual feedback without
+requiring the user to understand the multi-process architecture.
+The splashscreen closes atomically when the backend signals readiness via
+stdout, ensuring the UI is never displayed before the API is available.
+Nine IPC commands bridge the Rust shell and the web renderer, covering
+backend URL discovery, startup status, password-reset code retrieval,
+window management, and application metadata.
+Neither the React~+~TypeScript frontend nor the ASP.NET Core
+backend required any modification to accommodate the desktop shell,
+confirming the framework-agnostic design of the three-tier architecture.
+The resulting Tauri-based installer was approximately 35~MB in size with a
+cold-start time of approximately 1.5~seconds on the test machine
+(see Table~\ref{tab:perf_timings}).
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Lessons Learned}\label{sec:concl_lessons}
 % ─────────────────────────────────────────────────────────────────────────────
@@ -138,19 +157,28 @@ data.
 
 \textbf{SignalR group-per-user is a reliable notification pattern.}
 Joining each authenticated connection to a group named after the user's ID
-(\texttt{Groups.AddToGroupAsync(Context.ConnectionId, userId)}) meant that
+(\texttt{Groups.}\cbrk\texttt{AddToGroupAsync(}\cbrk\texttt{Context.ConnectionId, userId)}) meant that
 notifications could be dispatched to any service class by calling
-\texttt{\_hubContext.Clients.Group(userId)}, without needing to track connection IDs.
+\texttt{\_hubContext.}\cbrk\texttt{Clients.}\cbrk\texttt{Group(userId)}, without needing to track connection IDs.
 This pattern handled reconnection transparently: a reconnecting client re-joined its
 group and received any notifications dispatched after reconnection without any
 server-side state changes.
 
-\textbf{Electron child-process IPC via stdout is reliable but fragile.}
-The stdout-signal approach works well in production builds but can be disrupted during
-development when the backend writes diagnostic output before the ready signal.
-Filtering the stdout stream with a prefix (\texttt{TASKFLOW\_BACKEND\_READY:}) rather
-than reading the first line proved more robust, but a dedicated named-pipe or socket
+\textbf{Sidecar stdout parsing requires line-buffered input handling.}
+The stdout-signal approach (\texttt{TASKFLOW\_BACKEND\_READY}) works well in
+production builds but can be disrupted during development when the backend
+writes diagnostic output before the ready signal.
+Filtering the stdout stream with a prefix rather than reading the first line
+proved more robust, but a dedicated named-pipe or socket
 protocol would be a more principled solution.
+
+\textbf{Clean architectural boundaries enable shell-layer substitution.}
+Because the architecture separates the desktop shell from the web-based UI
+and the process-based backend (Section~\ref{sec:meth_arch}), the Rust source
+files in \texttt{src-tauri/} and the Tauri build pipeline are completely
+decoupled from the React frontend and ASP.NET Core backend.
+This validates the principle that investing in clean boundaries at the start of
+a project pays dividends when technology choices need to be revisited.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Limitations}\label{sec:concl_limitations}

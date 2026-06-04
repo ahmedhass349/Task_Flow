@@ -18,10 +18,10 @@ in Section~\ref{sec:intro_aims}:
 
 \begin{enumerate}
     \item \textbf{FR-01 User Authentication.}
-          The system shall support user registration, login, and password reset via
-          email.
+          The system shall support user registration, login, and password reset.
           Passwords shall be stored as bcrypt hashes; sessions shall be managed with
-          signed JWT tokens valid for 24~hours.
+          local-identity middleware that validates the \texttt{X-User-Email} header
+          against the SQLite database.
 
     \item \textbf{FR-02 Task Management.}
           Users shall be able to create, read, update, and delete tasks.
@@ -42,7 +42,7 @@ in Section~\ref{sec:intro_aims}:
     \item \textbf{FR-05 Messaging.}
           Users shall be able to exchange one-to-one direct messages and participate in
           group chats.
-          Both conversation types shall support file attachments up to 50~MB.
+          Both conversation types shall support file attachments up to 20~MB.
 
     \item \textbf{FR-06 Notifications and Reminders.}
           The system shall deliver real-time in-application notifications over SignalR
@@ -82,7 +82,8 @@ in Section~\ref{sec:intro_aims}:
           network access.
 
     \item \textbf{NFR-02 Security.}
-          All API endpoints shall require a valid JWT.
+          All API endpoints shall require a valid \texttt{X-User-Email} header,
+          validated by local-identity middleware.
           Passwords shall not be stored in recoverable form.
           The application shall not expose SQL injection vectors.
 
@@ -103,7 +104,7 @@ in Section~\ref{sec:intro_aims}:
 \section{System Architecture Overview}\label{sec:meth_arch}
 % ─────────────────────────────────────────────────────────────────────────────
 
-Task~Flow is structured as a three-tier desktop application embedded in an Electron shell.
+Task~Flow is structured as a three-tier desktop application embedded in a Tauri shell.
 
 \textbf{Tier 1 --- Presentation (React~+~TypeScript).}
 The user interface is a single-page application (SPA) built with React~19 and
@@ -115,7 +116,7 @@ served from \texttt{wwwroot/} by the Kestrel HTTP server.
 
 \textbf{Tier 2 --- Application Logic (ASP.NET Core 10).}
 The backend exposes 14 REST API controllers grouped under \texttt{/api/}, one SignalR
-hub (\texttt{/hubs/notifications}), and four background services.
+hub (\texttt{/hubs/notifications}), and six background services.
 It follows a layered architecture: controllers delegate to service classes, which in
 turn use repository objects (EF Core \texttt{DbContext} queries) for persistence.
 AutoMapper projects entity objects onto DTOs at the service boundary, preventing
@@ -129,21 +130,22 @@ MongoDB is an optional cloud relay used for cross-device features.
 The application starts and runs normally even when the MongoDB connection string is
 empty or the server is unreachable.
 
-\textbf{Electron Shell.}
-The Electron main process (\texttt{public/electron.js}) launches the compiled .NET
-backend as a child process.
+\textbf{Tauri Shell.}
+The Tauri main process (\texttt{src-tauri/src/lib.rs}) launches the compiled .NET
+backend as a sidecar process via the shell plugin~\cite{tauri_sidecar}.
 It monitors the child's standard output stream and waits for the line
-\texttt{TASKFLOW\_BACKEND\_READY:\{address\}} before opening the browser window and
-pointing it at the dynamically assigned \texttt{http://127.0.0.1:\{port\}} address.
+\texttt{TASKFLOW\_BACKEND\_READY:\{address\}} before closing the splashscreen
+window and revealing the main application window.
 This design ensures the UI is never shown before the API is ready to serve requests.
 
 \textbf{Request Lifecycle.}
 A typical authenticated request follows the path:
-React component $\to$ \texttt{fetch()} with \texttt{Authorization: Bearer \{token\}}
-header $\to$ Kestrel $\to$ JWT middleware validates signature and extracts claims $\to$
+React component $\to$ \texttt{fetch()} with \texttt{X-User-Email}
+header $\to$ Kestrel $\to$ local-identity middleware resolves user and creates
+\texttt{ClaimsPrincipal} $\to$
 controller action $\to$ service $\to$ EF Core $\to$ SQLite.
 If the operation mutates a syncable entity, the service additionally calls
-\texttt{IMirrorService.MirrorAsync()}, which either performs a direct MongoDB upsert
+\texttt{IMirrorService.}\cbrk\texttt{MirrorAsync()}, which either performs a direct MongoDB upsert
 (online) or enqueues a \texttt{SyncOutboxEntry} (offline).
 Real-time events are broadcast to the connected React client via the SignalR hub
 independently of the HTTP response path.
@@ -234,23 +236,25 @@ projection of the user to MongoDB, enabling other team members to look up the us
 email when sending invitations.
 
 Login validates the submitted password against the stored hash using
-\texttt{BCrypt.Verify()}.
-On success, the service constructs a JWT containing ten claims
-(\texttt{id}, \texttt{email}, \texttt{given\_name}, \texttt{family\_name},
-\texttt{avatarUrl}, \texttt{company}, \texttt{country}, \texttt{phone},
-\texttt{timezone}, and \texttt{jti}).
-The token is signed with HMAC-SHA256 using the key resolved from the
-\texttt{TASKFLOW\_JWT\_KEY} environment variable (falling back to the
-\texttt{Jwt:Key} configuration value, or an auto-generated 32-byte random hex string
-if neither is present).
-A fire-and-forget call to \texttt{UserDataSyncService.PullForUserAsync()} pulls the
+\texttt{BCrypt.Verify()} and, on success, returns the user's identity
+information including their \texttt{AppUser} record.
+No token is issued; the session is managed by local-identity middleware
+that reads the \texttt{X-User-Email} header on each request and constructs
+a \texttt{ClaimsPrincipal} with the user's identifier, email, and display name
+from the SQLite database.\footnote{This approach was chosen over JWT to
+eliminate token issuance, refresh, and revocation complexity in a
+single-user desktop context.}
+A fire-and-forget call to \texttt{UserDataSyncService.}\cbrk\texttt{PullForUserAsync()} pulls the
 latest MongoDB data for that user immediately after login, refreshing local copies of
 team memberships and pending invitations.
 
-Password reset is implemented via a time-limited token: a random URL-safe token is
-stored in \texttt{AppUser.ResetToken} alongside a \texttt{ResetTokenExpiry} timestamp
-and emailed to the user using MailKit over Gmail SMTP (port~587, STARTTLS).
-The reset endpoint validates the token, checks expiry, and updates the password hash.
+Password reset uses a locally generated recovery code: an 8-character
+alphanumeric token is written to a temporary file in the system's temp
+directory (\texttt{\%TEMP\%/taskflow\_reset\_pending.tmp}) and read by the
+Tauri main process via IPC (\texttt{invoke("read\_reset\_code")}).
+The reset code is valid for 15~minutes; the reset endpoint validates the
+code, checks expiry, and updates the password hash in both SQLite and
+the MongoDB credential backup.
 
 \subsection{Task and Project Management}\label{sec:meth_tasks}
 
@@ -266,7 +270,8 @@ The \texttt{Overdue} state is not set manually; it is assigned automatically by 
 
 All \texttt{TaskService} operations validate ownership by comparing the
 \texttt{AssigneeId} of the fetched entity against the \texttt{userId} extracted from
-the JWT claim \texttt{ClaimTypes.NameIdentifier}, returning a 403 response for
+the \texttt{ClaimsPrincipal}'s \texttt{NameIdentifier} claim (set by the
+local-identity middleware), returning a 403 response for
 unauthorised access attempts.
 Text search is executed at the database layer using EF Core \texttt{.Where()} with
 \texttt{string.Contains()} predicates (compiled to SQL \texttt{LIKE} clauses),
@@ -286,15 +291,12 @@ offline, it serialises the entity payload to JSON and inserts a
 \texttt{NotificationHub} extends ASP.NET Core SignalR's \texttt{Hub} class.
 On connection, each client is added to a user-specific SignalR group named
 \texttt{user\_\{userId\}}.
-The hub reads the JWT from the \texttt{access\_token} query string parameter (required
-because SignalR's JavaScript client cannot set HTTP headers during the WebSocket
-upgrade).
+The user identity is resolved by the local-identity middleware during the
+WebSocket upgrade handshake; the \texttt{Context.UserIdentifier} property
+reflects the \texttt{NameIdentifier} claim set by the middleware.
 The unread notification count is pushed to the client immediately upon connection.
 
-The system defines fifteen notification types (e.g., \texttt{TaskAssigned},
-\texttt{TaskCompleted}, \texttt{MessageReceived}, \texttt{TeamInvitation},
-\texttt{TaskOverdue}) and four priority levels (\texttt{Low}, \texttt{Normal},
-\texttt{High}, \texttt{Urgent}).
+The system defines seventeen notification types across four priority levels.
 Each notification includes an \texttt{ActionUrl} field that the frontend uses to
 navigate the user to the relevant resource on click.
 
@@ -320,7 +322,7 @@ separate soft-delete flags for each party (\texttt{IsDeletedBySender},
 This design ensures that a message deleted by one party remains visible to the other
 until they also delete it.
 File attachments (URL, original file name, MIME type, size in bytes) are stored as
-nullable fields on the \texttt{Message} entity and are limited to 50~MB by Kestrel's
+nullable fields on the \texttt{Message} entity and are limited to 20~MB by Kestrel's
 request body size limit.
 The \texttt{MessagesController} sends a \texttt{MessageReceived} SignalR event to the
 recipient's user group after persisting each message, enabling real-time delivery without
@@ -348,11 +350,11 @@ status \texttt{Pending} or \texttt{Failed}) and a \texttt{ConnectivityChanged} e
 that subscribers can observe.
 
 \textbf{OfflineSyncService} is the background worker that replays the outbox.
-It runs a 10-second ping loop: on each tick it calls \texttt{MongoService.PingAsync()}
-and updates \texttt{ConnectivityService.IsOnline}.
+It runs a 30-second ping loop: on each tick it calls \texttt{MongoService.}\cbrk\texttt{PingAsync()}
+and updates \texttt{ConnectivityService.}\cbrk\texttt{IsOnline}.
 It also subscribes to \texttt{ConnectivityChanged}: when the state transitions from
 offline to online, it waits 1500~ms (allowing the MongoDB connection to stabilise) and
-then calls \texttt{ReplayOutboxAsync()}.
+then calls \texttt{Replay}\cbrk\texttt{Outbox}\cbrk\texttt{Async()}.
 During replay, each \texttt{Pending} or \texttt{Failed} outbox entry is advanced to
 \texttt{Processing}, the stored operation is executed against MongoDB, and the entry is
 marked \texttt{Synced} on success or \texttt{Failed} (with an incremented attempt
@@ -392,11 +394,11 @@ prompt:
 \textbf{Streaming.}
 The \texttt{ChatAsync()} method makes an HTTP POST request with
 \texttt{stream: true} in the request body and reads the response using
-\texttt{HttpCompletionOption.ResponseHeadersRead}, then processes the response body as
+\texttt{HttpCompletionOption.}\cbrk\texttt{ResponseHeadersRead}, then processes the response body as
 an \texttt{IAsyncEnumerable<string>} of SSE lines.
 Each line prefixed with \texttt{data:} is deserialised as a chat-completion delta, and
 the token content is written immediately to the ASP.NET Core SSE response stream using
-\texttt{Response.WriteAsync()}.
+\texttt{Response.}\cbrk\texttt{WriteAsync()}.
 This pipeline adds negligible latency between the Mistral API producing a token and the
 React frontend rendering it.
 
@@ -519,57 +521,63 @@ Each conversation displays its AI-generated title and a relative timestamp.
 Clicking a conversation loads its full message history from the backend.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Desktop Packaging}\label{sec:meth_electron}
+\section{Desktop Packaging}\label{sec:meth_desktop}
 % ─────────────────────────────────────────────────────────────────────────────
 
 The production build of Task~Flow is a self-contained desktop installer that bundles
-three components: the Electron shell, the compiled .NET backend, and the Webpack-built
-React frontend assets.
+three components: the Tauri shell, the compiled .NET backend as a sidecar, and the
+Webpack-built React frontend assets.
 
-\textbf{Electron main process.}
-\texttt{public/electron.js} is the entry point for the desktop application.
-On startup it spawns the compiled .NET backend executable as a child process, capturing
-its standard output.
-The main process watches for the line matching \texttt{TASKFLOW\_BACKEND\_READY:\{address\}}
-to appear.
-Once detected, it extracts the port number, constructs the backend URL, and calls
-\texttt{mainWindow.loadURL()} to load the React SPA from the local Kestrel server.
-If the backend process exits unexpectedly, the main process terminates the Electron
-application with an error dialog.
+\textbf{Tauri shell.}
+The desktop application is built with Tauri v2~\cite{tauri_docs}, a Rust-based framework
+that uses the operating system's native WebView (Microsoft WebView2 on Windows) rather
+than bundling a browser engine.
+The Rust source code in \texttt{src-tauri/src/} is organised into \texttt{lib.rs}
+(plugin registration, window lifecycle, and application setup), \texttt{backend.rs}
+(sidecar spawning), and \texttt{commands.rs} (IPC commands).
 
-\textbf{CORS configuration.}
-Because Electron loads the frontend from a \texttt{file://} origin (for the production
-build) or from \texttt{localhost} (during development), the ASP.NET Core CORS policy
-uses \texttt{SetIsOriginAllowed(\_ => true)} combined with \texttt{AllowCredentials()}
-to permit the SignalR connection from either origin without hard-coding specific URLs.
+\textbf{Sidecar backend management.}
+The ASP.NET Core backend is declared as a sidecar via \texttt{externalBin} in
+\texttt{tauri.conf.json}~\cite{tauri_sidecar}.
+On startup, \texttt{spawn\_backend()} in \texttt{backend.rs} sets environment variables
+(\texttt{ASPNETCORE\_ENVIRONMENT}, \texttt{ASPNETCORE\_URLS}) and launches the process.
+The backend announces its dynamically assigned port by printing
+\texttt{TASKFLOW\_BACKEND\_}\cbrk\texttt{READY:\{address\}} to standard output.
+The Rust main process parses stdout, stores the URL in shared managed state
+(\texttt{BackendUrl}), and signals the frontend via IPC.
 
-\textbf{JWT key management.}
-The Kestrel server listens on \texttt{http://127.0.0.1:0} (a random available port).
-The JWT signing key is resolved in order of priority:
-(1)~\texttt{TASKFLOW\_JWT\_KEY} environment variable;
-(2)~\texttt{Jwt:Key} value in \texttt{appsettings.json};
-(3)~an automatically generated 32-byte random hex string persisted for the duration of
-the process.
-This means the application works out-of-the-box without any configuration while still
-allowing a stable key to be injected for production deployments.
+\textbf{IPC interface.}
+Nine \texttt{\#[tauri::command]} functions bridge the native shell and the web
+renderer: \texttt{get\_backend\_url}, \texttt{get\_startup\_status},
+\texttt{read\_reset\_code} (for password recovery), \texttt{get\_version},
+\texttt{get\_app\_data\_dir}, \texttt{open\_file\_dialog} (placeholder), and three
+window management commands (\texttt{window\_minimize}, \texttt{window\_maximize},
+\texttt{window\_close}) for a custom title-bar implementation.
 
-\textbf{electron-builder configuration.}
-\texttt{electron-builder.json} configures the following target artefacts:
+\textbf{Window lifecycle.}
+Two windows are declared: \texttt{splashscreen} (small, undecorated, shown while the
+backend starts) and \texttt{main} (the full application window).
+Both start invisible; the splashscreen is shown during backend startup, and when the
+backend signals ready (\texttt{TASKFLOW\_BACKEND\_}\cbrk\texttt{READY}), the URL is stored,
+the main window is revealed, and the splashscreen is closed.
 
+\textbf{Tauri build configuration.}
+\texttt{tauri.conf.json} configures the target artefacts:
 \begin{itemize}
-    \item \textbf{Windows} --- NSIS installer with \texttt{oneClick: false}, allowing
-          the user to choose the installation directory and optionally create desktop
-          and Start Menu shortcuts.
-    \item \textbf{macOS} --- DMG image and ZIP archive (for notarisation-free
-          distribution).
-    \item \textbf{Linux} --- AppImage (portable, no installation required) and DEB
-          package (for Debian/Ubuntu-based distributions).
+    \item \textbf{Windows} --- NSIS installer with \texttt{currentUser} install mode
+          (no administrator privileges required) and MSI installer.
+    \item \textbf{WebView2} --- \texttt{downloadBootstrapper} mode downloads and
+          installs the WebView2 runtime if absent; on Windows~10 (version~1803 and
+          later) and Windows~11, WebView2 is already integrated into the operating
+          system~\cite{webview2}.
 \end{itemize}
 
-The application ID is \texttt{com.taskflow.desktop}.
-The .NET backend self-contained publish output (\texttt{win-x64}, \texttt{osx-x64},
-\texttt{linux-x64}) is included as an extra resource so that electron-builder packages
-the correct native binary for each target platform.
+The build is orchestrated by \texttt{BUILD\_WINDOWS.bat}, which runs \texttt{npm ci},
+TypeScript type checking (\texttt{npx tsc --noEmit}), Webpack~5 frontend build,
+\texttt{dotnet publish} (self-contained, \texttt{win-x64}), and \texttt{npx tauri build}
+to produce the final installer.
+The resulting installer is self-contained: no .NET runtime, Node.js, or Rust toolchain
+is required on the target machine.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Testing Strategy}\label{sec:meth_testing}
@@ -581,14 +589,16 @@ Testing was conducted at three levels throughout the development process.
 Service-layer methods were verified by constructing the service with an in-memory
 SQLite database (using EF Core's \texttt{UseInMemoryDatabase} provider) and asserting
 the expected state after each operation.
-JWT claim extraction and bcrypt hash/verify round-trips were tested in isolation.
+Local-identity middleware resolution and bcrypt hash/verify round-trips were tested in isolation.
 
 \textbf{API integration testing.}
 Each of the 14 controllers was exercised against a running Kestrel instance using
-\texttt{HttpClient} requests constructed with valid and invalid JWT tokens.
-The tests verified: (a)~that protected endpoints return~401 when no token is supplied;
-(b)~that ownership checks return~403 for resources belonging to a different user;
-and (c)~that create, read, update, and delete operations produce the expected HTTP
+\texttt{HttpClient} requests with a valid \texttt{X-User-Email} header, a missing
+header, and a non-existent email.
+The tests verified: (a)~that the local-identity middleware resolves the user correctly
+in all three cases (falling back to the first database user when the header is
+absent); (b)~that ownership checks return~403 for resources belonging to a different
+user; and (c)~that create, read, update, and delete operations produce the expected HTTP
 status codes and response bodies.
 
 \textbf{Offline synchronisation testing.}
@@ -601,10 +611,121 @@ On toggling back online, the sync replay was observed via the progress bar and t
 MongoDB collection was inspected to confirm all entries were promoted to
 \texttt{Synced}.
 
-\textbf{Cross-platform packaging.}
+\textbf{Desktop packaging.}
 The NSIS installer was tested on Windows~11 and Windows~10.
-The macOS DMG was verified on macOS~14 (Sonoma) with both Intel and Apple Silicon
-(via Rosetta~2 emulation).
-The AppImage was tested on Ubuntu~22.04.
 In all cases the application launched, authenticated, and performed offline task
 creation and synchronisation without errors.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Tauri Shell Architecture}\label{sec:meth_tauri}
+
+This section documents the Tauri v2~\cite{tauri_docs}
+desktop shell that packages the ASP.NET Core backend and the React frontend
+into a native Windows installer.
+
+\subsection{Tauri Project Structure}\label{sec:meth_tauri_structure}
+
+The Tauri shell resides in \texttt{src-tauri/} and organises its Rust
+source into three modules: \texttt{lib.rs} (plugin registration, setup, and
+window lifecycle), \texttt{backend.rs} (sidecar spawning and termination), and
+\texttt{commands.rs} (IPC commands callable from the frontend).
+
+\subsection{Plugin Architecture}\label{sec:meth_tauri_plugins}
+
+Six Tauri plugins are registered: \texttt{shell} (sidecar lifecycle),
+\texttt{single-instance} (prevents duplicate instances), \texttt{log},
+\texttt{dialog} (native file dialogs), \texttt{fs} (file access for
+password-reset codes and the application data directory), and \texttt{http}
+(reserved for future use).
+
+\subsection{Sidecar Backend Management}\label{sec:meth_tauri_sidecar}
+
+The ASP.NET Core backend is declared as a sidecar in
+\texttt{tauri.conf.json} via \texttt{externalBin: ["binaries/taskflow-backend"]}~\cite{tauri_sidecar}.
+During the build, the compiled .NET executable receives the target-triple
+suffix (e.g.\ \texttt{taskflow-backend-}\cbrk\texttt{x86\_64-pc-windows-msvc.exe}) and is placed in
+\texttt{src-tauri/binaries/}.
+
+\texttt{spawn\_backend()} in \texttt{backend.rs} sets environment variables
+(\texttt{ASPNETCORE\_ENVIRONMENT}, \texttt{ASPNETCORE\_URLS}) and launches the process---via
+\texttt{tokio::process::Command} in development, or the shell plugin's
+\texttt{sidecar()} method in production.
+Stdout is parsed line-by-line for the \texttt{TASKFLOW\_BACKEND\_READY}
+signal; the dynamically assigned backend URL is stored in shared
+managed state (\texttt{BackendUrl}) and exposed to the frontend via IPC.
+A clean shutdown kills the child process on \texttt{ExitRequested} to prevent
+orphaned backends.
+
+\subsection{IPC Command Implementation}\label{sec:meth_tauri_ipc}
+
+Nine \texttt{\#[tauri::command]} functions are defined in
+\texttt{commands.rs} and invoked from the frontend via
+\texttt{invoke()}\cite{tauri_docs}.
+\texttt{get\_backend\_url} and \texttt{get\_startup\_status} expose the
+backend's dynamically assigned port and startup phase to the splashscreen;
+\texttt{read\_reset\_code} bridges the password-reset flow to the desktop
+context; \texttt{get\_version} and \texttt{get\_app\_data\_dir} provide
+package metadata and the platform-specific data directory;
+\texttt{open\_file\_dialog} is a placeholder for native file selection;
+and three window commands (\texttt{window\_minimize},
+\texttt{window\_maximize}, \texttt{window\_close}) implement a custom
+title-bar with native controls.
+
+\subsection{Security Configuration}\label{sec:meth_tauri_security}
+
+Tauri v2's security model centres on a Content Security Policy (CSP) and a
+declarative capabilities system.
+The CSP restricts connections to \texttt{http://127.0.0.1:*} and
+\texttt{ws://127.0.0.1:*} (for the local backend and its SignalR hub), while
+allowing external fonts from Google Fonts.
+The capabilities file (\texttt{capabilities/default.json}) grants per-plugin
+permissions granularly, e.g.\ \texttt{fs:allow-read-text-file} for password
+reset codes and \texttt{shell:allow-open} for opening URLs in the system
+browser.
+
+\subsection{Window Lifecycle and Splashscreen}\label{sec:meth_tauri_window}
+
+Two windows are declared: \texttt{splashscreen} (small, undecorated) and
+\texttt{main} (full application window), both initially invisible.
+The \texttt{setup()} closure in \texttt{lib.rs} manages shared state
+(\texttt{BackendUrl}, \texttt{StartupStatus}, \texttt{BackendProcess}), shows
+the splashscreen, and calls \texttt{spawn\_backend()}.
+Once \texttt{handle\_ready\_line()} receives the port announcement, it stores
+the URL, reveals the main window, and closes the splashscreen.
+On exit, \texttt{stop\_backend()} kills the sidecar, preventing orphaned
+processes.
+
+\subsection{Build Pipeline}\label{sec:meth_tauri_build}
+
+The production build is orchestrated by \texttt{BUILD\_WINDOWS.bat}, which
+executes six sequential steps:
+
+\begin{enumerate}
+    \item \textbf{Dependency installation.} \texttt{npm ci} installs
+          frontend dependencies deterministically from
+          \texttt{package-lock.json}.
+    \item \textbf{Type checking.} \texttt{npx tsc --noEmit} verifies
+          TypeScript correctness.
+    \item \textbf{Frontend build.} \texttt{npm run build:web} executes
+          Webpack~5 to produce production-optimised bundles in
+          \texttt{wwwroot/dist/}, including the splashscreen HTML page.
+    \item \textbf{Backend publish.} \texttt{dotnet publish} compiles the
+          ASP.NET Core backend as a self-contained single-file executable
+targeting \texttt{win-x64}.
+    \item \textbf{Sidecar staging.} The published backend executable is
+renamed to \texttt{taskflow-backend-}\cbrk\texttt{x86\_64-pc-windows-msvc.exe}
+           and placed in \texttt{src-tauri/binaries/}.
+    \item \textbf{Tauri build.} \texttt{npx tauri build} compiles the Rust
+          shell, bundles the frontend assets, embeds the sidecar, and
+          produces an NSIS installer targeted at
+          \texttt{x86\_64-pc-windows-msvc}.
+\end{enumerate}
+
+The resulting installer is self-contained: no .NET runtime, Node.js, or Rust
+toolchain is required on the target machine.
+WebView2 is handled by the Tauri installer configuration
+(\texttt{downloadBootstrapper} mode), which downloads and installs the
+WebView2 runtime if it is not already present on the system.
+On Windows~10 (version~1803 and later) and Windows~11, WebView2 is already
+integrated into the operating system, so the bootstrapper step is typically
+skipped~\cite{webview2}.

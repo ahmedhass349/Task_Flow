@@ -1,17 +1,17 @@
 \chapter*{Abstract}
-%\addcontentsline{toc}{chapter}{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
 \label{chap:abstract}
 \pagestyle{plain}
 
 Modern knowledge workers increasingly depend on digital task management tools to organise work, coordinate with teams, and meet deadlines. However, most contemporary solutions are cloud-centric, rendering them unavailable in low-connectivity environments, and none provide a tightly integrated AI assistant that understands the full project context.
 
-This thesis presents \textit{Task~Flow}, an offline-first desktop task and quality management application built with a hybrid architecture. The system pairs a local SQLite database for primary persistence with a MongoDB relay layer for cross-device data synchronisation when connectivity is available. The backend is implemented in ASP.NET Core (.NET~10) using a repository pattern, Entity Framework Core, JWT authentication, and SignalR for real-time notifications. The frontend is built with React~19 and TypeScript, packaged as a cross-platform desktop application via Electron~41.
+This thesis presents \textit{Task~Flow}, an offline-first desktop task and quality management application built with a hybrid architecture. The system pairs a local SQLite database for primary persistence with a MongoDB relay layer for cross-device data synchronisation when connectivity is available. The backend is implemented in ASP.NET Core (.NET~10) using a repository pattern, Entity Framework Core, local-identity middleware, and SignalR for real-time notifications. The frontend is built with React~19 and TypeScript, packaged as a cross-platform desktop application.
 
 Task~Flow provides five distinct task visualisation modes---list, Kanban board, table, Gantt chart, and calendar---alongside project management, team collaboration, real-time direct and group messaging, and a calendar with event scheduling. A key contribution is the embedded AI assistant powered by the Mistral API, offering three specialised modes: a general productivity assistant, a code helper, and a document scanner using optical character recognition. The assistant streams responses incrementally using Server-Sent Events, providing a responsive conversational experience.
 
-An outbox-pattern offline synchronisation engine ensures that operations performed without network access are reliably replayed once connectivity is restored, with progress broadcast to the client via SignalR. The application is distributed as a self-contained installer for Windows, macOS, and Linux using NSIS, DMG, and AppImage packaging respectively, with the .NET runtime embedded so no prior installation is required.
+An outbox-pattern offline synchronisation engine ensures that operations performed without network access are reliably replayed once connectivity is restored, with progress broadcast to the client via SignalR. The desktop application is packaged with Tauri~v2, a Rust-based framework that uses the operating system's native WebView, resulting in an installer size of approximately 35~MB and cold-start time of approximately 1.5~seconds. The application is distributed as a self-contained NSIS or MSI installer for Windows, with the .NET runtime embedded so no prior installation is required.
 
 Evaluation demonstrates that Task~Flow successfully delivers a full-featured, offline-capable task management environment with integrated AI assistance, addressing a clear gap in the existing landscape of productivity desktop software.
 
 \vspace{1em}
-\noindent\textbf{Keywords:} task management, offline-first, SQLite, MongoDB, ASP.NET Core, React, Electron, AI assistant, Mistral, real-time synchronisation, SignalR.
+\noindent\textbf{Keywords:} task management, offline-first, SQLite, MongoDB, ASP.NET Core, React, Tauri, WebView2, AI assistant, Mistral, real-time synchronisation, SignalR.

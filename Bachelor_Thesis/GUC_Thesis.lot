@@ -1,19 +1,20 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {2.1}{\ignorespaces Feature comparison of popular task-management tools vs.\ Task~Flow.}}{xix}{table.caption.14}%
+\contentsline {table}{\numberline {2.1}{\ignorespaces Feature comparison of popular task-management tools vs.\ Task~Flow.}}{19}{table.caption.14}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces Comparison of Electron and Tauri v2 desktop application frameworks.}}{20}{table.caption.15}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {3.1}{\ignorespaces MongoDB collections and their purpose.}}{xxxi}{table.caption.36}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces MongoDB collections and their purpose.}}{31}{table.caption.36}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {4.1}{\ignorespaces Functional requirement fulfilment matrix.}}{xl}{table.caption.37}%
-\contentsline {table}{\numberline {4.2}{\ignorespaces Informal response-time observations for key operations.}}{xlvii}{table.caption.54}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Functional requirement fulfilment matrix.}}{42}{table.caption.37}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Informal response-time observations for key operations.}}{49}{table.caption.54}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {A.1}{\ignorespaces REST API controllers and primary endpoints.}}{lvii}{table.caption.71}%
+\contentsline {table}{\numberline {A.1}{\ignorespaces REST API controllers and primary endpoints.}}{60}{table.caption.72}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {B.1}{\ignorespaces SQLite entity summary.}}{lix}{table.caption.73}%
-\contentsline {table}{\numberline {B.2}{\ignorespaces MongoDB collection descriptions.}}{lx}{table.caption.75}%
+\contentsline {table}{\numberline {B.1}{\ignorespaces SQLite entity summary.}}{62}{table.caption.74}%
+\contentsline {table}{\numberline {B.2}{\ignorespaces MongoDB collection descriptions.}}{63}{table.caption.76}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {C.1}{\ignorespaces \texttt {appsettings.json} section reference.}}{lxi}{table.caption.77}%
-\contentsline {table}{\numberline {C.2}{\ignorespaces Supported environment variables.}}{lxii}{table.caption.79}%
-\contentsline {table}{\numberline {C.3}{\ignorespaces Key \texttt {electron-builder.json} configuration.}}{lxiii}{table.caption.81}%
+\contentsline {table}{\numberline {C.1}{\ignorespaces \texttt {appsettings.json} section reference.}}{64}{table.caption.78}%
+\contentsline {table}{\numberline {C.2}{\ignorespaces Supported environment variables.}}{65}{table.caption.80}%
+\contentsline {table}{\numberline {C.3}{\ignorespaces Key \texttt {tauri.conf.json} configuration (Tauri build).}}{66}{table.caption.82}%
