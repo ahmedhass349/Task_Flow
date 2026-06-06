@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.27)  6 JUN 2026 23:24
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.27)  6 JUN 2026 23:51
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -621,16 +621,16 @@ Package caption Info: End \AtBeginDocument code.
 
 
 (./Sections/04_titlepage.tex
-<Figures/GUC_logo.png, id=305, 170.13562pt x 73.02281pt>
+<Figures/GUC_logo.png, id=305, 226.8475pt x 97.36375pt>
 File: Figures/GUC_logo.png Graphic file (type png)
 <use Figures/GUC_logo.png>
 Package pdftex.def Info: Figures/GUC_logo.png  used on input line 11.
-(pdftex.def)             Requested size: 135.89174pt x 58.32805pt.
+(pdftex.def)             Requested size: 135.89174pt x 58.32509pt.
  [1
 
 
 {c:/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/texlive/2026/
-texmf-dist/fonts/enc/dvips/base/8r.enc} <./Figures/GUC_logo.png>]
+texmf-dist/fonts/enc/dvips/base/8r.enc} <./Figures/GUC_logo.png (PNG copy)>]
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has 
 been already used, duplicate ignored
 <to be read again> 
@@ -719,18 +719,17 @@ File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 
  (./chapters/introduction.tex
 Chapter 1.
-<Figures/intro_dashboard.png.png, id=527, 1445.4pt x 776.9025pt>
-File: Figures/intro_dashboard.png.png Graphic file (type png)
-<use Figures/intro_dashboard.png.png>
-Package pdftex.def Info: Figures/intro_dashboard.png.png  used on input line 36
-.
+<Figures/intro_dashboard.jpg, id=527, 1445.4pt x 776.9025pt>
+File: Figures/intro_dashboard.jpg Graphic file (type jpg)
+<use Figures/intro_dashboard.jpg>
+Package pdftex.def Info: Figures/intro_dashboard.jpg  used on input line 36.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
 [14
 
 
 
 
-] [15 <./Figures/intro_dashboard.png.png>] [16]
+] [15 <./Figures/intro_dashboard.jpg>] [16]
 LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 1
 44.
 
@@ -770,34 +769,33 @@ Chapter 3.
 
 
 ] [29] [30] [31] [32]
-<Figures/erd_sqlite.png, id=726, 1059.96pt x 578.16pt>
+<Figures/erd_sqlite.png, id=724, 1204.5pt x 656.4525pt>
 File: Figures/erd_sqlite.png Graphic file (type png)
 <use Figures/erd_sqlite.png>
 Package pdftex.def Info: Figures/erd_sqlite.png  used on input line 214.
-(pdftex.def)             Requested size: 638.63339pt x 348.34547pt.
+(pdftex.def)             Requested size: 638.65765pt x 348.06842pt.
  [33
 
  <./Figures/erd_sqlite.png>] [34
 
 ]
-<Figures/erd_mongo.png, id=738, 1059.96pt x 578.16pt>
+<Figures/erd_mongo.png, id=736, 1204.5pt x 656.4525pt>
 File: Figures/erd_mongo.png Graphic file (type png)
 <use Figures/erd_mongo.png>
 Package pdftex.def Info: Figures/erd_mongo.png  used on input line 246.
-(pdftex.def)             Requested size: 638.63339pt x 348.34547pt.
+(pdftex.def)             Requested size: 638.65765pt x 348.06842pt.
  [35
 
  <./Figures/erd_mongo.png>] [36
 
 ] [37] [38]
-<Figures/res_kanban_view.png.png, id=757, 1445.4pt x 776.9025pt>
-File: Figures/res_kanban_view.png.png Graphic file (type png)
-<use Figures/res_kanban_view.png.png>
-Package pdftex.def Info: Figures/res_kanban_view.png.png  used on input line 43
-9.
+<Figures/res_kanban_view.jpg, id=755, 1445.4pt x 776.9025pt>
+File: Figures/res_kanban_view.jpg Graphic file (type jpg)
+<use Figures/res_kanban_view.jpg>
+Package pdftex.def Info: Figures/res_kanban_view.jpg  used on input line 439.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
- [39] [40 <./Figures/res_kanban_view.png.png>]
-[41] [42]) [43]
+ [39] [40 <./Figures/res_kanban_view.jpg>] [41]
+[42]) [43]
 \openout2 = `chapters/results.aux'.
 
  (./chapters/results.tex
@@ -807,11 +805,11 @@ Chapter 4.
 
 
 ]
-<Figures/res_dashboard_populated.png.png, id=787, 1445.4pt x 776.9025pt>
-File: Figures/res_dashboard_populated.png.png Graphic file (type png)
-<use Figures/res_dashboard_populated.png.png>
-Package pdftex.def Info: Figures/res_dashboard_populated.png.png  used on input
- line 43.
+<Figures/res_dashboard_populated.jpg, id=784, 1445.4pt x 776.9025pt>
+File: Figures/res_dashboard_populated.jpg Graphic file (type jpg)
+<use Figures/res_dashboard_populated.jpg>
+Package pdftex.def Info: Figures/res_dashboard_populated.jpg  used on input lin
+e 43.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
  [45]
 Underfull \hbox (badness 1048) in paragraph at lines 48--54
@@ -825,18 +823,18 @@ Underfull \hbox (badness 3503) in paragraph at lines 48--54
 oded con-stant in-side
  []
 
-<Figures/res_signup.png.png, id=793, 1445.4pt x 776.9025pt>
-File: Figures/res_signup.png.png Graphic file (type png)
-<use Figures/res_signup.png.png>
-Package pdftex.def Info: Figures/res_signup.png.png  used on input line 69.
+<Figures/res_signup.jpg, id=790, 1445.4pt x 776.9025pt>
+File: Figures/res_signup.jpg Graphic file (type jpg)
+<use Figures/res_signup.jpg>
+Package pdftex.def Info: Figures/res_signup.jpg  used on input line 69.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
-[46 <./Figures/res_dashboard_populated.png.png>]
-<Figures/res_login.png.png, id=799, 1445.4pt x 776.9025pt>
-File: Figures/res_login.png.png Graphic file (type png)
-<use Figures/res_login.png.png>
-Package pdftex.def Info: Figures/res_login.png.png  used on input line 84.
+[46 <./Figures/res_dashboard_populated.jpg>]
+<Figures/res_login.jpg, id=795, 1445.4pt x 776.9025pt>
+File: Figures/res_login.jpg Graphic file (type jpg)
+<use Figures/res_login.jpg>
+Package pdftex.def Info: Figures/res_login.jpg  used on input line 84.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
- [47 <./Figures/res_signup.png.png>]
+ [47 <./Figures/res_signup.jpg>]
 Underfull \hbox (badness 3000) in paragraph at lines 89--97
 \OT1/ptm/m/n/12 end-point gen-er-ates an al-phanu-meric re-cov-ery code, stores
  it with a 15-minute ex-
@@ -848,14 +846,14 @@ Underfull \hbox (badness 7851) in paragraph at lines 89--97
  writes the code to a tem-po-rary file at
  []
 
-[48 <./Figures/res_login.png.png>]
-<Figures/res_task_editor_empty.png.png, id=811, 491.58656pt x 627.09282pt>
+[48 <./Figures/res_login.jpg>]
+<Figures/res_task_editor_empty.png.png, id=805, 491.58656pt x 627.09282pt>
 File: Figures/res_task_editor_empty.png.png Graphic file (type png)
 <use Figures/res_task_editor_empty.png.png>
 Package pdftex.def Info: Figures/res_task_editor_empty.png.png  used on input l
 ine 124.
 (pdftex.def)             Requested size: 430.31812pt x 548.95366pt.
-<Figures/res_ai_smart_autofill.png.png, id=812, 486.31688pt x 685.8122pt>
+<Figures/res_ai_smart_autofill.png.png, id=807, 486.31688pt x 685.8122pt>
 File: Figures/res_ai_smart_autofill.png.png Graphic file (type png)
 <use Figures/res_ai_smart_autofill.png.png>
 Package pdftex.def Info: Figures/res_ai_smart_autofill.png.png  used on input l
@@ -877,39 +875,36 @@ Underfull \hbox (badness 2626) in paragraph at lines 136--143
 -ta-tion is pub-lished to the
  []
 
-<Figures/res_default_view.png.png, id=823, 1445.4pt x 776.9025pt>
-File: Figures/res_default_view.png.png Graphic file (type png)
-<use Figures/res_default_view.png.png>
-Package pdftex.def Info: Figures/res_default_view.png.png  used on input line 1
-65.
+<Figures/res_default_view.jpg, id=818, 1445.4pt x 776.9025pt>
+File: Figures/res_default_view.jpg Graphic file (type jpg)
+<use Figures/res_default_view.jpg>
+Package pdftex.def Info: Figures/res_default_view.jpg  used on input line 165.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
-[51 <./Figures/res_default_view.png.png>]
-File: Figures/res_kanban_view.png.png Graphic file (type png)
-<use Figures/res_kanban_view.png.png>
-Package pdftex.def Info: Figures/res_kanban_view.png.png  used on input line 18
-3.
+[51 <./Figures/res_default_view.jpg>]
+File: Figures/res_kanban_view.jpg Graphic file (type jpg)
+<use Figures/res_kanban_view.jpg>
+Package pdftex.def Info: Figures/res_kanban_view.jpg  used on input line 183.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
-<Figures/res_table_view.png.png, id=830, 1445.4pt x 776.9025pt>
-File: Figures/res_table_view.png.png Graphic file (type png)
-<use Figures/res_table_view.png.png>
-Package pdftex.def Info: Figures/res_table_view.png.png  used on input line 198
-.
+<Figures/res_table_view.jpg, id=824, 1445.4pt x 776.9025pt>
+File: Figures/res_table_view.jpg Graphic file (type jpg)
+<use Figures/res_table_view.jpg>
+Package pdftex.def Info: Figures/res_table_view.jpg  used on input line 198.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
  [52]
-<Figures/res_gantt_view.png.png, id=836, 1445.4pt x 776.9025pt>
-File: Figures/res_gantt_view.png.png Graphic file (type png)
-<use Figures/res_gantt_view.png.png>
-Package pdftex.def Info: Figures/res_gantt_view.png.png  used on input line 214
-.
+<Figures/res_gantt_view.jpg, id=830, 1445.4pt x 776.9025pt>
+File: Figures/res_gantt_view.jpg Graphic file (type jpg)
+<use Figures/res_gantt_view.jpg>
+Package pdftex.def Info: Figures/res_gantt_view.jpg  used on input line 214.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
- [53 <./Figures/res_table_view.png.png>]
-<Figures/res_calendar_view.png.png, id=842, 1445.4pt x 776.9025pt>
-File: Figures/res_calendar_view.png.png Graphic file (type png)
-<use Figures/res_calendar_view.png.png>
-Package pdftex.def Info: Figures/res_calendar_view.png.png  used on input line 
-230.
+ [53 <./Figures/res_table_view.jpg>]
+<Figures/res_calendar_view.jpg, id=835, 1445.4pt x 776.9025pt>
+File: Figures/res_calendar_view.jpg Graphic file (type jpg)
+<use Figures/res_calendar_view.jpg>
+Package pdftex.def Info: Figures/res_calendar_view.jpg  used on input line 230.
+
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
- [54 <./Figures/res_gantt_view.png.png>]
+
+[54 <./Figures/res_gantt_view.jpg>]
 Underfull \hbox (badness 5105) in paragraph at lines 253--262
 \OT1/ptm/m/n/12 The di-rect mes-sag-ing sys-tem sup-ports full-duplex real-time
  text ex-change. The
@@ -927,40 +922,41 @@ Underfull \hbox (badness 1342) in paragraph at lines 253--262
 ent's user group. On the re-ceiv-ing
  []
 
-[55 <./Figures/res_calendar_view.png.png>] [56]
-<Figures/res_ai_chatbot_empty.png.png, id=865, 1445.4pt x 776.9025pt>
-File: Figures/res_ai_chatbot_empty.png.png Graphic file (type png)
-<use Figures/res_ai_chatbot_empty.png.png>
-Package pdftex.def Info: Figures/res_ai_chatbot_empty.png.png  used on input li
-ne 330.
+[55 <./Figures/res_calendar_view.jpg>] [56]
+<Figures/res_ai_chatbot_empty.jpg, id=856, 1445.4pt x 776.9025pt>
+File: Figures/res_ai_chatbot_empty.jpg Graphic file (type jpg)
+<use Figures/res_ai_chatbot_empty.jpg>
+Package pdftex.def Info: Figures/res_ai_chatbot_empty.jpg  used on input line 3
+30.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
- [57 <./Figures/res_ai_chatbot_empty.png.png>]
-<Figures/res_ai_coder.png.png, id=873, 1445.4pt x 776.9025pt>
-File: Figures/res_ai_coder.png.png Graphic file (type png)
-<use Figures/res_ai_coder.png.png>
-Package pdftex.def Info: Figures/res_ai_coder.png.png  used on input line 357.
+ [57 <./Figures/res_ai_chatbot_empty.jpg>]
+<Figures/res_ai_coder.jpg, id=863, 1445.4pt x 776.9025pt>
+File: Figures/res_ai_coder.jpg Graphic file (type jpg)
+<use Figures/res_ai_coder.jpg>
+Package pdftex.def Info: Figures/res_ai_coder.jpg  used on input line 357.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
- [58 <./Figures/res_ai_coder.png.png>]
-<Figures/res_calendar_events.png.png, id=882, 1445.4pt x 776.9025pt>
-File: Figures/res_calendar_events.png.png Graphic file (type png)
-<use Figures/res_calendar_events.png.png>
-Package pdftex.def Info: Figures/res_calendar_events.png.png  used on input lin
-e 411.
+ [58 <./Figures/res_ai_coder.jpg>]
+<Figures/res_calendar_events.jpg, id=871, 1445.4pt x 776.9025pt>
+File: Figures/res_calendar_events.jpg Graphic file (type jpg)
+<use Figures/res_calendar_events.jpg>
+Package pdftex.def Info: Figures/res_calendar_events.jpg  used on input line 41
+1.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
- [59 <./Figures/res_calendar_events.png.png>]
-<Figures/res_notifications.png.png, id=890, 1445.4pt x 776.9025pt>
-File: Figures/res_notifications.png.png Graphic file (type png)
-<use Figures/res_notifications.png.png>
-Package pdftex.def Info: Figures/res_notifications.png.png  used on input line 
-428.
+ [59 <./Figures/res_calendar_events.jpg>]
+<Figures/res_notifications.jpg, id=878, 1445.4pt x 776.9025pt>
+File: Figures/res_notifications.jpg Graphic file (type jpg)
+<use Figures/res_notifications.jpg>
+Package pdftex.def Info: Figures/res_notifications.jpg  used on input line 428.
+
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
- [60 <./Figures/res_notifications.png.png>]
-<Figures/res_settings.png.png, id=899, 1445.4pt x 776.9025pt>
-File: Figures/res_settings.png.png Graphic file (type png)
-<use Figures/res_settings.png.png>
-Package pdftex.def Info: Figures/res_settings.png.png  used on input line 462.
+ [60 <./Figures/res_notifications.jpg>]
+<Figures/res_settings.jpg, id=886, 1445.4pt x 776.9025pt>
+File: Figures/res_settings.jpg Graphic file (type jpg)
+<use Figures/res_settings.jpg>
+Package pdftex.def Info: Figures/res_settings.jpg  used on input line 462.
 (pdftex.def)             Requested size: 430.31812pt x 231.29436pt.
- [61 <./Figures/res_settings.png.png>]) [62]
+ [61 <./Figures/res_settings.jpg>])
+[62]
 \openout2 = `chapters/conclusion.aux'.
 
  (./chapters/conclusion.tex
@@ -1114,7 +1110,7 @@ Package rerunfilecheck Info: File `GUC_Thesis.out' has not changed.
  ) 
 Here is how much of TeX's memory you used:
  15948 strings out of 467349
- 258431 string characters out of 5419862
+ 258039 string characters out of 5419862
  683427 words of memory out of 5000000
  44361 multiletter control sequences out of 15000+600000
  657950 words of font info for 105 fonts, out of 8000000 for 9000
@@ -1127,9 +1123,9 @@ t/fonts/type1/public/amsfonts/symbols/msam10.pfb><c:/texlive/2026/texmf-dist/fo
 nts/type1/urw/courier/ucrr8a.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/ti
 mes/utmb8a.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/times/utmr8a.pfb><c:
 /texlive/2026/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on GUC_Thesis.pdf (83 pages, 2968093 bytes).
+Output written on GUC_Thesis.pdf (83 pages, 1521558 bytes).
 PDF statistics:
- 1178 PDF objects out of 1200 (max. 8388607)
+ 1164 PDF objects out of 1200 (max. 8388607)
  1029 compressed objects within 11 object streams
  309 named destinations out of 1000 (max. 500000)
  696 words of extra memory for PDF output out of 10000 (max. 10000000)
