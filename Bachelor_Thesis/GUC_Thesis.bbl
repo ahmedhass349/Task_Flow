@@ -150,10 +150,4 @@ James~M. Wilson.
 \newblock {\em European Journal of Operational Research}, 149(2):430--437,
   2003.
 
-\bibitem{aspnetcore2024}
-{Microsoft}.
-\newblock {ASP.NET Core Documentation}.
-\newblock \url{https://docs.microsoft.com/en-us/aspnet/core}, 2024.
-\newblock Accessed 2024.
-
 \end{thebibliography}

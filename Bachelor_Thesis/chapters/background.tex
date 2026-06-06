@@ -1,7 +1,7 @@
 \chapter{Literature Review}\label{chap:background}
 
-This chapter surveys the academic literature and technical background that underpins the
-design decisions made in Task~Flow.
+This chapter surveys the academic literature and technical background that supports the
+design decisions made in TaskFlow.
 The review spans seven areas: existing task-management tools and their limitations,
 desktop application frameworks, offline-first architecture patterns, hybrid database
 designs, real-time communication protocols, authentication and security, and the
@@ -30,15 +30,15 @@ offer only read-only offline caching at best.
 and tasks in one surface, yet it shares the same connectivity dependency.
 
 Table~\ref{tab:tool_comparison} summarises the key feature dimensions of these
-tools relative to Task~Flow.
+tools relative to TaskFlow.
 
 \begin{table}[H]
 \centering
-\caption{Feature comparison of popular task-management tools vs.\ Task~Flow.}
+\caption{Feature comparison of popular task-management tools vs.\ TaskFlow.}
 \label{tab:tool_comparison}
 \begin{tabular}{lcccccc}
 \toprule
-\textbf{Feature} & \textbf{Trello} & \textbf{Asana} & \textbf{Jira} & \textbf{Notion} & \textbf{Task~Flow} \\
+\textbf{Feature} & \textbf{Trello} & \textbf{Asana} & \textbf{Jira} & \textbf{Notion} & \textbf{TaskFlow} \\
 \midrule
 Offline operation      & \texttimes & \texttimes & \texttimes & \texttimes & \checkmark \\
 Local persistence      & \texttimes & \texttimes & \texttimes & Limited    & \checkmark \\
@@ -55,7 +55,7 @@ Integrated messaging   & \texttimes & \texttimes & \texttimes & \texttimes & \ch
 
 The pattern that emerges from this survey is consistent: each tool excels in one or two
 dimensions but requires multiple third-party integrations to achieve a comparable feature
-breadth to Task~Flow, and none treats offline reliability as a design priority.
+breadth to TaskFlow, and none treats offline reliability as a design priority.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Desktop Application Frameworks}\label{sec:bg_desktop}
@@ -68,7 +68,7 @@ technology investments.
 \textbf{Native frameworks} such as WinForms, WPF (Windows), Cocoa (macOS), and GTK
 (Linux) offer tight OS integration and the best runtime performance but impose a
 per-platform development effort and cannot reuse the React/TypeScript frontend code
-already written for Task~Flow.
+already written for TaskFlow.
 
 \textbf{Tauri}~\cite{tauri_docs} is a Rust-based framework for building desktop
 applications using the operating system's native WebView rather than bundling
@@ -85,7 +85,7 @@ dialog boxes, and HTTP client functionality.
 The Rust language used for the Tauri core provides memory safety guarantees
 and thread safety at compile time~\cite{rust_lang}.
 
-For Task~Flow, the ASP.NET Core backend is bundled as a \emph{sidecar}
+For TaskFlow, the ASP.NET Core backend is bundled as a \emph{sidecar}
 binary~\cite{tauri_sidecar}: a self-contained executable that the Tauri
 application spawns as a child process via the shell plugin.
 The sidecar communicates its dynamically assigned port number by writing
@@ -106,7 +106,7 @@ This architecture allows a complete React~+~TypeScript frontend to be reused wit
 modification.
 Table~\ref{tab:electron_tauri_comparison} summarises the key differences between
 Electron and Tauri.
-The Task~Flow desktop shell uses Tauri v2, chosen for its significantly smaller
+The TaskFlow desktop shell uses Tauri v2, chosen for its significantly smaller
 binary footprint, OS-native WebView rendering, and declarative capabilities-based
 security model~\cite{tauri_security}.
 
@@ -188,7 +188,7 @@ Conflict-free Replicated Data Types (CRDTs)~\cite{shapiro2011crdt,kleppmann2019c
 provide a mathematically principled approach: data structures are designed so that
 any two states can be merged without coordination.
 Implementing CRDTs in a production system adds significant complexity; the current
-Task~Flow implementation adopts a simpler \emph{last-write-wins} strategy (using the
+TaskFlow implementation adopts a simpler \emph{last-write-wins} strategy (using the
 \texttt{UpdatedAt} timestamp as the arbitration key), with CRDTs noted as a long-term
 enhancement.
 
@@ -204,16 +204,17 @@ These properties make it the natural choice for a local persistence layer: the d
 travels with the application, survives process restarts, and performs all reads and
 writes without network round-trips.
 
-In Task~Flow, SQLite is the \emph{single source of truth}.
-All application features read from and write to SQLite first; MongoDB involvement is
-entirely asynchronous and does not block the user-visible operation path.
+In TaskFlow, MongoDB serves as the \emph{single source of truth} for synchronisable data.
+All application features read from and write to SQLite for local performance;
+changes are propagated to MongoDB asynchronously through the outbox-based sync engine,
+which does not block the user-visible operation path.
 
 \subsection*{MongoDB as a Cloud Relay}
 
 MongoDB~\cite{chodorow2013mongodb} is a document-oriented database used as
 the cloud relay layer for cross-device synchronisation.
 
-In Task~Flow, MongoDB serves as a \emph{synchronisation relay} for the subset of data
+In TaskFlow, MongoDB serves as a \emph{synchronisation relay} for the subset of data
 that must be visible across devices or shared among team members: mirrored tasks,
 notifications, team invitations, and user-presence indicators.
 The document \texttt{\_id} for each mirrored document is the entity's \texttt{SyncId}
@@ -226,7 +227,7 @@ conflict probability is low and eventual consistency is acceptable.
 \subsection*{Entity Framework Core}
 
 Entity Framework Core~\cite{efcoredocs2024} is the Object-Relational Mapper
-used by Task~Flow's backend. Its provider model allows the same application
+used by TaskFlow's backend. Its provider model allows the same application
 code to target SQLite locally or SQL~Server in production through a single
 configuration switch.
 
@@ -236,7 +237,7 @@ configuration switch.
 
 Modern collaborative applications require the server to \emph{push} state changes to
 connected clients rather than waiting for clients to poll.
-Three primary mechanisms are relevant to Task~Flow.
+Three primary mechanisms are relevant to TaskFlow.
 
 \subsection*{WebSockets}
 
@@ -253,7 +254,7 @@ WebSockets, Server-Sent Events, and long polling.
 It provides a hub-based RPC model in which the server can invoke named methods on
 connected clients, and clients can invoke methods on the server.
 SignalR automatically negotiates the best available transport and handles reconnection.
-Task~Flow uses SignalR's \texttt{NotificationHub} to broadcast real-time events:
+TaskFlow uses SignalR's \texttt{NotificationHub} to broadcast real-time events:
 connectivity-state changes, synchronisation progress, task reminders, and new
 notification payloads are all delivered to the React client via a single hub connection.
 
@@ -273,7 +274,7 @@ ceremony of WebSockets.
 \subsection*{Local Identity Middleware}
 
 Because the ASP.NET Core backend runs exclusively on localhost and is
-accessible only from the local desktop application, Task~Flow does not
+accessible only from the local desktop application, TaskFlow does not
 require a remote authentication server or token-based session management.
 Instead, a custom local-identity middleware resolves the active user from
 the SQLite database on every request.
@@ -295,7 +296,7 @@ The bcrypt algorithm~\cite{provos1999bcrypt} applies an adaptive key-derivation 
 with a configurable cost factor, deliberately making hash computation slow.
 As hardware performance improves, the cost factor can be increased to maintain the same
 brute-force resistance.
-Task~Flow uses BCrypt.Net-Next with the default cost factor to hash passwords at
+TaskFlow uses BCrypt.Net-Next with the default cost factor to hash passwords at
 registration and verify them at login, ensuring that even a full database compromise
 does not directly expose user credentials.
 
@@ -303,7 +304,7 @@ does not directly expose user credentials.
 
 The Open Web Application Security Project (OWASP) publishes an annually updated list of
 the ten most critical web application security risks~\cite{owasp2021}.
-The most relevant to Task~Flow are:
+The most relevant to TaskFlow are:
 \emph{Broken Access Control}---mitigated by validating the \texttt{X-User-Email}
 header identity against entity ownership on every protected endpoint;
 \emph{Cryptographic Failures}---addressed by bcrypt password hashing;
@@ -318,7 +319,7 @@ Ferraiolo and Kuhn's foundational work on role-based access
 control~(RBAC)~\cite{sandhu1996rbac} defines a model in which permissions are assigned
 to roles and roles are assigned to users, rather than assigning permissions directly to
 users.
-Task~Flow implements a lightweight RBAC model for team membership: each
+TaskFlow implements a lightweight RBAC model for team membership: each
 \texttt{TeamMember} record carries a \texttt{Role} field, and the Teams controller
 enforces that only the team owner may perform administrative operations such as removing
 members or disbanding the team.
@@ -351,7 +352,7 @@ Jiang et~al.~\cite{jiang2023mistral} introduced Mistral~7B, a 7-billion-paramete
 open-weight model that outperformed LLaMA~2~13B on several benchmarks despite being
 half the size, achieved through grouped-query attention and sliding-window attention
 mechanisms.
-Task~Flow integrates the Mistral API at three model tiers:
+TaskFlow integrates the Mistral API at three model tiers:
 \texttt{mistral-small-latest} for general conversational use;
 \texttt{codestral-latest} for the code-generation mode, a model fine-tuned on a large
 corpus of programming languages; and
@@ -395,7 +396,7 @@ scanning, sorting, and filtering without the spatial metaphor of Kanban columns 
 timeline bars.
 This view is preferred by users who think in terms of data rather than process flow.
 
-Task~Flow provides all four of these paradigms plus a smart-grouped default list
+TaskFlow provides all four of these paradigms plus a smart-grouped default list
 (grouping tasks by temporal proximity: Overdue, Today, This Week, Later, Completed),
 giving each user the freedom to work in the style that best fits their workflow at any
 given moment.
@@ -406,7 +407,7 @@ given moment.
 
 The literature review reveals a clear pattern of unmet needs in the current landscape of
 task-management software.
-Existing tools are built on cloud-first assumptions that render them fragile in
+Existing tools are built on cloud-first assumptions that make them unreliable in
 low-connectivity environments.
 The offline-first literature, particularly the transactional outbox pattern described
 by Fowler~\cite{fowler2002patterns} and the data-intensive application principles
@@ -432,4 +433,4 @@ authentication and security foundation.
 
 The following chapter translates these theoretical foundations into a concrete system
 design, detailing the architecture, data model, and implementation of each subsystem
-in Task~Flow.
+in TaskFlow.

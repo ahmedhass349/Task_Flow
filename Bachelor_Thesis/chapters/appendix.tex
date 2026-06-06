@@ -221,17 +221,74 @@ participation.
 
 \section*{MongoDB Collections}
 
-Table~\ref{tab:mongo_appendix} lists the five MongoDB collections used as the relay
-layer.
+Table~\ref{tab:mongo_appendix} lists the MongoDB collections used as the relay
+and mirror layer (fifteen in total).
 
-\begin{table}[H]
-\centering
+\begin{longtable}{p{3.8cm}p{9.2cm}}
 \caption{MongoDB collection descriptions.}
-\label{tab:mongo_appendix}
-\begin{tabular}{p{3.5cm}p{9.5cm}}
+\label{tab:mongo_appendix}\\
 \toprule
 \textbf{Collection} & \textbf{Description and key fields} \\
 \midrule
+\endfirsthead
+\toprule
+\textbf{Collection} & \textbf{Description and key fields} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\texttt{user\_presence}
+  & Optional online-status documents. Fields: userId, lastSeenAt, isOnline. \\
+\addlinespace
+\texttt{team\_invitations}
+  & Cross-device invitation relay. Fields: inviterEmail, inviteeEmail,
+    teamId, projectId, teamName, status (Pending/Accepted/Declined), createdAt. \\
+\addlinespace
+\texttt{team\_members}
+  & Mirror of accepted team memberships. Fields: teamId, userId,
+    userEmail, role, joinedAt. \\
+\addlinespace
+\texttt{cross\_}\cbrk\texttt{notifications}
+  & Cross-device notification relay for multi-machine alerts.
+    Fields: recipientEmail, title, message, notificationType,
+    relatedTaskId, createdAt. \\
+\addlinespace
+\texttt{user\_accounts}
+  & Encrypted password-hash backup for account restoration after reinstall.
+    Fields: email, passwordHash, userId, backedUpAt. \\
+\addlinespace
+\texttt{team\_}\cbrk\texttt{announcements}
+  & Team-wide announcement storage. Fields: teamId, authorEmail, title,
+    message, createdAt, readBy. \\
+\addlinespace
+\texttt{app\_settings}
+  & Key-value configuration store. Documents keyed by \texttt{\_id}. \\
+\addlinespace
+\texttt{users}
+  & Mirror of \texttt{AppUser} profile data (Company, Country, Phone,
+    Timezone). Fields: email, fullName, avatarUrl, company, country,
+    phone, timezone. \\
+\addlinespace
+\texttt{teams}
+  & Mirror of \texttt{Team} entity. Fields: name, description, color,
+    ownerId, createdAt. \\
+\addlinespace
+\texttt{team\_member\_}\cbrk\texttt{records}
+  & Mirror of per-member team metadata (distinct from
+    \texttt{team\_members}). Fields: teamId, userId, role, joinedAt. \\
+\addlinespace
+\texttt{messages}
+  & Mirror of \texttt{Message} entity. Fields: senderId, receiverId,
+    text, fileUrl, mimeType, fileSize, readAt, soft-delete flags. \\
+\addlinespace
+\texttt{chatbot\_}\cbrk\texttt{conversations}
+  & Mirror of AI chatbot conversation records.
+    Fields: userId, title, mode (General/Coder/Scanner), createdAt. \\
+\addlinespace
+\texttt{chatbot\_messages}
+  & Mirror of individual AI chat messages.
+    Fields: conversationId, role (user/assistant), content, createdAt. \\
+\addlinespace
 \texttt{tasks}
   & Mirror of \texttt{TaskItem}. Documents keyed by \texttt{syncId} (GUID).
     Fields: syncId, title, description, status, priority, dueDate, ownerId,
@@ -240,20 +297,7 @@ layer.
 \texttt{notifications}
   & Mirror of \texttt{Notification}. Fields: syncId, userId, title, message,
     notificationType, isRead, actionUrl, relatedTaskId, updatedAt. \\
-\addlinespace
-\texttt{team\_}\cbrk\texttt{invitations}
-  & Cross-device invitation relay. Fields: inviterEmail, inviteeEmail,
-    teamId, projectId, teamName, status (Pending/Accepted/Declined), createdAt. \\
-\addlinespace
-\texttt{team\_members}
-  & Mirror of accepted team memberships. Fields: teamId, userId,
-    userEmail, role, joinedAt. \\
-\addlinespace
-\texttt{user\_presence}
-  & Optional online-status documents. Fields: userId, lastSeenAt, isOnline. \\
-\bottomrule
-\end{tabular}
-\end{table}
+\end{longtable}
 
 % ═════════════════════════════════════════════════════════════════════════════
 \chapter{Configuration Reference}\label{app:config}
@@ -363,7 +407,7 @@ settings for the Tauri-based installer.
 \toprule
 \textbf{Key} & \textbf{Value / description} \\
 \midrule
-\texttt{productName}  & \texttt{Task Flow} \\
+\texttt{productName}  & \texttt{TaskFlow} \\
 \texttt{identifier}   & \texttt{com.taskflow.desktop} \\
 \texttt{build.}\cbrk\texttt{frontendDist} & \texttt{../wwwroot} — directory containing \texttt{index.html}
                               and Webpack output bundles. \\

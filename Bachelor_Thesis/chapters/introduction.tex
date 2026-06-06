@@ -27,9 +27,16 @@ current project state and can assist with both natural-language planning and tec
 code generation within the same interface~\cite{jiang2023mistral}.
 
 These two observations---the unreliability of purely cloud-centric architectures and the
-absence of deep AI integration---form the motivation for \textit{Task~Flow}: a
+absence of deep AI integration---form the motivation for \textit{TaskFlow}: a
 \emph{Smart Task \& Quality Management System} designed from the ground up as an
 offline-first desktop application with an embedded multi-mode AI assistant.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/intro_dashboard.png.png}
+    \caption{The TaskFlow desktop application showing the navigation sidebar, dashboard metric cards, mini-calendar, and Task Line widget.}
+    \label{fig:intro_dashboard}
+\end{figure}
 
 \section{Problem Statement}\label{sec:intro_problem}
 
@@ -84,8 +91,8 @@ The following specific objectives guide the work:
           Every core feature---task creation and editing, project management, calendar
           events, notifications, and messaging---must function fully without an active
           internet connection.
-          Data must be persisted locally in a SQLite database that serves as the single
-          source of truth for all user interactions.
+Data must be persisted locally in a SQLite database for performance, with MongoDB
+serving as the single source of truth for synchronisable data across devices.
 
     \item \textbf{Reliable, transparent synchronisation.}
           When connectivity is available, locally generated changes must be propagated to
@@ -156,7 +163,7 @@ The following capabilities were designed and implemented as part of this project
           self-contained Windows installer with a significantly reduced footprint.
 \end{itemize}
 
-\subsection*{Out of Scope}
+\subsection*{Limitations}
 
 The following items were explicitly excluded from the current implementation:
 

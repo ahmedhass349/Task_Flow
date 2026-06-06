@@ -1,7 +1,26 @@
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {1.1}{\ignorespaces The TaskFlow desktop application showing the navigation sidebar, dashboard metric cards, mini-calendar, and Task Line widget.}}{15}{figure.caption.12}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Entity Relationship Diagram for the SQLite Database.}}{33}{figure.caption.34}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Entity Relationship Diagram for the MongoDB Database.}}{35}{figure.caption.35}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Kanban view of the Tasks module with five colour-coded status columns and drag-and-drop support.}}{40}{figure.caption.36}%
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Dashboard after a task assignment, showing updated metric cards, activity feed, and Task Line widget.}}{46}{figure.caption.38}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Registration form with FluentValidation-validated identity fields and optional profile fields persisted to \texttt {AppUser}.}}{47}{figure.caption.39}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Login screen that posts credentials to the authentication endpoint and caches the user identity in React state.}}{48}{figure.caption.40}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces New-task editor in its initial state showing all required and optional fields with the \emph {Smart Auto Fill} panel at the top.}}{49}{figure.caption.41}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Task editor after \emph {Smart Auto Fill} populated fields from a natural-language prompt via the Mistral OCR model.}}{50}{figure.caption.42}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces Default view with tasks partitioned into temporal groups (\emph {Overdue}, \emph {Today}, \emph {This Week}, \emph {Later}, \emph {Completed}).}}{51}{figure.caption.43}%
+\contentsline {figure}{\numberline {4.7}{\ignorespaces Kanban view with a task in the \emph {To Do} column, colour-coded status headers, search and filter toolbar.}}{52}{figure.caption.44}%
+\contentsline {figure}{\numberline {4.8}{\ignorespaces Table view presenting tasks as rows with sortable columns and colour-coded priority and status pill badges.}}{53}{figure.caption.45}%
+\contentsline {figure}{\numberline {4.9}{\ignorespaces Gantt view showing task bars on a rolling 10-week forward timeline with a current-date marker.}}{54}{figure.caption.46}%
+\contentsline {figure}{\numberline {4.10}{\ignorespaces Calendar view with a mini-calendar sidebar and a monthly grid of task and event blocks in adjacent lanes.}}{55}{figure.caption.47}%
+\contentsline {figure}{\numberline {4.11}{\ignorespaces AI Assistant landing surface with three mode toggles (\emph {General}, \emph {Coder}, \emph {Scanner}) and a starter-prompt grid.}}{57}{figure.caption.55}%
+\contentsline {figure}{\numberline {4.12}{\ignorespaces AI Assistant in \emph {Coder} mode producing a syntax-highlighted code block via the Mistral API streamed response.}}{58}{figure.caption.58}%
+\contentsline {figure}{\numberline {4.13}{\ignorespaces Dedicated \emph {Calendar} page with a full-month time-grid view and the \emph {New Event} creation form.}}{59}{figure.caption.63}%
+\contentsline {figure}{\numberline {4.14}{\ignorespaces Notifications page with unread items delivered via SignalR, \emph {Mark all as Read} and \emph {Delete All} actions.}}{60}{figure.caption.65}%
+\contentsline {figure}{\numberline {4.15}{\ignorespaces Settings page (Profile tab) with navigation rail, avatar upload, and editable personal-information fields.}}{61}{figure.caption.68}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
