@@ -1,12 +1,49 @@
-\chapter{Literature Review}\label{chap:background}
+\chapter{Background and Literature Review}\label{chap:background}
 
-This chapter surveys the academic literature and technical background that supports the
-design decisions made in TaskFlow.
+This chapter provides the background context for the design and implementation of
+TaskFlow, then surveys the academic literature and technical foundations that support
+its key architectural decisions.
 The review spans seven areas: existing task-management tools and their limitations,
 desktop application frameworks, offline-first architecture patterns, hybrid database
 designs, real-time communication protocols, authentication and security, and the
 evolution of Large Language Models (LLMs) as productivity aids.
 It concludes with a brief treatment of project-visualisation paradigms.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Background of Task Management}\label{sec:bg_background}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Task management is the process of tracking, organising, and prioritising work items
+through their lifecycle from creation to completion.
+It is a fundamental activity in nearly every professional domain: software developers
+manage feature requests and bug fixes, healthcare workers track patient follow-ups,
+educators coordinate curriculum milestones, and enterprise teams break large projects
+into assignable units of work.
+
+Historically, task management relied on physical artifacts---paper to-do lists,
+whiteboards, sticky notes, and wall calendars.
+David Allen's \emph{Getting Things Done}~(GTD)~\cite{allen2001gtd} formalised this
+into a personal productivity methodology that externalises tasks into a trusted system,
+freeing cognitive resources for execution rather than recall.
+The Kanban system~\cite{anderson2010kanban}, originating in Toyota's manufacturing
+process, introduced visual workflow management through physical cards moved across
+columns representing production stages.
+
+The transition from physical to digital tools brought significant advantages:
+instant replication, search, reminders, and collaboration across geographic boundaries.
+However, the first generation of digital tools inherited an implicit assumption from
+their server-based architectures: that a reliable network connection is always
+available for reading and writing data.
+This assumption, while reasonable when the tools were designed, is increasingly at
+odds with modern work patterns that span trains, aeroplanes, co-working spaces, and
+rural locations with intermittent connectivity.
+
+The limitations of this cloud-first model---coupled with the fragmentation of
+task management across multiple messaging and productivity applications---motivate
+the need for a desktop task management system that functions reliably offline,
+synchronises transparently when connectivity is restored, and consolidates
+collaboration features into a single interface.
+The following section evaluates how well current commercial tools address these needs.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Task Management and Productivity Software}\label{sec:bg_tasktools}
@@ -15,7 +52,7 @@ It concludes with a brief treatment of project-visualisation paradigms.
 Task management software encompasses a broad spectrum of tools---from simple personal
 to-do lists to enterprise project-management suites.
 The most widely cited personal productivity framework is David Allen's
-\emph{Getting Things Done}~(GTD)~\cite{allen2001gtd}, which argues that externalising
+\emph{Getting Things Done}~(GTD), which argues that externalising
 tasks into a trusted system frees cognitive resources for execution rather than recall.
 Modern software tools attempt to operationalise this principle in varying ways.
 
@@ -330,21 +367,21 @@ members or disbanding the team.
 
 \subsection*{The Transformer Architecture}
 
-The transformer architecture, introduced by Vaswani et~al.~\cite{vaswani2017attention}
-in the seminal paper \textit{Attention Is All You Need}, replaced recurrent
-sequence-to-sequence models with a purely attention-based mechanism.
-The self-attention operation allows each token in a sequence to attend to every other
-token in parallel, enabling efficient training on large corpora and strong performance
-on a wide range of language tasks.
-This architecture became the foundation for all major LLMs in subsequent years.
-
-\subsection*{GPT-3 and the Emergence of Instruction Following}
-
-Brown et~al.'s GPT-3~\cite{brown2020gpt3} demonstrated that scaling transformer models
-to 175 billion parameters produced qualitatively new capabilities, including few-shot
-task completion from natural-language prompts.
-The subsequent development of instruction-tuned variants established the prompt-response
-interaction model that underpins modern conversational AI assistants.
+A Transformer is a deep learning architecture designed to process sequential data ---
+natural language text, source code, or ordered tokens of any kind --- without relying on
+recurrent or convolutional structure. Introduced by Vaswani et~al.~\cite{vaswani2017attention}
+in the 2017 paper \textit{Attention Is All You Need}, it replaced recurrent
+sequence-to-sequence frameworks with a purely attention-based mechanism.
+The core innovation is the \emph{self-attention} operation: each token in an input
+sequence computes a weighted sum of \emph{every} other token's representation, allowing
+the model to capture long-range dependencies directly rather than compressing the entire
+sequence through a fixed-size hidden state as recurrent networks must. Because
+self-attention processes all positions simultaneously rather than stepping through tokens
+one by one, training can be parallelised across the sequence length, enabling orders of
+magnitude larger datasets and deeper models than were feasible with recurrent
+architectures. This parallelisation and the ability to propagate gradients across
+arbitrary distances in a single layer made the Transformer the foundation for all
+subsequent Large Language Models (LLMs) such as GPT-4, Claude, and Llama.
 
 \subsection*{Mistral Models}
 
@@ -352,14 +389,10 @@ Jiang et~al.~\cite{jiang2023mistral} introduced Mistral~7B, a 7-billion-paramete
 open-weight model that outperformed LLaMA~2~13B on several benchmarks despite being
 half the size, achieved through grouped-query attention and sliding-window attention
 mechanisms.
-TaskFlow integrates the Mistral API at three model tiers:
-\texttt{mistral-small-latest} for general conversational use;
-\texttt{codestral-latest} for the code-generation mode, a model fine-tuned on a large
-corpus of programming languages; and
-\texttt{mistral-ocr-latest} for the document-scanner mode, which accepts base64-encoded
-images and PDF files and returns extracted and structured text.
-The 20-message conversation history window provides conversational context while
-bounding the per-request token count.
+Mistral offers multiple model tiers optimised for different tasks:
+\texttt{mistral-small-latest} for general conversational use,
+\texttt{codestral-latest} for code generation, and
+\texttt{mistral-ocr-latest} for document and image text extraction.
 
 
 

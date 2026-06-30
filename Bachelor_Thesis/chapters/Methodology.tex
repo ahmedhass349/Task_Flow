@@ -403,9 +403,16 @@ serves as the conversation's label in the sidebar.
 \section{Frontend Design}\label{sec:meth_frontend}
 % ─────────────────────────────────────────────────────────────────────────────
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/intro_dashboard.jpg}
+    \caption{The TaskFlow desktop application showing the navigation sidebar, dashboard metric cards, mini-calendar, and Task Line widget.}
+    \label{fig:meth_dashboard}
+\end{figure}
+
 \subsection{Application Structure}\label{sec:meth_fe_structure}
 
-The React application is organised as a flat module tree with client-side
+The React application is organised as a flat module tree (Figure~\ref{fig:meth_dashboard}) with client-side
 navigation managed by a routing library. All application routes except those
 related to authentication are protected by a guard component that redirects
 unauthenticated users to the login page. Styling is managed entirely through
@@ -432,7 +439,7 @@ in-tray sorted by urgency. Each group is rendered as a collapsible section.
 \textbf{Kanban View.}
 Tasks are arranged in columns corresponding to their status, with each column
 header colour-coded to convey urgency. Tasks can be moved between columns via
-drag-and-drop, which triggers an update request to the backend.
+drag-and-drop, which triggers an update request to the backend, as shown in Figure~\ref{fig:meth_kanban}.
 
 \begin{figure}[H]
     \centering

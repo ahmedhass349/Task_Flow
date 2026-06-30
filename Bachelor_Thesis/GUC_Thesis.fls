@@ -369,11 +369,6 @@ OUTPUT chapters/introduction.aux
 INPUT ./chapters/introduction.tex
 INPUT ./chapters/introduction.tex
 INPUT chapters/introduction.tex
-INPUT ./Figures/intro_dashboard.jpg
-INPUT ./Figures/intro_dashboard.jpg
-INPUT ./Figures/intro_dashboard.jpg
-INPUT ./Figures/intro_dashboard.jpg
-INPUT ./Figures/intro_dashboard.jpg
 INPUT c:/texlive/2026/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/psnfss/ts1ptm.fd
@@ -404,6 +399,11 @@ INPUT ./Figures/erd_mongo.png
 INPUT ./Figures/erd_mongo.png
 INPUT ./Figures/erd_mongo.png
 INPUT ./Figures/erd_mongo.png
+INPUT ./Figures/intro_dashboard.jpg
+INPUT ./Figures/intro_dashboard.jpg
+INPUT ./Figures/intro_dashboard.jpg
+INPUT ./Figures/intro_dashboard.jpg
+INPUT ./Figures/intro_dashboard.jpg
 INPUT ./Figures/res_kanban_view.jpg
 INPUT ./Figures/res_kanban_view.jpg
 INPUT ./Figures/res_kanban_view.jpg

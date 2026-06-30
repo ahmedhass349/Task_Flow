@@ -10,6 +10,10 @@ Tools such as Trello, Asana, Jira, and Notion have become everyday staples in so
 development teams, enabling members to track progress, share context, and coordinate
 across time zones without the overhead of physical meetings.
 
+In practice, many organisations---universities, government institutions, software companies, and large enterprises---still communicate task assignments and announcements through social-media platforms or messaging applications. As message volume grows, important tasks become buried among thousands of notifications, making them difficult to track and increasing the likelihood that critical deadlines or events are overlooked. Managers lack a structured mechanism to monitor progress, assess performance, and generate objective reports on task completion and delays. Without a dedicated system, generating such reports is time-consuming and often impractical.
+
+TaskFlow addresses these challenges by centralising task assignment, progress monitoring, reporting, collaboration, and intelligent notifications within a single desktop environment, ensuring that responsibilities are visible, traceable, and never lost in an overflowing chat feed.
+
 Despite this progress, the dominant generation of collaboration tools shares a critical
 architectural assumption: \emph{a reliable, always-available internet connection}.
 Every create, read, update, and delete operation is routed through a remote cloud server.
@@ -26,17 +30,11 @@ none provides a fully embedded, context-aware AI assistant that understands the 
 current project state and can assist with both natural-language planning and technical
 code generation within the same interface~\cite{jiang2023mistral}.
 
-These two observations---the unreliability of purely cloud-centric architectures and the
+These observations---the limitations of ad-hoc communication channels for task management, the unreliability of purely cloud-centric architectures, and the
 absence of deep AI integration---form the motivation for \textit{TaskFlow}: a
 \emph{Smart Task \& Quality Management System} designed from the ground up as an
 offline-first desktop application with an embedded multi-mode AI assistant.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.95\textwidth]{Figures/intro_dashboard.jpg}
-    \caption{The TaskFlow desktop application showing the navigation sidebar, dashboard metric cards, mini-calendar, and Task Line widget.}
-    \label{fig:intro_dashboard}
-\end{figure}
 
 \section{Problem Statement}\label{sec:intro_problem}
 

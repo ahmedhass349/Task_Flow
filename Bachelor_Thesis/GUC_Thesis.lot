@@ -1,19 +1,19 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {2.1}{\ignorespaces Feature comparison of popular task-management tools vs.\ TaskFlow.}}{20}{table.caption.15}%
-\contentsline {table}{\numberline {2.2}{\ignorespaces Comparison of Electron and Tauri v2 desktop application frameworks.}}{21}{table.caption.16}%
+\contentsline {table}{\numberline {2.1}{\ignorespaces Feature comparison of popular task-management tools vs.\ TaskFlow.}}{19}{table.caption.14}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces Comparison of Electron and Tauri v2 desktop application frameworks.}}{21}{table.caption.15}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {4.1}{\ignorespaces Functional requirement fulfilment matrix.}}{45}{table.caption.37}%
-\contentsline {table}{\numberline {4.2}{\ignorespaces Informal response-time observations for key operations.}}{62}{table.caption.69}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Functional requirement fulfilment matrix.}}{44}{table.caption.36}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Informal response-time observations for key operations.}}{62}{table.caption.68}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {A.1}{\ignorespaces REST API controllers and primary endpoints.}}{73}{table.caption.87}%
+\contentsline {table}{\numberline {A.1}{\ignorespaces REST API controllers and primary endpoints.}}{73}{table.caption.86}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {B.1}{\ignorespaces SQLite entity summary.}}{75}{table.caption.89}%
+\contentsline {table}{\numberline {B.1}{\ignorespaces SQLite entity summary.}}{75}{table.caption.88}%
 \contentsline {table}{\numberline {B.2}{\ignorespaces MongoDB collection descriptions.}}{76}{table.B.2}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {C.1}{\ignorespaces \texttt {appsettings.json} section reference.}}{78}{table.caption.92}%
-\contentsline {table}{\numberline {C.2}{\ignorespaces Supported environment variables.}}{79}{table.caption.94}%
-\contentsline {table}{\numberline {C.3}{\ignorespaces Key \texttt {tauri.conf.json} configuration (Tauri build).}}{80}{table.caption.96}%
+\contentsline {table}{\numberline {C.1}{\ignorespaces \texttt {appsettings.json} section reference.}}{78}{table.caption.91}%
+\contentsline {table}{\numberline {C.2}{\ignorespaces Supported environment variables.}}{79}{table.caption.93}%
+\contentsline {table}{\numberline {C.3}{\ignorespaces Key \texttt {tauri.conf.json} configuration (Tauri build).}}{80}{table.caption.95}%

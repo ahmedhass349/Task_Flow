@@ -136,14 +136,6 @@ Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
 \newblock {Attention Is All You Need}.
 \newblock {\em Advances in Neural Information Processing Systems}, 30, 2017.
 
-\bibitem{brown2020gpt3}
-Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, Prafulla
-  Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell,
-  et~al.
-\newblock {Language Models are Few-Shot Learners}.
-\newblock {\em Advances in Neural Information Processing Systems},
-  33:1877--1901, 2020.
-
 \bibitem{wilson2003gantt}
 James~M. Wilson.
 \newblock {Gantt Charts: A Centenary Appreciation}.

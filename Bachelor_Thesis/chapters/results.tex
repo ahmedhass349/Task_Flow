@@ -36,7 +36,7 @@ FR-11 Settings             & Fully met    & Profile, password change, notificati
 \end{table}
 
 All eleven functional requirements and all five non-functional requirements
-were met in the final build.
+were met in the final build; the populated dashboard (Figure~\ref{fig:res_dashboard}) illustrates this.
 
 \begin{figure}[H]
     \centering
@@ -63,6 +63,7 @@ FluentValidation rejects passwords shorter than eight characters, empty names, a
 malformed email addresses before the request reaches the service layer.
 Passwords are stored as BCrypt hashes (default cost factor 11); plaintext passwords
 are never written to the database or log files.
+New users fill out a registration form (Figure~\ref{fig:res_signup}) with validated identity fields and optional profile fields.
 
 \begin{figure}[H]
     \centering
@@ -76,7 +77,7 @@ The React client stores this identity in memory and sends the current
 user's email as an \texttt{X-User-Email} header on every subsequent API
 request.
 An \texttt{<AuthGuard>} component checks user presence on each route change and
-redirects unauthenticated users to the login page immediately, without a round-trip to
+redirects unauthenticated users to the login page (Figure~\ref{fig:res_login}) immediately, without a round-trip to
 the server.
 
 \begin{figure}[H]
@@ -116,8 +117,7 @@ Tasks may be assigned to one of three priority levels and five status values.
 The \texttt{DueDate\-WarningService} automatically transitions tasks whose due date has
 passed into the \texttt{Overdue} status on its next 1-minute polling cycle, ensuring
 the status always reflects reality without requiring user action.
-
-\enlargethispage{8pt}
+The new-task editor (Figure~\ref{fig:res_task_editor}) exposes all required and optional fields with the Smart Auto Fill panel at the top.
 
 \begin{figure}[H]
     \centering
@@ -125,6 +125,8 @@ the status always reflects reality without requiring user action.
     \caption{New-task editor in its initial state showing all required and optional fields with the \emph{Smart Auto Fill} panel at the top.}
     \label{fig:res_task_editor}
 \end{figure}
+
+The Smart Auto Fill feature (Figure~\ref{fig:res_ai_smart_autofill}) populates fields from a natural-language prompt via the Mistral OCR model.
 
 \begin{figure}[H]
     \centering
@@ -158,7 +160,7 @@ Tasks are partitioned client-side into five temporal groups: \emph{Overdue},
 Each group renders as a collapsible section with a count badge.
 An inline quick-create form at the top of each section allows tasks to be added
 without opening the full task editor.
-This view proved most useful for daily triage.
+This view is shown in Figure~\ref{fig:res_default_view} and proved most useful for daily triage.
 
 \begin{figure}[H]
     \centering
@@ -176,7 +178,7 @@ Column headers display per-column task counts and are colour-coded: red for
 \emph{Overdue}, amber for \emph{In Progress}, blue for \emph{Review}, green for
 \emph{Completed}, and grey for \emph{To Do}.
 The drag-and-drop feature was verified to work on Windows~11 (Chrome and Tauri) and
-macOS~14 (Safari and Tauri).
+macOS~14 (Safari and Tauri), as shown in Figure~\ref{fig:res_kanban_view}.
 
 \begin{figure}[H]
     \centering
@@ -186,7 +188,7 @@ macOS~14 (Safari and Tauri).
 \end{figure}
 
 \textbf{Table View.}
-Tasks are displayed in a data-grid layout with sortable columns for title, status,
+Tasks are displayed in a data-grid layout (Figure~\ref{fig:res_table_view}) with sortable columns for title, status,
 priority, due date, and project.
 Status and priority cells render as colour-coded pill badges.
 Each row includes an expand control that reveals a placeholder sub-task row;
@@ -206,7 +208,7 @@ Tasks without a due date are excluded from this view.
 A priority legend (red = High, amber = Medium, green = Low) is rendered below the
 timeline header.
 A vertical rule marks the current date.
-During testing the Gantt view was found useful for identifying workload clusters across
+During testing the Gantt view (Figure~\ref{fig:res_gantt_view}) was found useful for identifying workload clusters across
 months.
 
 \begin{figure}[H]
@@ -223,7 +225,7 @@ A dark-themed mini-calendar in the left sidebar allows week navigation.
 Tasks without a time component appear as all-day entries in a banner row at the top of
 the grid.
 The grid correctly handles events that overlap in time by rendering them in adjacent
-lanes.
+lanes, as illustrated in Figure~\ref{fig:res_calendar_view}.
 
 \begin{figure}[H]
     \centering
@@ -323,7 +325,7 @@ Section~\ref{sec:bg_offline}.
 % ─────────────────────────────────────────────────────────────────────────────
 \section{AI Chatbot}\label{sec:res_ai}
 
-The AI chatbot was tested in all three operational modes.
+The AI chatbot was tested in all three operational modes (Figure~\ref{fig:res_ai_chatbot}).
 
 \begin{figure}[H]
     \centering
@@ -350,7 +352,7 @@ TypeScript code samples when asked to generate a service class and a React hook.
 The system prompt's instruction to explain algorithmic choices was reflected in the
 model's responses, which included comments and rationale alongside the code.
 The \texttt{react-markdown} renderer with the \texttt{remark-gfm} plugin correctly
-formatted the code blocks with monospace styling and language labels.
+formatted the code blocks with monospace styling and language labels, as shown in Figure~\ref{fig:res_ai_coder}.
 
 \begin{figure}[H]
     \centering
@@ -404,7 +406,7 @@ Calendar events are distinct from tasks: they carry a \texttt{StartTime},
 Full CRUD operations were verified through the \texttt{CalendarController}.
 Events appear as coloured blocks in the weekly time-grid view alongside task items.
 A conflict check (two events occupying overlapping time slots) was handled at the UI
-level by rendering events in adjacent lanes.
+level by rendering events in adjacent lanes, as shown in Figure~\ref{fig:res_calendar_events}.
 
 \begin{figure}[H]
     \centering
@@ -421,7 +423,7 @@ level by rendering events in adjacent lanes.
 
 The notification panel was tested for all seventeen defined notification types.
 Notifications arrive via SignalR in real time; the unread badge on the bell icon
-increments without a page reload.
+increments without a page reload (Figure~\ref{fig:res_notifications}).
 
 \begin{figure}[H]
     \centering
@@ -455,7 +457,7 @@ re-firing.
 The settings page was divided into four sections: \emph{Profile},
 \emph{Security}, \emph{Notifications}, and \emph{Appearance}.
 Profile updates (name, avatar URL, company, country, phone, timezone) were persisted
-to \texttt{AppUser} immediately and reflected on the settings page after save.
+to \texttt{AppUser} immediately and reflected on the settings page (Figure~\ref{fig:res_settings}) after save.
 
 \begin{figure}[H]
     \centering
