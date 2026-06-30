@@ -146,7 +146,7 @@ export default function Signup() {
         </div>
 
         {/* Form */}
-        <div className="flex-1 flex flex-col justify-center px-8 mx-auto w-full max-w-[462px] mt-[-100px]">
+        <div className="flex-1 flex flex-col justify-center px-8 mx-auto w-full max-w-[462px]">
 
           {/* Server error banner */}
           {authError && (
