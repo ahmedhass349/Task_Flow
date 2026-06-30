@@ -531,8 +531,12 @@ for %%f in ("%BACKEND_PUBLISH_DIR%\*") do (
         if /i not "%%~nxf"=="%BACKEND_PROJECT_NAME%.exe" (
             if /i not "%%~nxf"=="web.config" (
                 if /i not "%%~nxf"=="%BACKEND_PROJECT_NAME%.staticwebassets.endpoints.json" (
-                    echo    [FOUND] Unexpected publish file: %%~nxf
-                    set "EXTRA_PUBLISH_FILES=1"
+                    if /i not "%%~nxf"=="appsettings.json" (
+                        if /i not "%%~nxf"=="appsettings.Production.json" (
+                            echo    [FOUND] Unexpected publish file: %%~nxf
+                            set "EXTRA_PUBLISH_FILES=1"
+                        )
+                    )
                 )
             )
         )
@@ -562,6 +566,13 @@ if errorlevel 1 (
 
 if not exist "%BINARIES_DIR%\%SIDECAR_NAME%" (
     call :Fail "Sidecar binary is missing after move." "Expected: %BINARIES_DIR%\%SIDECAR_NAME%"
+    goto :Halt
+)
+
+copy /y "%BACKEND_PUBLISH_DIR%\appsettings.json" "%BINARIES_DIR%\" >nul 2>&1
+copy /y "%BACKEND_PUBLISH_DIR%\appsettings.Production.json" "%BINARIES_DIR%\" >nul 2>&1
+if errorlevel 1 (
+    call :Fail "Failed to copy appsettings to Tauri binaries." "Target: %BINARIES_DIR%"
     goto :Halt
 )
 

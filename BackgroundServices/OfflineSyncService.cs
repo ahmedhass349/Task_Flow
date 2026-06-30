@@ -77,9 +77,25 @@ namespace taskflow.BackgroundServices
             // Initialise pending count from the DB
             await InitialisePendingCountAsync(stoppingToken);
 
+            // STARTUP FIX: Perform an eager first ping immediately so that _isOnline is
+            // populated before the React frontend calls /api/connectivity/status on sign-in.
+            // Without this the first ping would only happen after PingIntervalSeconds (30s),
+            // causing the UI to show "Working offline" for up to 30 seconds after login.
+            try
+            {
+                await _connectivity.CheckConnectivityAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "OfflineSyncService: initial eager ping failed");
+            }
+
             // Run the ping loop
             while (!stoppingToken.IsCancellationRequested)
             {
+                await Task.Delay(TimeSpan.FromSeconds(PingIntervalSeconds), stoppingToken)
+                    .ContinueWith(_ => { }, TaskContinuationOptions.None); // swallow cancellation
+
                 try
                 {
                     await _connectivity.CheckConnectivityAsync(stoppingToken);
@@ -88,9 +104,6 @@ namespace taskflow.BackgroundServices
                 {
                     _logger.LogWarning(ex, "OfflineSyncService: ping loop error");
                 }
-
-                await Task.Delay(TimeSpan.FromSeconds(PingIntervalSeconds), stoppingToken)
-                    .ContinueWith(_ => { }, TaskContinuationOptions.None); // swallow cancellation
             }
 
             _connectivity.ConnectivityChanged -= OnConnectivityChanged;

@@ -31,8 +31,7 @@
 
   <ItemGroup>
     <Content Update="appsettings*.json">
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-      <IncludeInSingleFile>true</IncludeInSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
 
   </ItemGroup>

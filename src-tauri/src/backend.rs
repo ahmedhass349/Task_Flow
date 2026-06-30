@@ -39,6 +39,31 @@ fn get_or_create_jwt_key(app: &AppHandle) -> String {
     key
 }
 
+fn get_mongo_uri(app: &AppHandle) -> String {
+    let is_dev = cfg!(debug_assertions);
+
+    let config_path = if is_dev {
+        // Dev mode: appsettings.json sits next to src-tauri/
+        std::path::PathBuf::from("../appsettings.json")
+    } else {
+        // Production: read from Tauri resource bundle
+        let resource_dir = app.path().resource_dir().unwrap();
+        resource_dir.join("binaries/appsettings.json")
+    };
+
+    if let Ok(content) = std::fs::read_to_string(&config_path) {
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+            if let Some(uri) = json["MongoDB"]["ConnectionString"].as_str() {
+                if !uri.is_empty() {
+                    return uri.to_string();
+                }
+            }
+        }
+    }
+
+    String::new()
+}
+
 fn handle_ready_line(app: &AppHandle, url: &str) {
     let url_state = app.state::<BackendUrl>();
     *url_state.0.lock().unwrap() = url.trim().to_string();
@@ -65,12 +90,14 @@ pub fn spawn_backend(app: AppHandle) {
     };
 
     let jwt_key = get_or_create_jwt_key(&app);
+    let mongo_uri = get_mongo_uri(&app);
 
     let env_vars: Vec<(&str, String)> = vec![
         ("ASPNETCORE_ENVIRONMENT", (if is_dev { "Development" } else { "Production" }).to_string()),
         ("ASPNETCORE_URLS", (if is_dev { "http://127.0.0.1:5000" } else { "http://127.0.0.1:0" }).to_string()),
         ("TASKFLOW_DB_PATH", db_path),
         ("TASKFLOW_JWT_KEY", jwt_key),
+        ("TASKFLOW_MONGO_URI", mongo_uri),
         ("DOTNET_TieredCompilation", "1".to_string()),
         ("DOTNET_TC_QuickJit", "1".to_string()),
         ("DOTNET_TC_QuickJitForLoops", "1".to_string()),

@@ -67,7 +67,9 @@
     "shortDescription": "Academic Task Management",
     "longDescription": "Task Flow is a production-ready academic task management application with cross-machine team collaboration.",
     "resources": [
-      "assets/*"
+      "assets/*",
+      "binaries/appsettings.json",
+      "binaries/appsettings.Production.json"
     ],
     "windows": {
       "webviewInstallMode": {

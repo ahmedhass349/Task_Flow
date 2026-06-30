@@ -51,9 +51,18 @@ export const useConnectivity = (): UseConnectivityReturn => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const baseUrl = getApiBaseUrl() || "";
+        // Wait for the API base URL to resolve (matters in Tauri builds where it's
+        // populated asynchronously via IPC). Retry for up to ~3 seconds.
+        let baseUrl = getApiBaseUrl();
+        if (!baseUrl) {
+          for (let i = 0; i < 6; i++) {
+            await new Promise(r => setTimeout(r, 500));
+            baseUrl = getApiBaseUrl();
+            if (baseUrl) break;
+          }
+        }
 
-        const res = await fetch(`${baseUrl}/api/connectivity/status`);
+        const res = await fetch(`${baseUrl || ""}/api/connectivity/status`);
 
         if (!res.ok) return;
 
@@ -70,6 +79,27 @@ export const useConnectivity = (): UseConnectivityReturn => {
     };
 
     fetchStatus();
+  }, []);
+
+
+  // ── Periodic re-fetch safety net ────────────────────────────────────────
+  // SignalR events can be missed during reconnects. Re-fetch every 30 s so
+  // the frontend never stays stale for longer than one ping cycle.
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const baseUrl = getApiBaseUrl() || "";
+        const res = await fetch(`${baseUrl}/api/connectivity/status`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const data: ConnectivityStatus = json.data;
+        setIsOnline(data.isOnline);
+        setIsManualOffline(data.isManualOffline);
+        setIsEffectivelyOnline(data.isEffectivelyOnline);
+        setPendingSyncCount(data.pendingSyncCount);
+      } catch { /* ignore — keep current state */ }
+    }, 30_000);
+    return () => clearInterval(id);
   }, []);
 
   // ── Custom event listeners (dispatched by useNotificationHub) ────────────
