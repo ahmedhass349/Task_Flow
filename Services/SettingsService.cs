@@ -1,7 +1,3 @@
-// FILE: Services/SettingsService.cs
-// STATUS: UPDATED
-// CHANGES: Updated UpdateProfileAsync to use FirstName/LastName (#24)
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +10,6 @@ using taskflow.DTOs.Settings;
 using taskflow.DTOs.Auth;
 using taskflow.Repositories.Interfaces;
 using taskflow.Services.Interfaces;
-using taskflow.Helpers;
 
 namespace taskflow.Services
 {
@@ -22,15 +17,13 @@ namespace taskflow.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
-        private readonly JwtHelper _jwtHelper;
         private readonly IMongoService _mongoService;
         private readonly AppDbContext _context;
 
-        public SettingsService(IUserRepository userRepository, IMapper mapper, JwtHelper jwtHelper, IMongoService mongoService, AppDbContext context)
+        public SettingsService(IUserRepository userRepository, IMapper mapper, IMongoService mongoService, AppDbContext context)
         {
             _userRepository = userRepository;
             _mapper = mapper;
-            _jwtHelper = jwtHelper;
             _mongoService = mongoService;
             _context = context;
         }
@@ -76,13 +69,11 @@ namespace taskflow.Services
             // Push updated profile to MongoDB presence so other users see the new name/avatar
             _ = _mongoService.UpsertPresenceAsync(user.Email, user.FullName ?? string.Empty, user.AvatarUrl ?? string.Empty);
 
-            // Generate new token with updated claims
-            var newToken = _jwtHelper.GenerateToken(user);
             var userDto = _mapper.Map<UserDto>(user);
 
             return new AuthResponse
             {
-                Token = newToken,
+                Token = "",
                 User = userDto
             };
         }
@@ -133,10 +124,25 @@ namespace taskflow.Services
                 .ToListAsync();
             _context.GroupChats.RemoveRange(groupChats);
 
-            // 5. Delete projects owned by this user (cascades project members; sets null on tasks)
+            // 5. Delete projects owned by this user.
+            // Explicitly delete tasks inside those projects first — the FK is OnDelete:SetNull,
+            // which means EF would only orphan them rather than remove them.  Orphaned tasks
+            // with a null ProjectId remain in SQLite and are re-injected into MongoDB by
+            // BulkSyncStartupService on every app restart.
             var projects = await _context.Projects
                 .Where(p => p.OwnerId == userId)
                 .ToListAsync();
+
+            if (projects.Count > 0)
+            {
+                var projectIds = projects.Select(p => p.Id).ToList();
+                var projectTasks = await _context.TaskItems
+                    .Where(t => t.ProjectId != null && projectIds.Contains(t.ProjectId.Value))
+                    .ToListAsync();
+                if (projectTasks.Count > 0)
+                    _context.TaskItems.RemoveRange(projectTasks);
+            }
+
             _context.Projects.RemoveRange(projects);
 
             // 6. Delete teams owned by this user (cascades team members)
@@ -145,13 +151,26 @@ namespace taskflow.Services
                 .ToListAsync();
             _context.Teams.RemoveRange(teams);
 
-            // 7. Clean up all MongoDB data for this user
+            // 7. Clean up all MongoDB data for this user (includes credential backup deletion)
             await _mongoService.DeleteUserDataAsync(user.Email);
 
             // 8. Remove the user — remaining EF cascades handle notifications, reminders,
             //    calendar events, chatbot conversations, and all remaining memberships.
             _userRepository.Remove(user);
             await _userRepository.SaveChangesAsync();
+
+            // 9. Purge ALL pending outbox entries so OfflineSyncService cannot replay
+            //    stale MirrorUpsert / BackupUserAccount / DeleteUserData operations
+            //    for the now-deleted account on the next reconnect.
+            //    Per-device SQLite means every pending entry was queued by this account.
+            var pendingEntries = await _context.SyncOutboxEntries
+                .Where(e => e.Status == "Pending" || e.Status == "Processing")
+                .ToListAsync();
+            if (pendingEntries.Count > 0)
+            {
+                _context.SyncOutboxEntries.RemoveRange(pendingEntries);
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

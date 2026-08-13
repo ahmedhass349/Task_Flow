@@ -1,8 +1,3 @@
-// FILE: Services/MessageService.cs
-// STATUS: UPDATED
-// CHANGES: Fixed N+1 query in GetContactsAsync (#11), removed unused _mapper (#16),
-//          added Initials/IsStarred to ContactDto (#29)
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,6 +49,11 @@ namespace taskflow.Services
                 .ToListAsync();
 
             var result = new List<ContactDto>();
+
+            // A-02: batch-fetch presence data so we can show real last-seen per contact
+            var emails = contactList.Select(c => c.Email).Where(e => !string.IsNullOrEmpty(e)).ToList();
+            var lastSeenMap = await _mongoService.GetLastSeenBatchAsync(emails);
+
             foreach (var contact in contactList)
             {
                 var contactMessages = allMessages
@@ -73,13 +73,16 @@ namespace taskflow.Services
                 result.Add(new ContactDto
                 {
                     Id = contact.Id,
+                    Email = contact.Email ?? string.Empty,
                     Name = contact.FullName ?? string.Empty,
                     AvatarUrl = contact.AvatarUrl,
                     Initials = initials,
-                    IsStarred = false, // MVP: no starred contacts feature yet
+                    IsStarred = false,
                     LastMessage = lastMessage?.Body ?? string.Empty,
                     LastMessageTime = lastMessage?.SentAt ?? DateTime.MinValue,
-                    UnreadCount = unreadCount
+                    UnreadCount = unreadCount,
+                    // A-02: map presence heartbeat; null when user has never logged in on a connected device
+                    LastSeen = lastSeenMap.TryGetValue(contact.Email ?? "", out var ls) ? ls : null,
                 });
             }
 
@@ -199,6 +202,9 @@ namespace taskflow.Services
             await _messageRepository.DeleteConversationAsync(userId, contactId, fullName);
         }
 
+        public Task DeleteMessageAsync(int messageId, int userId)
+            => _messageRepository.DeleteMessageAsync(messageId, userId);
+
         public async Task<ContactDto?> ResolveContactAsync(int requestingUserId, string email)
         {
             var user = await _userRepository.GetByEmailAsync(email);
@@ -219,16 +225,22 @@ namespace taskflow.Services
                 ? $"{nameParts[0][0]}{nameParts[^1][0]}".ToUpperInvariant()
                 : nameParts.Length == 1 ? nameParts[0][0].ToString().ToUpperInvariant() : "?";
 
+            // A-02: resolve presence for the single contact
+            var singlePresence = await _mongoService.GetLastSeenBatchAsync(new[] { user.Email! });
+            singlePresence.TryGetValue(user.Email!, out var singleLastSeen);
+
             return new ContactDto
             {
                 Id = user.Id,
+                Email = user.Email ?? string.Empty,
                 Name = user.FullName ?? string.Empty,
                 Initials = initials,
                 AvatarUrl = user.AvatarUrl,
                 LastMessage = string.Empty,
                 LastMessageTime = System.DateTime.MinValue,
                 UnreadCount = 0,
-                IsStarred = false
+                IsStarred = false,
+                LastSeen = singleLastSeen == default ? null : singleLastSeen,
             };
         }
     }

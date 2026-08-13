@@ -1,0 +1,5 @@
+Task Flow Desktop Application
+Copyright © 2025 Ahmed Abdelbarr. All rights reserved.
+
+This software is provided for personal and educational use.
+Redistribution or commercial use requires explicit written permission.

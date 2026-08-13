@@ -1,9 +1,3 @@
-// FILE: Services/AuthService.cs
-// STATUS: UPDATED
-// CHANGES: Fixed ResetPasswordAsync to validate ResetToken (#1),
-//          ForgotPasswordAsync now generates reset token (#18),
-//          RegisterAsync now sets FirstName/LastName (#24)
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,7 +6,6 @@ using System.Threading.Tasks;
 using AutoMapper;
 using taskflow.Data.Entities;
 using taskflow.DTOs.Auth;
-using taskflow.Helpers;
 using taskflow.Repositories.Interfaces;
 using taskflow.Services.Interfaces;
 
@@ -21,7 +14,6 @@ namespace taskflow.Services
     public class AuthService : IAuthService
     {
         private readonly IUserRepository _userRepository;
-        private readonly JwtHelper _jwtHelper;
         private readonly IMapper _mapper;
         private readonly IMirrorService _mirror;
         private readonly IMongoService _mongo;
@@ -37,14 +29,12 @@ namespace taskflow.Services
 
         public AuthService(
             IUserRepository userRepository,
-            JwtHelper jwtHelper,
             IMapper mapper,
             IMirrorService mirror,
             IMongoService mongo,
             IAccountRestorationService restoration)
         {
             _userRepository = userRepository;
-            _jwtHelper = jwtHelper;
             _mapper = mapper;
             _mirror = mirror;
             _mongo = mongo;
@@ -70,14 +60,13 @@ namespace taskflow.Services
                     throw new UnauthorizedAccessException("Invalid email or password.");
                 }
 
-                // Password already verified inside TryRestoreAsync — generate token directly.
+                // Password already verified inside TryRestoreAsync.
                 user.LastLoginAt = DateTime.UtcNow;
                 _userRepository.Update(user);
                 await _userRepository.SaveChangesAsync();
 
-                var restoredToken = _jwtHelper.GenerateToken(user);
                 var restoredDto = _mapper.Map<UserDto>(user);
-                return new AuthResponse { Token = restoredToken, User = restoredDto, IsRestored = true };
+                return new AuthResponse { Token = "", User = restoredDto, IsRestored = true };
             }
 
             bool validPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
@@ -89,12 +78,11 @@ namespace taskflow.Services
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
 
-            var token = _jwtHelper.GenerateToken(user);
             var userDto = _mapper.Map<UserDto>(user);
 
             return new AuthResponse
             {
-                Token = token,
+                Token = "",
                 User = userDto
             };
         }
@@ -159,12 +147,11 @@ namespace taskflow.Services
                 user.LastLoginAt
             });
 
-            var token = _jwtHelper.GenerateToken(user);
             var userDto = _mapper.Map<UserDto>(user);
 
             return new AuthResponse
             {
-                Token = token,
+                Token = "",
                 User = userDto
             };
         }
@@ -188,8 +175,9 @@ namespace taskflow.Services
         public async Task ForgotPasswordAsync(ForgotPasswordRequest request)
         {
             var user = await _userRepository.GetByEmailAsync(request.Email);
+            // Return silently for unknown emails — never reveal whether an account exists.
             if (user == null)
-                throw new KeyNotFoundException("No account found with this email address.");
+                return;
 
             var code = GenerateRecoveryCode();
             user.ResetToken = code;
@@ -198,8 +186,8 @@ namespace taskflow.Services
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
 
-            // Write code to a local temp file; the Electron main process reads it via
-            // IPC ('read-reset-code') and deletes it. The code is never returned in
+            // Write code to a local temp file; the Tauri main process reads it via
+            // invoke('read_reset_code') and deletes it. The code is never returned in
             // the HTTP response body.
             var tmpPath = Path.Combine(Path.GetTempPath(), "taskflow_reset_pending.tmp");
             await File.WriteAllTextAsync(tmpPath, code);

@@ -26,6 +26,37 @@ David~J. Anderson.
   Business}}.
 \newblock Blue Hole Press, 2010.
 
+\bibitem{tauri_docs}
+{Tauri Contributors}.
+\newblock {Tauri v2 Documentation}.
+\newblock \url{https://v2.tauri.app/start/}, 2025.
+\newblock Accessed 2025.
+
+\bibitem{webview2}
+{Microsoft Corporation}.
+\newblock {Microsoft Edge WebView2}.
+\newblock \url{https://developer.microsoft.com/en-us/microsoft-edge/webview2/},
+  2025.
+\newblock Accessed 2025.
+
+\bibitem{tauri_security}
+{Tauri Contributors}.
+\newblock {Tauri Security: Capabilities}.
+\newblock \url{https://v2.tauri.app/security/capabilities/}, 2025.
+\newblock Accessed 2025.
+
+\bibitem{rust_lang}
+{The Rust Programming Language}.
+\newblock {The Rust Programming Language}.
+\newblock \url{https://www.rust-lang.org}, 2025.
+\newblock Accessed 2025.
+
+\bibitem{tauri_sidecar}
+{Tauri Contributors}.
+\newblock {Embedding External Binaries in Tauri}.
+\newblock \url{https://v2.tauri.app/develop/sidecar/}, 2025.
+\newblock Accessed 2025.
+
 \bibitem{electrondocs2024}
 {Electron Contributors}.
 \newblock {Electron Documentation}.
@@ -82,13 +113,6 @@ I.~Fette and A.~Melnikov.
 \newblock \url{https://docs.microsoft.com/en-us/aspnet/core/signalr}, 2024.
 \newblock Accessed 2024.
 
-\bibitem{rfc7519}
-M.~Jones, J.~Bradley, and N.~Sakimura.
-\newblock {JSON Web Token (JWT)}.
-\newblock RFC 7519, Internet Engineering Task Force, May 2015.
-\newblock ISSN 2070-1721. Available:
-  \url{https://www.rfc-editor.org/rfc/rfc7519}.
-
 \bibitem{provos1999bcrypt}
 Niels Provos and David Mazi\`{e}res.
 \newblock {A Future-Adaptable Password Scheme}.
@@ -112,24 +136,10 @@ Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
 \newblock {Attention Is All You Need}.
 \newblock {\em Advances in Neural Information Processing Systems}, 30, 2017.
 
-\bibitem{brown2020gpt3}
-Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, Prafulla
-  Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell,
-  et~al.
-\newblock {Language Models are Few-Shot Learners}.
-\newblock {\em Advances in Neural Information Processing Systems},
-  33:1877--1901, 2020.
-
 \bibitem{wilson2003gantt}
 James~M. Wilson.
 \newblock {Gantt Charts: A Centenary Appreciation}.
 \newblock {\em European Journal of Operational Research}, 149(2):430--437,
   2003.
-
-\bibitem{aspnetcore2024}
-{Microsoft}.
-\newblock {ASP.NET Core Documentation}.
-\newblock \url{https://docs.microsoft.com/en-us/aspnet/core}, 2024.
-\newblock Accessed 2024.
 
 \end{thebibliography}

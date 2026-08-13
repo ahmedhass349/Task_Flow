@@ -1,7 +1,3 @@
-// FILE: Controllers/Api/ProjectsController.cs
-// STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() (#3), removed try-catch (#15), pass userId to Update/Delete/ToggleStar (#2), cleaned usings (#17)
-
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
@@ -19,7 +15,6 @@ namespace taskflow.Controllers.Api
     /// </summary>
     [ApiController]
     [Route("api/projects")]
-    [Authorize]
     public class ProjectsController : ControllerBase
     {
         private readonly IProjectService _projectService;

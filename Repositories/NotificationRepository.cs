@@ -1,3 +1,14 @@
+/*
+  FILE: Repositories/NotificationRepository.cs
+  PHASE: 3
+  MISSION: 2-Performance
+  CHANGES:
+    - MarkAllAsReadAsync: replaced load-all-into-memory + loop pattern with a single
+      ExecuteUpdateAsync call. This generates one SQL UPDATE ... SET IsRead=1, ReadAt=?
+      WHERE UserId=? AND IsRead=0 instead of loading N rows then issuing N property mutations
+      plus one batch SaveChanges. Functionally identical — the service still calls GetUnreadAsync
+      separately before this method to collect mirror data (Phase 2).
+*/
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -69,17 +80,12 @@ namespace taskflow.Repositories
 
         public async Task MarkAllAsReadAsync(int userId)
         {
-            var unreadNotifications = await _dbSet
+            var now = DateTime.UtcNow;
+            await _dbSet
                 .Where(n => n.UserId == userId && !n.IsRead)
-                .ToListAsync();
-
-            foreach (var notification in unreadNotifications)
-            {
-                notification.IsRead = true;
-                notification.ReadAt = DateTime.UtcNow;
-            }
-
-            await _context.SaveChangesAsync();
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(n => n.IsRead, true)
+                    .SetProperty(n => n.ReadAt, now));
         }
 
         public async Task DeleteAsync(int notificationId, int userId)

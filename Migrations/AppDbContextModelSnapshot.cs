@@ -112,6 +112,9 @@ namespace TaskFlow.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsSynced")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("MeetingLink")
                         .HasMaxLength(2048)
                         .HasColumnType("TEXT");
@@ -119,8 +122,15 @@ namespace TaskFlow.Migrations
                     b.Property<int>("OwnerId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("OwnerEmail")
+                        .HasMaxLength(320)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("StartAt")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SyncId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
@@ -128,9 +138,16 @@ namespace TaskFlow.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("UpdatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId");
+
+                    b.HasIndex("SyncId")
+                        .IsUnique();
 
                     b.ToTable("CalendarEvents");
                 });
@@ -524,6 +541,10 @@ namespace TaskFlow.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("UserEmail")
+                        .HasMaxLength(320)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("UserId")
                         .HasColumnType("INTEGER");
 
@@ -568,6 +589,10 @@ namespace TaskFlow.Migrations
 
                     b.Property<int>("OwnerId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("OwnerEmail")
+                        .HasMaxLength(320)
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("SyncId")
                         .HasColumnType("TEXT");
@@ -750,8 +775,19 @@ namespace TaskFlow.Migrations
                     b.Property<int?>("AssigneeId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AssigneeEmail")
+                        .HasMaxLength(320)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("CreatedAt")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CreatedByEmail")
+                        .HasMaxLength(320)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")

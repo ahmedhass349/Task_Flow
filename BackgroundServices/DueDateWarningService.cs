@@ -59,6 +59,7 @@ namespace taskflow.BackgroundServices
 
             // 24 hour warnings
             var tasksDueIn24Hours = await dbContext.TaskItems
+                .AsNoTracking()
                 .Include(t => t.Assignee)
                 .Where(t => t.AssigneeId.HasValue &&
                            t.DueDate.HasValue &&
@@ -79,6 +80,7 @@ namespace taskflow.BackgroundServices
 
             // 1 hour warnings
             var tasksDueIn1Hour = await dbContext.TaskItems
+                .AsNoTracking()
                 .Include(t => t.Assignee)
                 .Where(t => t.AssigneeId.HasValue &&
                            t.DueDate.HasValue &&

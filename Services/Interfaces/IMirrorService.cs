@@ -1,4 +1,3 @@
-// FILE: Services/Interfaces/IMirrorService.cs  PHASE: 2  CHANGE: added EraseSync for SyncId-keyed deletion
 using System;
 
 namespace taskflow.Services.Interfaces

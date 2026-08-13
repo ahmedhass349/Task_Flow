@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate, Navigate } from "react-router";
 import { TaskFlowLogo } from "../Components/TaskFlowLogo";
 import { AuthFooter } from "../Components/AuthFooter";
+import LoginPromotion from "../imports/LoginPromotion1";
+import PromotionBg from "../imports/PromotionBg";
 import { useAuth } from "../context/AuthContext";
 
 // ── Validation helpers ───────────────────────────────────────────────────
@@ -144,7 +146,7 @@ export default function Signup() {
         </div>
 
         {/* Form */}
-        <div className="flex-1 flex flex-col justify-center px-8 mx-auto w-full max-w-[462px] mt-[-100px]">
+        <div className="flex-1 flex flex-col justify-center px-8 mx-auto w-full max-w-[462px]">
 
           {/* Server error banner */}
           {authError && (
@@ -495,13 +497,15 @@ export default function Signup() {
         </div>
       </div>
 
-      {/* Right Side - Blue Promotion Panel */}
-      <div className="hidden lg:block w-[37.5%] bg-brand min-h-screen relative">
-        {/* Decorative white text/shapes - subtle branding */}
-        <div className="absolute bottom-[30px] right-[30px]">
-          <span className="font-bold text-lg text-white/80 tracking-[0.15px]">
-            TaskFlow <span className="font-normal">Pro</span>
-          </span>
+      {/* Right Side - Promotion */}
+      <div className="hidden lg:block w-[58%] relative min-h-screen">
+        <div className="absolute inset-0 overflow-hidden">
+          <PromotionBg />
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+          <div className="relative w-[468px] h-[469px]">
+            <LoginPromotion />
+          </div>
         </div>
       </div>
     </div>

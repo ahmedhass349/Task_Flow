@@ -1,8 +1,3 @@
-// FILE: DTOs/Settings/UpdateProfileRequest.cs
-// STATUS: UPDATED
-// CHANGES: Replaced FullName with FirstName/LastName for frontend compatibility (#24).
-//          Removed Data Annotations (using FluentValidation instead).
-
 namespace taskflow.DTOs.Settings
 {
     public class UpdateProfileRequest

@@ -1,7 +1,3 @@
-// FILE: Controllers/Api/DashboardController.cs
-// STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() (#3), removed try-catch (#15), cleaned usings (#17), standardized route (#20)
-
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
@@ -19,7 +15,6 @@ namespace taskflow.Controllers.Api
     /// </summary>
     [ApiController]
     [Route("api/dashboard")]
-    [Authorize]
     public class DashboardController : ControllerBase
     {
         private readonly IDashboardService _dashboardService;

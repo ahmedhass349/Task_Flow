@@ -1,8 +1,3 @@
-// FILE: Services/CalendarService.cs
-// STATUS: UPDATED
-// CHANGES: Added userId ownership checks to Update/Delete (#2),
-//          Fixed GetEventsAsync to filter in DB query instead of in-memory (#7)
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,12 +16,14 @@ namespace taskflow.Services
         private readonly IGenericRepository<CalendarEvent> _calendarRepository;
         private readonly IMapper _mapper;
         private readonly IMirrorService _mirror;
+        private readonly IUserRepository _userRepository;
 
-        public CalendarService(IGenericRepository<CalendarEvent> calendarRepository, IMapper mapper, IMirrorService mirror)
+        public CalendarService(IGenericRepository<CalendarEvent> calendarRepository, IMapper mapper, IMirrorService mirror, IUserRepository userRepository)
         {
             _calendarRepository = calendarRepository;
             _mapper = mapper;
             _mirror = mirror;
+            _userRepository = userRepository;
         }
 
         public async Task<IEnumerable<CalendarEventDto>> GetEventsAsync(int userId, DateTime? from, DateTime? to)
@@ -51,9 +48,13 @@ namespace taskflow.Services
 
         public async Task<CalendarEventDto> CreateEventAsync(int userId, CreateCalendarEventRequest request)
         {
+            // Phase 2: look up owner email for cross-device MongoDB pull queries
+            var owner = await _userRepository.GetByIdAsync(userId);
+
             var calendarEvent = new CalendarEvent
             {
                 OwnerId = userId,
+                OwnerEmail = owner?.Email,  // Phase 2
                 Title = request.Title,
                 Description = request.Description,
                 StartAt = request.StartAt,
@@ -106,7 +107,9 @@ namespace taskflow.Services
 
             _calendarRepository.Remove(calendarEvent);
             await _calendarRepository.SaveChangesAsync();
-            _mirror.Erase("calendar_events", eventId);
+            // Phase 2: use EraseSync(SyncId) because CalendarEvent is now ISyncableEntity
+            // — its MongoDB _id is the SyncId GUID, not the integer PK.
+            _mirror.EraseSync("calendar_events", calendarEvent.SyncId);
         }
     }
 }

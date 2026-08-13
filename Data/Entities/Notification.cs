@@ -1,4 +1,10 @@
-// FILE: Data/Entities/Notification.cs  PHASE: 2  CHANGE: implements ISyncableEntity — adds SyncId, UpdatedAt, IsSynced
+/*
+  FILE: Data/Entities/Notification.cs
+  PHASE: 2
+  MISSION: 1-CrossMachine
+  CHANGES:
+    - Added UserEmail (string?) — stable cross-device identifier for MongoDB pull queries (P2.2).
+*/
 using System;
 
 namespace taskflow.Data.Entities
@@ -36,6 +42,8 @@ namespace taskflow.Data.Entities
     {
         public int Id { get; set; }
         public int UserId { get; set; }
+        /// <summary>Email of the recipient — stable cross-device key used in MongoDB pull queries.</summary>
+        public string? UserEmail { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public NotificationType Type { get; set; }

@@ -6,7 +6,8 @@ using MongoDB.Bson.Serialization.Attributes;
 namespace taskflow.Models.Mongo
 {
     /// <summary>
-    /// Persists a team announcement to MongoDB so the sender can track read receipts.
+    /// A team-wide announcement persisted in MongoDB so every machine can read it.
+    /// ReadBy tracks which member emails have acknowledged the announcement.
     /// </summary>
     public class TeamAnnouncement
     {
@@ -27,33 +28,16 @@ namespace taskflow.Models.Mongo
         public string SenderName { get; set; } = string.Empty;
 
         [BsonElement("title")]
-        public string Title { get; set; } = string.Empty;
+        public string Title { get; set; } = "Team Announcement";
 
-        [BsonElement("body")]
-        public string Body { get; set; } = string.Empty;
+        [BsonElement("message")]
+        public string Message { get; set; } = string.Empty;
 
-        [BsonElement("sentAt")]
-        [BsonRepresentation(BsonType.DateTime)]
-        public DateTime SentAt { get; set; } = DateTime.UtcNow;
+        [BsonElement("createdAt")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        [BsonElement("recipients")]
-        public List<AnnouncementRecipient> Recipients { get; set; } = new();
-    }
-
-    public class AnnouncementRecipient
-    {
-        [BsonElement("email")]
-        public string Email { get; set; } = string.Empty;
-
-        [BsonElement("name")]
-        public string Name { get; set; } = string.Empty;
-
-        [BsonElement("hasRead")]
-        public bool HasRead { get; set; }
-
-        [BsonElement("readAt")]
-        [BsonRepresentation(BsonType.DateTime)]
-        [BsonIgnoreIfNull]
-        public DateTime? ReadAt { get; set; }
+        /// <summary>Lowercase emails of members who have read this announcement.</summary>
+        [BsonElement("readBy")]
+        public List<string> ReadBy { get; set; } = new();
     }
 }

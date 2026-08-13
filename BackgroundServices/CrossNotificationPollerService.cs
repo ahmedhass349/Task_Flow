@@ -45,6 +45,9 @@ namespace taskflow.BackgroundServices
     {
         private static readonly TimeSpan _interval = TimeSpan.FromSeconds(15);
 
+        // P6-C1: prevents concurrent polls if a cycle takes longer than the interval.
+        private readonly SemaphoreSlim _pollLock = new(1, 1);
+
         private readonly IServiceProvider _serviceProvider;
         private readonly IConnectivityService _connectivityService;
         private readonly ILogger<CrossNotificationPollerService> _logger;
@@ -69,8 +72,12 @@ namespace taskflow.BackgroundServices
                 {
                     // P3-A: Skip poll entirely when MongoDB is offline — avoids 8-second timeout
                     // storms that would fire every 15 seconds during a connectivity outage.
-                    if (_connectivityService.IsEffectivelyOnline)
-                        await PollAsync(stoppingToken);
+                    // P6-C1: TryEnter (non-blocking) ensures only one cycle runs at a time.
+                    if (_connectivityService.IsEffectivelyOnline && await _pollLock.WaitAsync(0, stoppingToken))
+                    {
+                        try   { await PollAsync(stoppingToken); }
+                        finally { _pollLock.Release(); }
+                    }
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {

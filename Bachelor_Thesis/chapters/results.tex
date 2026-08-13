@@ -1,6 +1,6 @@
 ﻿\chapter{Results}\label{chap:results}
 
-This chapter presents the functional outcomes of the Task~Flow implementation.
+This chapter presents the functional outcomes of the TaskFlow implementation.
 Each section evaluates a major feature area against the requirements established in
 Chapter~\ref{chap:Methodology}, describes the implemented behaviour, and notes any
 deviations or limitations observed during development and testing.
@@ -20,11 +20,11 @@ Section~\ref{sec:meth_requirements} to its implementation status in the delivere
 \toprule
 \textbf{Req.} & \textbf{Status} & \textbf{Notes} \\
 \midrule
-FR-01 User Authentication  & Fully met    & Registration, login, JWT, password reset via email \\
+FR-01 User Authentication  & Fully met    & Registration, login, local-identity middleware, local file-based password reset \\
 FR-02 Task Management      & Fully met    & Full CRUD, all status/priority values, star flag \\
 FR-03 Multiple Task Views  & Fully met    & Default, Kanban, Table, Gantt, Calendar \\
 FR-04 Project \& Teams     & Fully met    & Projects, membership, MongoDB-relayed invitations \\
-FR-05 Messaging            & Fully met    & DMs, group chats, file attachments up to 50~MB \\
+FR-05 Messaging            & Fully met    & DMs, group chats, file attachments up to 20~MB \\
 FR-06 Notifications        & Fully met    & SignalR, email, 24~h and 1~h due-date warnings \\
 FR-07 Calendar Events      & Fully met    & Full CRUD, colour, meeting link, weekly time-grid \\
 FR-08 AI Chatbot           & Fully met    & Three modes, SSE streaming, persisted history \\
@@ -36,7 +36,15 @@ FR-11 Settings             & Fully met    & Profile, password change, notificati
 \end{table}
 
 All eleven functional requirements and all five non-functional requirements
-were met in the final build.
+were met in the final build; the populated dashboard (Figure~\ref{fig:res_dashboard}) illustrates this.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_dashboard_populated.jpg}
+    \caption{Dashboard after a task assignment, showing updated metric cards, activity feed, and Task Line widget.}
+    \label{fig:res_dashboard}
+\end{figure}
+
 The one outstanding item noted in the non-functional requirements is
 NFR-02 (Security): the Mistral API key is currently stored as a hard-coded constant
 inside \texttt{MistralChatService.cs} rather than being injected via an environment
@@ -55,23 +63,42 @@ FluentValidation rejects passwords shorter than eight characters, empty names, a
 malformed email addresses before the request reaches the service layer.
 Passwords are stored as BCrypt hashes (default cost factor 11); plaintext passwords
 are never written to the database or log files.
+New users fill out a registration form (Figure~\ref{fig:res_signup}) with validated identity fields and optional profile fields.
 
-Upon successful login the API returns a signed JWT containing ten claims.
-The React client stores this token in \texttt{localStorage} and attaches it to every
-subsequent API request via the \texttt{Authorization: Bearer} header.
-An \texttt{<AuthGuard>} component checks token presence on each route change and
-redirects unauthenticated users to the login page immediately, without a round-trip to
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_signup.jpg}
+    \caption{Registration form with FluentValidation-validated identity fields and optional profile fields persisted to \texttt{AppUser}.}
+    \label{fig:res_signup}
+\end{figure}
+
+Upon successful login the API returns the authenticated user profile.
+The React client stores this identity in memory and sends the current
+user's email as an \texttt{X-User-Email} header on every subsequent API
+request.
+An \texttt{<AuthGuard>} component checks user presence on each route change and
+redirects unauthenticated users to the login page (Figure~\ref{fig:res_login}) immediately, without a round-trip to
 the server.
 
-The password reset flow was verified end-to-end: the \texttt{/api/auth/forgot-password}
-endpoint generates a URL-safe random token, stores it with a 1-hour expiry in
-\texttt{AppUser.ResetToken}, and dispatches a reset-link email via MailKit.
-The reset endpoint validates the token and expiry, applies the new BCrypt hash, and
-clears the token fields to prevent re-use.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_login.jpg}
+    \caption{Login screen that posts credentials to the authentication endpoint and caches the user identity in React state.}
+    \label{fig:res_login}
+\end{figure}
 
-User profile data (avatar URL, company, country, phone, timezone) is embedded in the
-JWT at login, making it available to the React application without an extra API call.
-Profile updates are reflected in the next token refresh (next login).
+The password reset flow was verified end-to-end: the \texttt{/api/auth/forgot-password}
+endpoint generates an alphanumeric recovery code, stores it with a 15-minute expiry in
+\texttt{AppUser.ResetToken}, and writes the code to a temporary file at
+\texttt{\%TEMP\%/taskflow\_reset\_pending.tmp}.
+The Tauri main process reads the code via IPC (\texttt{invoke("read\_reset\_code")})
+and deletes the file, preventing the code from being exposed to the browser runtime.
+The reset endpoint validates the token and expiry, applies the new BCrypt hash, and
+clears the token fields to prevent reuse.
+
+User profile data (avatar URL, company, country, phone, timezone) is returned in
+the login response and cached in React state, making it available to the application
+without an extra API call on every request.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Task and Project Management}\label{sec:res_tasks}
@@ -82,13 +109,31 @@ The \texttt{TasksController} exposes nine endpoints covering create, read (list 
 single), update (full and partial status-only PATCH), delete, toggle-star, search, and
 bulk-action operations.
 All endpoints enforce ownership: a user can only read, edit, or delete tasks where
-\texttt{AssigneeId} matches their JWT identity.
+\texttt{AssigneeId} matches their \texttt{ClaimsPrincipal} identity (set by the
+local-identity middleware).
 Attempts to access another user's tasks return HTTP~403.
 
 Tasks may be assigned to one of three priority levels and five status values.
-The \texttt{DueDateWarningService} automatically transitions tasks whose due date has
+The \texttt{DueDate\-WarningService} automatically transitions tasks whose due date has
 passed into the \texttt{Overdue} status on its next 1-minute polling cycle, ensuring
 the status always reflects reality without requiring user action.
+The new-task editor (Figure~\ref{fig:res_task_editor}) exposes all required and optional fields with the Smart Auto Fill panel at the top.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_task_editor_empty.png.png}
+    \caption{New-task editor in its initial state showing all required and optional fields with the \emph{Smart Auto Fill} panel at the top.}
+    \label{fig:res_task_editor}
+\end{figure}
+
+The Smart Auto Fill feature (Figure~\ref{fig:res_ai_smart_autofill}) populates fields from a natural-language prompt via the Mistral OCR model.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_ai_smart_autofill.png.png}
+    \caption{Task editor after \emph{Smart Auto Fill} populated fields from a natural-language prompt via the Mistral OCR model.}
+    \label{fig:res_ai_smart_autofill}
+\end{figure}
 
 Projects are created with a name, optional description, and optional colour.
 The project owner can invite collaborators by email; the invitation is published to the
@@ -115,7 +160,14 @@ Tasks are partitioned client-side into five temporal groups: \emph{Overdue},
 Each group renders as a collapsible section with a count badge.
 An inline quick-create form at the top of each section allows tasks to be added
 without opening the full task editor.
-This view proved most useful for daily triage.
+This view is shown in Figure~\ref{fig:res_default_view} and proved most useful for daily triage.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_default_view.jpg}
+    \caption{Default view with tasks partitioned into temporal groups (\emph{Overdue}, \emph{Today}, \emph{This Week}, \emph{Later}, \emph{Completed}).}
+    \label{fig:res_default_view}
+\end{figure}
 
 \textbf{Kanban View.}
 Five columns represent the five task statuses.
@@ -125,16 +177,30 @@ offline.
 Column headers display per-column task counts and are colour-coded: red for
 \emph{Overdue}, amber for \emph{In Progress}, blue for \emph{Review}, green for
 \emph{Completed}, and grey for \emph{To Do}.
-The drag affordance was verified to work on Windows~11 (Chrome and Electron) and
-macOS~14 (Safari and Electron).
+The drag-and-drop feature was verified to work on Windows~11 (Chrome and Tauri) and
+macOS~14 (Safari and Tauri), as shown in Figure~\ref{fig:res_kanban_view}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_kanban_view.jpg}
+    \caption{Kanban view with a task in the \emph{To Do} column, colour-coded status headers, search and filter toolbar.}
+    \label{fig:res_kanban_view}
+\end{figure}
 
 \textbf{Table View.}
-Tasks are displayed in a data-grid layout with sortable columns for title, status,
+Tasks are displayed in a data-grid layout (Figure~\ref{fig:res_table_view}) with sortable columns for title, status,
 priority, due date, and project.
 Status and priority cells render as colour-coded pill badges.
 Each row includes an expand control that reveals a placeholder sub-task row;
 actual sub-task persistence has been deferred to a future release (see
 Chapter~\ref{chap:todo}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_table_view.jpg}
+    \caption{Table view presenting tasks as rows with sortable columns and colour-coded priority and status pill badges.}
+    \label{fig:res_table_view}
+\end{figure}
 
 \textbf{Gantt View.}
 A full-calendar-year timeline renders task bars positioned by due date.
@@ -142,8 +208,15 @@ Tasks without a due date are excluded from this view.
 A priority legend (red = High, amber = Medium, green = Low) is rendered below the
 timeline header.
 A vertical rule marks the current date.
-During testing the Gantt view was found useful for identifying workload clusters across
+During testing the Gantt view (Figure~\ref{fig:res_gantt_view}) was found useful for identifying workload clusters across
 months.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_gantt_view.jpg}
+    \caption{Gantt view showing task bars on a rolling 10-week forward timeline with a current-date marker.}
+    \label{fig:res_gantt_view}
+\end{figure}
 
 \textbf{Calendar View.}
 A weekly time-grid covering 7:00~AM to 8:00~PM displays both \texttt{TaskItem} records
@@ -152,7 +225,14 @@ A dark-themed mini-calendar in the left sidebar allows week navigation.
 Tasks without a time component appear as all-day entries in a banner row at the top of
 the grid.
 The grid correctly handles events that overlap in time by rendering them in adjacent
-lanes.
+lanes, as illustrated in Figure~\ref{fig:res_calendar_view}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_calendar_view.jpg}
+    \caption{Calendar view with a mini-calendar sidebar and a monthly grid of task and event blocks in adjacent lanes.}
+    \label{fig:res_calendar_view}
+\end{figure}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Team Collaboration and Messaging}\label{sec:res_teams}
@@ -244,9 +324,15 @@ Section~\ref{sec:bg_offline}.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{AI Chatbot}\label{sec:res_ai}
-% ─────────────────────────────────────────────────────────────────────────────
 
-The AI chatbot was tested in all three operational modes.
+The AI chatbot was tested in all three operational modes (Figure~\ref{fig:res_ai_chatbot}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_ai_chatbot_empty.jpg}
+    \caption{AI Assistant landing surface with three mode toggles (\emph{General}, \emph{Coder}, \emph{Scanner}) and a starter-prompt grid.}
+    \label{fig:res_ai_chatbot}
+\end{figure}
 
 \subsection*{General Mode}
 
@@ -266,7 +352,14 @@ TypeScript code samples when asked to generate a service class and a React hook.
 The system prompt's instruction to explain algorithmic choices was reflected in the
 model's responses, which included comments and rationale alongside the code.
 The \texttt{react-markdown} renderer with the \texttt{remark-gfm} plugin correctly
-formatted the code blocks with monospace styling and language labels.
+formatted the code blocks with monospace styling and language labels, as shown in Figure~\ref{fig:res_ai_coder}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_ai_coder.jpg}
+    \caption{AI Assistant in \emph{Coder} mode producing a syntax-highlighted code block via the Mistral API streamed response.}
+    \label{fig:res_ai_coder}
+\end{figure}
 
 \subsection*{Scanner Mode}
 
@@ -280,7 +373,7 @@ the text with minor errors on ambiguous glyphs.
 \subsection*{Conversation Management}
 
 AI-generated titles were verified: the first message of each new conversation triggered
-a \texttt{GenerateTitleAsync()} call and the resulting title (typically 4--8 words)
+a \texttt{Generate\-Title\-Async()} call and the resulting title (typically 4--8 words)
 appeared in the conversation list sidebar within one second.
 Titles were stable across subsequent messages in the same conversation.
 The conversation list correctly sorted entries by \texttt{UpdatedAt} descending.
@@ -313,7 +406,14 @@ Calendar events are distinct from tasks: they carry a \texttt{StartTime},
 Full CRUD operations were verified through the \texttt{CalendarController}.
 Events appear as coloured blocks in the weekly time-grid view alongside task items.
 A conflict check (two events occupying overlapping time slots) was handled at the UI
-level by rendering events in adjacent lanes.
+level by rendering events in adjacent lanes, as shown in Figure~\ref{fig:res_calendar_events}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_calendar_events.jpg}
+    \caption{Dedicated \emph{Calendar} page with a full-month time-grid view and the \emph{New Event} creation form.}
+    \label{fig:res_calendar_events}
+\end{figure}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Notifications and Settings}\label{sec:res_settings}
@@ -321,18 +421,25 @@ level by rendering events in adjacent lanes.
 
 \subsection*{Notifications}
 
-The notification panel was tested for all fifteen defined notification types.
+The notification panel was tested for all seventeen defined notification types.
 Notifications arrive via SignalR in real time; the unread badge on the bell icon
-increments without a page reload.
-Clicking \emph{Mark all as read} sends a \texttt{PUT /api/notifications/mark-all-read}
-request, clears the badge, and marks every row in the \texttt{Notification} table as
-\texttt{IsRead = true}.
-The \texttt{ActionUrl} field was verified: clicking a \emph{TaskAssigned}
+increments without a page reload (Figure~\ref{fig:res_notifications}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_notifications.jpg}
+    \caption{Notifications page with unread items delivered via SignalR, \emph{Mark all as Read} and \emph{Delete All} actions.}
+    \label{fig:res_notifications}
+\end{figure}
+Clicking \emph{Mark all as read} invokes the SignalR hub method
+\texttt{MarkAllRead}, which clears the badge and marks every row in the
+\texttt{Notification} table as \texttt{IsRead = true}.
+The \texttt{ActionUrl} field was verified: clicking a \emph{TaskCreated}
 notification navigated the user to the correct task detail view.
 
 \texttt{DueDateWarningService} was tested by setting a task's due date to one hour in
 the future.
-After the next polling cycle (within 1 minute), a \emph{DueDateApproaching}
+After the next polling cycle (within 1 minute), a \emph{TaskDueSoon}
 notification appeared in the notification panel and a duplicate-suppression check
 confirmed that the notification was not re-generated on subsequent polling cycles within
 the same session.
@@ -350,7 +457,14 @@ re-firing.
 The settings page was divided into four sections: \emph{Profile},
 \emph{Security}, \emph{Notifications}, and \emph{Appearance}.
 Profile updates (name, avatar URL, company, country, phone, timezone) were persisted
-to \texttt{AppUser} immediately and reflected on the settings page after save.
+to \texttt{AppUser} immediately and reflected on the settings page (Figure~\ref{fig:res_settings}) after save.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_settings.jpg}
+    \caption{Settings page (Profile tab) with navigation rail, avatar upload, and editable personal-information fields.}
+    \label{fig:res_settings}
+\end{figure}
 The password change flow correctly required the current password before accepting a new
 one, and rejected mismatched confirmation values with a client-side validation error.
 Notification preference toggles (email notifications on/off per event type) were stored
@@ -359,40 +473,30 @@ in \texttt{AppUser} and respected by the \texttt{DueDateWarningService} and
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Cross-Platform Distribution}\label{sec:res_distribution}
-% ─────────────────────────────────────────────────────────────────────────────
 
-The packaged desktop application was tested on three operating systems.
+The desktop application was packaged using the Tauri v2 build system
+(\texttt{tauri build}), which produces NSIS and MSI installers for Windows.
 
 \textbf{Windows (NSIS installer).}
-The installer was built and executed on Windows~11 (x64).
-The \texttt{oneClick: false} NSIS configuration presented the user with an installation
-directory picker and optional shortcuts for the Desktop and Start Menu.
-After installation, launching the application from the Start Menu shortcut spawned the
-Electron process, which in turn started the embedded .NET backend.
-The \texttt{TASKFLOW\_BACKEND\_READY} signal was received within approximately 3
-seconds on the test machine (Intel Core i7, 16~GB RAM, NVMe SSD), after which the
-React UI loaded in the Electron window.
-The same installer was tested on Windows~10 (version~22H2) with identical results.
+The Tauri NSIS installer was built targeting \texttt{x86\_64-}\cbrk\texttt{pc-windows-msvc}.
+The installer configuration uses \texttt{installMode: currentUser}, which
+installs the application in the user's \texttt{\%LOCALAPPDATA\%} directory
+without requiring administrator privileges.
+The production build process, orchestrated by \texttt{BUILD\_WINDOWS.bat},
+compiles the Rust shell, bundles the Webpack output from
+\texttt{wwwroot/dist/}, and embeds the self-contained .NET backend as a sidecar
+binary.
+WebView2 is provided as part of Windows~10 (version~1803 and later) and all
+versions of Windows~11~\cite{webview2}, and the Tauri installer's
+\texttt{downloadBootstrapper} mode handles the case where it is absent.
 
-\textbf{macOS (DMG).}
-The DMG was mounted on macOS~14 Sonoma (Apple Silicon, M2 chip).
-Because the binary was not notarised, macOS Gatekeeper required the user to right-click
-and select \emph{Open} on the first launch.
-After this one-time override, subsequent launches proceeded without warnings.
-The application operated correctly; the Rosetta~2 translation layer was not invoked as
-the build targeted \texttt{osx-arm64} directly.
+Cold-start timing was measured on the test machine (Intel Core i7, 16~GB RAM,
+NVMe SSD): the application launched and showed the main window within
+approximately 1.5~seconds.
 
-\textbf{Linux (AppImage).}
-The AppImage was executed on Ubuntu~22.04 (x64) after marking it executable with
-\texttt{chmod +x}.
-No system-level dependencies needed to be installed.
-The application launched, authenticated successfully against the embedded backend, and
-performed offline task creation and synchronisation without errors.
-The DEB package was also installed via \texttt{dpkg -i} on the same machine and
-launched from the application menu.
-
-In all three environments the application started without requiring the user to install
-Node.js, .NET, or any other runtime, satisfying NFR-03 (Cross-Platform Distribution).
+The build currently targets only Windows (NSIS and MSI).
+Cross-platform builds for macOS and Linux are identified as future work
+(see Chapter~\ref{chap:todo}).
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Performance Observations}\label{sec:res_performance}
@@ -407,10 +511,11 @@ All measurements were made on the Windows~11 test machine described above.
 \label{tab:perf_timings}
 \begin{tabular}{lc}
 \toprule
-\textbf{Operation} & \textbf{Observed latency} \\
+\textbf{Operation} &
+\textbf{Tauri} \\
 \midrule
-Application cold start (Electron to UI ready)    & $\approx$3~s \\
-Login (JWT issue + MongoDB pull)                  & $<$500~ms \\
+Application cold start (to UI ready)             & $\approx$1.5~s \\
+Login (local identity + MongoDB pull)            & $<$500~ms \\
 Task list load (100 tasks, SQLite)               & $<$100~ms \\
 Task create (SQLite write + SignalR event)        & $<$80~ms \\
 First AI token rendered (General mode)           & $\approx$400~ms \\
@@ -420,7 +525,7 @@ Direct message delivery (sender to recipient)    & $<$150~ms \\
 \end{tabular}
 \end{table}
 
-All interactive operations satisfied the 200~ms threshold defined in NFR-04, with the
-exception of application cold start and AI first-token latency, which are dominated by
-process initialisation and network round-trip time respectively and are not considered
-interactive UI responses.
+All interactive operations satisfied the 200~ms threshold defined in NFR-04,
+with the exception of application cold start and AI first-token
+latency, which are dominated by process initialisation and network round-trip
+time respectively and are not considered interactive UI responses.

@@ -23,6 +23,7 @@ namespace taskflow
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                .UseContentRoot(AppContext.BaseDirectory)
                 .UseStartup<Startup>()
                 .Build();
     }

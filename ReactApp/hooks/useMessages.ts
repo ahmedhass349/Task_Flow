@@ -5,11 +5,13 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { api, ApiRequestError } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
 export interface Contact {
   id: number;
+  email: string;
   name: string;
   initials: string;
   avatarUrl?: string;
@@ -17,6 +19,8 @@ export interface Contact {
   lastMessageTime?: string;
   unreadCount: number;
   isStarred: boolean;
+  // A-02: ISO string from MongoDB user_presence.LastSeen; undefined when user has no presence record
+  lastSeen?: string;
 }
 
 export interface Message {
@@ -68,6 +72,7 @@ interface UseMessagesReturn {
   markConversationAsRead: (contactId: number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteConversation: (contactId: number) => Promise<void>;
+  deleteMessage: (messageId: number) => Promise<void>;
 }
 
 // ── Helper ────────────────────────────────────────────────────────────────
@@ -80,6 +85,7 @@ function toContact(raw: any): Contact {
   }
   return {
     id: raw.id,
+    email: raw.email ?? "",
     name: raw.name,
     initials: raw.initials ?? "",
     avatarUrl: raw.avatarUrl,
@@ -87,6 +93,8 @@ function toContact(raw: any): Contact {
     lastMessageTime,
     unreadCount: raw.unreadCount ?? 0,
     isStarred: raw.isStarred ?? false,
+    // A-02: pass through lastSeen from ContactDto; undefined/null when no presence record
+    lastSeen: raw.lastSeen ?? undefined,
   };
 }
 
@@ -252,8 +260,27 @@ export const useMessages = (): UseMessagesReturn => {
     }
   }, []);
 
+  const deleteMessage = useCallback(async (messageId: number) => {
+    // Optimistically remove from UI immediately
+    setMessages(prev => prev.filter(m => m.id !== messageId));
+    try {
+      await api.delete(`/api/messages/${messageId}`);
+    } catch (err) {
+      // Re-fetch on failure to restore the message
+      if (activeContactId !== null) fetchMessages(activeContactId);
+    }
+  }, [activeContactId, fetchMessages]);
+
   // ── Initial load ─────────────────────────────────────────────────────────
+  const { isInitialized, isAuthenticated } = useAuth();
+
   useEffect(() => {
+    if (!isInitialized) return;
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setIsLoading(true);
     api.get<any[]>("/api/messages/contacts")
@@ -267,7 +294,7 @@ export const useMessages = (): UseMessagesReturn => {
       })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [isInitialized, isAuthenticated]);
 
   // ── Load messages when active contact changes ────────────────────────────
   useEffect(() => {
@@ -332,5 +359,6 @@ export const useMessages = (): UseMessagesReturn => {
     markConversationAsRead,
     markAllAsRead,
     deleteConversation,
+    deleteMessage,
   };
 };

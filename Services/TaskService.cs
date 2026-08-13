@@ -1,9 +1,15 @@
-// FILE: Services/TaskService.cs
-// STATUS: UPDATED
-// CHANGES: Added userId ownership checks to Update/Delete/ToggleStar/UpdateStatus (#2),
-//          Fixed in-memory search to DB query (#8),
-//          Fixed double-fetch pattern (#13)
-
+/*
+  FILE: Services/TaskService.cs
+  PHASE: 2
+  DEFECT: 3-Persistence
+  CHANGES:
+    - CreateTaskAsync: resolve creator's email (userId -> email) and populate CreatedByEmail on
+      the new TaskItem so MirrorService writes it to MongoDB. Reuses the already-fetched assignee
+      record when the creator is also the assignee (self-assignment) to avoid an extra query.
+    - AssignTaskAsync: resolve assigner's email (assignerUserId -> email) and populate
+      CreatedByEmail so the task creator can be identified cross-device in UserDataSyncService's
+      OR filter (AssigneeEmail OR CreatedByEmail).
+*/
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,8 +35,9 @@ namespace taskflow.Services
         private readonly IReminderService _reminderService;
         private readonly IMirrorService _mirror;
         private readonly IUserRepository _userRepository;
+        private readonly IMongoService _mongoService;
 
-        public TaskService(ITaskRepository taskRepository, IMapper mapper, ILogger<TaskService> logger, INotificationService notificationService, IReminderService reminderService, IMirrorService mirror, IUserRepository userRepository)
+        public TaskService(ITaskRepository taskRepository, IMapper mapper, ILogger<TaskService> logger, INotificationService notificationService, IReminderService reminderService, IMirrorService mirror, IUserRepository userRepository, IMongoService mongoService)
         {
             _taskRepository = taskRepository;
             _mapper = mapper;
@@ -39,6 +46,7 @@ namespace taskflow.Services
             _reminderService = reminderService;
             _mirror = mirror;
             _userRepository = userRepository;
+            _mongoService = mongoService;
         }
 
         public async Task<IEnumerable<TaskDto>> GetTasksAsync(int userId, TaskFilterRequest filter)
@@ -172,13 +180,24 @@ namespace taskflow.Services
             if (request.DueDate.HasValue && request.DueDate.Value.Date < DateTime.UtcNow.Date)
                 throw new ArgumentException("Due date cannot be before today.");
 
+            // Phase 2: look up assignee email for cross-device MongoDB queries
+            int effectiveAssigneeId = request.AssigneeId ?? userId;
+            var assignee = await _userRepository.GetByIdAsync(effectiveAssigneeId);
+            // Avoid a second query when creator == assignee (self-assignment)
+            var creatorEmail = (effectiveAssigneeId == userId)
+                ? assignee?.Email
+                : (await _userRepository.GetByIdAsync(userId))?.Email;
+
             var task = new TaskItem
             {
                 Title = request.Title,
                 Description = request.Description,
                 ProjectId = request.ProjectId,
-                AssigneeId = request.AssigneeId ?? userId,
+                AssigneeId = effectiveAssigneeId,
                 AssignedById = userId,
+                AssigneeEmail = assignee?.Email,  // Phase 2
+                CreatedById = userId,  // Phase 4: track creator
+                CreatedByEmail = creatorEmail,    // Phase 2: stable cross-device creator key
                 Priority = request.Priority,
                 Status = request.Status,
                 DueDate = request.DueDate,
@@ -225,6 +244,94 @@ namespace taskflow.Services
             return await GetTaskByIdAsync(userId, task.Id);
         }
 
+        // PHASE 3: Assign a task to a team member by their email on behalf of a leader.
+        public async Task<TaskDto> AssignTaskAsync(int assignerUserId, AssignTaskRequest request)
+        {
+            var assignee = await _userRepository.GetByEmailAsync(request.AssigneeEmail)
+                ?? throw new KeyNotFoundException($"User with email '{request.AssigneeEmail}' not found.");
+
+            if (request.DueDate.HasValue && request.DueDate.Value.Date < DateTime.UtcNow.Date)
+                throw new ArgumentException("Due date cannot be before today.");
+
+            // Resolve assigner email so the task records its creator cross-device
+            var assigner = await _userRepository.GetByIdAsync(assignerUserId);
+            if (assigner == null)
+                throw new UnauthorizedAccessException("Assigner account not found.");
+
+            var assignerEmail = assigner.Email ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(assignerEmail))
+            {
+                var assignerMembers = await _mongoService.GetAllTeamMembersAsync(assignerEmail);
+                var assigneeRecord = assignerMembers.FirstOrDefault(m =>
+                    string.Equals(m.UserEmail, assignee.Email, StringComparison.OrdinalIgnoreCase));
+
+                if (assigneeRecord != null)
+                {
+                    var role = assigneeRecord.Role?.Trim().ToLowerInvariant() ?? string.Empty;
+                    if (role is "leader" or "owner" or "admin")
+                        throw new InvalidOperationException("Team leaders cannot be assigned tasks.");
+                }
+            }
+
+            var task = new TaskItem
+            {
+                Title = request.Title,
+                Description = request.Description,
+                ProjectId = request.ProjectId,
+                AssigneeId = assignee.Id,
+                AssigneeEmail = assignee.Email,  // Phase 2
+                CreatedById = assignerUserId,  // Phase 4: track who assigned
+                CreatedByEmail = assigner.Email, // Phase 2: stable cross-device creator key
+                Priority = request.Priority,
+                Status = request.Status,
+                DueDate = request.DueDate,
+                CreatedAt = DateTime.UtcNow,
+                LastModifiedBy = assignee.Email
+            };
+
+            await _taskRepository.AddAsync(task);
+            await _taskRepository.SaveChangesAsync();
+            _mirror.Mirror("tasks", task.Id, task);
+
+            // Schedule reminders under the assignee's account
+            if (request.ReminderMap != null && (request.NotifyEmail || request.NotifyInApp))
+            {
+                try
+                {
+                    var reminderDto = new CreateReminderDto
+                    {
+                        TaskId = task.Id,
+                        ReminderMap = request.ReminderMap,
+                        DueDate = request.DueDate,
+                        NotifyEmail = request.NotifyEmail,
+                        NotifyInApp = request.NotifyInApp
+                    };
+                    await _reminderService.SaveRemindersAsync(reminderDto, assignee.Id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to schedule reminders for assigned task {Id}", task.Id);
+                }
+            }
+
+            // Notify the assignee
+            try
+            {
+                await _notificationService.NotifyTaskCreatedAsync(assignee.Id, task);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send notification for assigned task {Id}", task.Id);
+            }
+
+            // Return DTO visible to the assigner (bypass ownership check)
+            var created = await _taskRepository.Query()
+                .Include(t => t.Project)
+                .Include(t => t.Assignee)
+                .FirstOrDefaultAsync(t => t.Id == task.Id);
+            return _mapper.Map<TaskDto>(created!);
+        }
+
         public async Task<TaskDto> UpdateTaskAsync(int userId, int taskId, UpdateTaskRequest request)
         {
             var task = await _taskRepository.GetByIdAsync(taskId);
@@ -261,6 +368,12 @@ namespace taskflow.Services
 
             task.Title = request.Title;
             task.Description = request.Description;
+            // Phase 2: update AssigneeEmail when AssigneeId changes for cross-device sync
+            if (request.AssigneeId.HasValue && request.AssigneeId.Value != task.AssigneeId)
+            {
+                var newAssignee = await _userRepository.GetByIdAsync(request.AssigneeId.Value);
+                task.AssigneeEmail = newAssignee?.Email;
+            }
             task.AssigneeId = request.AssigneeId ?? task.AssigneeId;
             task.Priority = request.Priority;
             task.Status = request.Status;

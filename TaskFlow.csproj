@@ -6,6 +6,7 @@
     <AssemblyName>taskflow</AssemblyName>
 
     <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
+    <StaticWebAssetOutputIntegrationEnabled>false</StaticWebAssetOutputIntegrationEnabled>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,8 +18,22 @@
 
   <ItemGroup>
     <None Update="wwwroot\**\*">
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <CopyToPublishDirectory Condition="'$(PublishSingleFile)'=='true'">Never</CopyToPublishDirectory>
+      <CopyToPublishDirectory Condition="'$(PublishSingleFile)'!='true'">PreserveNewest</CopyToPublishDirectory>
+      <IncludeInSingleFile Condition="'$(PublishSingleFile)'=='true'">true</IncludeInSingleFile>
     </None>
+
+    <Content Remove="package.json" />
+    <Content Remove="package-lock.json" />
+    <Content Remove="tsconfig.json" />
+    <Content Remove="web.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings*.json">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+
   </ItemGroup>
 
   <ItemGroup>
@@ -28,7 +43,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="10.0.5" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -43,8 +57,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.5" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-    <PackageReference Include="MailKit" Version="4.3.0" />
     <PackageReference Include="MongoDB.Driver" Version="2.24.0" />
+    <PackageReference Include="MailKit" Version="4.3.0" />
   </ItemGroup>
 
 </Project>

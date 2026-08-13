@@ -1,7 +1,3 @@
-// FILE: Controllers/Api/CalendarEventsController.cs
-// STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() (#3), removed try-catch (#15), pass userId to Update/Delete (#2), cleaned usings (#17)
-
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
@@ -19,7 +15,6 @@ namespace taskflow.Controllers.Api
     /// </summary>
     [ApiController]
     [Route("api/calendar-events")]
-    [Authorize]
     public class CalendarEventsController : ControllerBase
     {
         private readonly ICalendarService _calendarService;

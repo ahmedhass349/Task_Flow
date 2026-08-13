@@ -1,0 +1,1522 @@
+2026-06-02 18:20:05.571 +03:00 [INF] Running 14 pending migration(s): 20260406120911_InitialCreate, 20260411231949_AddOfflineSync, 20260414000000_AddMessageSoftDelete, 20260414123705_AddMessageAttachments, 20260414210710_AddGroupChats, 20260415203433_AddSyncFields, 20260415213408_FixUpdatedAtDefaults, 20260421000000_DropDocumentJobsTable, 20260422134647_AddMessageIsEdited, 20260513185738_AddIsBackedUpToMongo, 20260522145109_Phase1_RenameAdminToLeader, 20260522152153_Phase4_AddCreatedById, 20260526120000_Phase2_CrossMachineConsistency, 20260528000000_AddCreatedByEmailToTaskItems
+2026-06-02 18:20:05.834 +03:00 [INF] Executed DbCommand (27ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+PRAGMA journal_mode = 'wal';
+2026-06-02 18:20:05.848 +03:00 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-06-02 18:20:05.860 +03:00 [INF] Executed DbCommand (7ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsLock' AND "type" = 'table';
+2026-06-02 18:20:05.871 +03:00 [INF] Executed DbCommand (8ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE IF NOT EXISTS "__EFMigrationsLock" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK___EFMigrationsLock" PRIMARY KEY,
+    "Timestamp" TEXT NOT NULL
+);
+2026-06-02 18:20:05.877 +03:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-02 15:20:05.8741381+00:00');
+SELECT changes();
+2026-06-02 18:20:05.938 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+    "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+    "ProductVersion" TEXT NOT NULL
+);
+2026-06-02 18:20:05.954 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+2026-06-02 18:20:05.960 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM "__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2026-06-02 18:20:05.974 +03:00 [INF] Applying migration '20260406120911_InitialCreate'.
+2026-06-02 18:20:06.020 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "AppUsers" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_AppUsers" PRIMARY KEY AUTOINCREMENT,
+    "FullName" TEXT NOT NULL,
+    "FirstName" TEXT NOT NULL,
+    "LastName" TEXT NOT NULL,
+    "Email" TEXT NOT NULL,
+    "PasswordHash" TEXT NOT NULL,
+    "AvatarUrl" TEXT NULL,
+    "Company" TEXT NULL,
+    "Country" TEXT NULL,
+    "Phone" TEXT NULL,
+    "Timezone" TEXT NULL,
+    "ResetToken" TEXT NULL,
+    "ResetTokenExpiry" TEXT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "LastLoginAt" TEXT NULL
+);
+2026-06-02 18:20:06.022 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "CalendarEvents" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_CalendarEvents" PRIMARY KEY AUTOINCREMENT,
+    "OwnerId" INTEGER NOT NULL,
+    "Title" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "StartAt" TEXT NOT NULL,
+    "EndAt" TEXT NOT NULL,
+    "Color" TEXT NULL,
+    "MeetingLink" TEXT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_CalendarEvents_AppUsers_OwnerId" FOREIGN KEY ("OwnerId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:20:06.025 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "ChatbotConversations" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_ChatbotConversations" PRIMARY KEY AUTOINCREMENT,
+    "Title" TEXT NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "UpdatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_ChatbotConversations_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:20:06.027 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Messages" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Messages" PRIMARY KEY AUTOINCREMENT,
+    "SenderId" INTEGER NOT NULL,
+    "ReceiverId" INTEGER NOT NULL,
+    "Body" TEXT NOT NULL,
+    "IsRead" INTEGER NOT NULL,
+    "SentAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Messages_AppUsers_ReceiverId" FOREIGN KEY ("ReceiverId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_Messages_AppUsers_SenderId" FOREIGN KEY ("SenderId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT
+);
+2026-06-02 18:20:06.030 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Projects" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Projects" PRIMARY KEY AUTOINCREMENT,
+    "Name" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "Color" TEXT NULL,
+    "OwnerId" INTEGER NOT NULL,
+    "IsStarred" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Projects_AppUsers_OwnerId" FOREIGN KEY ("OwnerId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT
+);
+2026-06-02 18:20:06.033 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Teams" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Teams" PRIMARY KEY AUTOINCREMENT,
+    "Name" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "OwnerId" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Teams_AppUsers_OwnerId" FOREIGN KEY ("OwnerId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT
+);
+2026-06-02 18:20:06.035 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "ChatbotMessages" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_ChatbotMessages" PRIMARY KEY AUTOINCREMENT,
+    "ConversationId" INTEGER NOT NULL,
+    "Role" TEXT NOT NULL,
+    "Text" TEXT NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_ChatbotMessages_ChatbotConversations_ConversationId" FOREIGN KEY ("ConversationId") REFERENCES "ChatbotConversations" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:20:06.038 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "ProjectMembers" (
+    "ProjectId" INTEGER NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "Role" TEXT NOT NULL,
+    CONSTRAINT "PK_ProjectMembers" PRIMARY KEY ("ProjectId", "UserId"),
+    CONSTRAINT "FK_ProjectMembers_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_ProjectMembers_Projects_ProjectId" FOREIGN KEY ("ProjectId") REFERENCES "Projects" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:20:06.043 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "TaskItems" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_TaskItems" PRIMARY KEY AUTOINCREMENT,
+    "Title" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "ProjectId" INTEGER NULL,
+    "AssigneeId" INTEGER NULL,
+    "Priority" TEXT NOT NULL,
+    "Status" TEXT NOT NULL,
+    "DueDate" TEXT NULL,
+    "IsStarred" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_TaskItems_AppUsers_AssigneeId" FOREIGN KEY ("AssigneeId") REFERENCES "AppUsers" ("Id") ON DELETE SET NULL,
+    CONSTRAINT "FK_TaskItems_Projects_ProjectId" FOREIGN KEY ("ProjectId") REFERENCES "Projects" ("Id") ON DELETE SET NULL
+);
+2026-06-02 18:20:06.046 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "TeamMembers" (
+    "TeamId" INTEGER NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "Role" TEXT NOT NULL,
+    CONSTRAINT "PK_TeamMembers" PRIMARY KEY ("TeamId", "UserId"),
+    CONSTRAINT "FK_TeamMembers_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_TeamMembers_Teams_TeamId" FOREIGN KEY ("TeamId") REFERENCES "Teams" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:20:06.049 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Notifications" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Notifications" PRIMARY KEY AUTOINCREMENT,
+    "UserId" INTEGER NOT NULL,
+    "Title" TEXT NOT NULL,
+    "Message" TEXT NOT NULL,
+    "Type" TEXT NOT NULL,
+    "Priority" TEXT NOT NULL,
+    "IsRead" INTEGER NOT NULL,
+    "ActionUrl" TEXT NULL,
+    "RelatedTaskId" INTEGER NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "ReadAt" TEXT NULL,
+    CONSTRAINT "FK_Notifications_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_Notifications_TaskItems_RelatedTaskId" FOREIGN KEY ("RelatedTaskId") REFERENCES "TaskItems" ("Id") ON DELETE SET NULL
+);
+2026-06-02 18:20:06.053 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Reminders" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Reminders" PRIMARY KEY AUTOINCREMENT,
+    "TaskId" INTEGER NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "FireAt" TEXT NOT NULL,
+    "NotifyEmail" INTEGER NOT NULL,
+    "NotifyInApp" INTEGER NOT NULL,
+    "HasFired" INTEGER NOT NULL,
+    "FiredAt" TEXT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Reminders_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_Reminders_TaskItems_TaskId" FOREIGN KEY ("TaskId") REFERENCES "TaskItems" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:20:06.056 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "TaskComments" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_TaskComments" PRIMARY KEY AUTOINCREMENT,
+    "TaskId" INTEGER NOT NULL,
+    "AuthorId" INTEGER NOT NULL,
+    "Body" TEXT NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_TaskComments_AppUsers_AuthorId" FOREIGN KEY ("AuthorId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_TaskComments_TaskItems_TaskId" FOREIGN KEY ("TaskId") REFERENCES "TaskItems" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:20:06.060 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_AppUsers_Email" ON "AppUsers" ("Email");
+2026-06-02 18:20:06.064 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_CalendarEvents_OwnerId" ON "CalendarEvents" ("OwnerId");
+2026-06-02 18:20:06.067 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_ChatbotConversations_UserId" ON "ChatbotConversations" ("UserId");
+2026-06-02 18:20:06.069 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_ChatbotMessages_ConversationId" ON "ChatbotMessages" ("ConversationId");
+2026-06-02 18:20:06.073 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Messages_ReceiverId" ON "Messages" ("ReceiverId");
+2026-06-02 18:20:06.075 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Messages_SenderId" ON "Messages" ("SenderId");
+2026-06-02 18:20:06.080 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Notifications_RelatedTaskId" ON "Notifications" ("RelatedTaskId");
+2026-06-02 18:20:06.083 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Notifications_UserId_CreatedAt" ON "Notifications" ("UserId", "CreatedAt");
+2026-06-02 18:20:06.086 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Notifications_UserId_IsRead" ON "Notifications" ("UserId", "IsRead");
+2026-06-02 18:20:06.089 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_ProjectMembers_UserId" ON "ProjectMembers" ("UserId");
+2026-06-02 18:20:06.094 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Projects_OwnerId" ON "Projects" ("OwnerId");
+2026-06-02 18:20:06.097 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Reminders_FireAt_HasFired" ON "Reminders" ("FireAt", "HasFired");
+2026-06-02 18:20:06.177 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Reminders_TaskId" ON "Reminders" ("TaskId");
+2026-06-02 18:20:06.180 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Reminders_UserId" ON "Reminders" ("UserId");
+2026-06-02 18:20:06.183 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskComments_AuthorId" ON "TaskComments" ("AuthorId");
+2026-06-02 18:20:06.186 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskComments_TaskId" ON "TaskComments" ("TaskId");
+2026-06-02 18:20:06.204 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskItems_AssigneeId" ON "TaskItems" ("AssigneeId");
+2026-06-02 18:20:06.208 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskItems_ProjectId" ON "TaskItems" ("ProjectId");
+2026-06-02 18:20:06.212 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TeamMembers_UserId" ON "TeamMembers" ("UserId");
+2026-06-02 18:20:06.216 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Teams_OwnerId" ON "Teams" ("OwnerId");
+2026-06-02 18:20:06.219 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260406120911_InitialCreate', '10.0.5');
+2026-06-02 18:20:06.231 +03:00 [INF] Applying migration '20260411231949_AddOfflineSync'.
+2026-06-02 18:20:06.279 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "LocalInvitations" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_LocalInvitations" PRIMARY KEY AUTOINCREMENT,
+    "MongoId" TEXT NOT NULL,
+    "SenderEmail" TEXT NOT NULL,
+    "SenderFullName" TEXT NOT NULL,
+    "SenderAvatarUrl" TEXT NOT NULL,
+    "RecipientEmail" TEXT NOT NULL,
+    "RecipientFullName" TEXT NOT NULL,
+    "TeamId" TEXT NULL,
+    "TeamName" TEXT NULL,
+    "Role" TEXT NOT NULL,
+    "Message" TEXT NULL,
+    "Status" TEXT NOT NULL,
+    "SentAt" TEXT NOT NULL,
+    "RespondedAt" TEXT NULL,
+    "ExpiresAt" TEXT NULL,
+    "DeclineReason" TEXT NULL,
+    "CachedAt" TEXT NOT NULL
+);
+2026-06-02 18:20:06.284 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "LocalTeamMembers" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_LocalTeamMembers" PRIMARY KEY AUTOINCREMENT,
+    "MongoId" TEXT NOT NULL,
+    "TeamId" TEXT NOT NULL,
+    "TeamName" TEXT NOT NULL,
+    "OwnerEmail" TEXT NOT NULL,
+    "UserEmail" TEXT NOT NULL,
+    "UserFullName" TEXT NOT NULL,
+    "AvatarUrl" TEXT NULL,
+    "Role" TEXT NOT NULL,
+    "IsActive" INTEGER NOT NULL,
+    "JoinedAt" TEXT NOT NULL,
+    "CachedAt" TEXT NOT NULL
+);
+2026-06-02 18:20:06.289 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "SyncOutboxEntries" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_SyncOutboxEntries" PRIMARY KEY AUTOINCREMENT,
+    "OperationId" TEXT NOT NULL,
+    "OperationName" TEXT NOT NULL,
+    "PayloadJson" TEXT NOT NULL,
+    "Status" TEXT NOT NULL,
+    "Attempts" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "LastAttemptAt" TEXT NULL,
+    "ErrorMessage" TEXT NULL
+);
+2026-06-02 18:20:06.293 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_LocalInvitations_MongoId" ON "LocalInvitations" ("MongoId");
+2026-06-02 18:20:06.297 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_LocalInvitations_RecipientEmail" ON "LocalInvitations" ("RecipientEmail");
+2026-06-02 18:20:06.302 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_LocalInvitations_SenderEmail" ON "LocalInvitations" ("SenderEmail");
+2026-06-02 18:20:06.306 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_LocalTeamMembers_OwnerEmail" ON "LocalTeamMembers" ("OwnerEmail");
+2026-06-02 18:20:06.313 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_LocalTeamMembers_TeamId_OwnerEmail_UserEmail" ON "LocalTeamMembers" ("TeamId", "OwnerEmail", "UserEmail");
+2026-06-02 18:20:06.318 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_SyncOutboxEntries_CreatedAt" ON "SyncOutboxEntries" ("CreatedAt");
+2026-06-02 18:20:06.323 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_SyncOutboxEntries_OperationId" ON "SyncOutboxEntries" ("OperationId");
+2026-06-02 18:20:06.330 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_SyncOutboxEntries_Status" ON "SyncOutboxEntries" ("Status");
+2026-06-02 18:20:06.334 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260411231949_AddOfflineSync', '10.0.5');
+2026-06-02 18:20:06.343 +03:00 [INF] Applying migration '20260414000000_AddMessageSoftDelete'.
+2026-06-02 18:20:06.378 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "IsSystemMessage" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:20:06.383 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "IsDeletedBySender" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:20:06.388 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "IsDeletedByReceiver" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:20:06.391 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260414000000_AddMessageSoftDelete', '10.0.5');
+2026-06-02 18:20:06.397 +03:00 [INF] Applying migration '20260414123705_AddMessageAttachments'.
+2026-06-02 18:20:06.432 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "AttachmentName" TEXT NULL;
+2026-06-02 18:20:06.437 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "AttachmentSize" INTEGER NULL;
+2026-06-02 18:20:06.443 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "AttachmentType" TEXT NULL;
+2026-06-02 18:20:06.448 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "AttachmentUrl" TEXT NULL;
+2026-06-02 18:20:06.453 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260414123705_AddMessageAttachments', '10.0.5');
+2026-06-02 18:20:06.464 +03:00 [INF] Applying migration '20260414210710_AddGroupChats'.
+2026-06-02 18:20:06.528 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "GroupChats" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_GroupChats" PRIMARY KEY AUTOINCREMENT,
+    "Name" TEXT NOT NULL,
+    "CreatedByUserId" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_GroupChats_AppUsers_CreatedByUserId" FOREIGN KEY ("CreatedByUserId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT
+);
+2026-06-02 18:20:06.531 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "GroupChatMembers" (
+    "GroupChatId" INTEGER NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "JoinedAt" TEXT NOT NULL,
+    "LastReadAt" TEXT NULL,
+    CONSTRAINT "PK_GroupChatMembers" PRIMARY KEY ("GroupChatId", "UserId"),
+    CONSTRAINT "FK_GroupChatMembers_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_GroupChatMembers_GroupChats_GroupChatId" FOREIGN KEY ("GroupChatId") REFERENCES "GroupChats" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:20:06.535 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "GroupMessages" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_GroupMessages" PRIMARY KEY AUTOINCREMENT,
+    "GroupChatId" INTEGER NOT NULL,
+    "SenderId" INTEGER NOT NULL,
+    "Body" TEXT NOT NULL,
+    "SentAt" TEXT NOT NULL,
+    "AttachmentUrl" TEXT NULL,
+    "AttachmentName" TEXT NULL,
+    "AttachmentType" TEXT NULL,
+    "AttachmentSize" INTEGER NULL,
+    CONSTRAINT "FK_GroupMessages_AppUsers_SenderId" FOREIGN KEY ("SenderId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_GroupMessages_GroupChats_GroupChatId" FOREIGN KEY ("GroupChatId") REFERENCES "GroupChats" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:20:06.539 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_GroupChatMembers_UserId" ON "GroupChatMembers" ("UserId");
+2026-06-02 18:20:06.542 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_GroupChats_CreatedByUserId" ON "GroupChats" ("CreatedByUserId");
+2026-06-02 18:20:06.554 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_GroupMessages_GroupChatId_SentAt" ON "GroupMessages" ("GroupChatId", "SentAt");
+2026-06-02 18:20:06.561 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_GroupMessages_SenderId" ON "GroupMessages" ("SenderId");
+2026-06-02 18:20:06.568 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260414210710_AddGroupChats', '10.0.5');
+2026-06-02 18:20:06.575 +03:00 [INF] Applying migration '20260415203433_AddSyncFields'.
+2026-06-02 18:20:06.621 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DROP INDEX "IX_Notifications_UserId_CreatedAt";
+2026-06-02 18:20:06.625 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "IsSynced" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:20:06.630 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "LastModifiedBy" TEXT NULL;
+2026-06-02 18:20:06.634 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "SyncId" TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:20:06.640 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "UpdatedAt" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now'));
+2026-06-02 18:20:06.645 +03:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Reminders" ADD "IsSynced" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:20:06.652 +03:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Reminders" ADD "SyncId" TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:20:06.657 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Reminders" ADD "UpdatedAt" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now'));
+2026-06-02 18:20:06.663 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Projects" ADD "IsSynced" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:20:06.672 +03:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Projects" ADD "SyncId" TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:20:06.677 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Projects" ADD "UpdatedAt" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now'));
+2026-06-02 18:20:06.685 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Notifications" ADD "IsSynced" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:20:06.690 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Notifications" ADD "SyncId" TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:20:06.695 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Notifications" ADD "UpdatedAt" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now'));
+2026-06-02 18:20:06.701 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "TaskItems" SET "SyncId" = lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))) WHERE "SyncId" = '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:20:06.704 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Reminders" SET "SyncId" = lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))) WHERE "SyncId" = '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:20:06.708 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Projects" SET "SyncId" = lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))) WHERE "SyncId" = '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:20:06.714 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Notifications" SET "SyncId" = lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))) WHERE "SyncId" = '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:20:06.718 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_TaskItems_SyncId" ON "TaskItems" ("SyncId");
+2026-06-02 18:20:06.722 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_Reminders_SyncId" ON "Reminders" ("SyncId");
+2026-06-02 18:20:06.727 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_Projects_SyncId" ON "Projects" ("SyncId");
+2026-06-02 18:20:06.730 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_Notifications_SyncId" ON "Notifications" ("SyncId");
+2026-06-02 18:20:06.736 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260415203433_AddSyncFields', '10.0.5');
+2026-06-02 18:20:06.750 +03:00 [INF] Applying migration '20260415213408_FixUpdatedAtDefaults'.
+2026-06-02 18:20:06.795 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "TaskItems" SET "UpdatedAt" = strftime('%Y-%m-%dT%H:%M:%S', 'now') WHERE "UpdatedAt" = '';
+2026-06-02 18:20:06.799 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Reminders" SET "UpdatedAt" = strftime('%Y-%m-%dT%H:%M:%S', 'now') WHERE "UpdatedAt" = '';
+2026-06-02 18:20:06.805 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Projects" SET "UpdatedAt" = strftime('%Y-%m-%dT%H:%M:%S', 'now') WHERE "UpdatedAt" = '';
+2026-06-02 18:20:06.808 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Notifications" SET "UpdatedAt" = strftime('%Y-%m-%dT%H:%M:%S', 'now') WHERE "UpdatedAt" = '';
+2026-06-02 18:20:06.812 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260415213408_FixUpdatedAtDefaults', '10.0.5');
+2026-06-02 18:20:06.818 +03:00 [INF] Applying migration '20260421000000_DropDocumentJobsTable'.
+2026-06-02 18:20:06.857 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DROP TABLE IF EXISTS "DocumentJobs";
+2026-06-02 18:20:06.861 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260421000000_DropDocumentJobsTable', '10.0.5');
+2026-06-02 18:20:06.867 +03:00 [INF] Applying migration '20260422134647_AddMessageIsEdited'.
+2026-06-02 18:20:06.904 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "ChatbotMessages" ADD "IsEdited" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:20:06.906 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260422134647_AddMessageIsEdited', '10.0.5');
+2026-06-02 18:20:06.912 +03:00 [INF] Applying migration '20260513185738_AddIsBackedUpToMongo'.
+2026-06-02 18:20:06.961 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "ef_temp_AppUsers" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_AppUsers" PRIMARY KEY AUTOINCREMENT,
+    "AvatarUrl" TEXT NULL,
+    "Company" TEXT NULL,
+    "Country" TEXT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "Email" TEXT NOT NULL,
+    "FirstName" TEXT NOT NULL,
+    "FullName" TEXT NOT NULL,
+    "IsBackedUpToMongo" INTEGER NOT NULL,
+    "LastLoginAt" TEXT NULL,
+    "LastName" TEXT NOT NULL,
+    "PasswordHash" TEXT NOT NULL,
+    "Phone" TEXT NULL,
+    "ResetToken" TEXT NULL,
+    "ResetTokenExpiry" TEXT NULL,
+    "Timezone" TEXT NULL
+);
+2026-06-02 18:20:06.964 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "ef_temp_AppUsers" ("Id", "AvatarUrl", "Company", "Country", "CreatedAt", "Email", "FirstName", "FullName", "IsBackedUpToMongo", "LastLoginAt", "LastName", "PasswordHash", "Phone", "ResetToken", "ResetTokenExpiry", "Timezone")
+SELECT "Id", "AvatarUrl", "Company", "Country", "CreatedAt", "Email", "FirstName", "FullName", "IsBackedUpToMongo", "LastLoginAt", "LastName", "PasswordHash", "Phone", "ResetToken", "ResetTokenExpiry", "Timezone"
+FROM "AppUsers";
+2026-06-02 18:20:06.970 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+PRAGMA foreign_keys = 0;
+2026-06-02 18:20:06.972 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DROP TABLE "AppUsers";
+2026-06-02 18:20:06.978 +03:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "ef_temp_AppUsers" RENAME TO "AppUsers";
+2026-06-02 18:20:06.983 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+PRAGMA foreign_keys = 1;
+2026-06-02 18:20:06.987 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_AppUsers_Email" ON "AppUsers" ("Email");
+2026-06-02 18:20:06.994 +03:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260513185738_AddIsBackedUpToMongo', '10.0.5');
+2026-06-02 18:20:06.996 +03:00 [INF] Applying migration '20260522145109_Phase1_RenameAdminToLeader'.
+2026-06-02 18:20:07.029 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE TeamMembers SET Role = 'Leader' WHERE Role = 'Admin'
+2026-06-02 18:20:07.031 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260522145109_Phase1_RenameAdminToLeader', '10.0.5');
+2026-06-02 18:20:07.038 +03:00 [INF] Applying migration '20260522152153_Phase4_AddCreatedById'.
+2026-06-02 18:20:07.069 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "CreatedById" INTEGER NULL;
+2026-06-02 18:20:07.074 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260522152153_Phase4_AddCreatedById', '10.0.5');
+2026-06-02 18:20:07.082 +03:00 [INF] Applying migration '20260526120000_Phase2_CrossMachineConsistency'.
+2026-06-02 18:20:07.123 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "AssigneeEmail" TEXT NULL;
+2026-06-02 18:20:07.128 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Projects" ADD "OwnerEmail" TEXT NULL;
+2026-06-02 18:20:07.131 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Notifications" ADD "UserEmail" TEXT NULL;
+2026-06-02 18:20:07.135 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "CalendarEvents" ADD "OwnerEmail" TEXT NULL;
+2026-06-02 18:20:07.140 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "CalendarEvents" ADD "SyncId" TEXT NOT NULL DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1,1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))));
+2026-06-02 18:20:07.143 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "CalendarEvents" ADD "UpdatedAt" TEXT NOT NULL DEFAULT (datetime('now'));
+2026-06-02 18:20:07.146 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "CalendarEvents" ADD "IsSynced" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:20:07.150 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_CalendarEvents_SyncId" ON "CalendarEvents" ("SyncId");
+2026-06-02 18:20:07.153 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260526120000_Phase2_CrossMachineConsistency', '10.0.5');
+2026-06-02 18:20:07.160 +03:00 [INF] Applying migration '20260528000000_AddCreatedByEmailToTaskItems'.
+2026-06-02 18:20:07.186 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "CreatedByEmail" TEXT NULL;
+2026-06-02 18:20:07.188 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260528000000_AddCreatedByEmailToTaskItems', '10.0.5');
+2026-06-02 18:20:07.196 +03:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DELETE FROM "__EFMigrationsLock";
+2026-06-02 18:20:07.882 +03:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-06-02 18:20:09.134 +03:00 [INF] Reminder processor started
+2026-06-02 18:20:09.134 +03:00 [INF] DatabaseCleanupService started. First run in 5 min.
+2026-06-02 18:20:09.134 +03:00 [INF] CrossNotificationPollerService started (interval=15s).
+2026-06-02 18:20:09.134 +03:00 [INF] Due date warning service started
+2026-06-02 18:20:09.194 +03:00 [WRN] Overriding address(es) 'http://localhost:5001/'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
+2026-06-02 18:20:09.498 +03:00 [WRN] You do not have a valid license key for the Lucky Penny software AutoMapper. This is allowed for development and testing scenarios. If you are running in production you are required to have a licensed version. Please visit https://luckypennysoftware.com to obtain a valid license.
+2026-06-02 18:20:10.023 +03:00 [INF] Executed DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM "SyncOutboxEntries" AS "s"
+WHERE "s"."Status" = 'Pending'
+2026-06-02 18:20:10.077 +03:00 [INF] Executed DbCommand (38ms) [Parameters=[@upTo='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId", "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @upTo
+ORDER BY "r"."FireAt"
+2026-06-02 18:20:10.079 +03:00 [INF] Executed DbCommand (38ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:20:10.115 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:20:10.155 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @now AND "t"."Status" <> 'Completed'
+2026-06-02 18:20:10.251 +03:00 [INF] Connectivity: effective state changed → ONLINE
+2026-06-02 18:20:10.280 +03:00 [INF] BulkSyncStartupService: starting pull sync (MongoDB → SQLite)...
+2026-06-02 18:20:10.280 +03:00 [INF] Pushed ConnectivityChanged(true) via SignalR
+2026-06-02 18:20:10.474 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "p"."Id", "p"."Color", "p"."CreatedAt", "p"."Description", "p"."IsStarred", "p"."IsSynced", "p"."Name", "p"."OwnerEmail", "p"."OwnerId", "p"."SyncId", "p"."UpdatedAt"
+FROM "Projects" AS "p"
+2026-06-02 18:20:10.516 +03:00 [INF] PullSync: projects — inserted 0, updated 0, deleted 0
+2026-06-02 18:20:10.590 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt"
+FROM "TaskItems" AS "t"
+2026-06-02 18:20:10.594 +03:00 [INF] PullSync: tasks — inserted 0, updated 0, deleted 0
+2026-06-02 18:20:10.673 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "n"."Id", "n"."ActionUrl", "n"."CreatedAt", "n"."IsRead", "n"."IsSynced", "n"."Message", "n"."Priority", "n"."ReadAt", "n"."RelatedTaskId", "n"."SyncId", "n"."Title", "n"."Type", "n"."UpdatedAt", "n"."UserEmail", "n"."UserId"
+FROM "Notifications" AS "n"
+2026-06-02 18:20:10.676 +03:00 [INF] PullSync: notifications — inserted 0, updated 0, deleted 0
+2026-06-02 18:20:10.750 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId"
+FROM "Reminders" AS "r"
+2026-06-02 18:20:10.753 +03:00 [INF] PullSync: reminders — inserted 0, updated 0, deleted 0
+2026-06-02 18:20:10.828 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "c"."Id", "c"."Color", "c"."CreatedAt", "c"."Description", "c"."EndAt", "c"."IsSynced", "c"."MeetingLink", "c"."OwnerEmail", "c"."OwnerId", "c"."StartAt", "c"."SyncId", "c"."Title", "c"."UpdatedAt"
+FROM "CalendarEvents" AS "c"
+2026-06-02 18:20:10.831 +03:00 [INF] PullSync: calendar_events — inserted 0, updated 0, deleted 0
+2026-06-02 18:20:10.912 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "AppUsers" AS "a"
+WHERE "a"."IsBackedUpToMongo"
+2026-06-02 18:20:10.928 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@cutoff='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "AppUsers" AS "a"
+WHERE NOT ("a"."IsBackedUpToMongo") AND "a"."CreatedAt" < @cutoff
+2026-06-02 18:20:10.947 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "AppUsers" AS "a"
+WHERE NOT ("a"."IsBackedUpToMongo")
+2026-06-02 18:20:10.950 +03:00 [INF] BulkSyncStartupService: pull sync complete.
+2026-06-02 18:20:11.814 +03:00 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "s"."Id", "s"."Attempts", "s"."CreatedAt", "s"."ErrorMessage", "s"."LastAttemptAt", "s"."OperationId", "s"."OperationName", "s"."PayloadJson", "s"."Status"
+FROM "SyncOutboxEntries" AS "s"
+WHERE "s"."Status" = 'Pending'
+ORDER BY "s"."CreatedAt"
+2026-06-02 18:20:24.161 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:20:39.172 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:20:54.197 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:21:09.207 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:21:10.113 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[@upTo='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId", "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @upTo
+ORDER BY "r"."FireAt"
+2026-06-02 18:21:10.187 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:21:10.191 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:21:10.194 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @now AND "t"."Status" <> 'Completed'
+2026-06-02 18:21:24.223 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:21:39.230 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:21:54.240 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:22:09.253 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:22:10.136 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@upTo='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId", "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @upTo
+ORDER BY "r"."FireAt"
+2026-06-02 18:22:10.212 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:22:10.214 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:22:10.216 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @now AND "t"."Status" <> 'Completed'
+2026-06-02 18:22:24.262 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:22:39.273 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:22:54.291 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:23:09.302 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:23:10.146 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@upTo='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId", "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @upTo
+ORDER BY "r"."FireAt"
+2026-06-02 18:23:10.226 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:23:10.229 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:23:10.232 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @now AND "t"."Status" <> 'Completed'
+2026-06-02 18:23:24.322 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:23:39.338 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:23:54.354 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:24:09.369 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:24:10.162 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@upTo='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId", "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @upTo
+ORDER BY "r"."FireAt"
+2026-06-02 18:24:10.240 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:24:10.243 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:24:10.246 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @now AND "t"."Status" <> 'Completed'
+2026-06-02 18:24:24.389 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:24:39.396 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:24:54.410 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:25:09.173 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[@outboxCutoff='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+DELETE FROM "SyncOutboxEntries" AS "s"
+WHERE "s"."Status" IN ('Synced', 'Failed') AND "s"."CreatedAt" < @outboxCutoff
+2026-06-02 18:25:09.178 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[@notifReadCutoff='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+DELETE FROM "Notifications" AS "n"
+WHERE "n"."IsRead" AND "n"."CreatedAt" < @notifReadCutoff
+2026-06-02 18:25:09.182 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@notifAllCutoff='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+DELETE FROM "Notifications" AS "n"
+WHERE "n"."CreatedAt" < @notifAllCutoff
+2026-06-02 18:25:09.189 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@reminderCutoff='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+DELETE FROM "Reminders" AS "r"
+WHERE "r"."HasFired" AND "r"."FiredAt" < @reminderCutoff
+2026-06-02 18:25:09.214 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@chatCutoff='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+DELETE FROM "ChatbotMessages" AS "c"
+WHERE "c"."Id" IN (
+    SELECT "c0"."Id"
+    FROM "ChatbotMessages" AS "c0"
+    INNER JOIN "ChatbotConversations" AS "c1" ON "c0"."ConversationId" = "c1"."Id"
+    WHERE "c1"."UpdatedAt" < @chatCutoff
+)
+2026-06-02 18:25:09.220 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@chatCutoff='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+DELETE FROM "ChatbotConversations" AS "c"
+WHERE "c"."UpdatedAt" < @chatCutoff
+2026-06-02 18:25:09.225 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@msgCutoff='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+DELETE FROM "Messages" AS "m"
+WHERE "m"."IsDeletedBySender" AND "m"."IsDeletedByReceiver" AND "m"."SentAt" < @msgCutoff
+2026-06-02 18:25:09.237 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@invCutoff='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+DELETE FROM "LocalInvitations" AS "l"
+WHERE "l"."Status" <> 'Pending' AND ("l"."ExpiresAt" IS NULL OR "l"."ExpiresAt" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now'), '0'), '.')) AND "l"."CachedAt" < @invCutoff
+2026-06-02 18:25:09.428 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:25:10.177 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@upTo='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId", "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @upTo
+ORDER BY "r"."FireAt"
+2026-06-02 18:25:10.257 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:25:10.260 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:25:10.262 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @now AND "t"."Status" <> 'Completed'
+2026-06-02 18:25:23.766 +03:00 [INF] Reminder processor stopping...
+2026-06-02 18:25:23.768 +03:00 [INF] Due date warning service stopping...
+2026-06-02 18:49:43.222 +03:00 [INF] Running 14 pending migration(s): 20260406120911_InitialCreate, 20260411231949_AddOfflineSync, 20260414000000_AddMessageSoftDelete, 20260414123705_AddMessageAttachments, 20260414210710_AddGroupChats, 20260415203433_AddSyncFields, 20260415213408_FixUpdatedAtDefaults, 20260421000000_DropDocumentJobsTable, 20260422134647_AddMessageIsEdited, 20260513185738_AddIsBackedUpToMongo, 20260522145109_Phase1_RenameAdminToLeader, 20260522152153_Phase4_AddCreatedById, 20260526120000_Phase2_CrossMachineConsistency, 20260528000000_AddCreatedByEmailToTaskItems
+2026-06-02 18:49:43.625 +03:00 [INF] Executed DbCommand (99ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+PRAGMA journal_mode = 'wal';
+2026-06-02 18:49:43.638 +03:00 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-06-02 18:49:43.664 +03:00 [INF] Executed DbCommand (20ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsLock' AND "type" = 'table';
+2026-06-02 18:49:43.698 +03:00 [INF] Executed DbCommand (32ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE IF NOT EXISTS "__EFMigrationsLock" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK___EFMigrationsLock" PRIMARY KEY,
+    "Timestamp" TEXT NOT NULL
+);
+2026-06-02 18:49:43.711 +03:00 [INF] Executed DbCommand (9ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-06-02 15:49:43.7017616+00:00');
+SELECT changes();
+2026-06-02 18:49:43.780 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+    "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+    "ProductVersion" TEXT NOT NULL
+);
+2026-06-02 18:49:43.803 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+2026-06-02 18:49:43.809 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM "__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2026-06-02 18:49:43.823 +03:00 [INF] Applying migration '20260406120911_InitialCreate'.
+2026-06-02 18:49:43.870 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "AppUsers" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_AppUsers" PRIMARY KEY AUTOINCREMENT,
+    "FullName" TEXT NOT NULL,
+    "FirstName" TEXT NOT NULL,
+    "LastName" TEXT NOT NULL,
+    "Email" TEXT NOT NULL,
+    "PasswordHash" TEXT NOT NULL,
+    "AvatarUrl" TEXT NULL,
+    "Company" TEXT NULL,
+    "Country" TEXT NULL,
+    "Phone" TEXT NULL,
+    "Timezone" TEXT NULL,
+    "ResetToken" TEXT NULL,
+    "ResetTokenExpiry" TEXT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "LastLoginAt" TEXT NULL
+);
+2026-06-02 18:49:43.873 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "CalendarEvents" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_CalendarEvents" PRIMARY KEY AUTOINCREMENT,
+    "OwnerId" INTEGER NOT NULL,
+    "Title" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "StartAt" TEXT NOT NULL,
+    "EndAt" TEXT NOT NULL,
+    "Color" TEXT NULL,
+    "MeetingLink" TEXT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_CalendarEvents_AppUsers_OwnerId" FOREIGN KEY ("OwnerId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:49:43.876 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "ChatbotConversations" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_ChatbotConversations" PRIMARY KEY AUTOINCREMENT,
+    "Title" TEXT NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "UpdatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_ChatbotConversations_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:49:43.879 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Messages" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Messages" PRIMARY KEY AUTOINCREMENT,
+    "SenderId" INTEGER NOT NULL,
+    "ReceiverId" INTEGER NOT NULL,
+    "Body" TEXT NOT NULL,
+    "IsRead" INTEGER NOT NULL,
+    "SentAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Messages_AppUsers_ReceiverId" FOREIGN KEY ("ReceiverId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_Messages_AppUsers_SenderId" FOREIGN KEY ("SenderId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT
+);
+2026-06-02 18:49:43.882 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Projects" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Projects" PRIMARY KEY AUTOINCREMENT,
+    "Name" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "Color" TEXT NULL,
+    "OwnerId" INTEGER NOT NULL,
+    "IsStarred" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Projects_AppUsers_OwnerId" FOREIGN KEY ("OwnerId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT
+);
+2026-06-02 18:49:43.885 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Teams" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Teams" PRIMARY KEY AUTOINCREMENT,
+    "Name" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "OwnerId" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Teams_AppUsers_OwnerId" FOREIGN KEY ("OwnerId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT
+);
+2026-06-02 18:49:43.889 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "ChatbotMessages" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_ChatbotMessages" PRIMARY KEY AUTOINCREMENT,
+    "ConversationId" INTEGER NOT NULL,
+    "Role" TEXT NOT NULL,
+    "Text" TEXT NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_ChatbotMessages_ChatbotConversations_ConversationId" FOREIGN KEY ("ConversationId") REFERENCES "ChatbotConversations" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:49:43.893 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "ProjectMembers" (
+    "ProjectId" INTEGER NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "Role" TEXT NOT NULL,
+    CONSTRAINT "PK_ProjectMembers" PRIMARY KEY ("ProjectId", "UserId"),
+    CONSTRAINT "FK_ProjectMembers_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_ProjectMembers_Projects_ProjectId" FOREIGN KEY ("ProjectId") REFERENCES "Projects" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:49:43.896 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "TaskItems" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_TaskItems" PRIMARY KEY AUTOINCREMENT,
+    "Title" TEXT NOT NULL,
+    "Description" TEXT NULL,
+    "ProjectId" INTEGER NULL,
+    "AssigneeId" INTEGER NULL,
+    "Priority" TEXT NOT NULL,
+    "Status" TEXT NOT NULL,
+    "DueDate" TEXT NULL,
+    "IsStarred" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_TaskItems_AppUsers_AssigneeId" FOREIGN KEY ("AssigneeId") REFERENCES "AppUsers" ("Id") ON DELETE SET NULL,
+    CONSTRAINT "FK_TaskItems_Projects_ProjectId" FOREIGN KEY ("ProjectId") REFERENCES "Projects" ("Id") ON DELETE SET NULL
+);
+2026-06-02 18:49:43.899 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "TeamMembers" (
+    "TeamId" INTEGER NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "Role" TEXT NOT NULL,
+    CONSTRAINT "PK_TeamMembers" PRIMARY KEY ("TeamId", "UserId"),
+    CONSTRAINT "FK_TeamMembers_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_TeamMembers_Teams_TeamId" FOREIGN KEY ("TeamId") REFERENCES "Teams" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:49:43.902 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Notifications" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Notifications" PRIMARY KEY AUTOINCREMENT,
+    "UserId" INTEGER NOT NULL,
+    "Title" TEXT NOT NULL,
+    "Message" TEXT NOT NULL,
+    "Type" TEXT NOT NULL,
+    "Priority" TEXT NOT NULL,
+    "IsRead" INTEGER NOT NULL,
+    "ActionUrl" TEXT NULL,
+    "RelatedTaskId" INTEGER NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "ReadAt" TEXT NULL,
+    CONSTRAINT "FK_Notifications_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_Notifications_TaskItems_RelatedTaskId" FOREIGN KEY ("RelatedTaskId") REFERENCES "TaskItems" ("Id") ON DELETE SET NULL
+);
+2026-06-02 18:49:43.906 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "Reminders" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Reminders" PRIMARY KEY AUTOINCREMENT,
+    "TaskId" INTEGER NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "FireAt" TEXT NOT NULL,
+    "NotifyEmail" INTEGER NOT NULL,
+    "NotifyInApp" INTEGER NOT NULL,
+    "HasFired" INTEGER NOT NULL,
+    "FiredAt" TEXT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_Reminders_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_Reminders_TaskItems_TaskId" FOREIGN KEY ("TaskId") REFERENCES "TaskItems" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:49:43.910 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "TaskComments" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_TaskComments" PRIMARY KEY AUTOINCREMENT,
+    "TaskId" INTEGER NOT NULL,
+    "AuthorId" INTEGER NOT NULL,
+    "Body" TEXT NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_TaskComments_AppUsers_AuthorId" FOREIGN KEY ("AuthorId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_TaskComments_TaskItems_TaskId" FOREIGN KEY ("TaskId") REFERENCES "TaskItems" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:49:43.913 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_AppUsers_Email" ON "AppUsers" ("Email");
+2026-06-02 18:49:43.916 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_CalendarEvents_OwnerId" ON "CalendarEvents" ("OwnerId");
+2026-06-02 18:49:43.919 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_ChatbotConversations_UserId" ON "ChatbotConversations" ("UserId");
+2026-06-02 18:49:43.922 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_ChatbotMessages_ConversationId" ON "ChatbotMessages" ("ConversationId");
+2026-06-02 18:49:43.925 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Messages_ReceiverId" ON "Messages" ("ReceiverId");
+2026-06-02 18:49:43.929 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Messages_SenderId" ON "Messages" ("SenderId");
+2026-06-02 18:49:43.932 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Notifications_RelatedTaskId" ON "Notifications" ("RelatedTaskId");
+2026-06-02 18:49:43.935 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Notifications_UserId_CreatedAt" ON "Notifications" ("UserId", "CreatedAt");
+2026-06-02 18:49:43.939 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Notifications_UserId_IsRead" ON "Notifications" ("UserId", "IsRead");
+2026-06-02 18:49:43.943 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_ProjectMembers_UserId" ON "ProjectMembers" ("UserId");
+2026-06-02 18:49:43.945 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Projects_OwnerId" ON "Projects" ("OwnerId");
+2026-06-02 18:49:43.948 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Reminders_FireAt_HasFired" ON "Reminders" ("FireAt", "HasFired");
+2026-06-02 18:49:43.950 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Reminders_TaskId" ON "Reminders" ("TaskId");
+2026-06-02 18:49:43.953 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Reminders_UserId" ON "Reminders" ("UserId");
+2026-06-02 18:49:43.957 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskComments_AuthorId" ON "TaskComments" ("AuthorId");
+2026-06-02 18:49:43.960 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskComments_TaskId" ON "TaskComments" ("TaskId");
+2026-06-02 18:49:43.963 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskItems_AssigneeId" ON "TaskItems" ("AssigneeId");
+2026-06-02 18:49:43.965 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TaskItems_ProjectId" ON "TaskItems" ("ProjectId");
+2026-06-02 18:49:43.968 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_TeamMembers_UserId" ON "TeamMembers" ("UserId");
+2026-06-02 18:49:43.972 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_Teams_OwnerId" ON "Teams" ("OwnerId");
+2026-06-02 18:49:43.974 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260406120911_InitialCreate', '10.0.5');
+2026-06-02 18:49:44.003 +03:00 [INF] Applying migration '20260411231949_AddOfflineSync'.
+2026-06-02 18:49:44.027 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "LocalInvitations" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_LocalInvitations" PRIMARY KEY AUTOINCREMENT,
+    "MongoId" TEXT NOT NULL,
+    "SenderEmail" TEXT NOT NULL,
+    "SenderFullName" TEXT NOT NULL,
+    "SenderAvatarUrl" TEXT NOT NULL,
+    "RecipientEmail" TEXT NOT NULL,
+    "RecipientFullName" TEXT NOT NULL,
+    "TeamId" TEXT NULL,
+    "TeamName" TEXT NULL,
+    "Role" TEXT NOT NULL,
+    "Message" TEXT NULL,
+    "Status" TEXT NOT NULL,
+    "SentAt" TEXT NOT NULL,
+    "RespondedAt" TEXT NULL,
+    "ExpiresAt" TEXT NULL,
+    "DeclineReason" TEXT NULL,
+    "CachedAt" TEXT NOT NULL
+);
+2026-06-02 18:49:44.030 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "LocalTeamMembers" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_LocalTeamMembers" PRIMARY KEY AUTOINCREMENT,
+    "MongoId" TEXT NOT NULL,
+    "TeamId" TEXT NOT NULL,
+    "TeamName" TEXT NOT NULL,
+    "OwnerEmail" TEXT NOT NULL,
+    "UserEmail" TEXT NOT NULL,
+    "UserFullName" TEXT NOT NULL,
+    "AvatarUrl" TEXT NULL,
+    "Role" TEXT NOT NULL,
+    "IsActive" INTEGER NOT NULL,
+    "JoinedAt" TEXT NOT NULL,
+    "CachedAt" TEXT NOT NULL
+);
+2026-06-02 18:49:44.033 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "SyncOutboxEntries" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_SyncOutboxEntries" PRIMARY KEY AUTOINCREMENT,
+    "OperationId" TEXT NOT NULL,
+    "OperationName" TEXT NOT NULL,
+    "PayloadJson" TEXT NOT NULL,
+    "Status" TEXT NOT NULL,
+    "Attempts" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "LastAttemptAt" TEXT NULL,
+    "ErrorMessage" TEXT NULL
+);
+2026-06-02 18:49:44.036 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_LocalInvitations_MongoId" ON "LocalInvitations" ("MongoId");
+2026-06-02 18:49:44.041 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_LocalInvitations_RecipientEmail" ON "LocalInvitations" ("RecipientEmail");
+2026-06-02 18:49:44.044 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_LocalInvitations_SenderEmail" ON "LocalInvitations" ("SenderEmail");
+2026-06-02 18:49:44.047 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_LocalTeamMembers_OwnerEmail" ON "LocalTeamMembers" ("OwnerEmail");
+2026-06-02 18:49:44.059 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_LocalTeamMembers_TeamId_OwnerEmail_UserEmail" ON "LocalTeamMembers" ("TeamId", "OwnerEmail", "UserEmail");
+2026-06-02 18:49:44.062 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_SyncOutboxEntries_CreatedAt" ON "SyncOutboxEntries" ("CreatedAt");
+2026-06-02 18:49:44.065 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_SyncOutboxEntries_OperationId" ON "SyncOutboxEntries" ("OperationId");
+2026-06-02 18:49:44.069 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_SyncOutboxEntries_Status" ON "SyncOutboxEntries" ("Status");
+2026-06-02 18:49:44.071 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260411231949_AddOfflineSync', '10.0.5');
+2026-06-02 18:49:44.090 +03:00 [INF] Applying migration '20260414000000_AddMessageSoftDelete'.
+2026-06-02 18:49:44.123 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "IsSystemMessage" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:49:44.125 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "IsDeletedBySender" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:49:44.128 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "IsDeletedByReceiver" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:49:44.132 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260414000000_AddMessageSoftDelete', '10.0.5');
+2026-06-02 18:49:44.149 +03:00 [INF] Applying migration '20260414123705_AddMessageAttachments'.
+2026-06-02 18:49:44.171 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "AttachmentName" TEXT NULL;
+2026-06-02 18:49:44.174 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "AttachmentSize" INTEGER NULL;
+2026-06-02 18:49:44.178 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "AttachmentType" TEXT NULL;
+2026-06-02 18:49:44.181 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Messages" ADD "AttachmentUrl" TEXT NULL;
+2026-06-02 18:49:44.185 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260414123705_AddMessageAttachments', '10.0.5');
+2026-06-02 18:49:44.199 +03:00 [INF] Applying migration '20260414210710_AddGroupChats'.
+2026-06-02 18:49:44.242 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "GroupChats" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_GroupChats" PRIMARY KEY AUTOINCREMENT,
+    "Name" TEXT NOT NULL,
+    "CreatedByUserId" INTEGER NOT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    CONSTRAINT "FK_GroupChats_AppUsers_CreatedByUserId" FOREIGN KEY ("CreatedByUserId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT
+);
+2026-06-02 18:49:44.244 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "GroupChatMembers" (
+    "GroupChatId" INTEGER NOT NULL,
+    "UserId" INTEGER NOT NULL,
+    "JoinedAt" TEXT NOT NULL,
+    "LastReadAt" TEXT NULL,
+    CONSTRAINT "PK_GroupChatMembers" PRIMARY KEY ("GroupChatId", "UserId"),
+    CONSTRAINT "FK_GroupChatMembers_AppUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_GroupChatMembers_GroupChats_GroupChatId" FOREIGN KEY ("GroupChatId") REFERENCES "GroupChats" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:49:44.247 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "GroupMessages" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_GroupMessages" PRIMARY KEY AUTOINCREMENT,
+    "GroupChatId" INTEGER NOT NULL,
+    "SenderId" INTEGER NOT NULL,
+    "Body" TEXT NOT NULL,
+    "SentAt" TEXT NOT NULL,
+    "AttachmentUrl" TEXT NULL,
+    "AttachmentName" TEXT NULL,
+    "AttachmentType" TEXT NULL,
+    "AttachmentSize" INTEGER NULL,
+    CONSTRAINT "FK_GroupMessages_AppUsers_SenderId" FOREIGN KEY ("SenderId") REFERENCES "AppUsers" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_GroupMessages_GroupChats_GroupChatId" FOREIGN KEY ("GroupChatId") REFERENCES "GroupChats" ("Id") ON DELETE CASCADE
+);
+2026-06-02 18:49:44.252 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_GroupChatMembers_UserId" ON "GroupChatMembers" ("UserId");
+2026-06-02 18:49:44.256 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_GroupChats_CreatedByUserId" ON "GroupChats" ("CreatedByUserId");
+2026-06-02 18:49:44.259 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_GroupMessages_GroupChatId_SentAt" ON "GroupMessages" ("GroupChatId", "SentAt");
+2026-06-02 18:49:44.262 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_GroupMessages_SenderId" ON "GroupMessages" ("SenderId");
+2026-06-02 18:49:44.264 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260414210710_AddGroupChats', '10.0.5');
+2026-06-02 18:49:44.286 +03:00 [INF] Applying migration '20260415203433_AddSyncFields'.
+2026-06-02 18:49:44.321 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DROP INDEX "IX_Notifications_UserId_CreatedAt";
+2026-06-02 18:49:44.323 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "IsSynced" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:49:44.326 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "LastModifiedBy" TEXT NULL;
+2026-06-02 18:49:44.329 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "SyncId" TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:49:44.332 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "UpdatedAt" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now'));
+2026-06-02 18:49:44.337 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Reminders" ADD "IsSynced" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:49:44.340 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Reminders" ADD "SyncId" TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:49:44.343 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Reminders" ADD "UpdatedAt" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now'));
+2026-06-02 18:49:44.347 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Projects" ADD "IsSynced" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:49:44.350 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Projects" ADD "SyncId" TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:49:44.355 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Projects" ADD "UpdatedAt" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now'));
+2026-06-02 18:49:44.358 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Notifications" ADD "IsSynced" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:49:44.361 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Notifications" ADD "SyncId" TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:49:44.365 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Notifications" ADD "UpdatedAt" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now'));
+2026-06-02 18:49:44.369 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "TaskItems" SET "SyncId" = lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))) WHERE "SyncId" = '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:49:44.373 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Reminders" SET "SyncId" = lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))) WHERE "SyncId" = '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:49:44.375 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Projects" SET "SyncId" = lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))) WHERE "SyncId" = '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:49:44.378 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Notifications" SET "SyncId" = lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))) WHERE "SyncId" = '00000000-0000-0000-0000-000000000000';
+2026-06-02 18:49:44.380 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_TaskItems_SyncId" ON "TaskItems" ("SyncId");
+2026-06-02 18:49:44.383 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_Reminders_SyncId" ON "Reminders" ("SyncId");
+2026-06-02 18:49:44.386 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_Projects_SyncId" ON "Projects" ("SyncId");
+2026-06-02 18:49:44.389 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_Notifications_SyncId" ON "Notifications" ("SyncId");
+2026-06-02 18:49:44.392 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260415203433_AddSyncFields', '10.0.5');
+2026-06-02 18:49:44.413 +03:00 [INF] Applying migration '20260415213408_FixUpdatedAtDefaults'.
+2026-06-02 18:49:44.440 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "TaskItems" SET "UpdatedAt" = strftime('%Y-%m-%dT%H:%M:%S', 'now') WHERE "UpdatedAt" = '';
+2026-06-02 18:49:44.442 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Reminders" SET "UpdatedAt" = strftime('%Y-%m-%dT%H:%M:%S', 'now') WHERE "UpdatedAt" = '';
+2026-06-02 18:49:44.445 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Projects" SET "UpdatedAt" = strftime('%Y-%m-%dT%H:%M:%S', 'now') WHERE "UpdatedAt" = '';
+2026-06-02 18:49:44.447 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE "Notifications" SET "UpdatedAt" = strftime('%Y-%m-%dT%H:%M:%S', 'now') WHERE "UpdatedAt" = '';
+2026-06-02 18:49:44.452 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260415213408_FixUpdatedAtDefaults', '10.0.5');
+2026-06-02 18:49:44.484 +03:00 [INF] Applying migration '20260421000000_DropDocumentJobsTable'.
+2026-06-02 18:49:44.564 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DROP TABLE IF EXISTS "DocumentJobs";
+2026-06-02 18:49:44.567 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260421000000_DropDocumentJobsTable', '10.0.5');
+2026-06-02 18:49:44.581 +03:00 [INF] Applying migration '20260422134647_AddMessageIsEdited'.
+2026-06-02 18:49:44.602 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "ChatbotMessages" ADD "IsEdited" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:49:44.605 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260422134647_AddMessageIsEdited', '10.0.5');
+2026-06-02 18:49:44.619 +03:00 [INF] Applying migration '20260513185738_AddIsBackedUpToMongo'.
+2026-06-02 18:49:44.655 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE "ef_temp_AppUsers" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_AppUsers" PRIMARY KEY AUTOINCREMENT,
+    "AvatarUrl" TEXT NULL,
+    "Company" TEXT NULL,
+    "Country" TEXT NULL,
+    "CreatedAt" TEXT NOT NULL,
+    "Email" TEXT NOT NULL,
+    "FirstName" TEXT NOT NULL,
+    "FullName" TEXT NOT NULL,
+    "IsBackedUpToMongo" INTEGER NOT NULL,
+    "LastLoginAt" TEXT NULL,
+    "LastName" TEXT NOT NULL,
+    "PasswordHash" TEXT NOT NULL,
+    "Phone" TEXT NULL,
+    "ResetToken" TEXT NULL,
+    "ResetTokenExpiry" TEXT NULL,
+    "Timezone" TEXT NULL
+);
+2026-06-02 18:49:44.657 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "ef_temp_AppUsers" ("Id", "AvatarUrl", "Company", "Country", "CreatedAt", "Email", "FirstName", "FullName", "IsBackedUpToMongo", "LastLoginAt", "LastName", "PasswordHash", "Phone", "ResetToken", "ResetTokenExpiry", "Timezone")
+SELECT "Id", "AvatarUrl", "Company", "Country", "CreatedAt", "Email", "FirstName", "FullName", "IsBackedUpToMongo", "LastLoginAt", "LastName", "PasswordHash", "Phone", "ResetToken", "ResetTokenExpiry", "Timezone"
+FROM "AppUsers";
+2026-06-02 18:49:44.673 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+PRAGMA foreign_keys = 0;
+2026-06-02 18:49:44.675 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DROP TABLE "AppUsers";
+2026-06-02 18:49:44.680 +03:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "ef_temp_AppUsers" RENAME TO "AppUsers";
+2026-06-02 18:49:44.697 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+PRAGMA foreign_keys = 1;
+2026-06-02 18:49:44.699 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_AppUsers_Email" ON "AppUsers" ("Email");
+2026-06-02 18:49:44.728 +03:00 [INF] Executed DbCommand (12ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260513185738_AddIsBackedUpToMongo', '10.0.5');
+2026-06-02 18:49:44.730 +03:00 [INF] Applying migration '20260522145109_Phase1_RenameAdminToLeader'.
+2026-06-02 18:49:44.750 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+UPDATE TeamMembers SET Role = 'Leader' WHERE Role = 'Admin'
+2026-06-02 18:49:44.753 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260522145109_Phase1_RenameAdminToLeader', '10.0.5');
+2026-06-02 18:49:44.767 +03:00 [INF] Applying migration '20260522152153_Phase4_AddCreatedById'.
+2026-06-02 18:49:44.792 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "CreatedById" INTEGER NULL;
+2026-06-02 18:49:44.794 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260522152153_Phase4_AddCreatedById', '10.0.5');
+2026-06-02 18:49:44.807 +03:00 [INF] Applying migration '20260526120000_Phase2_CrossMachineConsistency'.
+2026-06-02 18:49:44.837 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "AssigneeEmail" TEXT NULL;
+2026-06-02 18:49:44.840 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Projects" ADD "OwnerEmail" TEXT NULL;
+2026-06-02 18:49:44.843 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "Notifications" ADD "UserEmail" TEXT NULL;
+2026-06-02 18:49:44.846 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "CalendarEvents" ADD "OwnerEmail" TEXT NULL;
+2026-06-02 18:49:44.849 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "CalendarEvents" ADD "SyncId" TEXT NOT NULL DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1,1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))));
+2026-06-02 18:49:44.854 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "CalendarEvents" ADD "UpdatedAt" TEXT NOT NULL DEFAULT (datetime('now'));
+2026-06-02 18:49:44.857 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "CalendarEvents" ADD "IsSynced" INTEGER NOT NULL DEFAULT 0;
+2026-06-02 18:49:44.860 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_CalendarEvents_SyncId" ON "CalendarEvents" ("SyncId");
+2026-06-02 18:49:44.863 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260526120000_Phase2_CrossMachineConsistency', '10.0.5');
+2026-06-02 18:49:44.881 +03:00 [INF] Applying migration '20260528000000_AddCreatedByEmailToTaskItems'.
+2026-06-02 18:49:44.906 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE "TaskItems" ADD "CreatedByEmail" TEXT NULL;
+2026-06-02 18:49:44.908 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260528000000_AddCreatedByEmailToTaskItems', '10.0.5');
+2026-06-02 18:49:44.934 +03:00 [INF] Executed DbCommand (13ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DELETE FROM "__EFMigrationsLock";
+2026-06-02 18:49:45.715 +03:00 [INF] User profile is available. Using 'C:\Users\Ahmed Abdelbarr\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-06-02 18:49:46.575 +03:00 [INF] CrossNotificationPollerService started (interval=15s).
+2026-06-02 18:49:46.575 +03:00 [INF] DatabaseCleanupService started. First run in 5 min.
+2026-06-02 18:49:46.575 +03:00 [INF] Reminder processor started
+2026-06-02 18:49:46.575 +03:00 [INF] Due date warning service started
+2026-06-02 18:49:46.601 +03:00 [WRN] Overriding address(es) 'http://localhost:5001/'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
+2026-06-02 18:49:46.897 +03:00 [WRN] You do not have a valid license key for the Lucky Penny software AutoMapper. This is allowed for development and testing scenarios. If you are running in production you are required to have a licensed version. Please visit https://luckypennysoftware.com to obtain a valid license.
+2026-06-02 18:49:47.170 +03:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM "SyncOutboxEntries" AS "s"
+WHERE "s"."Status" = 'Pending'
+2026-06-02 18:49:47.217 +03:00 [INF] Executed DbCommand (32ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:49:47.217 +03:00 [INF] Executed DbCommand (32ms) [Parameters=[@upTo='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId", "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @upTo
+ORDER BY "r"."FireAt"
+2026-06-02 18:49:47.236 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:49:47.266 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @now AND "t"."Status" <> 'Completed'
+2026-06-02 18:49:47.446 +03:00 [INF] Connectivity: effective state changed → ONLINE
+2026-06-02 18:49:47.448 +03:00 [INF] Pushed ConnectivityChanged(true) via SignalR
+2026-06-02 18:49:47.449 +03:00 [INF] BulkSyncStartupService: starting pull sync (MongoDB → SQLite)...
+2026-06-02 18:49:47.602 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "p"."Id", "p"."Color", "p"."CreatedAt", "p"."Description", "p"."IsStarred", "p"."IsSynced", "p"."Name", "p"."OwnerEmail", "p"."OwnerId", "p"."SyncId", "p"."UpdatedAt"
+FROM "Projects" AS "p"
+2026-06-02 18:49:47.623 +03:00 [INF] PullSync: projects — inserted 0, updated 0, deleted 0
+2026-06-02 18:49:47.696 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt"
+FROM "TaskItems" AS "t"
+2026-06-02 18:49:47.699 +03:00 [INF] PullSync: tasks — inserted 0, updated 0, deleted 0
+2026-06-02 18:49:47.775 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "n"."Id", "n"."ActionUrl", "n"."CreatedAt", "n"."IsRead", "n"."IsSynced", "n"."Message", "n"."Priority", "n"."ReadAt", "n"."RelatedTaskId", "n"."SyncId", "n"."Title", "n"."Type", "n"."UpdatedAt", "n"."UserEmail", "n"."UserId"
+FROM "Notifications" AS "n"
+2026-06-02 18:49:47.779 +03:00 [INF] PullSync: notifications — inserted 0, updated 0, deleted 0
+2026-06-02 18:49:47.850 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId"
+FROM "Reminders" AS "r"
+2026-06-02 18:49:47.855 +03:00 [INF] PullSync: reminders — inserted 0, updated 0, deleted 0
+2026-06-02 18:49:47.926 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "c"."Id", "c"."Color", "c"."CreatedAt", "c"."Description", "c"."EndAt", "c"."IsSynced", "c"."MeetingLink", "c"."OwnerEmail", "c"."OwnerId", "c"."StartAt", "c"."SyncId", "c"."Title", "c"."UpdatedAt"
+FROM "CalendarEvents" AS "c"
+2026-06-02 18:49:47.929 +03:00 [INF] PullSync: calendar_events — inserted 0, updated 0, deleted 0
+2026-06-02 18:49:48.035 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "AppUsers" AS "a"
+WHERE "a"."IsBackedUpToMongo"
+2026-06-02 18:49:48.052 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@cutoff='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "AppUsers" AS "a"
+WHERE NOT ("a"."IsBackedUpToMongo") AND "a"."CreatedAt" < @cutoff
+2026-06-02 18:49:48.071 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "AppUsers" AS "a"
+WHERE NOT ("a"."IsBackedUpToMongo")
+2026-06-02 18:49:48.075 +03:00 [INF] BulkSyncStartupService: pull sync complete.
+2026-06-02 18:49:48.976 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "s"."Id", "s"."Attempts", "s"."CreatedAt", "s"."ErrorMessage", "s"."LastAttemptAt", "s"."OperationId", "s"."OperationName", "s"."PayloadJson", "s"."Status"
+FROM "SyncOutboxEntries" AS "s"
+WHERE "s"."Status" = 'Pending'
+ORDER BY "s"."CreatedAt"
+2026-06-02 18:50:01.598 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:50:16.617 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:50:19.046 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5000/swagger - null null
+2026-06-02 18:50:19.133 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5000/swagger - 301 0 null 95.721ms
+2026-06-02 18:50:19.147 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5000/swagger/index.html - null null
+2026-06-02 18:50:19.240 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5000/swagger/index.html - 200 null text/html;charset=utf-8 92.4654ms
+2026-06-02 18:50:19.488 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5000/swagger/swagger-ui-bundle.js - null null
+2026-06-02 18:50:19.488 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5000/swagger/swagger-ui-standalone-preset.js - null null
+2026-06-02 18:50:19.489 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5000/swagger/swagger-ui.css - null null
+2026-06-02 18:50:19.549 +03:00 [INF] Sending file. Request path: '/swagger-ui.css'. Physical path: 'N/A'
+2026-06-02 18:50:19.552 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5000/swagger/swagger-ui.css - 200 144929 text/css 63.4055ms
+2026-06-02 18:50:19.572 +03:00 [INF] Sending file. Request path: '/swagger-ui-standalone-preset.js'. Physical path: 'N/A'
+2026-06-02 18:50:19.575 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5000/swagger/swagger-ui-standalone-preset.js - 200 312163 text/javascript 87.0465ms
+2026-06-02 18:50:19.723 +03:00 [INF] Sending file. Request path: '/swagger-ui-bundle.js'. Physical path: 'N/A'
+2026-06-02 18:50:19.724 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5000/swagger/swagger-ui-bundle.js - 200 1061536 text/javascript 236.171ms
+2026-06-02 18:50:20.237 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5000/swagger/v1/swagger.json - null null
+2026-06-02 18:50:20.306 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5000/swagger/favicon-16x16.png - null null
+2026-06-02 18:50:20.311 +03:00 [INF] Sending file. Request path: '/favicon-16x16.png'. Physical path: 'N/A'
+2026-06-02 18:50:20.314 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5000/swagger/favicon-16x16.png - 200 665 image/png 8.2855ms
+2026-06-02 18:50:20.489 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5000/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 251.5643ms
+2026-06-02 18:50:31.631 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:50:46.648 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:50:47.244 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@upTo='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId", "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @upTo
+ORDER BY "r"."FireAt"
+2026-06-02 18:50:47.288 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:50:47.294 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:50:47.298 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @now AND "t"."Status" <> 'Completed'
+2026-06-02 18:51:01.669 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:51:16.688 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:51:31.704 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:51:46.718 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:51:47.267 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@upTo='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId", "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @upTo
+ORDER BY "r"."FireAt"
+2026-06-02 18:51:47.310 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:51:47.313 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:51:47.317 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @now AND "t"."Status" <> 'Completed'
+2026-06-02 18:52:01.736 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:52:16.751 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:52:31.769 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:52:46.774 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:52:47.279 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@upTo='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId", "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @upTo
+ORDER BY "r"."FireAt"
+2026-06-02 18:52:47.327 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:52:47.335 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:52:47.340 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @now AND "t"."Status" <> 'Completed'
+2026-06-02 18:53:01.790 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:53:16.802 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:53:31.813 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:53:46.822 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:53:47.292 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@upTo='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "r"."Id", "r"."CreatedAt", "r"."FireAt", "r"."FiredAt", "r"."HasFired", "r"."IsSynced", "r"."NotifyEmail", "r"."NotifyInApp", "r"."SyncId", "r"."TaskId", "r"."UpdatedAt", "r"."UserId", "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "Reminders" AS "r"
+INNER JOIN "TaskItems" AS "t" ON "r"."TaskId" = "t"."Id"
+INNER JOIN "AppUsers" AS "a" ON "r"."UserId" = "a"."Id"
+WHERE NOT ("r"."HasFired") AND "r"."FireAt" <= @upTo
+ORDER BY "r"."FireAt"
+2026-06-02 18:53:47.357 +03:00 [INF] Executed DbCommand (1ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:53:47.361 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28), @AddHours='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" > @now AND "t"."DueDate" <= @AddHours AND "t"."Status" <> 'Completed'
+2026-06-02 18:53:47.364 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[@now='?' (Size = 28)], CommandType='"Text"', CommandTimeout='30']
+SELECT "t"."Id", "t"."AssigneeEmail", "t"."AssigneeId", "t"."CreatedAt", "t"."CreatedByEmail", "t"."CreatedById", "t"."Description", "t"."DueDate", "t"."IsStarred", "t"."IsSynced", "t"."LastModifiedBy", "t"."Priority", "t"."ProjectId", "t"."Status", "t"."SyncId", "t"."Title", "t"."UpdatedAt", "a"."Id", "a"."AvatarUrl", "a"."Company", "a"."Country", "a"."CreatedAt", "a"."Email", "a"."FirstName", "a"."FullName", "a"."IsBackedUpToMongo", "a"."LastLoginAt", "a"."LastName", "a"."PasswordHash", "a"."Phone", "a"."ResetToken", "a"."ResetTokenExpiry", "a"."Timezone"
+FROM "TaskItems" AS "t"
+LEFT JOIN "AppUsers" AS "a" ON "t"."AssigneeId" = "a"."Id"
+WHERE "t"."AssigneeId" IS NOT NULL AND "t"."DueDate" IS NOT NULL AND "t"."DueDate" < @now AND "t"."Status" <> 'Completed'
+2026-06-02 18:54:01.839 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:54:16.850 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:54:31.866 +03:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "a"."Id", "a"."Email"
+FROM "AppUsers" AS "a"
+2026-06-02 18:54:38.012 +03:00 [INF] Reminder processor stopping...
+2026-06-02 18:54:38.013 +03:00 [INF] Due date warning service stopping...

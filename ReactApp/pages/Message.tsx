@@ -7,12 +7,19 @@ import {
 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
+import Footer from "../Components/Footer";
 import { PageLoading, PageError } from "../Components/PageState";
-import { useMessages } from "../hooks/useMessages";
-import { useGroupChats } from "../hooks/useGroupChats";
-import type { SharedMember } from "../hooks/useTeams";
+import { useMessages, type Message as DmMessage } from "../hooks/useMessages";
+import { useGroupChats, type GroupMessage } from "../hooks/useGroupChats";
+import { useTeams, type SharedMember } from "../hooks/useTeams";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+
+interface ConversationCandidate {
+  email: string;
+  fullName: string;
+  avatarUrl?: string;
+}
 
 // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -68,8 +75,8 @@ function formatFileSize(bytes?: number): string {
   return `${(bytes / 1048576).toFixed(1)} MB`;
 }
 
-function groupMessagesByDate(messages: any[]) {
-  const groups: { label: string; messages: any[] }[] = [];
+function groupMessagesByDate<T extends { sentAt: string }>(messages: T[]): { label: string; messages: T[] }[] {
+  const groups: { label: string; messages: T[] }[] = [];
   let currentLabel = "";
   for (const msg of messages) {
     const d = new Date(msg.sentAt);
@@ -240,25 +247,25 @@ function Avatar({ name, avatarUrl, size = "md" }: { name: string; avatarUrl?: st
 // â”€â”€ Start Conversation Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface StartConversationModalProps {
-  candidates: Array<{ email: string; fullName: string; avatarUrl?: string }>;
-  existingContactIds: Set<number>;
+  candidates: ConversationCandidate[];
   currentUserEmail: string;
   onStart: (email: string) => Promise<void>;
   onClose: () => void;
 }
 
-function StartConversationModal({ candidates, existingContactIds, currentUserEmail, onStart, onClose }: StartConversationModalProps) {
+function StartConversationModal({ candidates, currentUserEmail, onStart, onClose }: StartConversationModalProps) {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Deduplicate contacts by email, exclude self
+  // Deduplicate candidates by email and exclude self.
   const members = useMemo(() => {
     const seen = new Set<string>();
     return candidates.filter(m => {
-      if (m.email === currentUserEmail) return false;
-      if (seen.has(m.email)) return false;
-      seen.add(m.email);
+      const email = m.email.trim().toLowerCase();
+      if (email === currentUserEmail.trim().toLowerCase()) return false;
+      if (seen.has(email)) return false;
+      seen.add(email);
       return true;
     });
   }, [candidates, currentUserEmail]);
@@ -305,7 +312,13 @@ function StartConversationModal({ candidates, existingContactIds, currentUserEma
               autoFocus
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search contacts..."
+              onKeyDown={e => {
+                if (e.key === "Enter" && search.includes("@")) {
+                  e.preventDefault();
+                  handleSelect(search.trim());
+                }
+              }}
+              placeholder="Search name or enter email…"
               className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder:text-gray-400"
             />
           </div>
@@ -318,11 +331,27 @@ function StartConversationModal({ candidates, existingContactIds, currentUserEma
 
         {/* Members list */}
         <div className="overflow-y-auto max-h-72">
-          {filtered.length === 0 ? (
+          {/* Direct email option — shown when search looks like an email */}
+          {search.includes("@") && (
+            <button
+              onClick={() => handleSelect(search.trim())}
+              disabled={loading}
+              className="w-full flex items-center gap-3 px-5 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 text-left"
+            >
+              <div className="size-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <Search className="size-4 text-blue-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-blue-700 truncate">Start chat with "{search.trim()}"</p>
+                <p className="text-xs text-gray-400">Look up by email address</p>
+              </div>
+            </button>
+          )}
+          {filtered.length === 0 && !search.includes("@") ? (
             <div className="px-5 py-8 text-center text-sm text-gray-400">
-              {members.length === 0 ? "No contacts available yet." : "No contacts match your search."}
+              {members.length === 0 ? "No contacts found. Enter an email address above to start a chat." : "No members match your search."}
             </div>
-          ) : (
+          ) : filtered.length > 0 ? (
             filtered.map(m => (
               <button
                 key={m.email}
@@ -335,12 +364,10 @@ function StartConversationModal({ candidates, existingContactIds, currentUserEma
                   <p className="text-sm font-medium text-gray-900 truncate">{m.fullName || m.email}</p>
                   <p className="text-xs text-gray-400 truncate">{m.email}</p>
                 </div>
-                {existingContactIds.has(0) && (
-                  <span className="text-xs text-blue-500 flex-shrink-0">Chat</span>
-                )}
+                <span className="text-xs text-blue-500 flex-shrink-0">Chat</span>
               </button>
             ))
-          )}
+          ) : null}
         </div>
 
         {loading && (
@@ -517,7 +544,7 @@ export default function Message() {
     contacts, messages, isLoading, error, refetch,
     sendMessage, uploadAttachment, resolveContact, addContactLocally,
     activeContactId, setActiveContactId,
-    markConversationAsRead, deleteConversation,
+    markConversationAsRead, deleteConversation, deleteMessage,
   } = useMessages();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -541,66 +568,18 @@ export default function Message() {
   const groupFileInputRef = useRef<HTMLInputElement>(null);
   const groupTextInputRef = useRef<HTMLInputElement>(null);
 
-  const [allSharedMembers, setAllSharedMembers] = useState<SharedMember[]>([]);
-  const [acceptedInvitationContacts, setAcceptedInvitationContacts] = useState<Array<{ email: string; fullName: string; avatarUrl?: string }>>([]);
+  const {
+    allSharedMembers,
+    fetchAllSharedMembers,
+    incomingInvitations,
+    outgoingInvitations,
+  } = useTeams();
 
-  // Fetch team members once for Start Conversation modal
+  // Fetch data on mount
   useEffect(() => {
-    api.get<SharedMember[]>('/api/teams/members-shared/all')
-      .then(d => setAllSharedMembers(d ?? []))
-      .catch(() => {});
-
-    Promise.all([
-      api.get<Array<{ senderEmail: string; senderFullName: string; senderAvatarUrl?: string; status: string }>>('/api/teams/invitations/incoming'),
-      api.get<Array<{ recipientEmail: string; recipientFullName: string; recipientAvatarUrl?: string; status: string }>>('/api/teams/invitations/outgoing'),
-    ])
-      .then(([incoming, outgoing]) => {
-        const candidates: Array<{ email: string; fullName: string; avatarUrl?: string }> = [];
-
-        for (const inv of incoming ?? []) {
-          if ((inv.status || '').toLowerCase() !== 'accepted') continue;
-          candidates.push({
-            email: inv.senderEmail,
-            fullName: inv.senderFullName || inv.senderEmail,
-            avatarUrl: inv.senderAvatarUrl,
-          });
-        }
-
-        for (const inv of outgoing ?? []) {
-          if ((inv.status || '').toLowerCase() !== 'accepted') continue;
-          candidates.push({
-            email: inv.recipientEmail,
-            fullName: inv.recipientFullName || inv.recipientEmail,
-            avatarUrl: inv.recipientAvatarUrl,
-          });
-        }
-
-        setAcceptedInvitationContacts(candidates);
-      })
-      .catch(() => {
-        setAcceptedInvitationContacts([]);
-      });
-
+    fetchAllSharedMembers();
     fetchGroups();
-  }, [fetchGroups]);
-
-  const startConversationCandidates = useMemo(() => {
-    const candidates: Array<{ email: string; fullName: string; avatarUrl?: string }> = [];
-
-    for (const member of allSharedMembers) {
-      candidates.push({
-        email: member.userEmail,
-        fullName: member.userFullName || member.userEmail,
-        avatarUrl: member.avatarUrl,
-      });
-    }
-
-    for (const c of acceptedInvitationContacts) {
-      candidates.push(c);
-    }
-
-    return candidates;
-  }, [allSharedMembers, acceptedInvitationContacts]);
+  }, [fetchAllSharedMembers, fetchGroups]);
 
   const [search, setSearch] = useState("");
   const [showContacts, setShowContacts] = useState(false);
@@ -670,7 +649,57 @@ export default function Message() {
     }
   }, [activeContactId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const existingContactIds = useMemo(() => new Set(contacts.map(c => c.id)), [contacts]);
+  const startConversationCandidates = useMemo<ConversationCandidate[]>(() => {
+    const byEmail = new Map<string, ConversationCandidate>();
+
+    for (const contact of contacts) {
+      const normalizedEmail = contact.email.trim().toLowerCase();
+      if (!normalizedEmail) continue;
+      byEmail.set(normalizedEmail, {
+        email: contact.email,
+        fullName: contact.name || contact.email,
+        avatarUrl: contact.avatarUrl || undefined,
+      });
+    }
+
+    for (const member of allSharedMembers) {
+      const normalizedEmail = member.userEmail.trim().toLowerCase();
+      if (!normalizedEmail) continue;
+      if (!byEmail.has(normalizedEmail)) {
+        byEmail.set(normalizedEmail, {
+        email: member.userEmail,
+        fullName: member.userFullName || member.userEmail,
+        avatarUrl: member.avatarUrl || undefined,
+        });
+      }
+    }
+
+    for (const inv of outgoingInvitations) {
+      if (inv.status !== "Accepted") continue;
+      const normalizedEmail = inv.recipientEmail.trim().toLowerCase();
+      if (!normalizedEmail) continue;
+      if (!byEmail.has(normalizedEmail)) {
+        byEmail.set(normalizedEmail, {
+          email: inv.recipientEmail,
+          fullName: inv.recipientFullName || inv.recipientEmail,
+        });
+      }
+    }
+
+    for (const inv of incomingInvitations) {
+      if (inv.status !== "Accepted") continue;
+      const normalizedEmail = inv.senderEmail.trim().toLowerCase();
+      if (!normalizedEmail) continue;
+      if (!byEmail.has(normalizedEmail)) {
+        byEmail.set(normalizedEmail, {
+          email: inv.senderEmail,
+          fullName: inv.senderFullName || inv.senderEmail,
+        });
+      }
+    }
+
+    return Array.from(byEmail.values());
+  }, [contacts, allSharedMembers, outgoingInvitations, incomingInvitations]);
 
   // â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -783,7 +812,7 @@ export default function Message() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen overflow-hidden bg-gray-50">
+      <div className="flex h-screen overflow-hidden bg-background">
         <Sidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
           <Header />
@@ -795,7 +824,7 @@ export default function Message() {
 
   if (error) {
     return (
-      <div className="flex h-screen overflow-hidden bg-gray-50">
+      <div className="flex h-screen overflow-hidden bg-background">
         <Sidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
           <Header />
@@ -806,7 +835,7 @@ export default function Message() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <div className="flex flex-col flex-1 overflow-hidden">
@@ -1064,7 +1093,7 @@ export default function Message() {
                             <div className="flex-1 h-px bg-gray-200" />
                           </div>
                           <div className="flex flex-col gap-3">
-                            {group.messages.map((msg: any) => {
+                            {group.messages.map((msg: GroupMessage) => {
                               const isSent = msg.senderId === currentUserId;
                               const hasAttachment = !!msg.attachmentUrl;
                               return (
@@ -1202,7 +1231,23 @@ export default function Message() {
                     <Avatar name={activeContact.name} avatarUrl={activeContact.avatarUrl} />
                     <div>
                       <p className="text-sm font-semibold text-gray-900">{activeContact.name}</p>
-                      <p className="text-xs text-green-500">Online</p>
+                      {/* A-02: dynamic presence — Online if seen within 5 min, else relative "Last seen" */}
+                      {activeContact.lastSeen
+                        ? (() => {
+                            const seenMs = Date.now() - new Date(activeContact.lastSeen).getTime();
+                            const isOnline = seenMs < 5 * 60 * 1000;
+                            if (isOnline) return <p className="text-xs text-green-500">Online</p>;
+                            const mins = Math.floor(seenMs / 60_000);
+                            const hrs  = Math.floor(seenMs / 3_600_000);
+                            const days = Math.floor(seenMs / 86_400_000);
+                            const ago  = days >= 1
+                              ? `${days}d ago`
+                              : hrs >= 1
+                                ? `${hrs}h ago`
+                                : `${mins}m ago`;
+                            return <p className="text-xs text-gray-400">Last seen {ago}</p>;
+                          })()
+                        : null}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1237,7 +1282,7 @@ export default function Message() {
                         </div>
 
                         <div className="flex flex-col gap-3">
-                          {group.messages.map((msg: any) => {
+                          {group.messages.map((msg: DmMessage) => {
                             const isSent = msg.senderId === currentUserId;
                             const hasAttachment = !!msg.attachmentUrl;
 
@@ -1253,7 +1298,16 @@ export default function Message() {
                             }
 
                             return (
-                              <div key={msg.id} className={`flex ${isSent ? "justify-end" : "justify-start"}`}>
+                              <div key={msg.id} className={`group flex items-end gap-1 ${isSent ? "justify-end" : "justify-start"}`}>
+                                {isSent && (
+                                  <button
+                                    onClick={() => deleteMessage(msg.id)}
+                                    title="Delete message"
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-500 flex-shrink-0 mb-1"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
                                 <div className={`flex flex-col max-w-[72%] ${isSent ? "items-end" : "items-start"}`}>
                                   {/* Attachment bubble */}
                                   {hasAttachment && (
@@ -1378,13 +1432,14 @@ export default function Message() {
             ))}
           </div>
         </div>
+
+        <Footer />
       </div>
 
       {/* Start Conversation Modal */}
       {showStartModal && (
         <StartConversationModal
           candidates={startConversationCandidates}
-          existingContactIds={existingContactIds}
           currentUserEmail={user?.email ?? ""}
           onStart={handleStartConversation}
           onClose={() => setShowStartModal(false)}

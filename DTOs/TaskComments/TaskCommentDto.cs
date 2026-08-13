@@ -1,7 +1,3 @@
-// FILE: DTOs/TaskComments/TaskCommentDto.cs
-// STATUS: NEW
-// CHANGES: Created for fully exposing TaskComment entity (#21)
-
 using System;
 
 namespace taskflow.DTOs.TaskComments

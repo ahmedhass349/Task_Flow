@@ -1,8 +1,3 @@
-// FILE: Mapping/MappingProfile.cs
-// STATUS: UPDATED
-// CHANGES: Added TaskComment mappings (#21), DueDateLabel for TaskDto (#28),
-//          ProfileDto FirstName/LastName auto-mapped by convention (#24)
-
 using System.Globalization;
 using System.Linq;
 using AutoMapper;
@@ -39,7 +34,10 @@ namespace taskflow.Mapping
                 .ForMember(dest => dest.AssigneeName, opt => opt.MapFrom(src => src.Assignee != null ? src.Assignee.FullName : null))
                 .ForMember(dest => dest.AssignedById, opt => opt.MapFrom(src => src.AssignedById))
                 .ForMember(dest => dest.DueDateLabel, opt => opt.MapFrom(src =>
-                    src.DueDate.HasValue ? src.DueDate.Value.ToString("MMM d", CultureInfo.InvariantCulture) : null));
+                    src.DueDate.HasValue ? src.DueDate.Value.ToString("MMM d", CultureInfo.InvariantCulture) : null))
+                // Phase 4: true when task was created by someone other than the assignee
+                .ForMember(dest => dest.IsAssignedByOther, opt => opt.MapFrom(src =>
+                    src.CreatedById.HasValue && src.CreatedById != src.AssigneeId));
 
             // ─── 4. CreateTaskRequest → TaskItem ────────────────────────────
             CreateMap<CreateTaskRequest, TaskItem>()

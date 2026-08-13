@@ -11,5 +11,6 @@ namespace taskflow.Repositories.Interfaces
         Task MarkConversationAsReadAsync(int userId, int contactId);
         Task MarkAllAsReadAsync(int userId);
         Task DeleteConversationAsync(int userId, int contactId, string senderFullName);
+        Task DeleteMessageAsync(int messageId, int userId);
     }
 }

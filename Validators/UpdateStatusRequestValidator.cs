@@ -1,7 +1,3 @@
-// FILE: Validators/UpdateStatusRequestValidator.cs
-// STATUS: NEW
-// CHANGES: Created for extracted UpdateStatusRequest DTO (#5)
-
 using FluentValidation;
 using taskflow.DTOs.Tasks;
 

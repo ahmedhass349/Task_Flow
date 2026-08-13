@@ -1,9 +1,26 @@
+/*
+  FILE: Services/NotificationService.cs
+  PHASE: 2
+  MISSION: 1-CrossMachine
+  CHANGES:
+    - CreateAsync: sets UserEmail on new Notification for cross-device MongoDB pull queries (P2.2).
+    - MarkAsReadAsync: added Mirror call so read-status is synced to MongoDB (P2.2).
+    - MarkAllAsReadAsync: loads unread BEFORE marking, then mirrors each notification (P2.2).
+  PHASE: 3
+  MISSION: 2-Performance
+  CHANGES:
+    - CreateAsync: removed redundant GetUnreadCountAsync + SendAsync("UnreadCount") after
+      ReceiveNotification. NotificationContext.tsx reducer's ADD_NOTIFICATION case already
+      increments unreadCount client-side, so the extra DB query + SignalR round-trip is
+      unnecessary. Saves 1 SQL COUNT query + 1 SignalR message per notification created.
+*/
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using taskflow.DTOs.Notifications;
 using taskflow.Data.Entities;
@@ -22,6 +39,7 @@ namespace taskflow.Services
         private readonly IEmailService _emailService;
         private readonly ILogger<NotificationService> _logger;
         private readonly IMirrorService _mirror;
+        private readonly IConfiguration _configuration;
 
         public NotificationService(
             INotificationRepository notificationRepository,
@@ -30,7 +48,8 @@ namespace taskflow.Services
             IHubContext<NotificationHub> hubContext,
             IEmailService emailService,
             ILogger<NotificationService> logger,
-            IMirrorService mirror)
+            IMirrorService mirror,
+            IConfiguration configuration)
         {
             _notificationRepository = notificationRepository;
             _userRepository = userRepository;
@@ -39,6 +58,7 @@ namespace taskflow.Services
             _emailService = emailService;
             _logger = logger;
             _mirror = mirror;
+            _configuration = configuration;
         }
 
         // Core creation method
@@ -48,9 +68,13 @@ namespace taskflow.Services
         {
             try
             {
+                // Phase 2: look up user email for cross-device MongoDB pull queries
+                var user = await GetUserById(userId);
+
                 var notification = new Notification
                 {
                     UserId = userId,
+                    UserEmail = user?.Email,  // Phase 2
                     Title = title,
                     Message = message,
                     Type = type,
@@ -66,16 +90,10 @@ namespace taskflow.Services
                 // Compute TimeAgo
                 notificationDto.TimeAgo = GetTimeAgo(createdNotification.CreatedAt);
 
-                // Push to user via SignalR
+                // Push to user via SignalR — client increments unreadCount locally on ADD_NOTIFICATION
                 await _hubContext.Clients
                     .User(userId.ToString())
                     .SendAsync("ReceiveNotification", notificationDto);
-
-                // Update unread count
-                var unreadCount = await _notificationRepository.GetUnreadCountAsync(userId);
-                await _hubContext.Clients
-                    .User(userId.ToString())
-                    .SendAsync("UnreadCount", unreadCount);
 
                 _logger.LogInformation("Notification created: {Title} for User {UserId}", title, userId);
 
@@ -282,7 +300,19 @@ namespace taskflow.Services
 
         public async Task MarkAsReadAsync(int notificationId, int userId)
         {
+            // Phase 2: load before marking so we can mirror the updated state
+            var notification = await _notificationRepository.FirstOrDefaultAsync(
+                n => n.Id == notificationId && n.UserId == userId);
+
             await _notificationRepository.MarkAsReadAsync(notificationId, userId);
+
+            // Phase 2: mirror read-status to MongoDB so other devices see it
+            if (notification != null)
+            {
+                notification.IsRead = true;
+                notification.ReadAt = DateTime.UtcNow;
+                _mirror.Mirror("notifications", notification.Id, notification);
+            }
 
             // Update unread count via SignalR
             var newCount = await _notificationRepository.GetUnreadCountAsync(userId);
@@ -293,7 +323,19 @@ namespace taskflow.Services
 
         public async Task MarkAllAsReadAsync(int userId)
         {
+            // Phase 2: load unread BEFORE marking so we can mirror each one
+            var unread = await _notificationRepository.GetUnreadAsync(userId);
+
             await _notificationRepository.MarkAllAsReadAsync(userId);
+
+            // Phase 2: mirror each notification's read-status to MongoDB
+            var now = DateTime.UtcNow;
+            foreach (var n in unread)
+            {
+                n.IsRead = true;
+                n.ReadAt = now;
+                _mirror.Mirror("notifications", n.Id, n);
+            }
 
             // Update unread count via SignalR
             await _hubContext.Clients
@@ -381,8 +423,7 @@ namespace taskflow.Services
 
         private string GetBaseUrl()
         {
-            // This should be injected via IConfiguration
-            return "http://localhost:3000";
+            return _configuration["AppSettings:BaseUrl"] ?? "http://localhost:3000";
         }
     }
 }

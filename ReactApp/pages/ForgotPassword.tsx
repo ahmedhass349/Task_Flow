@@ -17,7 +17,12 @@ export default function ForgotPassword() {
 
     try {
       await api.post<string>("/api/auth/forgot-password", { email });
-      const code: string | null = await (window as any).electronAPI.invoke('read-reset-code');
+      
+      let code: string | null = null;
+      if (typeof window !== 'undefined' && typeof (window as any).__TAURI_INTERNALS__ !== 'undefined') {
+        const { invoke } = await import('@tauri-apps/api/core');
+        code = await invoke<string | null>('read_reset_code');
+      }
       if (!code) {
         setError("Recovery code could not be retrieved. Please try again.");
         return;

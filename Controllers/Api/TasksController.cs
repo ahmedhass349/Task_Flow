@@ -1,8 +1,3 @@
-// FILE: Controllers/Api/TasksController.cs
-// STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() (#3), removed try-catch (#15), pass userId to Update/Delete/ToggleStar/UpdateStatus (#2),
-//          replaced inline UpdateStatusBody with UpdateStatusRequest DTO (#5), cleaned usings (#17)
-
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
@@ -23,7 +18,6 @@ namespace taskflow.Controllers.Api
     /// </summary>
     [ApiController]
     [Route("api/tasks")]
-    [Authorize]
     public class TasksController : ControllerBase
     {
         private readonly ITaskService _taskService;
@@ -45,49 +39,12 @@ namespace taskflow.Controllers.Api
             return userId;
         }
 
-        /// <summary>
-        /// Retrieves a filtered list of tasks for the authenticated user.
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetTasks([FromQuery] TaskFilterRequest filter)
         {
             var userId = GetUserId();
             var tasks = await _taskService.GetTasksAsync(userId, filter);
             return Ok(ApiResponse<IEnumerable<TaskDto>>.Ok(tasks));
-        }
-
-        /// <summary>
-        /// Retrieves tasks assigned to a specific team member (admin use).
-        /// </summary>
-        [HttpGet("member/{memberId}")]
-        public async Task<IActionResult> GetTasksByMember(int memberId)
-        {
-            var tasks = await _taskService.GetTasksByMemberIdAsync(memberId);
-            return Ok(ApiResponse<IEnumerable<TaskDto>>.Ok(tasks));
-        }
-
-        /// <summary>
-        /// Retrieves tasks assigned to a member identified by email (cross-machine support).
-        /// </summary>
-        [HttpGet("member-email")]
-        public async Task<IActionResult> GetTasksByMemberEmail([FromQuery] string email)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                return BadRequest(ApiResponse<object>.Fail("email is required."));
-            var tasks = await _taskService.GetTasksByMemberEmailAsync(email);
-            return Ok(ApiResponse<IEnumerable<TaskDto>>.Ok(tasks));
-        }
-
-        /// <summary>
-        /// Returns computed performance metrics for a member identified by email.
-        /// </summary>
-        [HttpGet("member-metrics")]
-        public async Task<IActionResult> GetMemberMetrics([FromQuery] string email)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                return BadRequest(ApiResponse<object>.Fail("email is required."));
-            var metrics = await _taskService.GetMemberMetricsAsync(email);
-            return Ok(ApiResponse<MemberMetricsDto>.Ok(metrics));
         }
 
         /// <summary>
@@ -101,9 +58,6 @@ namespace taskflow.Controllers.Api
             return Ok(ApiResponse<TaskDto>.Ok(task));
         }
 
-        /// <summary>
-        /// Creates a new task for the authenticated user.
-        /// </summary>
         [HttpPost]
         public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
         {
@@ -112,9 +66,25 @@ namespace taskflow.Controllers.Api
             return StatusCode(201, ApiResponse<TaskDto>.Ok(task, "Task created successfully"));
         }
 
-        /// <summary>
-        /// Updates an existing task by its identifier.
-        /// </summary>
+        [HttpPost("assign")]
+        public async Task<IActionResult> AssignTask([FromBody] AssignTaskRequest request)
+        {
+            try
+            {
+                var assignerUserId = GetUserId();
+                var task = await _taskService.AssignTaskAsync(assignerUserId, request);
+                return StatusCode(201, ApiResponse<TaskDto>.Ok(task, "Task assigned successfully"));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+        }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTask(int id, [FromBody] UpdateTaskRequest request)
         {
@@ -123,9 +93,6 @@ namespace taskflow.Controllers.Api
             return Ok(ApiResponse<TaskDto>.Ok(task, "Task updated successfully"));
         }
 
-        /// <summary>
-        /// Deletes a task by its identifier.
-        /// </summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
         {
@@ -134,9 +101,6 @@ namespace taskflow.Controllers.Api
             return NoContent();
         }
 
-        /// <summary>
-        /// Toggles the starred status of a task.
-        /// </summary>
         [HttpPatch("{id}/star")]
         public async Task<IActionResult> ToggleStar(int id)
         {
@@ -145,9 +109,6 @@ namespace taskflow.Controllers.Api
             return Ok(ApiResponse<TaskDto>.Ok(task, "Task star toggled"));
         }
 
-        /// <summary>
-        /// Updates the status of a task.
-        /// </summary>
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusRequest request)
         {
@@ -156,39 +117,37 @@ namespace taskflow.Controllers.Api
             return Ok(ApiResponse<TaskDto>.Ok(task, "Task status updated"));
         }
 
-        /// <summary>
-        /// Uses the AI scanner to extract task fields from an uploaded image or PDF.
-        /// Returns a SmartFillResult with title, description, priority, dueDate, and assignee.
-        /// </summary>
         [HttpPost("smart-fill")]
         public async Task<IActionResult> SmartFill([FromBody] SmartFillRequest request, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(request.FileBase64) || string.IsNullOrWhiteSpace(request.MimeType))
                 return BadRequest(ApiResponse<SmartFillResult>.Fail("fileBase64 and mimeType are required."));
 
-            // Get today's date for relative-date resolution
+            if (!_mistral.IsAvailable)
+                return BadRequest(ApiResponse<SmartFillResult>.Fail("Mistral AI is not configured."));
+
             var today = DateTime.Today;
             var todayStr = today.ToString("MMMM d, yyyy");
             var tomorrowStr = today.AddDays(1).ToString("yyyy-MM-dd");
             var nextMondayStr = today.AddDays((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) is var nm
                                     ? today.AddDays(((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7 == 0 ? 7 : ((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7).ToString("yyyy-MM-dd")
                                     : "";
-            _ = nm; // suppress unused warning
+            _ = nm;
 
             var systemPrompt =
                 $"You are a precise task-extraction AI. Your only job is to read ALL text in the provided document or image and extract task information.\n\n" +
                 $"TODAY'S DATE: {todayStr}\n\n" +
                 "FIELD EXTRACTION RULES:\n" +
-                "• title: A concise (≤10 words), action-oriented summary of the main task. Use imperative form (e.g. \"Fix login bug\", \"Submit Q3 report\", \"Design onboarding flow\"). NEVER leave empty — always infer from the content.\n" +
-                "• description: All relevant details: requirements, context, steps, notes, or instructions visible in the document. Be thorough — include everything useful.\n" +
-                "• priority: Must be EXACTLY one of: \"Low\", \"Medium\", \"High\", \"Urgent\". Infer as follows:\n" +
+                "title: A concise (≤10 words), action-oriented summary of the main task. Use imperative form (e.g. \"Fix login bug\", \"Submit Q3 report\", \"Design onboarding flow\"). NEVER leave empty — always infer from the content.\n" +
+                "description: All relevant details: requirements, context, steps, notes, or instructions visible in the document. Be thorough — include everything useful.\n" +
+                "priority: Must be EXACTLY one of: \"Low\", \"Medium\", \"High\", \"Urgent\". Infer as follows:\n" +
                 "  - \"urgent\", \"ASAP\", \"immediately\", \"critical\", \"emergency\", \"blocker\" → \"Urgent\"\n" +
                 "  - \"important\", \"high priority\", \"soon\", deadline within 3 days → \"High\"\n" +
                 "  - \"normal\", \"regular\", \"standard\", no clear signal → \"Medium\"\n" +
                 "  - \"low priority\", \"someday\", \"backlog\", \"nice to have\" → \"Low\"\n" +
-                "• dueDate: Any deadline, due date, or target date. Convert to ISO 8601 format \"YYYY-MM-DDTHH:mm:ss\". If only a date is given, append T23:59:00. Resolve relative dates: \"tomorrow\" = " + tomorrowStr + ", \"next week\" = add 7 days, \"end of month\" = last day of current month. Return \"\" if no date is mentioned.\n" +
-                "• assignee: Full name of the person assigned to or responsible for this task. Return \"\" if not found.\n" +
-                "• subtasks: An array of individual checklist items, steps, sub-items, or bullet points found in the document. Each entry should be a short, plain-text action item. Return an empty array [] if none exist.\n\n" +
+                "dueDate: Any deadline, due date, or target date. Convert to ISO 8601 format \"YYYY-MM-DDTHH:mm:ss\". If only a date is given, append T23:59:00. Resolve relative dates: \"tomorrow\" = " + tomorrowStr + ", \"next week\" = add 7 days, \"end of month\" = last day of current month. Return \"\" if no date is mentioned.\n" +
+                "assignee: Full name of the person assigned to or responsible for this task. Return \"\" if not found.\n" +
+                "subtasks: An array of individual checklist items, steps, sub-items, or bullet points found in the document. Each entry should be a short, plain-text action item. Return an empty array [] if none exist.\n\n" +
                 "CRITICAL INSTRUCTIONS:\n" +
                 "1. Read EVERY word in the image or document — do not skip any text, labels, headers, or annotations.\n" +
                 "2. Return ONLY a raw JSON object. No markdown code fences, no explanation, no extra text before or after.\n" +
@@ -198,9 +157,17 @@ namespace taskflow.Controllers.Api
                 "Examine every piece of text in this document or image thoroughly. Extract all task-relevant information and return it as a JSON object. " +
                 "Do not skip any text. Pay close attention to headings, labels, dates, names, and any prioritization keywords.";
 
-            var raw = await _mistral.ChatWithFileAsync(userPrompt, request.FileBase64, request.MimeType, systemPrompt, ct);
+            string raw;
+            try
+            {
+                raw = await _mistral.ChatWithFileAsync(userPrompt, request.FileBase64, request.MimeType, systemPrompt, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Mistral smart-fill API call failed");
+                return StatusCode(502, ApiResponse<SmartFillResult>.Fail("AI scanning service is temporarily unavailable. Please try again later."));
+            }
 
-            // Strip markdown code fences if the model wrapped the JSON
             var json = raw.Trim();
             if (json.StartsWith("```"))
             {

@@ -19,7 +19,6 @@ namespace taskflow.Services
     /// </summary>
     public class MongoService : IMongoService
     {
-        // FILE: Services/MongoService.cs  PHASE: 1  CHANGE: corrected connection string (appName), driver settings
         private const string DatabaseName = "TaskFlow";
 
         private readonly IMongoCollection<UserPresence>? _presenceCollection;
@@ -69,6 +68,8 @@ namespace taskflow.Services
                 {
                     try { await EnsureIndexesAsync(); }
                     catch (Exception ex) { _logger.LogWarning(ex, "MongoService: index creation failed (non-critical)."); }
+                    try { await NormalizeTeamMemberRolesAsync(); }
+                    catch (Exception ex) { _logger.LogWarning(ex, "MongoService: role normalization failed (non-critical)."); }
                 });
             }
             catch (Exception ex)
@@ -162,6 +163,53 @@ namespace taskflow.Services
                     new CreateIndexModel<UserAccount>(accountEmailIdx,
                         new CreateIndexOptions { Unique = true, Name = "account_email_unique" }));
             }
+
+            // Compound index for team_announcements (teamId + createdAt desc)
+            if (_announcementsCollection != null)
+            {
+                var annIdx = Builders<TeamAnnouncement>.IndexKeys
+                    .Ascending(a => a.TeamId)
+                    .Descending(a => a.CreatedAt);
+                await _announcementsCollection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<TeamAnnouncement>(annIdx,
+                        new CreateIndexOptions { Name = "ann_teamid_createdat" }));
+            }
+        }
+
+        private async Task NormalizeTeamMemberRolesAsync()
+        {
+            if (_membersCollection == null) return;
+            var filter = Builders<MongoTeamMember>.Filter.Eq(m => m.Role, "Admin");
+            var update = Builders<MongoTeamMember>.Update.Set(m => m.Role, "Leader");
+            var result = await _membersCollection.UpdateManyAsync(filter, update);
+            if (result.ModifiedCount > 0)
+                _logger.LogInformation("MongoService: normalized {Count} team_members documents from 'Admin' to 'Leader'.", result.ModifiedCount);
+        }
+
+        public async Task<TeamAnnouncement> WriteAnnouncementAsync(TeamAnnouncement announcement)
+        {
+            if (_announcementsCollection == null) return announcement;
+            announcement.CreatedAt = DateTime.UtcNow;
+            await _announcementsCollection.InsertOneAsync(announcement);
+            return announcement;
+        }
+
+        public async Task<List<TeamAnnouncement>> GetAnnouncementsAsync(string teamId, int limit = 50)
+        {
+            if (_announcementsCollection == null) return new List<TeamAnnouncement>();
+            var filter = Builders<TeamAnnouncement>.Filter.Eq(a => a.TeamId, teamId);
+            var sort = Builders<TeamAnnouncement>.Sort.Descending(a => a.CreatedAt);
+            return await _announcementsCollection.Find(filter).Sort(sort).Limit(limit).ToListAsync();
+        }
+
+        public async Task MarkAnnouncementReadAsync(string announcementId, string userEmail)
+        {
+            if (_announcementsCollection == null) return;
+            var normalizedEmail = userEmail.Trim().ToLowerInvariant();
+            var filter = Builders<TeamAnnouncement>.Filter.Eq(a => a.Id, announcementId);
+            // AddToSet is idempotent — won't add duplicates
+            var update = Builders<TeamAnnouncement>.Update.AddToSet(a => a.ReadBy, normalizedEmail);
+            await _announcementsCollection.UpdateOneAsync(filter, update);
         }
 
         // ── Generic entity mirror ─────────────────────────────────────────────
@@ -204,7 +252,6 @@ namespace taskflow.Services
             }
         }
 
-        // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: SyncId-keyed upsert/delete + generic find for cross-device sync
 
         /// <summary>
         /// Upserts a document using a GUID SyncId as <c>_id</c> (string).
@@ -226,6 +273,28 @@ namespace taskflow.Services
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "UpsertDocumentBySyncIdAsync failed: col={Col} syncId={SyncId}", collectionName, syncId);
+            }
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> when a document with the given GUID string <c>_id</c> exists in
+        /// <paramref name="collectionName"/>.  Returns <c>false</c> on any error so that callers
+        /// treat "unknown" as "not exists" — this is the safe default for injection prevention.
+        /// </summary>
+        internal async Task<bool> DocumentExistsBySyncIdAsync(
+            string collectionName, string syncId, CancellationToken ct = default)
+        {
+            if (_db == null) return false;
+            try
+            {
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>(collectionName);
+                var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", syncId);
+                return await collection.Find(filter).AnyAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "DocumentExistsBySyncIdAsync failed: col={Col} syncId={SyncId}", collectionName, syncId);
+                return false;
             }
         }
 
@@ -267,10 +336,50 @@ namespace taskflow.Services
             }
         }
 
+        /// <summary>
+        /// Returns ALL documents in the named collection, or <c>null</c> when MongoDB is
+        /// unreachable (distinguishes an error from a genuinely empty collection).
+        /// </summary>
+        internal async Task<List<MongoDB.Bson.BsonDocument>?> GetAllDocumentsAsync(
+            string collectionName, CancellationToken ct = default)
+        {
+            if (_db == null) return null;
+            try
+            {
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>(collectionName);
+                return await collection.Find(new MongoDB.Bson.BsonDocument()).ToListAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetAllDocumentsAsync failed: col={Col}", collectionName);
+                return null; // null = unreachable; empty list = collection is genuinely empty
+            }
+        }
+
+        // ── Settings (key-value config store in app_settings collection) ────────
+
+        /// <inheritdoc />
+        public async Task<string?> GetSettingAsync(string key)
+        {
+            if (_db == null) return null;
+            try
+            {
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>("app_settings");
+                var filter = Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", key);
+                var doc = await collection.Find(filter).FirstOrDefaultAsync();
+                return doc?.GetValue("value", MongoDB.Bson.BsonNull.Value)?.AsString;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetSettingAsync failed: key={Key}", key);
+                return null;
+            }
+        }
+
         // ── Connectivity ping ─────────────────────────────────────────────────
 
         /// <summary>
-        /// Pings the MongoDB admin database with a 5-second timeout.
+        /// Pings the MongoDB admin database with a 10-second timeout.
         /// Returns true when MongoDB is reachable.
         /// </summary>
         public async Task<bool> PingAsync(CancellationToken ct = default)
@@ -279,7 +388,7 @@ namespace taskflow.Services
             try
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                cts.CancelAfter(TimeSpan.FromSeconds(5));
+                cts.CancelAfter(TimeSpan.FromSeconds(10));
                 await _client.GetDatabase(DatabaseName)
                     .RunCommandAsync<MongoDB.Bson.BsonDocument>(
                         new MongoDB.Bson.BsonDocument("ping", 1),
@@ -371,8 +480,13 @@ namespace taskflow.Services
             if (_invitationsCollection == null)
                 throw new InvalidOperationException("MongoDB is unavailable.");
 
-            // Expire any pre-existing pending invitation from the same sender to the same recipient for the same team
+            // Prevent self-invitation
             var normalizedRecipient = request.RecipientEmail.Trim().ToLowerInvariant();
+            if (string.Equals(senderEmail.Trim().ToLowerInvariant(), normalizedRecipient))
+                throw new InvalidOperationException("You cannot invite yourself to a team.");
+
+            // Expire any pre-existing pending invitation from the same sender to the same recipient for the same team
+
             var expireFilter = Builders<TeamInvitation>.Filter.And(
                 Builders<TeamInvitation>.Filter.Eq(i => i.SenderEmail, senderEmail),
                 Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, normalizedRecipient),
@@ -424,7 +538,7 @@ namespace taskflow.Services
 
             await _invitationsCollection.InsertOneAsync(invitation);
 
-            // Auto-upsert the sender as Admin in their own team
+            // Auto-upsert the sender as Leader in their own team
             if (!string.IsNullOrEmpty(request.TeamId) && _membersCollection != null)
             {
                 var senderFilter = Builders<MongoTeamMember>.Filter.And(
@@ -432,12 +546,11 @@ namespace taskflow.Services
                     Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, senderEmail),
                     Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, senderEmail)
                 );
-                // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-A — persist sender avatar in team_members
                 var senderUpdate = Builders<MongoTeamMember>.Update
                     .Set(m => m.UserEmail, senderEmail)
                     .Set(m => m.UserFullName, senderFullName)
                     .Set(m => m.AvatarUrl, senderAvatarUrl ?? string.Empty)
-                    .Set(m => m.Role, "Admin")
+                    .Set(m => m.Role, "Leader")
                     .Set(m => m.TeamId, request.TeamId)
                     .Set(m => m.TeamName, request.TeamName ?? string.Empty)
                     .Set(m => m.OwnerEmail, senderEmail)
@@ -529,7 +642,6 @@ namespace taskflow.Services
             if (invitation == null)
                 throw new KeyNotFoundException("Invitation not found or already responded to.");
 
-            // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-B — also capture avatar URL and back-fill invitation doc
             // Resolve recipient's display name and avatar from their presence record.
             string recipientFullName = invitation.RecipientFullName;
             string recipientAvatarUrl = string.Empty;
@@ -574,7 +686,6 @@ namespace taskflow.Services
                     Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, recipientEmail),
                     Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, invitation.SenderEmail)
                 );
-                // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-B — persist recipient avatar in team_members
                 var memberUpdate = Builders<MongoTeamMember>.Update
                     .Set(m => m.TeamId, invitation.TeamId ?? string.Empty)
                     .Set(m => m.TeamName, invitation.TeamName ?? string.Empty)
@@ -648,10 +759,25 @@ namespace taskflow.Services
                 var filter = Builders<MongoTeamMember>.Filter.And(
                     Builders<MongoTeamMember>.Filter.Eq(m => m.TeamId, teamId),
                     Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, ownerEmail),
-                    Builders<MongoTeamMember>.Filter.Eq(m => m.IsActive, true)
+                    Builders<MongoTeamMember>.Filter.Eq(m => m.IsActive, true),
+                    Builders<MongoTeamMember>.Filter.Ne(m => m.UserEmail, ownerEmail)
                 );
 
                 var members = await _membersCollection.Find(filter).ToListAsync();
+
+                // Fallback: if no members found with the given ownerEmail, try querying by
+                // teamId alone.  This handles the case where existing MongoDB records still
+                // carry "user@local" as OwnerEmail (from the pre-fix middleware).
+                if (members.Count == 0)
+                {
+                    var fallbackFilter = Builders<MongoTeamMember>.Filter.And(
+                        Builders<MongoTeamMember>.Filter.Eq(m => m.TeamId, teamId),
+                        Builders<MongoTeamMember>.Filter.Eq(m => m.IsActive, true),
+                        Builders<MongoTeamMember>.Filter.Ne(m => m.UserEmail, ownerEmail)
+                    );
+                    members = await _membersCollection.Find(fallbackFilter).ToListAsync();
+                }
+
                 var lastSeenMap = await GetLastSeenBatchAsync(members.Select(m => m.UserEmail));
                 return members.ConvertAll(m => new MongoTeamMemberDto
                 {
@@ -682,7 +808,8 @@ namespace taskflow.Services
             {
                 var filter = Builders<MongoTeamMember>.Filter.And(
                     Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, ownerEmail),
-                    Builders<MongoTeamMember>.Filter.Eq(m => m.IsActive, true)
+                    Builders<MongoTeamMember>.Filter.Eq(m => m.IsActive, true),
+                    Builders<MongoTeamMember>.Filter.Ne(m => m.UserEmail, ownerEmail)
                 );
 
                 var members = await _membersCollection.Find(filter)
@@ -711,7 +838,7 @@ namespace taskflow.Services
             }
         }
 
-        private async Task<Dictionary<string, DateTime>> GetLastSeenBatchAsync(IEnumerable<string> emails)
+        public async Task<Dictionary<string, DateTime>> GetLastSeenBatchAsync(IEnumerable<string> emails)
         {
             if (_presenceCollection == null) return [];
             var emailList = emails.ToList();
@@ -773,7 +900,6 @@ namespace taskflow.Services
                 .Set(m => m.UserFullName, memberFullName)
                 .Set(m => m.OwnerEmail, ownerEmail)
                 .Set(m => m.IsActive, true)
-                // FILE: Services/MongoService.cs  PHASE: 2  CHANGE: P2-C — Set(Role) so re-adds can upgrade role
                 .Set(m => m.Role, role)
                 .SetOnInsert(m => m.JoinedAt, DateTime.UtcNow);
 
@@ -928,20 +1054,22 @@ namespace taskflow.Services
         {
             try
             {
+                var normalized = userEmail.Trim().ToLowerInvariant();
+
                 if (_presenceCollection != null)
                     await _presenceCollection.DeleteOneAsync(
-                        Builders<UserPresence>.Filter.Eq(u => u.Email, userEmail));
+                        Builders<UserPresence>.Filter.Eq(u => u.Email, normalized));
 
                 if (_membersCollection != null)
                 {
                     // Deactivate records where the user is a member of someone else's team
                     await _membersCollection.UpdateManyAsync(
-                        Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, userEmail),
+                        Builders<MongoTeamMember>.Filter.Eq(m => m.UserEmail, normalized),
                         Builders<MongoTeamMember>.Update.Set(m => m.IsActive, false));
 
                     // Deactivate records for teams the user owned
                     await _membersCollection.UpdateManyAsync(
-                        Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, userEmail),
+                        Builders<MongoTeamMember>.Filter.Eq(m => m.OwnerEmail, normalized),
                         Builders<MongoTeamMember>.Update.Set(m => m.IsActive, false));
                 }
 
@@ -951,10 +1079,16 @@ namespace taskflow.Services
                         Builders<TeamInvitation>.Filter.And(
                             Builders<TeamInvitation>.Filter.Eq(i => i.Status, InvitationStatus.Pending),
                             Builders<TeamInvitation>.Filter.Or(
-                                Builders<TeamInvitation>.Filter.Eq(i => i.SenderEmail, userEmail),
-                                Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, userEmail))),
+                                Builders<TeamInvitation>.Filter.Eq(i => i.SenderEmail, normalized),
+                                Builders<TeamInvitation>.Filter.Eq(i => i.RecipientEmail, normalized))),
                         Builders<TeamInvitation>.Update.Set(i => i.Status, InvitationStatus.Cancelled));
                 }
+
+                // Remove the credential backup so the account cannot be ghost-restored
+                // on another machine after it has been deleted.
+                if (_userAccountsCollection != null)
+                    await _userAccountsCollection.DeleteOneAsync(
+                        Builders<UserAccount>.Filter.Eq(a => a.Email, normalized));
             }
             catch (Exception ex)
             {
@@ -966,23 +1100,24 @@ namespace taskflow.Services
 
         public async Task BackupUserAccountAsync(string email, string passwordHash, int sqliteId)
         {
-            if (_userAccountsCollection == null) return;
-            try
-            {
-                var normalized = email.Trim().ToLowerInvariant();
-                var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, normalized);
-                var update = Builders<UserAccount>.Update
-                    .Set(a => a.Email, normalized)
-                    .Set(a => a.PasswordHash, passwordHash)
-                    .Set(a => a.SqliteId, sqliteId)
-                    .Set(a => a.UpdatedAt, DateTime.UtcNow);
-                await _userAccountsCollection.UpdateOneAsync(filter, update,
-                    new UpdateOptions { IsUpsert = true });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "MongoService.BackupUserAccountAsync failed for {Email}", email);
-            }
+            // Do NOT catch exceptions here — callers rely on exceptions propagating to determine
+            // whether the backup succeeded.  If the write fails, IsBackedUpToMongo must stay false
+            // so BulkSyncStartupService.BackupUnbackedUsersAsync can retry on the next startup.
+            if (_userAccountsCollection == null)
+                throw new InvalidOperationException("MongoDB user_accounts collection is unavailable.");
+
+            var normalized = email.Trim().ToLowerInvariant();
+            var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, normalized);
+            var update = Builders<UserAccount>.Update
+                .Set(a => a.Email, normalized)
+                .Set(a => a.PasswordHash, passwordHash)
+                .Set(a => a.SqliteId, sqliteId)
+                .Set(a => a.UpdatedAt, DateTime.UtcNow)
+                // SetOnInsert ensures _id is always a proper ObjectId on first insert,
+                // guarding against a null-_id regression if this method is ever refactored.
+                .SetOnInsert(a => a.Id, MongoDB.Bson.ObjectId.GenerateNewId().ToString());
+            await _userAccountsCollection.UpdateOneAsync(filter, update,
+                new UpdateOptions { IsUpsert = true });
         }
 
         public async Task<UserAccount?> FindAccountForRestorationAsync(string email)
@@ -990,14 +1125,73 @@ namespace taskflow.Services
             if (_userAccountsCollection == null) return null;
             try
             {
+                // Use a 6-second hard cap so a dead/slow connection doesn't stall the
+                // login endpoint for the full driver ServerSelectionTimeout (8 s).
+                using var cts = new System.Threading.CancellationTokenSource(
+                    TimeSpan.FromSeconds(6));
                 var normalized = email.Trim().ToLowerInvariant();
                 var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, normalized);
-                return await _userAccountsCollection.Find(filter).FirstOrDefaultAsync();
+                return await _userAccountsCollection.Find(filter)
+                    .FirstOrDefaultAsync(cts.Token);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "MongoService.FindAccountForRestorationAsync failed for {Email}", email);
                 return null;
+            }
+        }
+
+        public async Task<Models.Mongo.MongoUserProfile?> FindUserProfileFromUsersAsync(string email)
+        {
+            if (_db == null) return null;
+            try
+            {
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(6));
+                var collection = _db.GetCollection<MongoDB.Bson.BsonDocument>("users");
+                var normalized = email.Trim().ToLowerInvariant();
+                // Case-insensitive regex match on the Email field
+                var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter
+                    .Regex("Email", new MongoDB.Bson.BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(normalized)}$", "i"));
+                var doc = await collection.Find(filter).FirstOrDefaultAsync(cts.Token);
+                if (doc == null) return null;
+
+                return new Models.Mongo.MongoUserProfile
+                {
+                    Company  = doc.Contains("Company")  && !doc["Company"].IsBsonNull  ? doc["Company"].AsString  : null,
+                    Country  = doc.Contains("Country")  && !doc["Country"].IsBsonNull  ? doc["Country"].AsString  : null,
+                    Phone    = doc.Contains("Phone")    && !doc["Phone"].IsBsonNull    ? doc["Phone"].AsString    : null,
+                    Timezone = doc.Contains("Timezone") && !doc["Timezone"].IsBsonNull ? doc["Timezone"].AsString : null,
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MongoService.FindUserProfileFromUsersAsync failed for {Email}", email);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> when a credential record for <paramref name="email"/> exists in
+        /// the <c>user_accounts</c> collection.  Returns <c>false</c> on any error or when
+        /// MongoDB is unreachable, so callers treat "unknown" as "not exists" (safe default).
+        /// Used as an injection guard: if the account is absent from MongoDB it must not be
+        /// re-created by login-time fire-and-forget writes or stale outbox replays.
+        /// </summary>
+        public async Task<bool> AccountExistsInMongoAsync(string email)
+        {
+            if (_userAccountsCollection == null) return false;
+            try
+            {
+                using var cts = new System.Threading.CancellationTokenSource(
+                    TimeSpan.FromSeconds(6));
+                var normalized = email.Trim().ToLowerInvariant();
+                var filter = Builders<UserAccount>.Filter.Eq(a => a.Email, normalized);
+                return await _userAccountsCollection.Find(filter).AnyAsync(cts.Token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MongoService.AccountExistsInMongoAsync failed for {Email}", email);
+                return false;
             }
         }
 
@@ -1035,8 +1229,7 @@ namespace taskflow.Services
                 var docs = await _crossNotificationsCollection.Find(filter).ToListAsync();
                 if (docs.Count > 0)
                 {
-                    // FILE: Services/MongoService.cs  PHASE: 4  CHANGE: delete by specific IDs (not email filter)
-                    // to avoid silently deleting notifications that arrived between the Find and DeleteMany.
+                    // Snapshot IDs before delete to avoid a race condition between Find and DeleteMany.
                     var ids = docs.Select(d => d.Id).ToList();
                     var idFilter = Builders<CrossNotification>.Filter.In(n => n.Id, ids);
                     await _crossNotificationsCollection.DeleteManyAsync(idFilter);
@@ -1053,15 +1246,32 @@ namespace taskflow.Services
         // ── Dev / testing ─────────────────────────────────────────────────────
 
         /// <summary>Drops every document from all three MongoDB collections.</summary>
-        public async Task ClearAllAsync()
+        public async Task ClearAllAsync(bool includeUsers = false)
         {
+            if (_db == null) return;
             var empty = Builders<MongoDB.Bson.BsonDocument>.Filter.Empty;
-            if (_presenceCollection != null)
-                await _db!.GetCollection<MongoDB.Bson.BsonDocument>("user_presence").DeleteManyAsync(empty);
-            if (_invitationsCollection != null)
-                await _db!.GetCollection<MongoDB.Bson.BsonDocument>("team_invitations").DeleteManyAsync(empty);
-            if (_membersCollection != null)
-                await _db!.GetCollection<MongoDB.Bson.BsonDocument>("team_members").DeleteManyAsync(empty);
+
+            // Relay / cross-device collections
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("user_presence").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("team_invitations").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("team_members").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("cross_notifications").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("team_announcements").DeleteManyAsync(empty);
+
+            // Mirror collections (BulkSyncStartupService pulls these into SQLite on every
+            // startup — they must be cleared together with SQLite to prevent re-injection).
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("projects").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("tasks").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("notifications").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("reminders").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("calendar_events").DeleteManyAsync(empty);
+            await _db.GetCollection<MongoDB.Bson.BsonDocument>("users").DeleteManyAsync(empty);
+
+            // Credential backup — only cleared when explicitly requested (users=true).
+            // Omitting this while keeping SQLite users would cause ReconcileUsersAsync to
+            // delete them on the next startup (they'd be absent from user_accounts).
+            if (includeUsers)
+                await _db.GetCollection<MongoDB.Bson.BsonDocument>("user_accounts").DeleteManyAsync(empty);
         }
 
         // ── Presence exact-match lookup ────────────────────────────────────────

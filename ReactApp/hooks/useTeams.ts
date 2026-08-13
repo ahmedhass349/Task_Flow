@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiRequestError } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 // â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -13,7 +14,7 @@ export interface TeamMember {
   userId: string;
   name: string;
   email: string;
-  role: "Member" | "Admin";
+  role: "Member" | "Leader";
   status: "active" | "invited" | "inactive";
   avatarUrl?: string;
 }
@@ -85,6 +86,31 @@ export interface AnnouncementWithReceipts {
   recipients: AnnouncementRecipient[];
 }
 
+export interface Announcement {
+  id: string;
+  teamId: string;
+  teamName: string;
+  senderEmail: string;
+  senderName: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  readBy: string[];
+}
+
+export interface MemberProgressStat {
+  userId: number;
+  userName: string;
+  initials: string;
+  email: string;
+  avatarUrl?: string;
+  role: string;
+  tasksTodo: number;
+  tasksInProgress: number;
+  tasksCompleted: number;
+  tasksOverdue: number;
+}
+
 export interface SendInvitationRequest {
   recipientEmail: string;
   teamId?: string;
@@ -141,7 +167,14 @@ export interface UseTeamsReturn {
   // Announcements
   sendAnnouncement: (teamId: string, message: string, title?: string) => Promise<void>;
   getAnnouncements: (teamId: string) => Promise<AnnouncementWithReceipts[]>;
-  markAnnouncementRead: (announcementId: string) => Promise<void>;
+  announcements: Announcement[];
+  announcementsLoading: boolean;
+  fetchAnnouncements: (teamId: string) => Promise<void>;
+  markAnnouncementRead: (teamId: string, announcementId: string) => Promise<void>;
+  // PHASE 5: leader progress dashboard
+  memberProgress: MemberProgressStat[];
+  memberProgressLoading: boolean;
+  fetchMemberProgress: (teamId: string) => Promise<void>;
 }
 
 // â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -173,7 +206,7 @@ export const useTeams = (): UseTeamsReturn => {
     }
     try {
       const data = await api.get<Team[]>("/api/teams");
-      setTeams(data);
+      setTeams(data ?? []);
     } catch (err) {
       if (!silent) {
         setError(
@@ -350,6 +383,55 @@ export const useTeams = (): UseTeamsReturn => {
   // â”€â”€ User search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
+  // ── Announcements ────────────────────────────────────────────────────────
+
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+
+  // PHASE 5: member progress stats
+  const [memberProgress, setMemberProgress] = useState<MemberProgressStat[]>([]);
+  const [memberProgressLoading, setMemberProgressLoading] = useState(false);
+
+  const fetchAnnouncementsInner = useCallback(async (teamId: string) => {
+    if (!teamId) return;
+    setAnnouncementsLoading(true);
+    try {
+      const data = await api.get<Announcement[]>(`/api/teams/${teamId}/announcements`);
+      setAnnouncements(data ?? []);
+    } catch {
+      // silently ignore — announcements are non-critical
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  }, []);
+
+  const fetchAnnouncements = useCallback(async (teamId: string) => {
+    await fetchAnnouncementsInner(teamId);
+  }, [fetchAnnouncementsInner]);
+
+  const markAnnouncementRead = useCallback(async (teamId: string, announcementId: string): Promise<void> => {
+    try {
+      await api.post(`/api/teams/${teamId}/announcements/${announcementId}/read`, {});
+      await fetchAnnouncementsInner(teamId);
+    } catch {
+      // non-critical — silently swallow
+    }
+  }, [fetchAnnouncementsInner]);
+
+  const fetchMemberProgress = useCallback(async (teamId: string) => {
+    if (!teamId) return;
+    setMemberProgressLoading(true);
+    try {
+      // GET /api/teams/{id}/members returns TeamMemberDto[] with all four task counts
+      const data = await api.get<MemberProgressStat[]>(`/api/teams/${teamId}/members`);
+      setMemberProgress(data ?? []);
+    } catch {
+      setMemberProgress([]);
+    } finally {
+      setMemberProgressLoading(false);
+    }
+  }, []);
+
   const leaveTeam = useCallback(async (teamId) => {
     if (!teamId) return;
     await api.delete(`/api/teams/${teamId}/membership`);
@@ -358,7 +440,9 @@ export const useTeams = (): UseTeamsReturn => {
 
   const sendAnnouncement = useCallback(async (teamId: string, message: string, title?: string): Promise<void> => {
     await api.post(`/api/teams/${teamId}/announce`, { message, title });
-  }, []);
+    // PHASE 2: refresh announcement list after sending
+    await fetchAnnouncementsInner(teamId);
+  }, [fetchAnnouncementsInner]);
 
   const getAnnouncements = useCallback(async (teamId: string): Promise<AnnouncementWithReceipts[]> => {
     try {
@@ -387,12 +471,16 @@ export const useTeams = (): UseTeamsReturn => {
 
   // â”€â”€ Initial load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+  const { isInitialized, isAuthenticated } = useAuth();
+
   useEffect(() => {
+    if (!isInitialized) return;
+    if (!isAuthenticated) return;
     fetchData();
     fetchInvitations();
     fetchAllSharedMembers();
     fetchMembershipsByMe();
-  }, [fetchData, fetchInvitations, fetchAllSharedMembers, fetchMembershipsByMe]);
+  }, [isInitialized, isAuthenticated, fetchData, fetchInvitations, fetchAllSharedMembers, fetchMembershipsByMe]);
 
   // ── Refresh on page visibility / window focus ─────────────────────────────
 
@@ -435,11 +523,12 @@ export const useTeams = (): UseTeamsReturn => {
   // Called once on mount and every 2 minutes while the app is open.
 
   useEffect(() => {
+    if (!isInitialized || !isAuthenticated) return;
     const ping = () => { api.post("/api/teams/presence", {}).catch(() => {}); };
     ping();
     const heartbeatId = setInterval(ping, 60_000);
     return () => clearInterval(heartbeatId);
-  }, []);
+  }, [isInitialized, isAuthenticated]);
 
   // ── 30-second safety-net polling (fallback when SignalR events are missed) ─
 
@@ -485,7 +574,13 @@ export const useTeams = (): UseTeamsReturn => {
     searchUsers,
     sendAnnouncement,
     getAnnouncements,
+    announcements,
+    announcementsLoading,
+    fetchAnnouncements,
     markAnnouncementRead,
+    memberProgress,
+    memberProgressLoading,
+    fetchMemberProgress,
   };
 };
 

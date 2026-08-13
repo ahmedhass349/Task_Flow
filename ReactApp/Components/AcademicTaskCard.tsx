@@ -29,8 +29,10 @@ interface AcademicTaskCardProps {
   onClose?: () => void;
   onSuccess?: (task: TaskPayload) => Promise<void> | void;
   initialData?: any;
-  /** When set, the Assignee field is pre-filled and read-only */
-  lockAssignee?: string;
+  // PHASE 3: task assignment support
+  prefilledAssignee?: string;   // member name to pre-fill and optionally lock
+  lockAssignee?: boolean;        // when true, assignee field becomes a read-only chip
+  assignmentContext?: string;    // subtitle shown in card header, e.g. "Assigning task to Ahmed"
 }
 
 type Priority = "Low" | "Medium" | "High" | "Urgent";
@@ -258,7 +260,7 @@ function ReminderRow({
   );
 }
 
-export default function AcademicTaskCard({ onClose, onSuccess, initialData, lockAssignee }: AcademicTaskCardProps) {
+export default function AcademicTaskCard({ onClose, onSuccess, initialData, prefilledAssignee, lockAssignee, assignmentContext }: AcademicTaskCardProps) {
   const { addToast } = useToast();
   const isEditMode = Boolean(initialData?.id);
 
@@ -308,7 +310,8 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData, lock
         const converted = toDateTimeLocalInputValue(fields.dueDate.trim());
         if (converted) { setDue(converted); filled++; }
       }
-      if (fields.assignee?.trim()) { setAssignee(fields.assignee.trim()); filled++; }
+      // PHASE 3: do not overwrite a locked assignee with smart-fill output
+      if (fields.assignee?.trim() && !lockAssignee) { setAssignee(fields.assignee.trim()); filled++; }
       if (Array.isArray(fields.subtasks) && fields.subtasks.length > 0) {
         const newSubtasks = fields.subtasks
           .map(t => t?.trim())
@@ -321,8 +324,9 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData, lock
       if (filled === 0) {
         setSmartFillError("No task details could be extracted from this file. Try a different document.");
       }
-    } catch {
-      setSmartFillError("Scanning failed. Please check your connection and try again.");
+    } catch (err: any) {
+      const msg = err?.message || "Scanning failed. Please check your connection and try again.";
+      setSmartFillError(msg);
     } finally {
       setSmartFillLoading(false);
     }
@@ -369,7 +373,8 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData, lock
     return "To Do";
   });
   const [due, setDue] = useState(toDateTimeLocalInputValue(initialData?.dueDate));
-  const [assignee, setAssignee] = useState(initialData?.assignee || "");
+  // PHASE 3: pre-fill from prefilledAssignee prop when available
+  const [assignee, setAssignee] = useState(prefilledAssignee ?? initialData?.assignee ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
@@ -522,7 +527,7 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData, lock
 
   return (
     <div
-      className="w-full max-w-[560px] rounded-[20px] bg-white shadow-2xl flex flex-col max-h-[92vh]"
+      className="w-full max-w-[680px] rounded-[20px] bg-white shadow-2xl flex flex-col max-h-[92vh]"
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <div className="flex items-center justify-between px-7 pt-7 pb-5 shrink-0" style={{ borderBottom: "1px solid #f0f1f5" }}>
@@ -531,8 +536,12 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData, lock
             <ListTodo className="size-5 text-blue-500" />
           </div>
           <div>
-            <h2 className="text-[17px] text-gray-900" style={{ fontWeight: 700 }}>{initialData ? "Edit Task" : "Create New Task"}</h2>
-            <p className="text-[12px] text-gray-500 mt-0.5">Fill in the details to add a task to your board</p>
+            <h2 className="text-[17px] text-gray-900" style={{ fontWeight: 700 }}>
+              {assignmentContext ? "Assign Task" : initialData ? "Edit Task" : "Create New Task"}
+            </h2>
+            <p className="text-[12px] text-gray-500 mt-0.5">
+              {assignmentContext ?? "Fill in the details to add a task to your board"}
+            </p>
           </div>
         </div>
         <button
@@ -774,10 +783,11 @@ export default function AcademicTaskCard({ onClose, onSuccess, initialData, lock
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] text-gray-700" style={{ fontWeight: 500 }}>Assignee</label>
               {lockAssignee ? (
+                /* PHASE 3: locked pill when leader assigns task to a specific member */
                 <div className="flex items-center gap-3 px-4 py-3 rounded-[10px]" style={{ border: "1.5px solid #dbeafe", background: "#eff6ff" }}>
-                  <User className="size-4 text-blue-500 shrink-0" />
-                  <span className="flex-1 text-[13px] text-blue-700 font-medium">{lockAssignee}</span>
-                  <Lock className="size-3.5 text-blue-400 shrink-0" />
+                  <User className="size-4 text-blue-400 shrink-0" />
+                  <span className="flex-1 text-[13px] text-blue-700 font-medium">{assignee}</span>
+                  <span className="text-[11px] text-blue-400 bg-blue-100 px-2 py-0.5 rounded-full">locked</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-3 px-4 py-3 rounded-[10px]" style={{ border: "1.5px solid #e5e7eb", background: "#fafafa" }}>

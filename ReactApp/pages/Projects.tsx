@@ -42,7 +42,8 @@ export default function Projects() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto w-full">
           <div className="max-w-7xl mx-auto p-6 space-y-6">
             {/* Page Header */}
             <div className="flex items-center justify-between">
@@ -128,7 +129,7 @@ export default function Projects() {
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className={`${project.color} h-2 rounded-full transition-all`}
-                          style={{ width: `${(project.tasksCompleted / project.tasksTotal) * 100}%` }}
+                          style={{ width: `${project.tasksTotal > 0 ? Math.round((project.tasksCompleted / project.tasksTotal) * 100) : 0}%` }}
                         />
                       </div>
                     </div>
@@ -140,7 +141,7 @@ export default function Projects() {
                         <span>{project.memberCount} members</span>
                       </div>
                       <span className="text-xs text-gray-500">
-                        {Math.round((project.tasksCompleted / project.tasksTotal) * 100)}% complete
+                        {project.tasksTotal > 0 ? Math.round((project.tasksCompleted / project.tasksTotal) * 100) : 0}% complete
                       </span>
                     </div>
                   </div>
@@ -148,6 +149,7 @@ export default function Projects() {
               ))}
             </div>
             )}
+          </div>
           </div>
           <Footer />
         </main>

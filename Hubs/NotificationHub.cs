@@ -7,7 +7,6 @@ using taskflow.Services.Interfaces;
 
 namespace taskflow.Hubs
 {
-    [Authorize]
     public class NotificationHub : Hub
     {
         private readonly INotificationService _notificationService;

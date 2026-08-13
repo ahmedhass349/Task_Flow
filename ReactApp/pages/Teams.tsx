@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   Users,
   Mail,
@@ -16,15 +16,19 @@ import {
   Pencil,
   LogOut,
   Megaphone,
-  History,
+  Eye,
+  ChevronDown,
   ClipboardList,
-  BarChart2,
+  BarChart3,
+  AlertCircle,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
 import Sidebar from "../Components/Sidebar";
 import Footer from "../Components/Footer";
 import Header from "../Components/Header";
 import { PageLoading, PageError, PageEmpty } from "../Components/PageState";
+// PHASE 3: reuse task creation card for leader-to-member assignment
+import AcademicTaskCard, { type TaskPayload } from "../Components/AcademicTaskCard";
+import { api } from "../services/api";
 import {
   useTeams,
   type Invitation,
@@ -32,10 +36,9 @@ import {
   type UserSearchResult,
   type SendInvitationRequest,
   type Team,
-  type AnnouncementWithReceipts,
+  type Announcement,
+  type MemberProgressStat,
 } from "../hooks/useTeams";
-import AcademicTaskCard, { type TaskPayload } from "../Components/AcademicTaskCard";
-import { api } from "../services/api";
 
 // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -58,6 +61,13 @@ const avatarColor = (str: string) =>
   AVATAR_COLORS[
     str.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) % AVATAR_COLORS.length
   ];
+
+/** Normalise legacy "Admin" role label to "Leader" for display. */
+const displayRole = (role: string) => role === "Admin" ? "Leader" : role;
+const isLeadershipRole = (role: string) => {
+  const normalized = role.trim().toLowerCase();
+  return normalized === "leader" || normalized === "owner" || normalized === "admin";
+};
 
 const statusBadge: Record<string, string> = {
   Pending:   "bg-yellow-100 text-yellow-700",
@@ -593,19 +603,17 @@ function OutgoingCard({ inv, onCancel, onDelete }: OutgoingCardProps) {
 interface SharedMemberCardProps {
   member: SharedMember;
   onRemove: (email: string) => Promise<void>;
-  onAssign?: () => void;
-  onMetrics?: () => void;
-  onClick?: () => void;
   showTeam?: boolean;
+  // PHASE 3: optional handler for leader-to-member task assignment
+  onAssignTask?: (member: SharedMember) => void;
 }
 
-function SharedMemberCard({ member, onRemove, onAssign, onMetrics, onClick, showTeam }: SharedMemberCardProps) {
+function SharedMemberCard({ member, onRemove, showTeam, onAssignTask }: SharedMemberCardProps) {
   const [busy, setBusy] = useState(false);
+  const isOwnerRecord =
+    member.userEmail.trim().toLowerCase() === member.ownerEmail.trim().toLowerCase();
   return (
-    <div
-      className={`p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors ${onClick ? "cursor-pointer" : ""}`}
-      onClick={onClick}
-    >
+    <div className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
       <div className="relative flex-shrink-0">
         <div className={`${avatarColor(member.userEmail)} size-11 rounded-full flex items-center justify-center text-white font-bold`}>
           {getInitials(member.userFullName || member.userEmail)}
@@ -631,42 +639,38 @@ function SharedMemberCard({ member, onRemove, onAssign, onMetrics, onClick, show
         <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
           <Mail className="size-3" />
           <span className="truncate">{member.userEmail}</span>
-          <span className="ml-2 font-medium text-gray-700">· {member.role}</span>
+          <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+            member.role === 'Leader' || member.role === 'Owner' || member.role === 'Admin'
+              ? 'bg-amber-100 text-amber-700'
+              : 'bg-gray-100 text-gray-600'
+          }`}>{displayRole(member.role)}</span>
         </div>
         <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
           <Clock className="size-3" /> Joined {fmtDate(member.joinedAt)}
         </p>
       </div>
-      <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
-        {onMetrics && (
-          <button
-            onClick={onMetrics}
-            aria-label="View performance metrics"
-            title="View metrics"
-            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            <BarChart2 className="size-4" />
-          </button>
-        )}
-        {onAssign && (
-          <button
-            onClick={onAssign}
-            aria-label="Assign task to this member"
-            title="Assign task"
-            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-          >
-            <ClipboardList className="size-4" />
-          </button>
-        )}
+      {/* PHASE 3: Assign Task button — only visible when handler is provided (i.e. current user is a leader) */}
+      {onAssignTask && !isLeadershipRole(member.role) && (
+        <button
+          type="button"
+          onClick={() => onAssignTask(member)}
+          aria-label="Assign task to this member"
+          title="Assign task"
+          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0"
+        >
+          <ClipboardList className="size-4" />
+        </button>
+      )}
+      {!isOwnerRecord && (
         <button
           onClick={async () => { setBusy(true); try { await onRemove(member.userEmail); } finally { setBusy(false); } }}
           disabled={busy}
           aria-label="Remove member"
-          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
         >
           <Trash2 className="size-4" />
         </button>
-      </div>
+      )}
     </div>
   );
 }
@@ -688,7 +692,12 @@ function MembershipCard({ member, onLeave }: MembershipCardProps) {
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-gray-900">{member.ownerEmail}</p>
         <p className="text-sm text-gray-700 mt-1">
-          Added you to <strong>{member.teamName || "their team"}</strong> as <span className="font-medium">{member.role}</span>
+          Added you to <strong>{member.teamName || "their team"}</strong> as{" "}
+          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+            member.role === 'Leader' || member.role === 'Owner' || member.role === 'Admin'
+              ? 'bg-amber-100 text-amber-700'
+              : 'bg-gray-100 text-gray-600'
+          }`}>{displayRole(member.role)}</span>
         </p>
         <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
           <Clock className="size-3" /> {fmtDate(member.joinedAt)}
@@ -708,6 +717,62 @@ function MembershipCard({ member, onLeave }: MembershipCardProps) {
 }
 
 // â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// ── ReadReceiptsPopup ─────────────────────────────────────────────────────
+
+interface ReadReceiptsPopupProps {
+  announcement: Announcement;
+  allMembers: SharedMember[];
+  onClose: () => void;
+}
+
+function ReadReceiptsPopup({ announcement, allMembers, onClose }: ReadReceiptsPopupProps) {
+  const readSet = new Set(announcement.readBy.map(e => e.toLowerCase()));
+  const read = allMembers.filter(m => readSet.has(m.userEmail.toLowerCase()));
+  const unread = allMembers.filter(m => !readSet.has(m.userEmail.toLowerCase()));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl p-5 w-full max-w-xs" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Eye className="size-4 text-blue-500" />
+            <h3 className="font-semibold text-gray-900 text-sm">Read by</h3>
+          </div>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+            <X className="size-4" />
+          </button>
+        </div>
+        <p className="text-xs text-gray-400 mb-1 font-medium uppercase tracking-wide">Read ({read.length})</p>
+        {read.length === 0 ? (
+          <p className="text-xs text-gray-400 mb-3 italic">Nobody yet</p>
+        ) : (
+          <ul className="space-y-1 mb-3">
+            {read.map(m => (
+              <li key={m.id} className="flex items-center gap-2 text-sm">
+                <CheckCircle className="size-3.5 text-green-500 flex-shrink-0" />
+                <span className="text-gray-700">{m.userFullName || m.userEmail}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {unread.length > 0 && (
+          <>
+            <p className="text-xs text-gray-400 mb-1 font-medium uppercase tracking-wide">Not read ({unread.length})</p>
+            <ul className="space-y-1">
+              {unread.map(m => (
+                <li key={m.id} className="flex items-center gap-2 text-sm">
+                  <Clock className="size-3.5 text-gray-300 flex-shrink-0" />
+                  <span className="text-gray-500">{m.userFullName || m.userEmail}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ── AnnouncementModal ─────────────────────────────────────────────────────
 
@@ -805,383 +870,159 @@ function AnnouncementModal({ teamName, onClose, onSend }: AnnouncementModalProps
   );
 }
 
-// ── Announcement History Modal ────────────────────────────────────────────
+// ── ProgressDashboard ─────────────────────────────────────────────────────
 
-interface AnnouncementHistoryModalProps {
-  teamId: string;
-  teamName: string;
-  onClose: () => void;
-  getAnnouncements: (teamId: string) => Promise<AnnouncementWithReceipts[]>;
+interface ProgressDashboardProps {
+  members: MemberProgressStat[];
+  loading: boolean;
+  onRefresh: () => void;
+  onAssignTask?: (email: string, name: string) => void;
 }
 
-function AnnouncementHistoryModal({ teamId, teamName, onClose, getAnnouncements }: AnnouncementHistoryModalProps) {
-  const [announcements, setAnnouncements] = useState<AnnouncementWithReceipts[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<string | null>(null);
+const STAT_COLORS = {
+  todo:       { bar: "bg-gray-300",   text: "text-gray-500",   label: "To Do"       },
+  inProgress: { bar: "bg-blue-400",   text: "text-blue-600",   label: "In Progress" },
+  completed:  { bar: "bg-green-400",  text: "text-green-600",  label: "Done"        },
+  overdue:    { bar: "bg-red-400",    text: "text-red-600",    label: "Overdue"     },
+};
 
-  useEffect(() => {
-    getAnnouncements(teamId).then(data => {
-      setAnnouncements(Array.isArray(data) ? data : []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [teamId, getAnnouncements]);
+function ProgressBar({ value, total, colorClass }: { value: number; total: number; colorClass: string }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all duration-300 ${colorClass}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs text-gray-400 w-6 text-right">{value}</span>
+    </div>
+  );
+}
+
+function ProgressDashboard({ members, loading, onRefresh, onAssignTask }: ProgressDashboardProps) {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+        <span className="size-6 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+        <p className="text-sm">Loading progress…</p>
+      </div>
+    );
+  }
+
+  if (members.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+        <BarChart3 className="size-10 opacity-25" />
+        <p className="text-sm">No member data yet</p>
+        <button
+          onClick={onRefresh}
+          className="mt-1 text-xs text-blue-500 hover:text-blue-700 underline"
+        >
+          Refresh
+        </button>
+      </div>
+    );
+  }
+
+  // Overall team totals for the summary row
+  const totals = members.reduce(
+    (acc, m) => ({
+      todo:       acc.todo       + m.tasksTodo,
+      inProgress: acc.inProgress + m.tasksInProgress,
+      completed:  acc.completed  + m.tasksCompleted,
+      overdue:    acc.overdue    + m.tasksOverdue,
+    }),
+    { todo: 0, inProgress: 0, completed: 0, overdue: 0 }
+  );
+  const grandTotal = totals.todo + totals.inProgress + totals.completed + totals.overdue;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <History className="size-5 text-orange-500" />
-            <h2 className="text-lg font-bold text-gray-900">Announcement History</h2>
+    <div className="p-4 space-y-4">
+      {/* Team summary strip */}
+      <div className="grid grid-cols-4 gap-2">
+        {(["todo", "inProgress", "completed", "overdue"] as const).map(key => (
+          <div key={key} className="bg-gray-50 border border-gray-100 rounded-xl p-3 text-center">
+            <p className={`text-xl font-bold ${STAT_COLORS[key].text}`}>{totals[key]}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{STAT_COLORS[key].label}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="size-5" />
-          </button>
-        </div>
-        <p className="text-sm text-gray-500 mb-4 flex-shrink-0">All announcements sent to <strong>{teamName}</strong></p>
-        <div className="overflow-y-auto flex-1">
-          {loading && (
-            <div className="flex items-center justify-center h-32">
-              <span className="size-6 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin" />
-            </div>
-          )}
-          {!loading && announcements.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-32 text-gray-400">
-              <Megaphone className="size-8 mb-2 opacity-30" />
-              <p className="text-sm">No announcements sent yet</p>
-            </div>
-          )}
-          {!loading && announcements.map(ann => {
-            const readCount = ann.recipients.filter(r => r.hasRead).length;
-            const totalCount = ann.recipients.length;
-            const isExpanded = expanded === ann.id;
-            return (
-              <div key={ann.id} className="border border-gray-200 rounded-xl mb-3 overflow-hidden">
-                <button
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
-                  onClick={() => setExpanded(isExpanded ? null : ann.id)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      {ann.title && <p className="font-semibold text-gray-900 text-sm">{ann.title}</p>}
-                      <p className={`text-sm text-gray-700 ${ann.title ? "mt-0.5" : ""} line-clamp-2`}>{ann.body}</p>
-                    </div>
-                    <div className="flex-shrink-0 text-right">
-                      <p className="text-xs text-gray-400">{new Date(ann.sentAt).toLocaleDateString()}</p>
-                      <p className={`text-xs font-medium mt-0.5 ${readCount === totalCount ? "text-green-600" : "text-orange-500"}`}>
-                        {readCount}/{totalCount} read
-                      </p>
-                    </div>
+        ))}
+      </div>
+
+      {/* Per-member cards */}
+      <div className="space-y-3">
+        {members.map(m => {
+          const memberTotal = m.tasksTodo + m.tasksInProgress + m.tasksCompleted + m.tasksOverdue;
+          const completionPct = memberTotal > 0 ? Math.round((m.tasksCompleted / memberTotal) * 100) : 0;
+          return (
+            <div key={m.userId} className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+              {/* Header row */}
+              <div className="flex items-center gap-3">
+                <div className={`${avatarColor(m.email)} size-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
+                  {m.initials || getInitials(m.userName || m.email)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-gray-900 text-sm truncate">{m.userName || m.email}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      m.role === "Leader" || m.role === "Owner"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>{m.role}</span>
+                    {m.tasksOverdue > 0 && (
+                      <span className="flex items-center gap-0.5 text-xs text-red-500">
+                        <AlertCircle className="size-3" />{m.tasksOverdue} overdue
+                      </span>
+                    )}
                   </div>
-                </button>
-                {isExpanded && (
-                  <div className="border-t border-gray-100 px-4 py-3 bg-gray-50">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recipients</p>
-                    <div className="space-y-2">
-                      {ann.recipients.map(r => (
-                        <div key={r.email} className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-800">{r.name || r.email}</p>
-                            <p className="text-xs text-gray-500">{r.email}</p>
-                          </div>
-                          {r.hasRead ? (
-                            <div className="text-right">
-                              <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                                <CheckCircle className="size-3.5" /> Read
-                              </span>
-                              {r.readAt && <p className="text-xs text-gray-400">{new Date(r.readAt).toLocaleString()}</p>}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-400 flex items-center gap-1">
-                              <Clock className="size-3.5" /> Pending
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <p className="text-xs text-gray-400 truncate">{m.email}</p>
+                </div>
+                <div className="flex-shrink-0 text-right">
+                  <p className="text-sm font-bold text-gray-700">{completionPct}%</p>
+                  <p className="text-xs text-gray-400">{m.tasksCompleted}/{memberTotal}</p>
+                </div>
+                {onAssignTask && !isLeadershipRole(m.role) && (
+                  <button
+                    type="button"
+                    onClick={() => onAssignTask(m.email, m.userName)}
+                    title="Assign task"
+                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0"
+                  >
+                    <ClipboardList className="size-4" />
+                  </button>
                 )}
               </div>
-            );
-          })}
-        </div>
+
+              {/* Progress bars */}
+              <div className="space-y-1.5">
+                <ProgressBar value={m.tasksTodo}       total={memberTotal} colorClass={STAT_COLORS.todo.bar} />
+                <ProgressBar value={m.tasksInProgress} total={memberTotal} colorClass={STAT_COLORS.inProgress.bar} />
+                <ProgressBar value={m.tasksCompleted}  total={memberTotal} colorClass={STAT_COLORS.completed.bar} />
+                <ProgressBar value={m.tasksOverdue}    total={memberTotal} colorClass={STAT_COLORS.overdue.bar} />
+              </div>
+
+              {/* Legend */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {(["todo", "inProgress", "completed", "overdue"] as const).map(key => {
+                  const val = key === "todo" ? m.tasksTodo : key === "inProgress" ? m.tasksInProgress : key === "completed" ? m.tasksCompleted : m.tasksOverdue;
+                  return (
+                    <span key={key} className={`text-xs ${STAT_COLORS[key].text}`}>
+                      <span className="font-semibold">{val}</span> {STAT_COLORS[key].label}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
-    </div>
-  );
-}
 
-// ── Member Metrics Popup ──────────────────────────────────────────────────
-
-interface MemberMetrics {
-  total: number;
-  completed: number;
-  inProgress: number;
-  todo: number;
-  review: number;
-  overdue: number;
-  high: number;
-  medium: number;
-  low: number;
-  completionRatePct: number;
-}
-
-interface MemberMetricsPopupProps {
-  member: SharedMember;
-  onClose: () => void;
-}
-
-function MemberMetricsPopup({ member, onClose }: MemberMetricsPopupProps) {
-  const [metrics, setMetrics] = useState<MemberMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api.get<MemberMetrics>(`/api/tasks/member-metrics?email=${encodeURIComponent(member.userEmail)}`)
-      .then(data => setMetrics(data))
-      .catch(() => setMetrics(null))
-      .finally(() => setLoading(false));
-  }, [member.userEmail]);
-
-  const bar = (value: number, max: number, color: string) => (
-    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-      <div
-        className={`h-full ${color} rounded-full transition-all`}
-        style={{ width: max > 0 ? `${Math.round((value / max) * 100)}%` : "0%" }}
-      />
-    </div>
-  );
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <BarChart2 className="size-5 text-blue-600" />
-            <h2 className="text-lg font-bold text-gray-900">Performance</h2>
-          </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="size-5" />
-          </button>
-        </div>
-        <div className="flex items-center gap-3 mb-5">
-          <div className={`${avatarColor(member.userEmail)} size-10 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>
-            {getInitials(member.userFullName || member.userEmail)}
-          </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-gray-900 truncate">{member.userFullName || member.userEmail}</p>
-            <p className="text-xs text-gray-500 truncate">{member.userEmail}</p>
-          </div>
-        </div>
-        {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <span className="size-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-          </div>
-        ) : metrics == null ? (
-          <div className="text-center text-sm text-gray-400 py-8">Could not load metrics</div>
-        ) : (
-          <div className="space-y-5">
-            {/* Completion rate hero */}
-            <div className="bg-gray-50 rounded-xl p-4 text-center">
-              <p className="text-4xl font-bold text-gray-900">{metrics.completionRatePct}%</p>
-              <p className="text-xs text-gray-500 mt-1">Completion rate · {metrics.total} total task{metrics.total !== 1 ? "s" : ""}</p>
-              <div className="mt-3">{bar(metrics.completed, metrics.total, "bg-green-500")}</div>
-            </div>
-            {/* Status breakdown */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">By Status</p>
-              <div className="space-y-2">
-                {[
-                  { label: "Completed",   value: metrics.completed,  color: "bg-green-500",  text: "text-green-600"  },
-                  { label: "In Progress", value: metrics.inProgress, color: "bg-orange-400", text: "text-orange-500" },
-                  { label: "Review",      value: metrics.review,     color: "bg-purple-400", text: "text-purple-600" },
-                  { label: "To Do",       value: metrics.todo,       color: "bg-gray-400",   text: "text-gray-500"  },
-                  { label: "Overdue",     value: metrics.overdue,    color: "bg-red-500",    text: "text-red-600"   },
-                ].map(({ label, value, color, text }) => (
-                  <div key={label} className="flex items-center gap-3">
-                    <span className={`text-xs font-medium ${text} w-20 flex-shrink-0`}>{label}</span>
-                    <div className="flex-1">{bar(value, metrics.total, color)}</div>
-                    <span className="text-xs font-bold text-gray-700 w-6 text-right">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Priority breakdown */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">By Priority</p>
-              <div className="space-y-2">
-                {[
-                  { label: "High",   value: metrics.high,   color: "bg-red-400",    text: "text-red-500"    },
-                  { label: "Medium", value: metrics.medium, color: "bg-orange-300", text: "text-orange-400" },
-                  { label: "Low",    value: metrics.low,    color: "bg-gray-300",   text: "text-gray-400"   },
-                ].map(({ label, value, color, text }) => (
-                  <div key={label} className="flex items-center gap-3">
-                    <span className={`text-xs font-medium ${text} w-20 flex-shrink-0`}>{label}</span>
-                    <div className="flex-1">{bar(value, metrics.total, color)}</div>
-                    <span className="text-xs font-bold text-gray-700 w-6 text-right">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Team Member Dto (for metrics & assignment) ────────────────────────────
-
-interface LocalTeamMember {
-  userId: number;
-  userName: string;
-  email: string;
-  tasksCompleted: number;
-  tasksInProgress: number;
-}
-
-// ── Member Info Modal ─────────────────────────────────────────────────────
-
-interface MemberInfoModalProps {
-  member: SharedMember;
-  localData?: LocalTeamMember;
-  onClose: () => void;
-  onAssign?: () => void;
-}
-
-function MemberInfoModal({ member, localData, onClose, onAssign }: MemberInfoModalProps) {
-  type TaskRow = { id: number; title: string; status: string; priority: string; dueDate?: string; projectName: string };
-  const [tasks, setTasks] = useState<TaskRow[]>([]);
-  const [tasksLoading, setTasksLoading] = useState(false);
-
-  useEffect(() => {
-    setTasksLoading(true);
-    const url = member.localUserId != null
-      ? `/api/tasks/member/${member.localUserId}`
-      : `/api/tasks/member-email?email=${encodeURIComponent(member.userEmail)}`;
-    api.get<TaskRow[]>(url)
-      .then(data => setTasks(Array.isArray(data) ? data : []))
-      .catch(() => setTasks([]))
-      .finally(() => setTasksLoading(false));
-  }, [member.localUserId, member.userEmail]);
-
-  const completed = tasks.filter(t => t.status === "Completed").length;
-  const inProgress = tasks.filter(t => t.status === "InProgress").length;
-  const total = tasks.length;
-  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-  const statusBadge = (status: string) => {
-    if (status === "Completed") return "bg-green-100 text-green-700";
-    if (status === "InProgress") return "bg-orange-100 text-orange-700";
-    return "bg-gray-100 text-gray-600";
-  };
-  const statusLabel = (status: string) => {
-    if (status === "InProgress") return "In Progress";
-    return status;
-  };
-  const priorityBadge = (priority: string) => {
-    if (priority === "High") return "text-red-500";
-    if (priority === "Medium") return "text-orange-400";
-    return "text-gray-400";
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5 flex-shrink-0">
-          <h2 className="text-lg font-bold text-gray-900">Member Info</h2>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="size-5" />
-          </button>
-        </div>
-
-        {/* Scrollable body */}
-        <div className="overflow-y-auto flex-1 min-h-0 space-y-4">
-          {/* Avatar + identity */}
-          <div className="flex items-center gap-4">
-            <div className={`${avatarColor(member.userEmail)} size-14 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0`}>
-              {getInitials(member.userFullName || member.userEmail)}
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900 text-base">{member.userFullName || member.userEmail}</p>
-              <p className="text-sm text-gray-500">{member.userEmail}</p>
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{member.role}</span>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Task Completion</span>
-              <span className={`text-sm font-bold ${pct >= 70 ? "text-green-600" : pct >= 40 ? "text-orange-500" : "text-red-500"}`}>{pct}%</span>
-            </div>
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
-            </div>
-            <div className="flex gap-4 text-xs">
-              <span className="flex items-center gap-1 text-green-600"><CheckCircle className="size-3" /> {completed} completed</span>
-              <span className="flex items-center gap-1 text-orange-500"><Clock className="size-3" /> {inProgress} in progress</span>
-            </div>
-          </div>
-
-          {/* Assigned tasks list */}
-          <div>
-            <p className="text-sm font-semibold text-gray-700 mb-2">Assigned Tasks</p>
-            {tasksLoading ? (
-              <div className="text-center text-sm text-gray-400 py-4">Loading tasks…</div>
-            ) : tasks.length === 0 ? (
-              <div className="text-center text-sm text-gray-400 py-4">{member.localUserId == null ? "Tasks on another machine aren't visible here" : "No tasks assigned"}</div>
-            ) : (
-              <div className="space-y-2">
-                {tasks.map(task => (
-                  <div key={task.id} className="flex items-start gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{task.title}</p>
-                      {task.projectName && (
-                        <p className="text-xs text-gray-400 truncate">{task.projectName}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {task.dueDate && (
-                        <span className="text-xs text-gray-400">
-                          {new Date(task.dueDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                        </span>
-                      )}
-                      <span className={`text-xs font-medium ${priorityBadge(task.priority)}`}>{task.priority}</span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${statusBadge(task.status)}`}>{statusLabel(task.status)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Metadata */}
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">Joined</span>
-              <span className="font-medium text-gray-900">{fmtDate(member.joinedAt)}</span>
-            </div>
-            {member.lastSeen && (
-              <div className="flex items-center justify-between">
-                <span className="text-gray-500">Last seen</span>
-                <span className="font-medium text-gray-900">{fmtDate(member.lastSeen)}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Footer button */}
-        {onAssign && (
-          <div className="flex-shrink-0 pt-4">
-            <button
-              onClick={() => { onClose(); onAssign(); }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
-            >
-              <ClipboardList className="size-4" /> Assign Task
-            </button>
-          </div>
-        )}
-      </div>
+      {grandTotal === 0 && (
+        <p className="text-center text-xs text-gray-400 pt-2">
+          No tasks assigned to team members yet.{" "}
+          {onAssignTask && (
+            <span className="text-blue-500">Use the assign button to get started.</span>
+          )}
+        </p>
+      )}
     </div>
   );
 }
@@ -1218,10 +1059,14 @@ export default function Teams() {
     membershipsByMeLoading,
     leaveTeam,
     sendAnnouncement,
-    getAnnouncements,
+    announcements,
+    announcementsLoading,
+    fetchAnnouncements,
     markAnnouncementRead,
+    memberProgress,
+    memberProgressLoading,
+    fetchMemberProgress,
   } = useTeams();
-  const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState<Tab>("all-members");
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -1232,68 +1077,27 @@ export default function Teams() {
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [deletingTeamId, setDeletingTeamId] = useState<string | null>(null);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  // PHASE 3: member selected for task assignment
+  const [assigningToMember, setAssigningToMember] = useState<SharedMember | null>(null);
+  // PHASE 2: which announcement's read-receipts popup is visible
+  const [readReceiptsFor, setReadReceiptsFor] = useState<string | null>(null);
+  // PHASE 5: inner panel tab for owned-team right panel
+  const [teamPanelTab, setTeamPanelTab] = useState<"members" | "progress">("members");
 
-  // Feature 2: Announcement history
-  const [showAnnouncementHistory, setShowAnnouncementHistory] = useState(false);
-
-  // Feature 4: Assign task
-  const [showAssignTask, setShowAssignTask] = useState(false);
-  const [localTeamMembers, setLocalTeamMembers] = useState<LocalTeamMember[]>([]);
-  const [localMembersLoading, setLocalMembersLoading] = useState(false);
-  const [selectedAssigneeId, setSelectedAssigneeId] = useState<number | null>(null);
-  const [selectedAssigneeName, setSelectedAssigneeName] = useState<string | null>(null);
-
-  // Feature 5: Member info popup
-  const [selectedMemberInfo, setSelectedMemberInfo] = useState<SharedMember | null>(null);
-  // Feature 6: Member metrics popup
-  const [selectedMemberMetrics, setSelectedMemberMetrics] = useState<SharedMember | null>(null);
-
-  // Load local SQLite members (for task assignment + metrics) when a team is selected
-  const loadLocalMembers = useCallback(async (teamId: string) => {
-    setLocalMembersLoading(true);
-    try {
-      const res = await api.get<LocalTeamMember[]>(`/api/teams/${teamId}/members`);
-      setLocalTeamMembers(res ?? []);
-    } catch {
-      setLocalTeamMembers([]);
-    } finally {
-      setLocalMembersLoading(false);
-    }
-  }, []);
-
+  // PHASE 2: load announcements whenever the selected owned-team changes + poll every 30s
   useEffect(() => {
-    if (!showAssignTask) return;
-    if (selectedAssigneeId !== null) return;
-    if (localTeamMembers.length > 0) {
-      setSelectedAssigneeId(localTeamMembers[0].userId);
-    }
-  }, [showAssignTask, localTeamMembers, selectedAssigneeId]);
+    if (!selectedTeamId) return;
+    fetchAnnouncements(selectedTeamId);
+    const interval = setInterval(() => fetchAnnouncements(selectedTeamId), 30_000);
+    return () => clearInterval(interval);
+  }, [selectedTeamId, fetchAnnouncements]);
 
-  // Handle task assignment
-  const handleAssignTask = async (data: TaskPayload) => {
-    const title = data.title.trim();
-    await api.post("/api/tasks", {
-      title,
-      description: data.notes || "",
-      priority: data.priority.charAt(0).toUpperCase() + data.priority.slice(1),
-      status: "Todo",
-      dueDate: data.dueDate || undefined,
-      assigneeId: selectedAssigneeId ?? undefined,
-    });
-    setShowAssignTask(false);
-    setSelectedAssigneeId(null);
-    setSelectedAssigneeName(null);
-    if (selectedTeamId) loadLocalMembers(selectedTeamId);
-  };
-
-  // Mark announcement read from URL param
+  // Load announcements when member selects a joined team
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const announcementId = params.get("announcementId");
-    if (announcementId) {
-      markAnnouncementRead(announcementId).catch(() => {});
-    }
-  }, [markAnnouncementRead]);
+    if (!selectedMembershipId) return;
+    const membership = membershipsByMe.find(m => m.id === selectedMembershipId);
+    if (membership?.teamId) fetchAnnouncements(membership.teamId);
+  }, [selectedMembershipId, membershipsByMe, fetchAnnouncements]);
 
   // Derived: contacts who have accepted an invitation (bidirectional)
   const acceptedContacts = useMemo<AcceptedContact[]>(() => {
@@ -1331,17 +1135,70 @@ export default function Teams() {
   const pendingIn = incomingInvitations.filter(i => i.status === "Pending").length;
   const pendingOut = outgoingInvitations.filter(i => i.status === "Pending").length;
 
+  const mergedProgressMembers = useMemo<MemberProgressStat[]>(() => {
+    const byEmail = new Map<string, MemberProgressStat>();
+
+    for (const m of memberProgress) {
+      byEmail.set(m.email.trim().toLowerCase(), m);
+    }
+
+    let syntheticUserId = -1;
+    for (const shared of sharedMembers) {
+      const key = shared.userEmail.trim().toLowerCase();
+      if (byEmail.has(key)) continue;
+
+      byEmail.set(key, {
+        userId: syntheticUserId--,
+        userName: shared.userFullName || shared.userEmail,
+        initials: getInitials(shared.userFullName || shared.userEmail),
+        email: shared.userEmail,
+        avatarUrl: shared.avatarUrl || undefined,
+        role: displayRole(shared.role),
+        tasksTodo: 0,
+        tasksInProgress: 0,
+        tasksCompleted: 0,
+        tasksOverdue: 0,
+      });
+    }
+
+    return Array.from(byEmail.values());
+  }, [memberProgress, sharedMembers]);
+
   const handleSelectTeam = (teamId: string) => {
     setSelectedTeamId(teamId);
-    setSelectedAssigneeId(null);
-    setSelectedAssigneeName(null);
+    setTeamPanelTab("members"); // PHASE 5: reset inner panel to members when switching teams
     fetchSharedMembers(teamId);
-    loadLocalMembers(teamId);
+    fetchMemberProgress(teamId); // PHASE 5: pre-fetch progress so switching tabs is instant
   };
 
   const handleRemoveSharedMember = async (email: string) => {
     if (!selectedTeamId) return;
     await removeSharedMember(selectedTeamId, email);
+  };
+
+  // PHASE 3: Submit task assignment via /api/tasks/assign
+  const handleAssignTask = async (payload: TaskPayload) => {
+    if (!assigningToMember) return;
+    // Map AcademicTaskCard payload fields to AssignTaskRequest DTO
+    // TaskPriority: Low=0, Medium=1, High=2
+    const priorityMap: Record<string, number> = { low: 0, medium: 1, high: 2 };
+    // TaskStatus: Todo=0, InProgress=1, Review=2, Completed=3, Overdue=4
+    const statusMap: Record<string, number> = {
+      "To Do": 0, "In Progress": 1, "In Review": 2, "Done": 3, "Overdue": 4,
+    };
+    await api.post("/api/tasks/assign", {
+      assigneeEmail: assigningToMember.userEmail,
+      title: payload.title,
+      description: payload.notes || null,
+      projectId: null,
+      priority: priorityMap[payload.priority] ?? 1,
+      status: statusMap[payload.taskType] ?? 0,
+      dueDate: payload.dueDate || null,
+      reminderMap: payload.reminderMap ?? null,
+      notifyEmail: payload.notifyVia.email,
+      notifyInApp: payload.notifyVia.inApp,
+    });
+    setAssigningToMember(null);
   };
 
   const tabs = [
@@ -1352,13 +1209,14 @@ export default function Teams() {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto w-full">
           <div className="max-w-5xl mx-auto p-6 space-y-6">
 
             {/* Page header */}
@@ -1542,17 +1400,39 @@ export default function Teams() {
 
                       {selectedTeamId && (
                         <>
-                          <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                            <h2 className="font-semibold text-gray-900">
-                              Members &mdash; {teams.find(t => t.id === selectedTeamId)?.name}
-                            </h2>
-                            <div className="flex items-center gap-2 flex-wrap">
+                          {/* PHASE 5: inner tab bar — Members | Progress */}
+                          <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
+                            {/* Tab buttons */}
+                            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
                               <button
-                                onClick={() => setShowAnnouncementHistory(true)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
+                                onClick={() => setTeamPanelTab("members")}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                  teamPanelTab === "members"
+                                    ? "bg-white text-gray-900 shadow-sm"
+                                    : "text-gray-500 hover:text-gray-700"
+                                }`}
                               >
-                                <History className="size-3.5" /> History
+                                <Users className="size-3.5" /> Members
                               </button>
+                              <button
+                                onClick={() => {
+                                  setTeamPanelTab("progress");
+                                  if (memberProgress.length === 0 || !memberProgressLoading) {
+                                    fetchMemberProgress(selectedTeamId);
+                                  }
+                                }}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                  teamPanelTab === "progress"
+                                    ? "bg-white text-gray-900 shadow-sm"
+                                    : "text-gray-500 hover:text-gray-700"
+                                }`}
+                              >
+                                <BarChart3 className="size-3.5" /> Progress
+                              </button>
+                            </div>
+
+                            {/* Right-side action buttons (shared by both tabs) */}
+                            <div className="flex items-center gap-2">
                               <button
                                 onClick={() => setShowAnnouncementModal(true)}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-medium hover:bg-orange-600 transition-colors"
@@ -1568,38 +1448,98 @@ export default function Teams() {
                               >
                                 <UserPlus className="size-3.5" /> Invite Member
                               </button>
-                              {(sharedMembersLoading || localMembersLoading) && (
+                              {(sharedMembersLoading || memberProgressLoading) && (
                                 <span className="size-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
                               )}
                             </div>
                           </div>
 
-                          {/* Members list */}
-                          <>
-                            {!sharedMembersLoading && sharedMembers.length === 0 ? (
-                              <div className="flex flex-col items-center justify-center h-36 text-gray-400">
-                                <Users className="size-8 mb-2 opacity-30" />
-                                <p className="text-sm">No members yet &mdash; invite someone!</p>
+                          {/* Members tab */}
+                          {teamPanelTab === "members" && (
+                            <>
+                              {!sharedMembersLoading && sharedMembers.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-36 text-gray-400">
+                                  <Users className="size-8 mb-2 opacity-30" />
+                                  <p className="text-sm">No members yet &mdash; invite someone!</p>
+                                </div>
+                              ) : (
+                                <div className="divide-y divide-gray-100">
+                                  {sharedMembers.map(m => (
+                                    <SharedMemberCard
+                                      key={m.id}
+                                      member={m}
+                                      onRemove={handleRemoveSharedMember}
+                                      // PHASE 3: leader can assign tasks to their team members
+                                      onAssignTask={setAssigningToMember}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* PHASE 2: Persistent announcement feed */}
+                              <div className="border-t border-gray-100">
+                                <div className="px-6 py-3 flex items-center justify-between bg-gray-50">
+                                  <div className="flex items-center gap-1.5">
+                                    <Megaphone className="size-3.5 text-orange-400" />
+                                    <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Announcements</span>
+                                    {announcements.length > 0 && (
+                                      <span className="bg-orange-100 text-orange-600 text-xs font-medium px-1.5 py-0.5 rounded-full">{announcements.length}</span>
+                                    )}
+                                  </div>
+                                  {announcementsLoading && (
+                                    <span className="size-3.5 border-2 border-gray-300 border-t-orange-400 rounded-full animate-spin" />
+                                  )}
+                                </div>
+                                {!announcementsLoading && announcements.length === 0 ? (
+                                  <div className="flex flex-col items-center justify-center py-6 text-gray-400">
+                                    <Megaphone className="size-6 mb-1 opacity-30" />
+                                    <p className="text-xs">No announcements yet</p>
+                                  </div>
+                                ) : (
+                                  <ul className="divide-y divide-gray-50 max-h-64 overflow-y-auto">
+                                    {announcements.map(ann => {
+                                      const readCount = ann.readBy.length;
+                                      const totalCount = sharedMembers.length;
+                                      return (
+                                        <li key={ann.id} className="px-6 py-3 hover:bg-gray-50 transition-colors">
+                                          <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0 flex-1">
+                                              <p className="text-xs font-semibold text-gray-800 truncate">{ann.title}</p>
+                                              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{ann.message}</p>
+                                              <p className="text-xs text-gray-400 mt-1">
+                                                {ann.senderName} &middot; {new Date(ann.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                              </p>
+                                            </div>
+                                            <button
+                                              onClick={() => setReadReceiptsFor(ann.id ?? null)}
+                                              className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-500 transition-colors flex-shrink-0 mt-0.5"
+                                              title="View read receipts"
+                                            >
+                                              <Eye className="size-3.5" />
+                                              <span>{readCount}/{totalCount}</span>
+                                            </button>
+                                          </div>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                )}
                               </div>
-                            ) : (
-                              <div className="divide-y divide-gray-100">
-                                {sharedMembers.map(m => (
-                                  <SharedMemberCard
-                                    key={m.id}
-                                    member={m}
-                                    onRemove={handleRemoveSharedMember}
-                                    onMetrics={m.userEmail !== user?.email ? () => setSelectedMemberMetrics(m) : undefined}
-                                    onAssign={m.userEmail !== user?.email ? () => {
-                                      setSelectedAssigneeId(m.localUserId ?? null);
-                                      setSelectedAssigneeName(m.userFullName || m.userEmail);
-                                      setShowAssignTask(true);
-                                    } : undefined}
-                                    onClick={() => setSelectedMemberInfo(m)}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </>
+                            </>
+                          )}
+
+                          {/* PHASE 5: Progress tab */}
+                          {teamPanelTab === "progress" && (
+                            <ProgressDashboard
+                              members={mergedProgressMembers}
+                              loading={memberProgressLoading}
+                              onRefresh={() => fetchMemberProgress(selectedTeamId)}
+                              onAssignTask={(email, _name) => {
+                                const found = sharedMembers.find(m => m.userEmail === email);
+                                if (found) setAssigningToMember(found);
+                              }}
+                            />
+                          )}
                         </>
                       )}
 
@@ -1610,7 +1550,7 @@ export default function Teams() {
                           <>
                             <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                               <h2 className="font-semibold text-gray-900">{membership.teamName || "Team"}</h2>
-                              <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">{membership.role}</span>
+                              <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">{displayRole(membership.role)}</span>
                             </div>
                             <div className="p-6 space-y-4">
                               <div className="flex items-center gap-3">
@@ -1625,7 +1565,7 @@ export default function Teams() {
                               <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Your Role</p>
-                                  <p className="font-medium text-gray-900">{membership.role}</p>
+                                  <p className="font-medium text-gray-900">{displayRole(membership.role)}</p>
                                 </div>
                                 <div>
                                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Joined</p>
@@ -1642,6 +1582,40 @@ export default function Teams() {
                               >
                                 <LogOut className="size-4" /> Leave Team
                               </button>
+
+                              {/* Announcements for this team */}
+                              {announcements.length > 0 && (
+                                <div className="pt-2 space-y-2">
+                                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Announcements</p>
+                                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {announcements.map(ann => {
+                                      const alreadyRead = ann.readBy.includes(membership.userEmail.toLowerCase());
+                                      return (
+                                        <div key={ann.id} className={`rounded-lg border p-3 text-sm ${alreadyRead ? "border-gray-100 bg-gray-50" : "border-orange-200 bg-orange-50"}`}>
+                                          {ann.title && <p className="font-semibold text-gray-900 text-xs mb-0.5">{ann.title}</p>}
+                                          <p className="text-gray-700 text-xs leading-relaxed">{ann.message}</p>
+                                          <div className="flex items-center justify-between mt-2">
+                                            <p className="text-[11px] text-gray-400">{fmtDate(ann.createdAt)}</p>
+                                            {!alreadyRead && (
+                                              <button
+                                                onClick={() => markAnnouncementRead(membership.teamId, ann.id)}
+                                                className="text-[11px] font-medium text-orange-600 hover:text-orange-700 flex items-center gap-1"
+                                              >
+                                                <CheckCircle className="size-3" /> Mark as read
+                                              </button>
+                                            )}
+                                            {alreadyRead && (
+                                              <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                                                <CheckCircle className="size-3 text-green-500" /> Read
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </>
                         );
@@ -1709,6 +1683,7 @@ export default function Teams() {
             )}
 
           </div>
+          </div>
           <Footer />
         </main>
       </div>
@@ -1745,43 +1720,38 @@ export default function Teams() {
         />
       )}
 
-      {showAnnouncementHistory && selectedTeamId && (
-        <AnnouncementHistoryModal
-          teamId={selectedTeamId}
-          teamName={teams.find(t => t.id === selectedTeamId)?.name ?? "your team"}
-          onClose={() => setShowAnnouncementHistory(false)}
-          getAnnouncements={getAnnouncements}
-        />
-      )}
+      {/* PHASE 2: Read receipts popup */}
+      {readReceiptsFor && (() => {
+        const ann = announcements.find(a => a.id === readReceiptsFor);
+        if (!ann) return null;
+        return (
+          <ReadReceiptsPopup
+            announcement={ann}
+            allMembers={sharedMembers}
+            onClose={() => setReadReceiptsFor(null)}
+          />
+        );
+      })()}
 
-      {selectedMemberMetrics && (
-        <MemberMetricsPopup
-          member={selectedMemberMetrics}
-          onClose={() => setSelectedMemberMetrics(null)}
-        />
-      )}
-
-      {selectedMemberInfo && (
-        <MemberInfoModal
-          member={selectedMemberInfo}
-          localData={localTeamMembers.find(lm => lm.userId === selectedMemberInfo.localUserId)}
-          onClose={() => setSelectedMemberInfo(null)}
-          onAssign={selectedMemberInfo.localUserId != null ? () => {
-            setSelectedAssigneeId(selectedMemberInfo.localUserId!);
-            setSelectedAssigneeName(selectedMemberInfo.userFullName || selectedMemberInfo.userEmail);
-            setShowAssignTask(true);
-            setSelectedMemberInfo(null);
-          } : undefined}
-        />
-      )}
-
-      {showAssignTask && selectedTeamId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => { setShowAssignTask(false); setSelectedAssigneeId(null); setSelectedAssigneeName(null); }}>
-          <div className="w-full max-w-[560px]" onClick={e => e.stopPropagation()}>
+      {/* PHASE 3: Assign task modal — rendered when leader clicks the ClipboardList button */}
+      {assigningToMember && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Assign task"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-900/30 backdrop-blur-sm px-4"
+          onClick={() => setAssigningToMember(null)}
+        >
+          <div
+            className="w-full max-w-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <AcademicTaskCard
-              onClose={() => { setShowAssignTask(false); setSelectedAssigneeId(null); setSelectedAssigneeName(null); }}
+              prefilledAssignee={assigningToMember.userEmail}
+              lockAssignee
+              assignmentContext={`Assigning task to ${assigningToMember.userFullName || assigningToMember.userEmail}`}
               onSuccess={handleAssignTask}
-              lockAssignee={selectedAssigneeName ?? undefined}
+              onClose={() => setAssigningToMember(null)}
             />
           </div>
         </div>

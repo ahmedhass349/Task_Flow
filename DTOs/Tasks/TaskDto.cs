@@ -1,7 +1,3 @@
-// FILE: DTOs/Tasks/TaskDto.cs
-// STATUS: UPDATED
-// CHANGES: Added DueDateLabel computed field (#28), kept ProjectName/AssigneeName (frontend maps these)
-
 using System;
 
 namespace taskflow.DTOs.Tasks
@@ -19,6 +15,8 @@ namespace taskflow.DTOs.Tasks
         public string Priority { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public bool IsStarred { get; set; }
+        /// <summary>True when this task was created by someone other than the assignee (i.e., leader-assigned). Phase 4.</summary>
+        public bool IsAssignedByOther { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

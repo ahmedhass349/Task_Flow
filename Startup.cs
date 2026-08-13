@@ -1,13 +1,5 @@
-/*
-    FILE: Startup.cs
-    PHASE: Phase 1
-    PURPOSE: Configures services and middleware with provider-switching database support and desktop startup readiness signals.
-    CHANGED FROM: SQL Server-only DbContext registration and restricted CORS without startup DB readiness signals.
-*/
-
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -21,7 +13,6 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Newtonsoft.Json;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System;
@@ -92,95 +83,8 @@ namespace taskflow
             // ── AutoMapper ───────────────────────────────────────────────────
             services.AddAutoMapper(_ => { }, typeof(MappingProfile).Assembly);
 
-            // ── JWT Authentication ───────────────────────────────────────────
-            // Read JWT key from env var (set by Electron before spawning backend),
-            // fall back to appsettings, and if still absent auto-generate a random key
-            // that is valid only for the lifetime of this process.
-            var jwtKey = System.Environment.GetEnvironmentVariable("TASKFLOW_JWT_KEY")
-                         ?? Configuration["Jwt:Key"]
-                         ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
-            {
-                // Auto-generate a cryptographically-random key (64 hex chars = 32 bytes)
-                jwtKey = Convert.ToHexString(
-                    System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
-            }
-
-            // Write the resolved key back so JwtHelper (which reads IConfiguration) sees it.
-            ((IConfigurationRoot)Configuration)["Jwt:Key"] = jwtKey;
-
-            var jwtIssuer = Configuration["Jwt:Issuer"]!;
-            var jwtAudience = Configuration["Jwt:Audience"]!;
-
-            services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtIssuer,
-                    ValidAudience = jwtAudience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-                    // S-07: explicitly zero the default 5-minute skew so tokens expire at the exact time.
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                // Return JSON for auth failures instead of default plain text
-                options.Events = new JwtBearerEvents
-                {
-                    OnChallenge = async context =>
-                    {
-                        context.HandleResponse();
-                        context.Response.StatusCode = 401;
-                        context.Response.ContentType = "application/json";
-                        var errorResponse = new
-                        {
-                            success = false,
-                            message = "Unauthorized. Please log in to continue."
-                        };
-                        var json = JsonConvert.SerializeObject(errorResponse);
-                        await context.Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes(json));
-                    },
-                    OnForbidden = async context =>
-                    {
-                        context.Response.StatusCode = 403;
-                        context.Response.ContentType = "application/json";
-                        var errorResponse = new
-                        {
-                            success = false,
-                            message = "You do not have permission to perform this action."
-                        };
-                        var json = JsonConvert.SerializeObject(errorResponse);
-                        await context.Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes(json));
-                    },
-                    // Read JWT from query string for SignalR hub connections
-                    OnMessageReceived = context =>
-                    {
-                        var accessToken = context.Request.Query["access_token"];
-                        var path = context.HttpContext.Request.Path;
-                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
-                        {
-                            context.Token = accessToken;
-                        }
-                        return System.Threading.Tasks.Task.CompletedTask;
-                    }
-                };
-            });
-
-            services.AddAuthorization();
-
             // ── CORS ─────────────────────────────────────────────────────────
-            // PHASE 1 CHANGE: Switched from WithOrigins() to SetIsOriginAllowed(_ => true).
-            // Reason: In Electron production the React renderer loads from file:// origin,
-            // which is not covered by specific localhost origins.
+            // In Tauri production the React renderer loads from tauri://localhost origin.
             // The backend only binds to 127.0.0.1 so permitting any origin is safe —
             // no external machine can reach the API.
             // SetIsOriginAllowed (not AllowAnyOrigin) is used so AllowCredentials()
@@ -200,6 +104,8 @@ namespace taskflow
             services.AddControllersWithViews()
                 .AddNewtonsoftJson(options =>
                 {
+                    options.SerializerSettings.ContractResolver =
+                        new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
                     options.SerializerSettings.ReferenceLoopHandling =
                         Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                 });
@@ -307,8 +213,9 @@ namespace taskflow
             // ── SignalR ─────────────────────────────────────────────────────
             services.AddSignalR();
 
-            // S-09: Fixed-window rate limiter — caps anonymous auth endpoints at 10 requests/minute
-            // per client IP to mitigate brute-force and credential-stuffing attacks.
+            // ── Rate limiting ───────────────────────────────────────────────
+            // C-01: GlobalLimiter — sliding window, 300 req/min per authenticated userId.
+            // Falls back to remote IP for anonymous requests.
             services.AddRateLimiter(options =>
             {
                 options.AddFixedWindowLimiter("auth", o =>
@@ -318,6 +225,24 @@ namespace taskflow
                     o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     o.QueueLimit = 0;
                 });
+
+                // C-01: Per-user global cap — partitioned by JWT userId so each user
+                // gets their own bucket rather than all local users sharing one IP bucket.
+                options.GlobalLimiter = PartitionedRateLimiter.Create<Microsoft.AspNetCore.Http.HttpContext, string>(ctx =>
+                {
+                    var userId = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                                 ?? ctx.Connection.RemoteIpAddress?.ToString()
+                                 ?? "anon";
+                    return RateLimitPartition.GetSlidingWindowLimiter(userId, _ => new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit          = 300,
+                        Window               = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow    = 6,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit           = 0,
+                    });
+                });
+
                 options.RejectionStatusCode = 429;
             });
 
@@ -330,7 +255,6 @@ namespace taskflow
             services.AddHostedService<BackgroundServices.CrossNotificationPollerService>();
 
             // ── Helpers (DI) ─────────────────────────────────────────────────
-            services.AddScoped<JwtHelper>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, IHostApplicationLifetime appLifetime)
@@ -354,10 +278,11 @@ namespace taskflow
                 var address = app.ServerFeatures.Get<IServerAddressesFeature>()?.Addresses.FirstOrDefault();
                 if (!string.IsNullOrWhiteSpace(address))
                 {
-                    var electronFriendlyAddress = address
-                        .Replace("127.0.0.1", "localhost", StringComparison.OrdinalIgnoreCase)
-                        .Replace("[::1]", "localhost", StringComparison.OrdinalIgnoreCase);
-                    Console.WriteLine($"TASKFLOW_BACKEND_READY:{electronFriendlyAddress}");
+                    // Emit the bound address verbatim — ASPNETCORE_URLS is always set to
+                    // "http://127.0.0.1:0" so the address is already an IPv4 loopback URL.
+                    // Normalising to "localhost" is avoided because on Windows it can resolve
+                    // to ::1 (IPv6), causing Tauri's WebView to connect to the wrong interface.
+                    Console.WriteLine($"TASKFLOW_BACKEND_READY:{address}");
                     Console.Out.Flush();
                 }
             });
@@ -367,7 +292,21 @@ namespace taskflow
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 try
                 {
-                    db.Database.Migrate();
+                    // P1.3: Only run migrations when there are actually pending migrations.
+                    // GetPendingMigrations() does a lightweight schema-version check against
+                    // __EFMigrationsHistory. Skipping Migrate() when the DB is current removes
+                    // ~100–300ms from the critical path on every launch after initial setup.
+                    var pendingMigrations = db.Database.GetPendingMigrations().ToList();
+                    if (pendingMigrations.Any())
+                    {
+                        Log.Information("Running {Count} pending migration(s): {Names}",
+                            pendingMigrations.Count, string.Join(", ", pendingMigrations));
+                        db.Database.Migrate();
+                    }
+                    else
+                    {
+                        Log.Debug("Database schema is current — migration skipped");
+                    }
                     Console.WriteLine("TASKFLOW_DB_READY");
                 }
                 catch (Exception ex)
@@ -424,9 +363,45 @@ namespace taskflow
             // S-09: Rate limiter must sit after routing so endpoint metadata is resolved.
             app.UseRateLimiter();
 
-            // ── Auth middleware (order matters: after routing, before endpoints)
-            app.UseAuthentication();
-            app.UseAuthorization();
+            // ── Default user identity (replaces JWT auth) ────────────────────
+            app.Use(async (context, next) =>
+            {
+                if (context.User.Identity?.IsAuthenticated != true)
+                {
+                    taskflow.Data.Entities.AppUser? appUser = null;
+                    try
+                    {
+                        var userRepo = context.RequestServices.GetRequiredService<taskflow.Repositories.Interfaces.IUserRepository>();
+
+                        // Support X-User-Email header for multi-user switching on the same machine.
+                        var headerEmail = context.Request.Headers["X-User-Email"].FirstOrDefault()?.Trim();
+                        if (!string.IsNullOrEmpty(headerEmail))
+                            appUser = await userRepo.GetByEmailAsync(headerEmail);
+
+                        // Fall back to the first user in the database.
+                        if (appUser == null)
+                            appUser = (await userRepo.GetAllAsync()).FirstOrDefault();
+                    }
+                    catch { /* use defaults below */ }
+
+                    var userId = appUser?.Id.ToString() ?? "1";
+                    var email  = appUser?.Email  ?? "unknown@local";
+                    var name   = appUser?.FullName ?? "Local User";
+
+                    var claims = new[]
+                    {
+                        new System.Security.Claims.Claim(
+                            System.Security.Claims.ClaimTypes.NameIdentifier, userId),
+                        new System.Security.Claims.Claim(
+                            System.Security.Claims.ClaimTypes.Email, email),
+                        new System.Security.Claims.Claim(
+                            System.Security.Claims.ClaimTypes.Name, name),
+                    };
+                    var identity = new System.Security.Claims.ClaimsIdentity(claims, "local");
+                    context.User = new System.Security.Claims.ClaimsPrincipal(identity);
+                }
+                await next();
+            });
 
             app.UseEndpoints(endpoints =>
             {

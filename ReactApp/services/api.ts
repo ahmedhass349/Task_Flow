@@ -1,112 +1,16 @@
-// ── Centralized API Service for Task Flow ────────────────────────────────
-//
-// All API calls go through this module. It provides:
-// - Base URL configuration
-// - Automatic auth token injection
-// - Consistent error handling
-// - Typed request/response helpers
-//
-// Usage example available in repository docs or README.
-
-import type { ApiError, ApiResponse } from "../types";
+import type { ApiError } from "../types";
 import { getApiBaseUrl } from "../config/api";
 
-// ── Token management ─────────────────────────────────────────────────────
+// ── Auth state for header-based user switching ───────────────────────────
 
-let authToken: string | null = null;
-const TOKEN_KEY = "taskflow_token";
-const SESSION_TOKEN_KEY = "taskflow_session_token";
-const REMEMBER_ME_KEY = "taskflow_remember_me";
+let currentUserEmail: string | null = null;
 
-export function getRememberMePreference(): boolean {
-  return localStorage.getItem(REMEMBER_ME_KEY) === "true";
-}
-
-export function setRememberMePreference(rememberMe: boolean): void {
-  // Determine the active token from persistent storage or the in-memory var.
-  const activeToken = authToken || localStorage.getItem(TOKEN_KEY) || null;
-
-  if (!activeToken) {
-    if (!rememberMe) {
-      localStorage.removeItem(REMEMBER_ME_KEY);
-      localStorage.removeItem(TOKEN_KEY);
-      sessionStorage.removeItem(SESSION_TOKEN_KEY);
-    }
-    return;
-  }
-
-  if (rememberMe) {
-    localStorage.setItem(TOKEN_KEY, activeToken);
-    localStorage.setItem(REMEMBER_ME_KEY, "true");
-    sessionStorage.removeItem(SESSION_TOKEN_KEY);
-  } else {
-    // Downgrade to memory-only: remove all persistent copies.
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REMEMBER_ME_KEY);
-    sessionStorage.removeItem(SESSION_TOKEN_KEY);
-  }
-
-  authToken = activeToken;
-}
-
-export function setAuthToken(token: string | null, rememberMe = true): void {
-  authToken = token;
-  if (token) {
-    if (rememberMe) {
-      localStorage.setItem(TOKEN_KEY, token);
-      localStorage.setItem(REMEMBER_ME_KEY, "true");
-      // Clear any non-persistent remnants from previous sessions.
-      sessionStorage.removeItem(SESSION_TOKEN_KEY);
-    } else {
-      // Keep the token in memory only — do NOT write to sessionStorage.
-      // In Electron, sessionStorage is persisted to disk and survives app
-      // restarts, so storing here would defeat the purpose of "not remembered".
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(REMEMBER_ME_KEY);
-      sessionStorage.removeItem(SESSION_TOKEN_KEY);
-    }
-  } else {
-    localStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem(SESSION_TOKEN_KEY);
-    localStorage.removeItem(REMEMBER_ME_KEY);
-  }
-}
-
-export function getAuthToken(): string | null {
-  if (!authToken) {
-    // Only restore from persistent storage when the user explicitly opted in.
-    // sessionStorage is intentionally NOT read here: Electron persists it to
-    // disk, so a session-only token stored there would survive app restarts
-    // and behave identically to a remembered token.
-    if (localStorage.getItem(REMEMBER_ME_KEY) === "true") {
-      authToken = localStorage.getItem(TOKEN_KEY);
-    }
-    // Otherwise authToken stays null — user must log in again after restart.
-  }
-  return authToken;
-}
-
-export function clearAuthToken(): void {
-  authToken = null;
-  localStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(SESSION_TOKEN_KEY);
-  localStorage.removeItem(REMEMBER_ME_KEY);
+/** Set the email of the currently active user.  Sent as X-User-Email on every request. */
+export function setCurrentUserEmail(email: string | null) {
+  currentUserEmail = email;
 }
 
 // ── Error class ──────────────────────────────────────────────────────────
-
-// ── Global session-expiry handler ───────────────────────────────────────
-// AuthContext registers this on mount. Any non-auth 401 response triggers it,
-// clearing the stale token and redirecting the user back to the login page.
-let _unauthorizedHandler: (() => void) | null = null;
-
-export function setUnauthorizedHandler(handler: () => void): void {
-  _unauthorizedHandler = handler;
-}
-
-export function clearUnauthorizedHandler(): void {
-  _unauthorizedHandler = null;
-}
 
 export class ApiRequestError extends Error {
   status: number;
@@ -120,6 +24,11 @@ export class ApiRequestError extends Error {
   }
 }
 
+/** Extracts a human-readable message from any thrown value. */
+export function extractErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
+
 // ── Core fetch wrapper ───────────────────────────────────────────────────
 
 interface RequestOptions {
@@ -130,9 +39,7 @@ interface RequestOptions {
 }
 
 async function request<T>(endpoint: string, options: RequestOptions): Promise<T> {
-  const baseUrl = getApiBaseUrl() || (import.meta as any).env?.VITE_API_BASE_URL || "";
-  // If endpoint is already an absolute URL (e.g. built by ENDPOINTS via buildUrl),
-  // use it directly to avoid double-prepending the base URL.
+  const baseUrl = getApiBaseUrl() || "";
   const url = endpoint.startsWith("http://") || endpoint.startsWith("https://")
     ? endpoint
     : `${baseUrl}${endpoint}`;
@@ -142,9 +49,8 @@ async function request<T>(endpoint: string, options: RequestOptions): Promise<T>
     ...options.headers,
   };
 
-  const token = getAuthToken();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  if (currentUserEmail) {
+    headers["X-User-Email"] = currentUserEmail;
   }
 
   const config: RequestInit = {
@@ -166,7 +72,6 @@ async function request<T>(endpoint: string, options: RequestOptions): Promise<T>
 
   // Check response status BEFORE trying to parse JSON
   if (!response.ok) {
-    // Try to get error details from body if possible
     let errorData: unknown;
     try {
       const contentType = response.headers.get("content-type");
@@ -177,20 +82,10 @@ async function request<T>(endpoint: string, options: RequestOptions): Promise<T>
       // If we can't parse error body, continue with status-based error
     }
 
-    // Treat a 401 on any non-auth endpoint as a session expiry: clear the token
-    // and trigger a logout so the user is redirected to the login page instead of
-    // seeing broken UI or silent errors throughout the app.
-    if (response.status === 401 && _unauthorizedHandler) {
-      const isAuthEndpoint = url.includes("/api/auth/login") || url.includes("/api/auth/register");
-      if (!isAuthEndpoint) {
-        _unauthorizedHandler();
-      }
-    }
-
     throw new ApiRequestError({
-      message: (errorData as any)?.message || `Request failed with status ${response.status}`,
+      message: (errorData as { message?: string } | null)?.message || `Request failed with status ${response.status}`,
       status: response.status,
-      errors: (errorData as any)?.errors,
+      errors: (errorData as { errors?: Record<string, string[]> } | null)?.errors,
     });
   }
 
@@ -205,19 +100,23 @@ async function request<T>(endpoint: string, options: RequestOptions): Promise<T>
     });
   }
 
-  // Successful HTTP status. Most backend endpoints wrap payload in ApiResponse<T>.
-  const maybeWrapped = data as ApiResponse<T> | T;
+  const maybeWrapped = data as Record<string, unknown> | T;
 
-  if (typeof maybeWrapped === "object" && maybeWrapped !== null && "success" in maybeWrapped) {
-    const wrapped = maybeWrapped as ApiResponse<T>;
-    if (!wrapped.success) {
+  // Normalise casing: handle both "success" (camelCase) and "Success" (PascalCase).
+  const isWrapped = typeof maybeWrapped === "object" && maybeWrapped !== null &&
+    ("success" in maybeWrapped || "Success" in maybeWrapped);
+
+  if (isWrapped) {
+    const wrapped = maybeWrapped as Record<string, unknown>;
+    const ok = wrapped.success ?? wrapped.Success;
+    if (!ok) {
       throw new ApiRequestError({
-        message: wrapped.message || "Request failed",
+        message: (wrapped.message as string) || (wrapped.Message as string) || "Request failed",
         status: response.status,
-        errors: wrapped.errors,
+        errors: wrapped.errors as Record<string, string[]> | undefined,
       });
     }
-    return (wrapped.data ?? (null as T));
+    return ((wrapped.data ?? wrapped.Data ?? null) as T);
   }
 
   return maybeWrapped as T;
@@ -248,26 +147,27 @@ export const api = {
 
   /** Upload FormData (multipart) — does NOT set Content-Type so the browser adds the boundary. */
   postForm<T>(endpoint: string, formData: FormData, signal?: AbortSignal): Promise<T> {
-    const baseUrl = getApiBaseUrl() || (import.meta as any).env?.VITE_API_BASE_URL || "";
+    const baseUrl = getApiBaseUrl() || "";
     const url = `${baseUrl}${endpoint}`;
-    const token = getAuthToken();
-    const headers: HeadersInit = {};
-    if (token) (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
 
-    return fetch(url, { method: "POST", headers, body: formData, signal })
+    return fetch(url, { method: "POST", body: formData, signal })
       .then(async (response) => {
         if (response.status === 204) return undefined as T;
         const data: unknown = await response.json().catch(() => null);
         if (!response.ok) {
           throw new ApiRequestError({
-            message: (data as any)?.message || `Upload failed with status ${response.status}`,
+            message: (data as { message?: string } | null)?.message || `Upload failed with status ${response.status}`,
             status: response.status,
           });
         }
-        const maybe = data as any;
-        if (maybe && "success" in maybe) {
-          if (!maybe.success) throw new ApiRequestError({ message: maybe.message || "Upload failed", status: response.status });
-          return (maybe.data ?? null) as T;
+        const formDataWrapped = data as Record<string, unknown> | T;
+        const isFormWrapped = typeof formDataWrapped === "object" && formDataWrapped !== null &&
+          ("success" in formDataWrapped || "Success" in formDataWrapped);
+        if (isFormWrapped) {
+          const fw = formDataWrapped as Record<string, unknown>;
+          const ok = fw.success ?? fw.Success;
+          if (!ok) throw new ApiRequestError({ message: (fw.message as string) || (fw.Message as string) || "Upload failed", status: response.status });
+          return ((fw.data ?? fw.Data ?? null) as T);
         }
         return data as T;
       });

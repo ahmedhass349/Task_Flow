@@ -1,8 +1,3 @@
-// FILE: Services/ProjectService.cs
-// STATUS: UPDATED
-// CHANGES: Added userId ownership checks to Update/Delete/ToggleStar (#2),
-//          Fixed double-fetch pattern in Create/Update/ToggleStar (#13)
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,12 +17,14 @@ namespace taskflow.Services
         private readonly IProjectRepository _projectRepository;
         private readonly IMapper _mapper;
         private readonly IMirrorService _mirror;
+        private readonly IUserRepository _userRepository;
 
-        public ProjectService(IProjectRepository projectRepository, IMapper mapper, IMirrorService mirror)
+        public ProjectService(IProjectRepository projectRepository, IMapper mapper, IMirrorService mirror, IUserRepository userRepository)
         {
             _projectRepository = projectRepository;
             _mapper = mapper;
             _mirror = mirror;
+            _userRepository = userRepository;
         }
 
         public async Task<IEnumerable<ProjectDto>> GetUserProjectsAsync(int userId)
@@ -50,12 +47,16 @@ namespace taskflow.Services
 
         public async Task<ProjectDto> CreateProjectAsync(int userId, CreateProjectRequest request)
         {
+            // Phase 2: look up owner email for cross-device MongoDB queries
+            var owner = await _userRepository.GetByIdAsync(userId);
+
             var project = new Project
             {
                 Name = request.Name,
                 Description = request.Description,
                 Color = request.Color,
                 OwnerId = userId,
+                OwnerEmail = owner?.Email,  // Phase 2
                 CreatedAt = DateTime.UtcNow
             };
 

@@ -18,24 +18,60 @@ namespace taskflow.Services
 {
     public class MistralChatService : IMistralChatService
     {
-        private readonly string _apiKey;
+        private string? _apiKey;
         private readonly string _chatModel;
         private readonly string _coderModel;
         private readonly string _ocrModel;
+        private bool _mongoChecked;
+        private readonly IMongoService? _mongo;
 
         private readonly IHttpClientFactory _httpFactory;
         private readonly ILogger<MistralChatService> _logger;
 
-        private const string HardcodedApiKey = "B0tvPW52GKBJDw321cub71GDDJZJXDRJ";
+        public bool IsAvailable
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(_apiKey)) return true;
+                if (_mongoChecked) return false;
 
-        public MistralChatService(IHttpClientFactory httpFactory, ILogger<MistralChatService> logger, IConfiguration configuration)
+                _mongoChecked = true;
+                try
+                {
+                    var key = _mongo?.GetSettingAsync("mistral_api_key")
+                        .ConfigureAwait(false).GetAwaiter().GetResult();
+                    if (!string.IsNullOrWhiteSpace(key))
+                    {
+                        _apiKey = key;
+                        _logger.LogInformation("Mistral API key resolved from MongoDB.");
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "MongoDB fallback for API key unavailable.");
+                }
+                return false;
+            }
+        }
+
+        public MistralChatService(
+            IHttpClientFactory httpFactory,
+            ILogger<MistralChatService> logger,
+            IConfiguration configuration,
+            IMongoService mongoService)
         {
             _httpFactory = httpFactory;
             _logger = logger;
-            _apiKey = HardcodedApiKey;
+            _mongo = mongoService;
+            _apiKey = configuration["Mistral:ApiKey"]
+                   ?? configuration["MISTRAL_API_KEY"]
+                   ?? configuration["MistralApiKey"]
+                   ?? Environment.GetEnvironmentVariable("MISTRAL_API_KEY");
             _chatModel = configuration["Mistral:Model"] ?? "mistral-small-latest";
             _coderModel = configuration["Mistral:CoderModel"] ?? "codestral-latest";
             _ocrModel = configuration["Mistral:OcrModel"] ?? "mistral-ocr-latest";
+            _logger.LogInformation("MistralChatService initialized. API key present: {HasKey}", !string.IsNullOrWhiteSpace(_apiKey));
         }
 
         public async Task<string> ChatAsync(

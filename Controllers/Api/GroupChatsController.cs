@@ -15,7 +15,6 @@ namespace taskflow.Controllers.Api
 {
     [ApiController]
     [Route("api/group-chats")]
-    [Authorize]
     public class GroupChatsController : ControllerBase
     {
         private readonly IGroupChatService _groupChatService;
@@ -127,6 +126,9 @@ namespace taskflow.Controllers.Api
             var ext = Path.GetExtension(file.FileName);
             if (!AllowedExtensions.Contains(ext))
                 return BadRequest(ApiResponse<string>.Fail("File type not allowed."));
+
+            if (!await FileSignatureValidator.IsValidAsync(file, ext))
+                return BadRequest(ApiResponse<string>.Fail("File content does not match the declared file type."));
 
             var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "group-attachments");
             Directory.CreateDirectory(uploadsFolder);

@@ -1,3 +1,17 @@
+/*
+  FILE: BackgroundServices/OfflineSyncService.cs
+  PHASE: 1 & 3
+  DEFECT: 2-Connection, 1-Injection
+  CHANGES:
+    - PingIntervalSeconds: 10 → 30. A 10-second ping cycle is too aggressive for Machine B's
+      slower connection and amplifies the flip-flop caused by transient failures.
+    - MirrorUpsert dispatch case: added stale-entry injection guard. For entries older than
+      30 minutes that carry a SyncId, DocumentExistsBySyncIdAsync is called before pushing.
+      If the document is absent from MongoDB (externally deleted), we return without throwing
+      so ReplayEntryAsync marks the entry Synced and prunes it — injection prevented.
+    - BackupUserAccount dispatch case: same stale-entry guard using AccountExistsInMongoAsync.
+      Prevents resurrecting credential records for accounts deleted from MongoDB.
+*/
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,8 +46,7 @@ namespace taskflow.BackgroundServices
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<OfflineSyncService> _logger;
 
-        // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 1  CHANGE: reduced ping interval from 30s to 10s
-        private const int PingIntervalSeconds = 10;
+        private const int PingIntervalSeconds = 30;
 
         // B-05: prevents concurrent replay when both the timer loop and the connectivity-changed
         // event handler call ReplayOutboxAsync at the same time.
@@ -64,9 +77,25 @@ namespace taskflow.BackgroundServices
             // Initialise pending count from the DB
             await InitialisePendingCountAsync(stoppingToken);
 
+            // STARTUP FIX: Perform an eager first ping immediately so that _isOnline is
+            // populated before the React frontend calls /api/connectivity/status on sign-in.
+            // Without this the first ping would only happen after PingIntervalSeconds (30s),
+            // causing the UI to show "Working offline" for up to 30 seconds after login.
+            try
+            {
+                await _connectivity.CheckConnectivityAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "OfflineSyncService: initial eager ping failed");
+            }
+
             // Run the ping loop
             while (!stoppingToken.IsCancellationRequested)
             {
+                await Task.Delay(TimeSpan.FromSeconds(PingIntervalSeconds), stoppingToken)
+                    .ContinueWith(_ => { }, TaskContinuationOptions.None); // swallow cancellation
+
                 try
                 {
                     await _connectivity.CheckConnectivityAsync(stoppingToken);
@@ -75,9 +104,6 @@ namespace taskflow.BackgroundServices
                 {
                     _logger.LogWarning(ex, "OfflineSyncService: ping loop error");
                 }
-
-                await Task.Delay(TimeSpan.FromSeconds(PingIntervalSeconds), stoppingToken)
-                    .ContinueWith(_ => { }, TaskContinuationOptions.None); // swallow cancellation
             }
 
             _connectivity.ConnectivityChanged -= OnConnectivityChanged;
@@ -249,7 +275,6 @@ namespace taskflow.BackgroundServices
                 }
                 case "LeaveTeam":
                 {
-                    // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 4  CHANGE: added missing LeaveTeam case
                     var x = Deserialize<LeaveTeamPayload>(p);
                     await _mongoService.LeaveTeamAsync(x.TeamId, x.UserEmail);
                     break;
@@ -276,8 +301,29 @@ namespace taskflow.BackgroundServices
                 }
                 case "MirrorUpsert":
                 {
-                    // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 2  CHANGE: routes to SyncId-keyed upsert when syncId is present
                     var x = Deserialize<MirrorUpsertPayload>(p);
+
+                    // DEFECT 1 INJECTION GUARD: for outbox entries older than 30 minutes that
+                    // carry a SyncId, verify the document still exists in MongoDB before pushing.
+                    // If the document was externally deleted (e.g. via Atlas UI or admin tool)
+                    // after the entry was queued, pushing it now would resurrect deleted data.
+                    // We return without throwing so ReplayEntryAsync marks the entry as Synced
+                    // and prunes it from the queue — it is treated as successfully handled.
+                    if (!string.IsNullOrEmpty(x.SyncId) && entry.CreatedAt < DateTime.UtcNow.AddMinutes(-30))
+                    {
+                        bool docExists = await _mongoService.DocumentExistsBySyncIdAsync(
+                            x.Collection, x.SyncId, CancellationToken.None);
+                        if (!docExists)
+                        {
+                            _logger.LogWarning(
+                                "INJECTION PREVENTION: skipping stale MirrorUpsert for {Col}/{SyncId} " +
+                                "(queued {Age:F0}m ago — document absent from MongoDB, likely externally deleted).",
+                                x.Collection, x.SyncId,
+                                (DateTime.UtcNow - entry.CreatedAt).TotalMinutes);
+                            return;
+                        }
+                    }
+
                     var doc = MongoDB.Bson.BsonDocument.Parse(x.ExtJson);
                     if (!string.IsNullOrEmpty(x.SyncId))
                     {
@@ -294,7 +340,6 @@ namespace taskflow.BackgroundServices
                 }
                 case "MirrorDelete":
                 {
-                    // FILE: BackgroundServices/OfflineSyncService.cs  PHASE: 2  CHANGE: routes to SyncId-keyed delete when syncId is present
                     var x = Deserialize<MirrorDeletePayload>(p);
                     if (!string.IsNullOrEmpty(x.SyncId))
                         await _mongoService.DeleteDocumentBySyncIdAsync(x.Collection, x.SyncId);
@@ -311,8 +356,25 @@ namespace taskflow.BackgroundServices
                 case "BackupUserAccount":
                 {
                     // Replays a credential backup that was queued while offline.
-                    // After success, mark IsBackedUpToMongo = true in SQLite.
+                    // DEFECT 1 INJECTION GUARD: for stale entries (>30 min old), verify the
+                    // account still exists in MongoDB before pushing.  If it was externally
+                    // deleted after the entry was queued, pushing it would resurrect the account.
+                    // Return without throwing → marked Synced and pruned from the queue.
                     var x = Deserialize<BackupAccountPayload>(p);
+
+                    if (entry.CreatedAt < DateTime.UtcNow.AddMinutes(-30))
+                    {
+                        bool accountExists = await _mongoService.AccountExistsInMongoAsync(x.Email);
+                        if (!accountExists)
+                        {
+                            _logger.LogWarning(
+                                "INJECTION PREVENTION: skipping stale BackupUserAccount for {Email} " +
+                                "(queued {Age:F0}m ago — account absent from MongoDB, likely externally deleted).",
+                                x.Email, (DateTime.UtcNow - entry.CreatedAt).TotalMinutes);
+                            return;
+                        }
+                    }
+
                     await _mongoService.BackupUserAccountAsync(x.Email, x.PasswordHash, x.SqliteId);
 
                     using (var scope = _scopeFactory.CreateScope())
@@ -325,6 +387,38 @@ namespace taskflow.BackgroundServices
                             await db.SaveChangesAsync();
                         }
                     }
+                    break;
+                }
+                // Dispatch cases for cross-notifications and announcements queued while offline.
+                case "WriteCrossNotification":
+                {
+                    var x = Deserialize<CrossNotificationPayload>(p);
+                    await _mongoService.WriteCrossNotificationAsync(new taskflow.Models.Mongo.CrossNotification
+                    {
+                        RecipientEmail = x.RecipientEmail,
+                        SenderEmail    = x.SenderEmail,
+                        Title          = x.Title,
+                        Message        = x.Message,
+                        Type           = x.Type,
+                        Priority       = x.Priority,
+                        ActionUrl      = x.ActionUrl ?? string.Empty,
+                    });
+                    break;
+                }
+                case "WriteAnnouncement":
+                {
+                    var x = Deserialize<WriteAnnouncementPayload>(p);
+                    await _mongoService.WriteAnnouncementAsync(new taskflow.Models.Mongo.TeamAnnouncement
+                    {
+                        Id          = x.Id,
+                        TeamId      = x.TeamId,
+                        TeamName    = x.TeamName,
+                        SenderEmail = x.SenderEmail,
+                        SenderName  = x.SenderName,
+                        Title       = x.Title,
+                        Message     = x.Message,
+                        CreatedAt   = x.CreatedAt,
+                    });
                     break;
                 }
                 default:
@@ -409,5 +503,15 @@ namespace taskflow.BackgroundServices
         private record UserDataPayload(string UserEmail);
 
         private record BackupAccountPayload(string Email, string PasswordHash, int SqliteId);
+
+        // P6-O1: payload for cross-notification queued while offline.
+        private record CrossNotificationPayload(
+            string RecipientEmail, string SenderEmail, string Title,
+            string Message, string Type, string Priority, string? ActionUrl);
+
+        // P6-O2: payload for announcement queued while offline.
+        private record WriteAnnouncementPayload(
+            string? Id, string TeamId, string TeamName,
+            string SenderEmail, string SenderName, string Title, string Message, DateTime CreatedAt);
     }
 }

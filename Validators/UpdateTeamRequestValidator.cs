@@ -1,7 +1,3 @@
-// FILE: Validators/UpdateTeamRequestValidator.cs
-// STATUS: NEW
-// CHANGES: Created for missing UpdateTeam endpoint (#22)
-
 using FluentValidation;
 using taskflow.DTOs.Teams;
 

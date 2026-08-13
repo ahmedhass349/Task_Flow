@@ -9,7 +9,6 @@ namespace taskflow.Controllers.Api
 {
     [ApiController]
     [Route("api/connectivity")]
-    [Authorize]
     public class ConnectivityController : ControllerBase
     {
         private readonly IConnectivityService _connectivity;
@@ -19,10 +18,8 @@ namespace taskflow.Controllers.Api
             _connectivity = connectivity;
         }
 
-        // FILE: Controllers/Api/ConnectivityController.cs  PHASE: 1  CHANGE: [AllowAnonymous] on health endpoint
         /// <summary>Returns the current connectivity state.</summary>
         [HttpGet("status")]
-        [AllowAnonymous]
         public IActionResult GetStatus()
         {
             var dto = new ConnectivityStatusDto

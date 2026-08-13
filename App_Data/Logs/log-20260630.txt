@@ -1,0 +1,15 @@
+2026-06-30 17:54:44.929 +03:00 [INF] Reminder processor started
+2026-06-30 17:54:44.930 +03:00 [INF] DatabaseCleanupService started. First run in 5 min.
+2026-06-30 17:54:44.929 +03:00 [INF] Due date warning service started
+2026-06-30 17:54:44.929 +03:00 [INF] CrossNotificationPollerService started (interval=15s).
+2026-06-30 17:54:44.943 +03:00 [WRN] Overriding address(es) 'http://localhost:5293'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
+2026-06-30 17:54:45.413 +03:00 [WRN] You do not have a valid license key for the Lucky Penny software AutoMapper. This is allowed for development and testing scenarios. If you are running in production you are required to have a licensed version. Please visit https://luckypennysoftware.com to obtain a valid license.
+2026-06-30 17:54:45.902 +03:00 [INF] Connectivity: effective state changed → ONLINE
+2026-06-30 17:54:45.915 +03:00 [INF] Pushed ConnectivityChanged(true) via SignalR
+2026-06-30 17:54:45.917 +03:00 [INF] BulkSyncStartupService: starting pull sync (MongoDB → SQLite)...
+2026-06-30 17:54:46.097 +03:00 [INF] PullSync: projects — inserted 0, updated 0, deleted 0
+2026-06-30 17:54:46.170 +03:00 [INF] PullSync: tasks — inserted 0, updated 0, deleted 0
+2026-06-30 17:54:46.341 +03:00 [INF] PullSync: notifications — inserted 0, updated 0, deleted 0
+2026-06-30 17:54:46.410 +03:00 [INF] PullSync: reminders — inserted 0, updated 0, deleted 0
+2026-06-30 17:54:46.502 +03:00 [INF] PullSync: calendar_events — inserted 0, updated 0, deleted 0
+2026-06-30 17:54:46.600 +03:00 [INF] BulkSyncStartupService: pull sync complete.

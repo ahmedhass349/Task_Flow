@@ -1,79 +1,92 @@
-\contentsline {chapter}{Acknowledgments}{iii}{chapter*.1}%
-\contentsline {chapter}{List of Publications}{iv}{section*.2}%
-\contentsline {chapter}{List of Abbreviations}{x}{section*.6}%
-\contentsline {chapter}{List of Figures}{xi}{section*.8}%
-\contentsline {chapter}{List of Tables}{xii}{section*.10}%
-\contentsline {chapter}{\numberline {1}Introduction}{xiii}{chapter.1}%
-\contentsline {section}{\numberline {1.1}Background and Motivation}{xiii}{section.1.1}%
-\contentsline {section}{\numberline {1.2}Problem Statement}{xiv}{section.1.2}%
-\contentsline {section}{\numberline {1.3}Aims and Objectives}{xiv}{section.1.3}%
-\contentsline {section}{\numberline {1.4}Scope and Limitations}{xv}{section.1.4}%
-\contentsline {section}{\numberline {1.5}Thesis Overview}{xvi}{section.1.5}%
-\contentsline {chapter}{\numberline {2}Literature Review}{xviii}{chapter.2}%
-\contentsline {section}{\numberline {2.1}Task Management and Productivity Software}{xviii}{section.2.1}%
-\contentsline {section}{\numberline {2.2}Desktop Application Frameworks}{xix}{section.2.2}%
-\contentsline {section}{\numberline {2.3}Offline-First Architecture}{xx}{section.2.3}%
-\contentsline {section}{\numberline {2.4}Hybrid Database Architectures}{xxi}{section.2.4}%
-\contentsline {section}{\numberline {2.5}Real-Time Communication Patterns}{xxii}{section.2.5}%
-\contentsline {section}{\numberline {2.6}Authentication and Security}{xxii}{section.2.6}%
-\contentsline {section}{\numberline {2.7}Large Language Models and AI-Assisted Productivity}{xxiv}{section.2.7}%
-\contentsline {section}{\numberline {2.8}Project Visualisation Paradigms}{xxv}{section.2.8}%
-\contentsline {section}{\numberline {2.9}Summary}{xxv}{section.2.9}%
-\contentsline {chapter}{\numberline {3}Methodology}{xxvii}{chapter.3}%
-\contentsline {section}{\numberline {3.1}Requirements Analysis}{xxvii}{section.3.1}%
-\contentsline {section}{\numberline {3.2}System Architecture Overview}{xxix}{section.3.2}%
-\contentsline {section}{\numberline {3.3}Data Layer Design}{xxx}{section.3.3}%
-\contentsline {section}{\numberline {3.4}Backend Implementation}{xxxi}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}Authentication Service}{xxxi}{subsection.3.4.1}%
-\contentsline {subsection}{\numberline {3.4.2}Task and Project Management}{xxxi}{subsection.3.4.2}%
-\contentsline {subsection}{\numberline {3.4.3}Real-Time Notification System}{xxxii}{subsection.3.4.3}%
-\contentsline {subsection}{\numberline {3.4.4}Messaging System}{xxxii}{subsection.3.4.4}%
-\contentsline {subsection}{\numberline {3.4.5}Offline Synchronisation Engine}{xxxiii}{subsection.3.4.5}%
-\contentsline {subsection}{\numberline {3.4.6}AI Integration}{xxxiv}{subsection.3.4.6}%
-\contentsline {section}{\numberline {3.5}Frontend Implementation}{xxxiv}{section.3.5}%
-\contentsline {subsection}{\numberline {3.5.1}Application Structure}{xxxiv}{subsection.3.5.1}%
-\contentsline {subsection}{\numberline {3.5.2}Task Visualisation Views}{xxxv}{subsection.3.5.2}%
-\contentsline {subsection}{\numberline {3.5.3}Connectivity Bar and Offline UX}{xxxvi}{subsection.3.5.3}%
-\contentsline {subsection}{\numberline {3.5.4}AI Chatbot Interface}{xxxvi}{subsection.3.5.4}%
-\contentsline {section}{\numberline {3.6}Desktop Packaging}{xxxvi}{section.3.6}%
-\contentsline {section}{\numberline {3.7}Testing Strategy}{xxxvii}{section.3.7}%
-\contentsline {chapter}{\numberline {4}Results}{xxxix}{chapter.4}%
-\contentsline {section}{\numberline {4.1}System Features Overview}{xxxix}{section.4.1}%
-\contentsline {section}{\numberline {4.2}Authentication and User Management}{xl}{section.4.2}%
-\contentsline {section}{\numberline {4.3}Task and Project Management}{xli}{section.4.3}%
-\contentsline {section}{\numberline {4.4}Task Visualisation Modes}{xli}{section.4.4}%
-\contentsline {section}{\numberline {4.5}Team Collaboration and Messaging}{xlii}{section.4.5}%
-\contentsline {section}{\numberline {4.6}Offline Synchronisation}{xliii}{section.4.6}%
-\contentsline {section}{\numberline {4.7}AI Chatbot}{xliv}{section.4.7}%
-\contentsline {section}{\numberline {4.8}Calendar and Dashboard}{xlv}{section.4.8}%
-\contentsline {section}{\numberline {4.9}Notifications and Settings}{xlvi}{section.4.9}%
-\contentsline {section}{\numberline {4.10}Cross-Platform Distribution}{xlvi}{section.4.10}%
-\contentsline {section}{\numberline {4.11}Performance Observations}{xlvii}{section.4.11}%
-\contentsline {chapter}{\numberline {5}Conclusion}{xlviii}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Summary of Work}{xlviii}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Technical Contributions}{xlix}{section.5.2}%
-\contentsline {paragraph}{Outbox-pattern offline sync engine for a desktop .NET application.}{xlix}{section*.55}%
-\contentsline {paragraph}{Dual-database architecture with a shared entity abstraction.}{xlix}{section*.56}%
-\contentsline {paragraph}{SSE-streamed multi-modal AI chatbot in a desktop context.}{l}{section*.57}%
-\contentsline {paragraph}{Self-contained cross-platform packaging with embedded runtime.}{l}{section*.58}%
-\contentsline {section}{\numberline {5.3}Lessons Learned}{l}{section.5.3}%
-\contentsline {section}{\numberline {5.4}Limitations}{li}{section.5.4}%
-\contentsline {chapter}{\numberline {6}Future Work}{lii}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Short-Term Improvements}{lii}{section.6.1}%
-\contentsline {paragraph}{Sub-task backend implementation.}{lii}{section*.59}%
-\contentsline {paragraph}{Mistral API key security.}{lii}{section*.60}%
-\contentsline {paragraph}{Automated test suite.}{liii}{section*.61}%
-\contentsline {paragraph}{Per-field conflict resolution.}{liii}{section*.62}%
-\contentsline {paragraph}{macOS notarisation.}{liii}{section*.63}%
-\contentsline {section}{\numberline {6.2}Long-Term Enhancements}{liii}{section.6.2}%
-\contentsline {paragraph}{Mobile companion application.}{liii}{section*.64}%
-\contentsline {paragraph}{AI-powered task creation from natural language.}{liii}{section*.65}%
-\contentsline {paragraph}{CRDT-based synchronisation.}{liv}{section*.66}%
-\contentsline {paragraph}{Analytics and reporting dashboard.}{liv}{section*.67}%
-\contentsline {paragraph}{Third-party integration plugins.}{liv}{section*.68}%
-\contentsline {paragraph}{Cloud-hosted multi-tenant mode.}{liv}{section*.69}%
-\contentsline {chapter}{Appendix}{lv}{section*.70}%
-\contentsline {chapter}{\numberline {A}API Reference}{lvi}{chapter.A}%
-\contentsline {chapter}{\numberline {B}Database Schema}{lviii}{chapter.B}%
-\contentsline {chapter}{\numberline {C}Configuration Reference}{lx}{chapter.C}%
-\contentsline {chapter}{References}{lxiv}{section*.82}%
+\contentsline {chapter}{Acknowledgments}{2}{chapter*.1}%
+\contentsline {chapter}{List of Publications}{3}{section*.2}%
+\contentsline {chapter}{Abstract}{4}{chapter*.3}%
+\contentsline {chapter}{List of Abbreviations}{9}{section*.6}%
+\contentsline {chapter}{List of Figures}{10}{section*.8}%
+\contentsline {chapter}{List of Tables}{12}{section*.10}%
+\contentsline {chapter}{\numberline {1}Introduction}{13}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Background and Motivation}{13}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Problem Statement}{14}{section.1.2}%
+\contentsline {section}{\numberline {1.3}Aims and Objectives}{15}{section.1.3}%
+\contentsline {section}{\numberline {1.4}Scope and Limitations}{16}{section.1.4}%
+\contentsline {section}{\numberline {1.5}Thesis Overview}{17}{section.1.5}%
+\contentsline {chapter}{\numberline {2}Background and Literature Review}{18}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Background of Task Management}{18}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Task Management and Productivity Software}{19}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Desktop Application Frameworks}{20}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Offline-First Architecture}{21}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Hybrid Database Architectures}{22}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Real-Time Communication Patterns}{23}{section.2.6}%
+\contentsline {section}{\numberline {2.7}Authentication and Security}{23}{section.2.7}%
+\contentsline {section}{\numberline {2.8}Large Language Models and AI-Assisted Productivity}{24}{section.2.8}%
+\contentsline {section}{\numberline {2.9}Project Visualisation Paradigms}{25}{section.2.9}%
+\contentsline {section}{\numberline {2.10}Summary}{26}{section.2.10}%
+\contentsline {chapter}{\numberline {3}Methodology}{27}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Requirements Analysis}{27}{section.3.1}%
+\contentsline {section}{\numberline {3.2}System Architecture Overview}{28}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Data Layer Design}{30}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Dual-Store Strategy}{30}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Synchronisation Model}{30}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Entity Model}{30}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}MongoDB Collection Design}{33}{subsection.3.3.4}%
+\contentsline {section}{\numberline {3.4}Backend Design}{35}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Authentication Service}{35}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Task and Project Management}{35}{subsection.3.4.2}%
+\contentsline {subsection}{\numberline {3.4.3}Real-Time Notification System}{36}{subsection.3.4.3}%
+\contentsline {subsection}{\numberline {3.4.4}Messaging System}{36}{subsection.3.4.4}%
+\contentsline {subsection}{\numberline {3.4.5}Offline Synchronisation Engine}{36}{subsection.3.4.5}%
+\contentsline {subsection}{\numberline {3.4.6}AI Integration}{37}{subsection.3.4.6}%
+\contentsline {section}{\numberline {3.5}Frontend Design}{38}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}Application Structure}{38}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}Task Visualisation Views}{38}{subsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.5.3}Offline-Aware User Interface}{40}{subsection.3.5.3}%
+\contentsline {subsection}{\numberline {3.5.4}AI Chatbot Interface}{40}{subsection.3.5.4}%
+\contentsline {section}{\numberline {3.6}Desktop Packaging}{40}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}Native Shell}{40}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}Sidecar Backend Management}{41}{subsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.6.3}Window Lifecycle}{41}{subsection.3.6.3}%
+\contentsline {subsection}{\numberline {3.6.4}Plugin Architecture}{41}{subsection.3.6.4}%
+\contentsline {subsection}{\numberline {3.6.5}Security Configuration}{41}{subsection.3.6.5}%
+\contentsline {subsection}{\numberline {3.6.6}Build Pipeline}{42}{subsection.3.6.6}%
+\contentsline {section}{\numberline {3.7}Testing Strategy}{42}{section.3.7}%
+\contentsline {chapter}{\numberline {4}Results}{43}{chapter.4}%
+\contentsline {section}{\numberline {4.1}System Features Overview}{43}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Authentication and User Management}{45}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Task and Project Management}{47}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Task Visualisation Modes}{51}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Team Collaboration and Messaging}{55}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Offline Synchronisation}{56}{section.4.6}%
+\contentsline {section}{\numberline {4.7}AI Chatbot}{57}{section.4.7}%
+\contentsline {section}{\numberline {4.8}Calendar and Dashboard}{59}{section.4.8}%
+\contentsline {section}{\numberline {4.9}Notifications and Settings}{60}{section.4.9}%
+\contentsline {section}{\numberline {4.10}Cross-Platform Distribution}{61}{section.4.10}%
+\contentsline {section}{\numberline {4.11}Performance Observations}{62}{section.4.11}%
+\contentsline {chapter}{\numberline {5}Conclusion}{63}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Summary of Work}{63}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Technical Contributions}{64}{section.5.2}%
+\contentsline {paragraph}{Outbox-pattern offline sync engine for a desktop .NET application.}{64}{section*.69}%
+\contentsline {paragraph}{Dual-database architecture with a shared entity abstraction.}{64}{section*.70}%
+\contentsline {paragraph}{SSE-streamed multi-modal AI chatbot in a desktop context.}{65}{section*.71}%
+\contentsline {paragraph}{Self-contained desktop packaging with embedded runtime.}{65}{section*.72}%
+\contentsline {paragraph}{Tauri sidecar architecture with splashscreen lifecycle management.}{65}{section*.73}%
+\contentsline {section}{\numberline {5.3}Lessons Learned}{65}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Limitations}{66}{section.5.4}%
+\contentsline {chapter}{\numberline {6}Future Work}{68}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Short-Term Improvements}{68}{section.6.1}%
+\contentsline {paragraph}{Sub-task backend implementation.}{68}{section*.74}%
+\contentsline {paragraph}{Mistral API key security.}{68}{section*.75}%
+\contentsline {paragraph}{Automated test suite.}{69}{section*.76}%
+\contentsline {paragraph}{Per-field conflict resolution.}{69}{section*.77}%
+\contentsline {paragraph}{Cross-platform Tauri builds.}{69}{section*.78}%
+\contentsline {section}{\numberline {6.2}Long-Term Enhancements}{69}{section.6.2}%
+\contentsline {paragraph}{Mobile companion application.}{69}{section*.79}%
+\contentsline {paragraph}{AI-powered task creation from natural language.}{70}{section*.80}%
+\contentsline {paragraph}{CRDT-based synchronisation.}{70}{section*.81}%
+\contentsline {paragraph}{Analytics and reporting dashboard.}{70}{section*.82}%
+\contentsline {paragraph}{Third-party integration plugins.}{70}{section*.83}%
+\contentsline {paragraph}{Cloud-hosted multi-tenant mode.}{70}{section*.84}%
+\contentsline {chapter}{Appendix}{71}{section*.85}%
+\contentsline {chapter}{\numberline {A}API Reference}{72}{chapter.A}%
+\contentsline {chapter}{\numberline {B}Database Schema}{74}{chapter.B}%
+\contentsline {chapter}{\numberline {C}Configuration Reference}{77}{chapter.C}%
+\contentsline {chapter}{References}{81}{section*.96}%

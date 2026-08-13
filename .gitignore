@@ -1,6 +1,5 @@
 node_modules
-# Ignore appsettings with secrets
-appsettings.json
+# Ignore environment-specific appsettings (dev/prod overrides)
 appsettings.*.json
 # Environment files
 .env
@@ -13,3 +12,16 @@ publish/
 *.sqlite
 .vs/
 .vscode/
+
+# Rust
+/target/
+**/target/
+
+# Tauri
+src-tauri/target/
+
+# Build outputs
+*.lib
+*.pdb
+*.dll
+*.exe

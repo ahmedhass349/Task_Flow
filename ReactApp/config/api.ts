@@ -2,41 +2,48 @@
 //
 // Centralized endpoint configuration for all API calls.
 // Supports:
-// 1. Electron desktop app (gets backend URL from main process)
+// 1. Tauri desktop app (gets backend URL via invoke('get_backend_url'))
 // 2. Web dev server (uses localhost with proxy or environment variable)
 // 3. Production deployment (uses configurable base URL)
 
-// Detect if running in Electron (preload.js exposes window.electronAPI)
-const isElectron = typeof window !== 'undefined' && (window as any).electronAPI !== undefined;
+// Detect if running in Tauri
+const isTauri = typeof window !== 'undefined' && typeof (window as any).__TAURI_INTERNALS__ !== 'undefined';
 
-// Initialize API base URL - will be set dynamically for Electron
+// Initialize API base URL - resolved dynamically in Tauri desktop builds
 let API_BASE_URL = "";
 let apiBaseUrlInitialized = false;
 
-// Get API base URL - handles both Electron and web contexts
+// Get API base URL - handles both Tauri and web contexts
 const initializeApiBaseUrl = async (): Promise<string> => {
   if (apiBaseUrlInitialized) {
     return API_BASE_URL;
   }
 
-  if (isElectron && (window as any).electronAPI?.invoke) {
+  if (isTauri) {
     try {
-      const backendUrl = await (window as any).electronAPI.invoke('get-backend-url');
+      const { invoke } = await import('@tauri-apps/api/core');
+      const backendUrl = await invoke<string>('get_backend_url');
       if (backendUrl) {
         API_BASE_URL = backendUrl;
         apiBaseUrlInitialized = true;
         return backendUrl;
       }
+      // Backend URL not available yet — caller should retry
+      return "";
     } catch (error) {
-      // Failed to get Electron backend URL, will fall back to web context
+      // IPC failed (e.g. CSP blocked the custom protocol before postMessage fallback).
+      // Do NOT set apiBaseUrlInitialized = true here — the caller (initializeApi) will
+      // retry after 500ms, and by then Tauri should have fallen back to the postMessage
+      // interface, allowing the next invoke() attempt to succeed.
+      return "";
     }
   }
 
-  // Web context: use environment variable or empty string (will use relative URLs via webpack proxy)
-  const envUrl = (import.meta as any).env?.VITE_API_BASE_URL || "";
-  API_BASE_URL = envUrl;
+  // Web context (dev server): relative URLs work via webpack proxy.
+  // No need to retry — mark initialized immediately.
+  API_BASE_URL = "";
   apiBaseUrlInitialized = true;
-  return envUrl;
+  return "";
 };
 
 // Helper function to build endpoint URL
@@ -45,7 +52,15 @@ const buildUrl = (path: string): string => {
 };
 
 // Export initialization function for use in React app entry
+// Retries up to 30 times (500ms apart) waiting for the backend URL to become available
+// via Tauri IPC, so API calls use the correct backend origin.
 export const initializeApi = async (): Promise<void> => {
+  for (let i = 0; i < 30; i++) {
+    const url = await initializeApiBaseUrl();
+    if (url) return;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  // Final attempt — if still empty, fall back to relative URLs
   await initializeApiBaseUrl();
 };
 
@@ -167,7 +182,7 @@ export let ENDPOINTS = createEndpoints();
 /**
  * Phase 3 fix: re-builds ENDPOINTS with the resolved API_BASE_URL.
  * Must be called after initializeApi() resolves (before root.render) so that
- * Electron desktop apps get the correct localhost:PORT prefix on all URLs.
+ * Tauri desktop apps get the correct localhost:PORT prefix on all URLs.
  */
 export const refreshEndpoints = (): void => {
   ENDPOINTS = createEndpoints();
@@ -176,8 +191,13 @@ export const refreshEndpoints = (): void => {
 // Export function to get current base URL
 export const getApiBaseUrl = (): string => API_BASE_URL;
 
-// Export signal for when API is ready
+// Export signal for when API is ready (retries until the backend URL is resolved)
 export const getApiReady = async (): Promise<void> => {
+  for (let i = 0; i < 30; i++) {
+    const url = await initializeApiBaseUrl();
+    if (url) return;
+    await new Promise(r => setTimeout(r, 500));
+  }
   await initializeApiBaseUrl();
 };
 

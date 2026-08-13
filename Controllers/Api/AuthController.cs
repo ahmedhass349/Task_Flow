@@ -1,9 +1,3 @@
-// FILE: Controllers/Api/AuthController.cs
-// STATUS: MODIFIED
-// CHANGES: Fixed GetUserId() to return 401 (#3), removed try-catch blocks (#15), cleaned usings (#17),
-//          added fire-and-forget presence upsert to MongoDB relay on login/register (Phase 2);
-//          S-09 (Phase 5): [EnableRateLimiting("auth")] on all four anonymous auth actions.
-
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
@@ -51,18 +45,26 @@ namespace taskflow.Controllers.Api
         /// Authenticates a user with email and password credentials.
         /// </summary>
         [HttpPost("login")]
-        [AllowAnonymous]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var result = await _authService.LoginAsync(request);
 
-            // Fire-and-forget presence upsert — MongoDB failure must not block login
-            _ = Task.Run(async () =>
+        // Fire-and-forget presence upsert — MongoDB failure must not block login
+        _ = Task.Run(async () =>
+        {
+            try
             {
-                try { await _mongoService.UpsertPresenceAsync(result.User.Email, result.User.FullName, result.User.AvatarUrl ?? string.Empty); }
-                catch { /* intentionally swallowed */ }
-            });
+                // DEFECT 1 INJECTION GUARD (Pathway C): only upsert presence if the account
+                // backup already exists in MongoDB.  If the account was deleted from MongoDB
+                // (e.g. via Atlas admin) but the local SQLite record is still present, this
+                // login would otherwise resurrect the user_presence document, violating RULE 2/3.
+                bool accountExists = await _mongoService.AccountExistsInMongoAsync(result.User.Email);
+                if (!accountExists) return;
+                await _mongoService.UpsertPresenceAsync(result.User.Email, result.User.FullName, result.User.AvatarUrl ?? string.Empty);
+            }
+            catch { /* intentionally swallowed */ }
+        });
 
             // Phase 2: pull down cross-device data for this user (fire-and-forget)
             _ = Task.Run(async () =>
@@ -78,7 +80,6 @@ namespace taskflow.Controllers.Api
         /// Registers a new user account.
         /// </summary>
         [HttpPost("register")]
-        [AllowAnonymous]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
@@ -98,7 +99,6 @@ namespace taskflow.Controllers.Api
         /// Initiates a password reset flow by sending an email with a reset token.
         /// </summary>
         [HttpPost("forgot-password")]
-        [AllowAnonymous]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
@@ -110,7 +110,6 @@ namespace taskflow.Controllers.Api
         /// Resets a user's password using a previously issued reset token.
         /// </summary>
         [HttpPost("reset-password")]
-        [AllowAnonymous]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
@@ -122,7 +121,6 @@ namespace taskflow.Controllers.Api
         /// Retrieves the currently authenticated user's profile information.
         /// </summary>
         [HttpGet("me")]
-        [Authorize]
         public async Task<IActionResult> GetCurrentUser()
         {
             var userId = GetUserId();
@@ -144,7 +142,6 @@ namespace taskflow.Controllers.Api
         /// Logs out the current user. Since JWT is stateless, this endpoint simply acknowledges the logout request.
         /// </summary>
         [HttpPost("logout")]
-        [Authorize]
         public IActionResult Logout()
         {
             return Ok(ApiResponse<string>.Ok("Logged out", "Logout successful"));

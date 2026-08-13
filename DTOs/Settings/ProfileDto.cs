@@ -1,7 +1,3 @@
-// FILE: DTOs/Settings/ProfileDto.cs
-// STATUS: UPDATED
-// CHANGES: Now uses canonical UserDto structure for consistency
-
 using taskflow.DTOs.Auth;
 
 namespace taskflow.DTOs.Settings

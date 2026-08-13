@@ -1,7 +1,3 @@
-// FILE: Middleware/ExceptionHandlingMiddleware.cs
-// STATUS: NEW
-// CHANGES: Global exception handling middleware (#4) — replaces repetitive try-catch in every controller
-
 using System;
 using System.Collections.Generic;
 using System.Net;

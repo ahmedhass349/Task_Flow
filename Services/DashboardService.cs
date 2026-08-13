@@ -1,7 +1,3 @@
-// FILE: Services/DashboardService.cs
-// STATUS: UPDATED
-// CHANGES: Fixed N+1 query for team member count (#10), removed unused _mapper (#16)
-
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -32,21 +28,26 @@ namespace taskflow.Services
 
         public async Task<DashboardStatsDto> GetStatsAsync(int userId)
         {
-            int activeTaskCount = await _taskRepository.CountAsync(
+            var activeTaskCountTask = _taskRepository.CountAsync(
                 t => t.AssigneeId == userId && t.Status != TaskStatus.Completed);
 
-            int inProgressCount = await _taskRepository.CountAsync(
+            var inProgressCountTask = _taskRepository.CountAsync(
                 t => t.AssigneeId == userId && t.Status == TaskStatus.InProgress);
 
-            var projects = await _projectRepository.GetUserProjectsAsync(userId);
-            int projectCount = projects.Count();
+            var projectsTask = _projectRepository.GetUserProjectsAsync(userId);
 
-            // Fix #10: Single query instead of N+1 loop
-            var userTeamIds = await _teamMemberRepository.Query()
+            var userTeamIdsTask = _teamMemberRepository.Query()
                 .Where(tm => tm.UserId == userId)
                 .Select(tm => tm.TeamId)
                 .Distinct()
                 .ToListAsync();
+
+            await Task.WhenAll(activeTaskCountTask, inProgressCountTask, projectsTask, userTeamIdsTask);
+
+            int activeTaskCount = activeTaskCountTask.Result;
+            int inProgressCount = inProgressCountTask.Result;
+            int projectCount = projectsTask.Result.Count();
+            var userTeamIds = userTeamIdsTask.Result;
 
             int teamMemberCount = userTeamIds.Count > 0
                 ? await _teamMemberRepository.CountAsync(tm => userTeamIds.Contains(tm.TeamId))

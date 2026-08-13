@@ -1,10 +1,3 @@
-// FILE: Services/TeamService.cs
-// STATUS: UPDATED
-// CHANGES: Added UpdateTeam/DeleteTeam/RemoveTeamMember (#22),
-//          Fixed N+1 in GetTeamMembersAsync (#12),
-//          Fixed double SaveChangesAsync in CreateTeamAsync (#14),
-//          Added Initials to TeamMemberDto (#30)
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using taskflow.Data.Entities;
+using taskflow.DTOs.Mongo;
 using taskflow.DTOs.Teams;
 using taskflow.Repositories.Interfaces;
 using taskflow.Services.Interfaces;
@@ -28,6 +22,7 @@ namespace taskflow.Services
         private readonly IMapper _mapper;
         private readonly IMirrorService _mirror;
         private readonly INotificationService _notificationService;
+        private readonly IMongoService _mongoService;
 
         public TeamService(
             IGenericRepository<Team> teamRepository,
@@ -36,7 +31,8 @@ namespace taskflow.Services
             ITaskRepository taskRepository,
             IMapper mapper,
             IMirrorService mirror,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IMongoService mongoService)
         {
             _teamRepository = teamRepository;
             _teamMemberRepository = teamMemberRepository;
@@ -45,6 +41,7 @@ namespace taskflow.Services
             _mapper = mapper;
             _mirror = mirror;
             _notificationService = notificationService;
+            _mongoService = mongoService;
         }
 
         public async Task<IEnumerable<TeamDto>> GetUserTeamsAsync(int userId)
@@ -77,7 +74,7 @@ namespace taskflow.Services
             {
                 TeamId = team.Id,
                 UserId = userId,
-                Role = TeamRole.Admin
+                Role = TeamRole.Leader
             };
 
             await _teamMemberRepository.AddAsync(ownerMember);
@@ -136,10 +133,11 @@ namespace taskflow.Services
                 .Select(m => m.UserId)
                 .ToList();
 
-            // Remove all members first
+            // Remove all members first; mirror each deletion to MongoDB
             foreach (var member in team.Members.ToList())
             {
                 _teamMemberRepository.Remove(member);
+                _mirror.Erase("team_member_records", member.TeamId * 1_000_000 + member.UserId);
             }
 
             _teamRepository.Remove(team);
@@ -157,6 +155,7 @@ namespace taskflow.Services
         public async Task<IEnumerable<TeamMemberDto>> GetTeamMembersAsync(int teamId)
         {
             var team = await _teamRepository.Query()
+                .Include(t => t.Owner)
                 .Include(t => t.Members)
                     .ThenInclude(m => m.User)
                 .FirstOrDefaultAsync(t => t.Id == teamId);
@@ -164,47 +163,100 @@ namespace taskflow.Services
             if (team == null)
                 throw new KeyNotFoundException($"Team with ID {teamId} not found.");
 
-            // Fix #12: Batch-load task counts instead of N+1
-            var memberUserIds = team.Members.Select(m => m.UserId).ToList();
+            var membersByEmail = new Dictionary<string, TeamMemberDto>(StringComparer.OrdinalIgnoreCase);
 
-            var completedCounts = await _taskRepository.Query()
-                .Where(t => t.AssigneeId.HasValue && memberUserIds.Contains(t.AssigneeId.Value) && t.Status == TaskStatus.Completed)
-                .GroupBy(t => t.AssigneeId!.Value)
-                .Select(g => new { UserId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.UserId, x => x.Count);
-
-            var inProgressCounts = await _taskRepository.Query()
-                .Where(t => t.AssigneeId.HasValue && memberUserIds.Contains(t.AssigneeId.Value) && (t.Status == TaskStatus.InProgress || t.Status == TaskStatus.Todo))
-                .GroupBy(t => t.AssigneeId!.Value)
-                .Select(g => new { UserId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.UserId, x => x.Count);
-
-            var result = new List<TeamMemberDto>();
             foreach (var member in team.Members)
             {
-                // Compute initials (#30)
+                // Skip the team owner/leader — progress and member lists are for non-leader members only
+                if (member.UserId == team.OwnerId) continue;
+
+                var email = member.User?.Email ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(email)) continue;
+
                 var nameParts = (member.User?.FullName ?? "").Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 string initials = nameParts.Length >= 2
                     ? $"{nameParts[0][0]}{nameParts[^1][0]}".ToUpperInvariant()
                     : nameParts.Length == 1 ? nameParts[0][0].ToString().ToUpperInvariant() : "?";
 
-                completedCounts.TryGetValue(member.UserId, out int completedCount);
-                inProgressCounts.TryGetValue(member.UserId, out int inProgressCount);
-
-                result.Add(new TeamMemberDto
+                membersByEmail[email] = new TeamMemberDto
                 {
                     UserId = member.UserId,
-                    UserName = member.User?.FullName ?? string.Empty,
-                    Email = member.User?.Email ?? string.Empty,
+                    UserName = member.User?.FullName ?? email,
+                    Email = email,
                     AvatarUrl = member.User?.AvatarUrl,
                     Initials = initials,
                     Role = member.Role.ToString(),
-                    TasksCompleted = completedCount,
-                    TasksInProgress = inProgressCount
-                });
+                };
             }
 
-            return result;
+            var ownerEmail = team.Owner?.Email ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(ownerEmail))
+            {
+                try
+                {
+                    List<MongoTeamMemberDto> sharedMembers = await _mongoService.GetTeamMembersAsync(teamId.ToString(), ownerEmail);
+                    foreach (var shared in sharedMembers)
+                    {
+                        if (string.IsNullOrWhiteSpace(shared.UserEmail)) continue;
+                        if (membersByEmail.ContainsKey(shared.UserEmail)) continue;
+
+                        var nameParts = (shared.UserFullName ?? "").Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        string initials = nameParts.Length >= 2
+                            ? $"{nameParts[0][0]}{nameParts[^1][0]}".ToUpperInvariant()
+                            : nameParts.Length == 1 ? nameParts[0][0].ToString().ToUpperInvariant() : "?";
+
+                        membersByEmail[shared.UserEmail] = new TeamMemberDto
+                        {
+                            UserId = int.MinValue + membersByEmail.Count,
+                            UserName = string.IsNullOrWhiteSpace(shared.UserFullName) ? shared.UserEmail : shared.UserFullName,
+                            Email = shared.UserEmail,
+                            AvatarUrl = string.IsNullOrWhiteSpace(shared.AvatarUrl) ? null : shared.AvatarUrl,
+                            Initials = initials,
+                            Role = string.IsNullOrWhiteSpace(shared.Role) ? "Member" : shared.Role,
+                        };
+                    }
+                }
+                catch
+                {
+                    // Non-critical fallback: progress still works for local members.
+                }
+            }
+
+            if (membersByEmail.Count == 0)
+                return new List<TeamMemberDto>();
+
+            var memberEmails = membersByEmail.Keys
+                .Where(e => !string.IsNullOrWhiteSpace(e))
+                .ToList();
+
+            var tasks = await _taskRepository.Query()
+                .Where(t => t.AssigneeEmail != null && memberEmails.Contains(t.AssigneeEmail))
+                .Select(t => new { t.AssigneeEmail, t.Status })
+                .ToListAsync();
+
+            foreach (var task in tasks)
+            {
+                if (string.IsNullOrWhiteSpace(task.AssigneeEmail)) continue;
+                if (!membersByEmail.TryGetValue(task.AssigneeEmail, out var stat)) continue;
+
+                switch (task.Status)
+                {
+                    case TaskStatus.Completed:
+                        stat.TasksCompleted++;
+                        break;
+                    case TaskStatus.InProgress:
+                        stat.TasksInProgress++;
+                        break;
+                    case TaskStatus.Overdue:
+                        stat.TasksOverdue++;
+                        break;
+                    default:
+                        stat.TasksTodo++;
+                        break;
+                }
+            }
+
+            return membersByEmail.Values;
         }
 
         public async Task AddTeamMemberAsync(int teamId, AddTeamMemberRequest request)
@@ -232,6 +284,11 @@ namespace taskflow.Services
 
             await _teamMemberRepository.AddAsync(teamMember);
             await _teamMemberRepository.SaveChangesAsync();
+
+            // Mirror the addition to MongoDB immediately so team_member_records
+            // stays consistent across machines without waiting for the next BulkSync.
+            // Synthetic id matches the BulkSync formula: TeamId * 1_000_000 + UserId.
+            _mirror.Mirror("team_member_records", teamMember.TeamId * 1_000_000 + teamMember.UserId, teamMember);
         }
 
         public async Task RemoveTeamMemberAsync(int userId, int teamId, int memberUserId)
@@ -256,6 +313,10 @@ namespace taskflow.Services
 
             _teamMemberRepository.Remove(membership);
             await _teamMemberRepository.SaveChangesAsync();
+
+            // Mirror the deletion to MongoDB so team_member_records stays consistent
+            // across all machines (BulkSync uses a synthetic id = TeamId * 1_000_000 + UserId)
+            _mirror.Erase("team_member_records", membership.TeamId * 1_000_000 + membership.UserId);
         }
     }
 }

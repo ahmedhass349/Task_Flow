@@ -1,7 +1,3 @@
-// FILE: DTOs/Teams/UpdateTeamRequest.cs
-// STATUS: NEW
-// CHANGES: Added for missing UpdateTeam endpoint (#22)
-
 namespace taskflow.DTOs.Teams
 {
     public class UpdateTeamRequest

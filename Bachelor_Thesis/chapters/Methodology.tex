@@ -1,9 +1,9 @@
-﻿\chapter{Methodology}\label{chap:Methodology}
+\chapter{Methodology}\label{chap:Methodology}
 
-This chapter describes the methodology used to design and implement Task~Flow.
-It begins with a structured requirements analysis, then presents the high-level
-system architecture, followed by detailed accounts of the data layer, backend,
-frontend, and desktop-packaging implementations.
+This chapter describes the methodology used to design and implement TaskFlow.
+It begins with a structured requirements analysis and a high-level system
+architecture overview, then examines each major subsystem through the lens of
+design decisions, architectural trade-offs, and alternative approaches considered.
 The chapter closes with a discussion of the testing strategy applied throughout
 development.
 
@@ -18,16 +18,14 @@ in Section~\ref{sec:intro_aims}:
 
 \begin{enumerate}
     \item \textbf{FR-01 User Authentication.}
-          The system shall support user registration, login, and password reset via
-          email.
-          Passwords shall be stored as bcrypt hashes; sessions shall be managed with
-          signed JWT tokens valid for 24~hours.
+          The system shall support user registration, login, and password reset.
+          Credentials shall be stored using a salted, one-way hash and protected
+          against replay attacks.
 
     \item \textbf{FR-02 Task Management.}
           Users shall be able to create, read, update, and delete tasks.
-          Each task shall carry a title, optional description, priority (Low, Medium,
-          High), status (To~Do, In~Progress, Review, Completed, Overdue), optional due
-          date, star flag, and project assignment.
+          Each task shall carry a title, optional description, configurable priority,
+          status, optional due date, star flag, and project assignment.
 
     \item \textbf{FR-03 Multiple Task Views.}
           Tasks shall be displayable in five views: a smart-grouped default list, a
@@ -35,541 +33,554 @@ in Section~\ref{sec:intro_aims}:
 
     \item \textbf{FR-04 Project and Team Management.}
           Users shall be able to create projects, invite team members, and assign tasks
-          to projects.
-          Team invitations shall be transmitted via MongoDB to support cross-device
-          reception.
+          to projects. Invitations shall be delivered across devices.
 
     \item \textbf{FR-05 Messaging.}
           Users shall be able to exchange one-to-one direct messages and participate in
-          group chats.
-          Both conversation types shall support file attachments up to 50~MB.
+          group chats, both with optional file attachments.
 
     \item \textbf{FR-06 Notifications and Reminders.}
-          The system shall deliver real-time in-application notifications over SignalR
-          and optional email reminders at user-configured times.
-          Automated warnings shall fire 24~hours and 1~hour before task due dates.
+          The system shall deliver real-time in-application notifications and optional
+          email reminders at user-configured times.
+          Automated warnings shall fire before task due dates.
 
     \item \textbf{FR-07 Calendar Events.}
-          Users shall be able to create, edit, and delete calendar events with start and
-          end times, an optional colour, and an optional meeting link.
+          Users shall be able to create, edit, and delete calendar events with temporal
+          boundaries, an optional colour, and an optional meeting link.
 
     \item \textbf{FR-08 AI Chatbot.}
           A conversational AI assistant shall be available in three modes: general
-          chat, code generation, and document scanning (OCR).
-          Responses shall be streamed token-by-token via SSE.
+          conversation, code generation, and document scanning.
+          Responses shall be delivered token-by-token as they are generated.
           Conversation history shall be persisted between sessions.
 
     \item \textbf{FR-09 Offline Operation.}
-          All features in FR-01 through FR-07 shall function without network access.
-          Locally generated changes shall be queued and replayed to MongoDB when
-          connectivity is restored.
+          All core task-management features shall function without network access.
+          Locally generated changes shall be queued and synchronised when connectivity
+          is restored.
 
     \item \textbf{FR-10 Dashboard.}
-          A dashboard shall display summary statistics (active tasks, in-progress count,
-          project count, team member count), a task-trend indicator, tasks due this week,
-          a recent-activity feed, and an embedded calendar widget.
+          A dashboard shall display summary statistics, a task-trend indicator, tasks
+          due within the current week, a recent-activity feed, and an embedded calendar
+          widget.
 
     \item \textbf{FR-11 Settings.}
-          Users shall be able to update their profile (name, avatar, company, country,
-          phone, timezone), change their password, and manage notification preferences.
+          Users shall be able to update their profile, change their password, and manage
+          notification preferences.
 \end{enumerate}
 
 \subsection*{Non-Functional Requirements}
 
 \begin{enumerate}
     \item \textbf{NFR-01 Offline Availability.}
-          The application shall start and remain fully operable on a machine with no
-          network access.
+          The application shall start and remain fully operable without network access.
 
     \item \textbf{NFR-02 Security.}
-          All API endpoints shall require a valid JWT.
-          Passwords shall not be stored in recoverable form.
-          The application shall not expose SQL injection vectors.
+          All API endpoints shall require authentication. Passwords shall not be stored
+          in recoverable form. The application shall be resistant to common web
+          vulnerabilities including SQL injection.
 
     \item \textbf{NFR-03 Cross-Platform Distribution.}
-          The packaged installer shall run on Windows (x64), macOS (x64/ARM), and Linux
-          (x64) without requiring the user to install any additional runtime.
+          The packaged installer shall run on Windows, macOS, and Linux without
+          requiring the user to install any additional runtime.
 
     \item \textbf{NFR-04 Responsiveness.}
           UI interactions shall produce visible feedback within 200~ms under normal
           conditions.
 
     \item \textbf{NFR-05 Extensibility.}
-          The backend shall use a repository and service pattern such that new entity
-          types can be added without modifying existing controller logic.
+          The backend shall be structured so that new entity types can be added without
+          modifying existing controller logic.
 \end{enumerate}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{System Architecture Overview}\label{sec:meth_arch}
 % ─────────────────────────────────────────────────────────────────────────────
 
-Task~Flow is structured as a three-tier desktop application embedded in an Electron shell.
+TaskFlow is structured as a three-tier desktop application embedded in a native
+operating-system shell.
 
-\textbf{Tier 1 --- Presentation (React~+~TypeScript).}
-The user interface is a single-page application (SPA) built with React~19 and
-TypeScript~6.
-It communicates with the backend exclusively via HTTP REST calls and a persistent
-SignalR WebSocket connection.
-Webpack~5 bundles all TypeScript and Tailwind CSS sources into a set of static assets
-served from \texttt{wwwroot/} by the Kestrel HTTP server.
+\textbf{Tier 1 --- Presentation Layer.}
+The user interface is a single-page application built with React and TypeScript.
+It communicates with the backend exclusively through HTTP REST calls and a
+persistent WebSocket connection for real-time events. The choice of an SPA
+architecture over server-side rendering was motivated by the need for a
+responsive, application-like feel in a desktop context, where page reloads would
+disrupt the user experience.
 
-\textbf{Tier 2 --- Application Logic (ASP.NET Core 10).}
-The backend exposes 14 REST API controllers grouped under \texttt{/api/}, one SignalR
-hub (\texttt{/hubs/notifications}), and four background services.
-It follows a layered architecture: controllers delegate to service classes, which in
-turn use repository objects (EF Core \texttt{DbContext} queries) for persistence.
-AutoMapper projects entity objects onto DTOs at the service boundary, preventing
-internal model details from leaking into the API response.
-A global \texttt{ExceptionHandlingMiddleware} catches unhandled exceptions and returns
-a uniform JSON error envelope, ensuring no stack trace is ever exposed to the client.
+\textbf{Tier 2 --- Application Logic Layer.}
+The backend exposes a REST API and a real-time event hub. It follows a layered
+architecture: HTTP controllers delegate to service classes, which in turn use
+data-access objects for persistence. A mapping layer projects internal entity
+models onto response objects at the service boundary, preventing internal
+representation details from leaking into the API surface. A global error-handling
+mechanism catches unhandled exceptions and returns a uniform error response,
+ensuring that no internal state or stack trace is ever exposed to the client.
+This layered structure was chosen to maintain separation of concerns and to
+allow individual layers to be tested or replaced independently.
 
-\textbf{Tier 3 --- Data (SQLite + MongoDB).}
-SQLite serves as the primary, always-available local store.
-MongoDB is an optional cloud relay used for cross-device features.
-The application starts and runs normally even when the MongoDB connection string is
-empty or the server is unreachable.
+\textbf{Tier 3 --- Data Layer.}
+Two database systems are employed for different purposes. A local embedded
+database serves as the primary, always-available store that operates without any
+network dependency. A cloud document database acts as an optional relay used
+exclusively for cross-device synchronisation and team collaboration features.
+The application starts and runs normally even when the cloud database is
+unreachable. This dual-store design was adopted to satisfy the offline-availability
+requirement (NFR-01) while still enabling multi-device and team workflows.
 
-\textbf{Electron Shell.}
-The Electron main process (\texttt{public/electron.js}) launches the compiled .NET
-backend as a child process.
-It monitors the child's standard output stream and waits for the line
-\texttt{TASKFLOW\_BACKEND\_READY:\{address\}} before opening the browser window and
-pointing it at the dynamically assigned \texttt{http://127.0.0.1:\{port\}} address.
-This design ensures the UI is never shown before the API is ready to serve requests.
+\textbf{Desktop Shell.}
+A lightweight native shell launches the compiled backend as a managed child
+process. It monitors the child's output for a readiness signal before revealing
+the application window, ensuring that the user interface is never shown before
+the API is ready to serve requests. Using a native shell rather than bundling a
+full browser engine reduces the application's disk and memory footprint, as it
+leverages the operating system's built-in webview component.
 
 \textbf{Request Lifecycle.}
-A typical authenticated request follows the path:
-React component $\to$ \texttt{fetch()} with \texttt{Authorization: Bearer \{token\}}
-header $\to$ Kestrel $\to$ JWT middleware validates signature and extracts claims $\to$
-controller action $\to$ service $\to$ EF Core $\to$ SQLite.
-If the operation mutates a syncable entity, the service additionally calls
-\texttt{IMirrorService.MirrorAsync()}, which either performs a direct MongoDB upsert
-(online) or enqueues a \texttt{SyncOutboxEntry} (offline).
-Real-time events are broadcast to the connected React client via the SignalR hub
-independently of the HTTP response path.
+A typical authenticated request flows through the layers in sequence: the
+React component issues an HTTP request with the user's identity --- the
+shell process adds the authenticated user's email to every outgoing request.
+The backend middleware resolves this identity into a principal object that is
+carried through the remainder of the request pipeline. The controller delegates
+to a service, which performs the business logic and persists changes through the
+data-access layer. If the operation mutates a synchronisable entity, the service
+additionally triggers the synchronisation engine, which either applies the change
+directly to the cloud database (if online) or enqueues it for later replay (if
+offline). Real-time events are broadcast to the connected client via the
+persistent WebSocket connection independently of the HTTP response path.
+
+% Figure omitted: three-tier architecture diagram was prepared but is not
+% included in this document.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Data Layer Design}\label{sec:meth_data}
 % ─────────────────────────────────────────────────────────────────────────────
 
-\subsection*{The ISyncableEntity Interface}
+\subsection{Dual-Store Strategy}
 
-Entities that must be mirrored to MongoDB implement the \texttt{ISyncableEntity}
-interface, which exposes three properties:
+The central design decision in the data layer was the adoption of two distinct
+database systems serving complementary roles. A local embedded database
+(SQLite) provides the primary persistence layer with zero network dependency,
+satisfying the offline-availability requirement. A cloud document database
+(MongoDB) acts as a synchronisation relay for cross-device features: team
+invitations, membership rosters, presence information, and mirrors of
+synchronisable entities such as tasks and notifications.
+
+This dual-store approach introduces inherent complexity --- every write to a
+synchronisable entity must eventually be reflected in both stores, and the
+system must handle periods where only one store is reachable. An alternative
+considered was a cloud-only architecture with a local cache, but this was
+rejected because it would make the application unusable during network
+outages, violating NFR-01. Conversely, a local-only architecture would prevent
+multi-device and team features entirely. The chosen design occupies a middle
+ground: the cloud store (MongoDB) is authoritative, and the local store is a
+local cache whose consistency with the source of truth is maintained by an
+outbox-based synchronisation engine.
+
+\subsection{Synchronisation Model}
+
+Entities that must be replicated to the cloud store are identified at design
+time. Each such entity carries a globally unique identifier assigned at
+creation time, which serves as the document key in the cloud database. This
+design enables idempotent operations: replaying the same synchronisation entry
+twice produces the same document rather than a duplicate. A timestamp field
+records the most recent modification and serves as the arbitration key in a
+last-write-wins conflict-resolution strategy, which was chosen for its
+simplicity and because concurrent edits to the same entity across different
+devices are expected to be rare in a personal-task-management context.
+
+A dirty flag on each synchronisable entity indicates whether the local record
+has been propagated to the cloud. The persistence layer automatically stamps
+the modification timestamp and resets the dirty flag on any tracked change,
+eliminating the need for manual bookkeeping in service code.
+
+\subsection{Entity Model}
+
+The application manages eighteen entity types in the local database, grouped
+into identity, work items, team and social structures, messaging, time-related
+records, alerts, AI conversation history, and synchronisation metadata. Unique
+indexes on the global identifiers of synchronisable types prevent duplicate
+inserts if the application is restarted during a synchronisation pass.
+Entity types that are read-only mirrors of cloud documents --- such as
+team memberships and invitations pulled on login --- use the cloud document
+identifier as their local primary key.
+
+Figure~\ref{fig:erd_sqlite} illustrates the entity relationship diagram for the local SQLite database.
+
+\begin{landscape}
+\begin{figure}[H]
+    \makebox[\linewidth][c]{%
+        \includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{Figures/erd_sqlite.png}%
+    }
+    \caption{Entity Relationship Diagram for the SQLite Database.}
+    \label{fig:erd_sqlite}
+\end{figure}
+\end{landscape}
+
+\subsection{MongoDB Collection Design}
+
+Five collections are maintained in the cloud database:
 
 \begin{itemize}
-    \item \texttt{SyncId} (GUID) --- a stable, globally unique identifier assigned at
-          creation time.
-          It is used as the MongoDB document \texttt{\_id}, enabling idempotent upserts:
-          re-running the same outbox entry twice produces the same document, not a
-          duplicate.
-    \item \texttt{UpdatedAt} (DateTime) --- the wall-clock timestamp of the most recent
-          change, used as the arbitration key in last-write-wins conflict resolution.
-    \item \texttt{IsSynced} (bool) --- a dirty flag that indicates whether the local
-          record has been propagated to MongoDB.
+    \item Synchronisation mirrors of the primary work entities (tasks,
+          notifications), keyed by their global identifiers.
+    \item A team-invitations collection indexed by recipient email and status,
+          enabling pending invitations to be delivered to any device the
+          recipient logs into.
+    \item A team-membership collection indexed by team and owner, serving as
+          the roster for team-wide features.
+    \item A user-presence collection for online-status indication across
+          devices.
 \end{itemize}
 
-The \texttt{AppDbContext.SaveChangesAsync()} override automatically stamps
-\texttt{UpdatedAt} to \texttt{DateTime.UtcNow} and assigns a new \texttt{SyncId} for
-newly added entities, eliminating boilerplate from every service call.
-It also sets \texttt{IsSynced = false} for every modified entity to ensure that
-outstanding changes are detected by the sync engine.
+This minimal cloud schema reflects the design principle that the cloud store
+exists solely to enable cross-device and team collaboration --- it is not a
+backup or primary store.
 
-\subsection*{SQLite Entity Model}
+Figure~\ref{fig:erd_mongo} visualises the collections and their relationships within the MongoDB database.
 
-The application manages eighteen entity types in SQLite, grouped as follows:
-
-\begin{itemize}
-    \item \textbf{Identity}: \texttt{AppUser}
-    \item \textbf{Work}: \texttt{TaskItem}, \texttt{TaskComment}, \texttt{Project},
-          \texttt{ProjectMember}
-    \item \textbf{Team \& Social}: \texttt{Team}, \texttt{TeamMember},
-          \texttt{LocalTeamMember}, \texttt{LocalInvitation}
-    \item \textbf{Messaging}: \texttt{Message}, \texttt{GroupChat},
-          \texttt{GroupChatMember}, \texttt{GroupMessage}
-    \item \textbf{Time}: \texttt{CalendarEvent}, \texttt{Reminder}
-    \item \textbf{Alerts}: \texttt{Notification}
-    \item \textbf{AI}: \texttt{ChatbotConversation}, \texttt{ChatbotMessage}
-    \item \textbf{Sync}: \texttt{SyncOutboxEntry}
-\end{itemize}
-
-Unique indexes on \texttt{SyncId} for the four core syncable types (Project,
-TaskItem, Notification, Reminder) prevent duplicate inserts if the application
-is restarted mid-sync.
-\texttt{LocalInvitation} and \texttt{LocalTeamMember} are read-only mirrors of MongoDB
-documents pulled on login; their \texttt{MongoId} field serves as the local primary key.
-
-\subsection*{MongoDB Collection Design}
-
-Five collections are maintained in the \texttt{TaskFlow} MongoDB database:
-
-\begin{table}[H]
-\centering
-\caption{MongoDB collections and their purpose.}
-\label{tab:mongo_collections}
-\begin{tabular}{lll}
-\toprule
-\textbf{Collection} & \textbf{Key Index} & \textbf{Purpose} \\
-\midrule
-\texttt{tasks}             & \texttt{\_id} (SyncId)          & Mirror of SQLite task rows \\
-\texttt{notifications}     & \texttt{\_id} (SyncId)          & Mirror of SQLite notifications \\
-\texttt{team\_invitations} & (recipientEmail, status)        & Cross-device team invites \\
-\texttt{team\_members}     & (teamId, ownerEmail)            & Team membership roster \\
-\texttt{user\_presence}    & email (unique)                  & Online/offline status \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{landscape}
+\begin{figure}[H]
+    \makebox[\linewidth][c]{%
+        \includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{Figures/erd_mongo.png}%
+    }
+    \caption{Entity Relationship Diagram for the MongoDB Database.}
+    \label{fig:erd_mongo}
+\end{figure}
+\end{landscape}
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Backend Implementation}\label{sec:meth_backend}
+\section{Backend Design}\label{sec:meth_backend}
 % ─────────────────────────────────────────────────────────────────────────────
 
 \subsection{Authentication Service}\label{sec:meth_auth}
 
-User registration follows a three-step process:
-(1)~validate the input DTO using FluentValidation~\cite{aspnetcore2024};
-(2)~hash the password with BCrypt.Net-Next using the default cost factor;
-(3)~persist the \texttt{AppUser} record to SQLite and asynchronously mirror a safe
-projection of the user to MongoDB, enabling other team members to look up the user by
-email when sending invitations.
+User registration follows a three-step process: input validation, credential
+hashing, and persistence. The choice of a salted, adaptive hash function
+(bcrypt) for password storage was made to resist brute-force attacks even if
+the local database file is compromised --- a realistic threat model for a
+desktop application whose data resides on the local filesystem.
 
-Login validates the submitted password against the stored hash using
-\texttt{BCrypt.Verify()}.
-On success, the service constructs a JWT containing ten claims
-(\texttt{id}, \texttt{email}, \texttt{given\_name}, \texttt{family\_name},
-\texttt{avatarUrl}, \texttt{company}, \texttt{country}, \texttt{phone},
-\texttt{timezone}, and \texttt{jti}).
-The token is signed with HMAC-SHA256 using the key resolved from the
-\texttt{TASKFLOW\_JWT\_KEY} environment variable (falling back to the
-\texttt{Jwt:Key} configuration value, or an auto-generated 32-byte random hex string
-if neither is present).
-A fire-and-forget call to \texttt{UserDataSyncService.PullForUserAsync()} pulls the
-latest MongoDB data for that user immediately after login, refreshing local copies of
-team memberships and pending invitations.
+Login validates the submitted password against the stored hash and, on success,
+returns the user's identity profile. No token is issued; the session is managed
+by middleware that reads the authenticated user's email from each request header
+and resolves the corresponding identity from the local database. This approach
+was chosen over a token-based scheme --- such as JWT --- to eliminate token
+issuance, refresh, and revocation complexity in a single-user desktop context
+where the HTTP client and server are always on the same machine and the
+identity header is set by the trusted native shell rather than by an external
+browser. A post-login synchronisation step immediately refreshes local copies of
+team memberships and pending invitations from the cloud database.
 
-Password reset is implemented via a time-limited token: a random URL-safe token is
-stored in \texttt{AppUser.ResetToken} alongside a \texttt{ResetTokenExpiry} timestamp
-and emailed to the user using MailKit over Gmail SMTP (port~587, STARTTLS).
-The reset endpoint validates the token, checks expiry, and updates the password hash.
+Password reset uses a locally generated recovery code that is written to a
+temporary file on the filesystem and read by the native shell through an
+inter-process communication bridge. The reset code is time-limited,
+and the reset endpoint validates the code, checks expiry, and updates the
+password hash in both the local and cloud databases.
 
 \subsection{Task and Project Management}\label{sec:meth_tasks}
 
-\texttt{TaskItem} is the central entity of the system.
-Each task belongs to exactly one \texttt{AppUser} (its assignee) and optionally to
-one \texttt{Project}.
-The \texttt{Priority} enum defines three levels: \texttt{Low} (0), \texttt{Medium} (1),
-and \texttt{High} (2).
-The \texttt{TaskItemStatus} enum defines five states: \texttt{Todo},
-\texttt{InProgress}, \texttt{Review}, \texttt{Completed}, and \texttt{Overdue}.
-The \texttt{Overdue} state is not set manually; it is assigned automatically by the
-\texttt{DueDateWarningService} background service when the due date passes.
+The task entity is the central data structure of the system, carrying metadata
+such as priority (three levels), status (five states), and project association.
+The status model includes both user-set states and an automatically assigned
+overdue state computed by a background process that monitors approaching due
+dates.
 
-All \texttt{TaskService} operations validate ownership by comparing the
-\texttt{AssigneeId} of the fetched entity against the \texttt{userId} extracted from
-the JWT claim \texttt{ClaimTypes.NameIdentifier}, returning a 403 response for
-unauthorised access attempts.
-Text search is executed at the database layer using EF Core \texttt{.Where()} with
-\texttt{string.Contains()} predicates (compiled to SQL \texttt{LIKE} clauses),
-avoiding in-memory filtering of large datasets.
-AutoMapper projects \texttt{TaskItem} entities onto \texttt{TaskItemDto} response
-objects, exposing only the fields needed by the frontend.
+All mutating operations enforce ownership by comparing the authenticated
+user's identity against the owner field of the target entity, rejecting
+unauthorised access attempts with an appropriate error response. Text search is
+executed at the database layer rather than in application memory, ensuring that
+search performance degrades gracefully as the dataset grows.
 
-After any create or update operation, the service invokes
-\texttt{IMirrorService.MirrorAsync(entity, operationName)}.
-\texttt{MirrorService} checks \texttt{ConnectivityService.IsEffectivelyOnline}: if
-online, it calls \texttt{MongoService.UpsertDocumentBySyncIdAsync()} directly; if
-offline, it serialises the entity payload to JSON and inserts a
-\texttt{SyncOutboxEntry} into the local database with status \texttt{Pending}.
+After any create or update operation on a synchronisable entity, the service
+triggers the synchronisation engine. The engine checks the current
+connectivity state: if online, it applies the change to the cloud database
+directly; if offline, it serialises the change as an outbox entry in the local
+database for later replay.
 
 \subsection{Real-Time Notification System}\label{sec:meth_notifications}
 
-\texttt{NotificationHub} extends ASP.NET Core SignalR's \texttt{Hub} class.
-On connection, each client is added to a user-specific SignalR group named
-\texttt{user\_\{userId\}}.
-The hub reads the JWT from the \texttt{access\_token} query string parameter (required
-because SignalR's JavaScript client cannot set HTTP headers during the WebSocket
-upgrade).
-The unread notification count is pushed to the client immediately upon connection.
+The notification subsystem provides real-time delivery of alerts --- task due
+date warnings, reminder firings, and team-related events --- without requiring
+the client to poll. The system uses a persistent WebSocket connection
+established at application startup. Each client is assigned to a user-specific
+channel upon connection, allowing the backend to address notifications to
+individual users efficiently.
 
-The system defines fifteen notification types (e.g., \texttt{TaskAssigned},
-\texttt{TaskCompleted}, \texttt{MessageReceived}, \texttt{TeamInvitation},
-\texttt{TaskOverdue}) and four priority levels (\texttt{Low}, \texttt{Normal},
-\texttt{High}, \texttt{Urgent}).
-Each notification includes an \texttt{ActionUrl} field that the frontend uses to
-navigate the user to the relevant resource on click.
-
-Two background services supplement the notification hub:
-\texttt{DueDateWarningService} runs on a 1-minute timer, queries all tasks with
-approaching due dates, and fires both in-app notifications and (if configured) email
-alerts.
-An in-memory \texttt{\_sentNotifications} dictionary deduplicates warnings so that
-the same task does not generate repeated notifications within the same application
-session.
-\texttt{ReminderProcessorService} runs on a 1-minute timer and fires user-configured
-\texttt{Reminder} records whose \texttt{FireAt} time has passed and whose
-\texttt{HasFired} flag is still false.
+A hierarchy of notification types across several priority levels is defined,
+each carrying contextual information that allows the frontend to navigate the
+user to the relevant resource when the notification is clicked. Two background
+processes supplement the push-based hub: one monitors approaching task due
+dates and fires both in-app notifications and (if configured) email alerts,
+using an in-memory deduplication mechanism to avoid repeated warnings for the
+same task within a session; the other fires user-configured reminders whose
+scheduled time has passed.
 
 \subsection{Messaging System}\label{sec:meth_messages}
 
-The messaging module provides two conversation types.
+The messaging module provides two conversation types. Direct messages store a
+sender, a receiver, a text body, a read flag, and separate soft-delete flags
+for each party. This design ensures that a message deleted by one party remains
+visible to the other until they also delete it --- a pattern favoured by
+privacy-conscious messaging applications. The system enforces a configurable
+attachment size limit at the HTTP server level.
 
-\textbf{Direct Messages.}
-The \texttt{Message} entity stores a sender, a receiver, a text body, a read flag, and
-separate soft-delete flags for each party (\texttt{IsDeletedBySender},
-\texttt{IsDeletedByReceiver}).
-This design ensures that a message deleted by one party remains visible to the other
-until they also delete it.
-File attachments (URL, original file name, MIME type, size in bytes) are stored as
-nullable fields on the \texttt{Message} entity and are limited to 50~MB by Kestrel's
-request body size limit.
-The \texttt{MessagesController} sends a \texttt{MessageReceived} SignalR event to the
-recipient's user group after persisting each message, enabling real-time delivery without
-polling.
-
-\textbf{Group Chats.}
-\texttt{GroupChat} stores a name, description, and owner.
-\texttt{GroupChatMember} is the join entity between a group and its participants.
-\texttt{GroupMessage} mirrors the attachment model of direct messages and additionally
-records whether the message has been edited (\texttt{IsEdited}).
-The \texttt{GroupChatsController} broadcasts a \texttt{GroupMessageReceived} event
-to a SignalR group named after the group chat ID.
+Group chats store a name, description, and owner, with a join entity linking
+participants to the group. Group messages extend the attachment model of direct
+messages with an edit-tracking flag. After persisting each message, the backend
+broadcasts a real-time event to the recipient's notification channel (for
+direct messages) or to a channel scoped to the group, enabling real-time
+delivery without polling.
 
 \subsection{Offline Synchronisation Engine}\label{sec:meth_sync}
 
-The synchronisation subsystem is composed of three cooperating components.
+The synchronisation subsystem comprises three cooperating components that
+together implement the outbox pattern.
 
-\textbf{ConnectivityService} is a singleton that maintains the effective connectivity
-state of the application.
-It exposes \texttt{IsOnline} (result of the last MongoDB ping), \texttt{IsManualOffline}
-(user-toggled flag from the UI), and the derived \texttt{IsEffectivelyOnline} property
-(\texttt{IsOnline \&\& !IsManualOffline}).
-It also exposes \texttt{PendingSyncCount} (count of \texttt{SyncOutboxEntry} rows with
-status \texttt{Pending} or \texttt{Failed}) and a \texttt{ConnectivityChanged} event
-that subscribers can observe.
+A connectivity-monitoring component maintains the effective connectivity state
+of the application by periodically probing the cloud database. It exposes the
+current state --- online, manually-offline, or disconnected --- and the count
+of pending synchronisation entries, and emits events when the state changes.
+A user-toggled manual-offline mode is provided to allow explicit control over
+when synchronisation occurs, which is particularly useful during testing.
 
-\textbf{OfflineSyncService} is the background worker that replays the outbox.
-It runs a 10-second ping loop: on each tick it calls \texttt{MongoService.PingAsync()}
-and updates \texttt{ConnectivityService.IsOnline}.
-It also subscribes to \texttt{ConnectivityChanged}: when the state transitions from
-offline to online, it waits 1500~ms (allowing the MongoDB connection to stabilise) and
-then calls \texttt{ReplayOutboxAsync()}.
-During replay, each \texttt{Pending} or \texttt{Failed} outbox entry is advanced to
-\texttt{Processing}, the stored operation is executed against MongoDB, and the entry is
-marked \texttt{Synced} on success or \texttt{Failed} (with an incremented attempt
-counter and error message) on failure.
-SignalR events (\texttt{SyncStarted}, \texttt{SyncProgress}, \texttt{SyncComplete}) are
-broadcast to the client throughout the replay process, feeding the
-\texttt{ConnectivityBar}'s animated progress indicator.
+A background synchronisation worker replays the outbox. It runs a periodic
+probe loop that updates the connectivity state. When the state transitions from
+offline to online, it waits briefly for the connection to stabilise and then
+processes each pending outbox entry sequentially: each entry is advanced through
+Pending, Processing, Synced, or Failed states, with failed entries recording an
+attempt count and error information for diagnostic purposes. Throughout the
+replay process, progress events are broadcast to the client via the real-time
+notification channel, allowing the frontend to display an animated progress
+indicator.
 
-\textbf{BulkSyncStartupService} runs once at application startup.
-It waits up to 90~seconds for MongoDB to become reachable, then performs a bulk upsert
-of all SQLite entities implementing \texttt{ISyncableEntity}.
-This ensures that a fresh installation, or a machine that was offline during the
-previous session, fully reconciles its local state with MongoDB before accepting new
+A startup synchronisation service runs once at application launch. It waits for
+the cloud database to become reachable for a configurable period, then performs
+a bulk reconciliation of all synchronisable entities from the local store to
+the cloud. This ensures that a fresh installation, or a machine that was offline
+during a previous session, fully reconciles its local state before accepting new
 writes.
+
+The outbox pattern was chosen over alternative synchronisation strategies ---
+such as two-phase commit or distributed transactions --- because it provides
+eventual consistency without requiring the cloud database to be available at
+write time, which is the defining constraint of the offline-operations
+requirement (FR-09). The trade-off is that synchronised state may lag behind
+local state during offline periods, but this is acceptable in a
+personal-task-management domain where concurrent cross-device edits to the
+same entity are expected to be rare.
 
 \subsection{AI Integration}\label{sec:meth_ai}
 
-\texttt{MistralChatService} encapsulates all communication with the Mistral REST API.
-It is constructed as a typed \texttt{HttpClient} singleton registered in the DI
-container.
-Three operational modes are supported, each targeting a different model and system
-prompt:
+The AI assistant communicates with a third-party large-language-model API.
+Three operational modes are supported, each targeting a different model
+variant optimised for general conversation, code generation, and document text
+extraction, respectively. This design was chosen because no single model
+variant excels at all three tasks --- code generation requires a model trained
+on code corpora, while document extraction requires vision-language
+capabilities.
 
-\begin{itemize}
-    \item \textbf{General mode} (\texttt{mistral-small-latest}) --- a general-purpose
-          assistant that can answer questions, help with planning, and discuss any topic.
-    \item \textbf{Coder mode} (\texttt{codestral-latest}) --- a code-specialised
-          assistant with a system prompt that instructs the model to prefer code
-          examples and to explain algorithmic choices.
-    \item \textbf{Scanner mode} (\texttt{mistral-ocr-latest}) --- a vision-language
-          mode that accepts base64-encoded images or PDF documents and returns extracted,
-          structured text.
-          PDFs are submitted to the \texttt{/v1/ocr} endpoint; images are embedded
-          directly in the chat message payload.
-\end{itemize}
+The streaming delivery mechanism is a critical design consideration.
+Rather than waiting for the full response to be generated on the server before
+sending it to the client, the backend reads the API response incrementally and
+forwards each token to the client as it arrives, using a server-sent events
+(SSE) stream. This approach adds negligible latency between the model
+producing a token and the frontend rendering it, providing a responsive typing
+experience to the user. Alternative transports considered included long-polling
+and WebSocket-based streaming, but SSE was chosen because it is natively
+supported by browsers, requires no additional client libraries, and maps
+naturally to the unidirectional server-to-client streaming pattern.
 
-\textbf{Streaming.}
-The \texttt{ChatAsync()} method makes an HTTP POST request with
-\texttt{stream: true} in the request body and reads the response using
-\texttt{HttpCompletionOption.ResponseHeadersRead}, then processes the response body as
-an \texttt{IAsyncEnumerable<string>} of SSE lines.
-Each line prefixed with \texttt{data:} is deserialised as a chat-completion delta, and
-the token content is written immediately to the ASP.NET Core SSE response stream using
-\texttt{Response.WriteAsync()}.
-This pipeline adds negligible latency between the Mistral API producing a token and the
-React frontend rendering it.
-
-\textbf{History window.}
-The service loads the last 20 messages from the \texttt{ChatbotMessage} table before
-constructing the API request, providing the model with sufficient context while bounding
-the token cost of each request.
-After streaming completes, the assistant's full response is assembled from all received
-deltas and persisted as a new \texttt{ChatbotMessage} row with \texttt{Role = "assistant"}.
-
-\textbf{Title generation.}
-When a new conversation is started, a follow-up call to \texttt{GenerateTitleAsync()}
-asks the model to produce a short, descriptive title from the first user message.
-This title is stored in \texttt{ChatbotConversation.Title} and displayed in the
-conversation list sidebar.
+Conversation history is managed by loading a sliding window of recent messages
+before constructing each API request, providing the model with sufficient
+context while bounding the per-request token cost. After streaming completes,
+the assistant's full response is assembled from all received fragments and
+persisted as a new message. When a new conversation is started, the model is
+asked to generate a short, descriptive title from the first user message, which
+serves as the conversation's label in the sidebar.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Frontend Implementation}\label{sec:meth_frontend}
+\section{Frontend Design}\label{sec:meth_frontend}
 % ─────────────────────────────────────────────────────────────────────────────
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/intro_dashboard.jpg}
+    \caption{The TaskFlow desktop application showing the navigation sidebar, dashboard metric cards, mini-calendar, and Task Line widget.}
+    \label{fig:meth_dashboard}
+\end{figure}
 
 \subsection{Application Structure}\label{sec:meth_fe_structure}
 
-The React application is organised as a flat module tree rooted at
-\texttt{ReactApp/}.
-React Router~7 manages client-side navigation with a route table of seventeen pages.
-All routes except \texttt{/login}, \texttt{/signup}, \texttt{/forgot-password}, and
-\texttt{/reset-password} are wrapped in an \texttt{<AuthGuard>} component that
-redirects unauthenticated users to the login page.
+The React application is organised as a flat module tree (Figure~\ref{fig:meth_dashboard}) with client-side
+navigation managed by a routing library. All application routes except those
+related to authentication are protected by a guard component that redirects
+unauthenticated users to the login page. Styling is managed entirely through
+utility-first CSS classes, eliminating custom stylesheets and ensuring visual
+consistency through a shared design token system. Third-party component
+primitives are used for accessible interactive elements such as dropdown menus.
 
-Styling is managed entirely with Tailwind CSS~4 utility classes; no custom CSS files
-exist in the project.
-The Lucide React icon library provides consistent SVG icons throughout the UI.
-Radix UI primitives (\texttt{@radix-ui/react-dropdown-menu}) are used for accessible
-dropdown menus.
-The \texttt{react-markdown} library with the \texttt{remark-gfm} plugin renders
-assistant responses as formatted Markdown, supporting code blocks, tables, and inline
-formatting.
-
-Webpack~5 transpiles TypeScript via \texttt{ts-loader} and PostCSS processes Tailwind
-classes; the output bundles are written to \texttt{wwwroot/dist/} and served directly
-by Kestrel.
+The build pipeline transpiles TypeScript sources and processes CSS through a
+PostCSS pipeline, producing optimised bundles served by the backend's
+static-file middleware.
 
 \subsection{Task Visualisation Views}\label{sec:meth_views}
 
-All five views consume the same \texttt{TaskItem[]} array from a shared context and
-differ only in their rendering and interaction model.
+All five task views consume the same data from a shared state and differ only
+in their rendering and interaction model. This design avoids duplicating data
+fetching and transformation logic across views and ensures that a change made
+in one view is immediately reflected in all others.
 
 \textbf{Default View.}
-Tasks are partitioned into five temporal groups computed client-side: Overdue (past due
-date), Today (due today), This Week (due within 7~days), Later (due after 7~days), and
-Completed.
-Each group is rendered as a collapsible section with a task count badge.
-This grouping replicates the mental model of a physical in-tray sorted by urgency.
+Tasks are partitioned into temporal groups --- overdue, due today, due this
+week, due later, and completed --- that replicate the mental model of a physical
+in-tray sorted by urgency. Each group is rendered as a collapsible section.
 
 \textbf{Kanban View.}
-Five columns correspond to the five task statuses.
-Each column header is coloured to convey urgency (red for Overdue, amber for In
-Progress, etc.) and displays the column's task count.
-Tasks are rendered as drag-and-drop cards using the HTML5 Drag and Drop API; dropping a
-card in a different column fires a \texttt{PATCH /api/tasks/\{id\}} request to update
-the task's status.
+Tasks are arranged in columns corresponding to their status, with each column
+header colour-coded to convey urgency. Tasks can be moved between columns via
+drag-and-drop, which triggers an update request to the backend, as shown in Figure~\ref{fig:meth_kanban}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/res_kanban_view.jpg}
+    \caption{Kanban view of the Tasks module with five colour-coded status columns and drag-and-drop support.}
+    \label{fig:meth_kanban}
+\end{figure}
 
 \textbf{Table View.}
-Tasks are displayed in a columnar grid with columns for title, status, priority, due
-date, project, and actions.
-Status and priority are rendered as colour-coded badge components.
-Each row has an expand toggle that reveals a sub-task scaffold row (UI-level only;
-sub-task backend persistence is a planned future feature).
+Tasks are displayed in a columnar grid with sortable columns. Status and
+priority are rendered as colour-coded badges. An expand toggle reveals a
+sub-task scaffold row for future functionality.
 
 \textbf{Gantt View.}
-A full-calendar-year timeline is rendered as a horizontal structure.
-Each task is represented as a bar positioned and sized according to its due date.
-A priority colour legend (red = High, amber = Medium, green = Low) allows at-a-glance
-workload assessment.
-The current date is highlighted with a vertical marker.
+A full-calendar-year timeline renders each task as a bar positioned and sized
+according to its due date, with colour coding for priority. The current date is
+highlighted with a vertical marker, enabling at-a-glance workload assessment
+over a long time horizon.
 
 \textbf{Calendar View.}
-A weekly time-grid spanning 7:00~AM to 8:00~PM displays tasks and calendar events as
-positioned blocks.
-A dark mini-calendar sidebar allows week navigation.
-Tasks without a specific time are shown as all-day entries at the top of the grid.
+A weekly time-grid displays tasks and calendar events as positioned blocks.
+Tasks without a specific time are shown as all-day entries. A miniature
+calendar sidebar allows week navigation.
 
-\subsection{Connectivity Bar and Offline UX}\label{sec:meth_connbar}
+Providing five distinct visualisations of the same data was a deliberate design
+decision to support different user workflows and preferences --- some users
+prefer a list sorted by urgency, others a spatial Kanban layout, and others a
+temporal Gantt or calendar view --- without fragmenting the data model.
 
-\texttt{ConnectivityBar.tsx} is a fixed-position banner rendered at the top of the
-application layout.
-It subscribes to real-time SignalR events (\texttt{ConnectivityChanged},
-\texttt{SyncStarted}, \texttt{SyncProgress}, \texttt{SyncComplete}) via the
-\texttt{useConnectivity()} custom hook.
+\subsection{Offline-Aware User Interface}\label{sec:meth_connbar}
 
-When the application is offline, the banner shows in amber with an offline icon and the
-count of pending sync operations.
-When a sync pass is in progress, the banner shows in blue and renders an animated
-progress bar that advances as each outbox entry is processed.
-When connectivity is healthy and no sync is in progress, the banner is hidden entirely
-to avoid distracting the user.
-A \texttt{toggleManualOffline} button allows developers and testers to simulate offline
-mode without physically disconnecting the network.
+A persistent banner at the top of the application layout communicates the
+synchronisation state to the user. It subscribes to real-time connectivity and
+sync-progress events from the backend, displaying:
+\begin{itemize}
+    \item An amber warning with a pending-operation count when offline;
+    \item A blue progress bar advancing as outbox entries are processed
+          during a synchronisation pass;
+    \item Nothing when connectivity is healthy and no sync is in progress.
+\end{itemize}
+A manual-offline toggle is provided to allow users --- and, during development,
+testers --- to simulate offline conditions without physically disconnecting
+the network.
 
 \subsection{AI Chatbot Interface}\label{sec:meth_chatbot}
 
-\texttt{Chatbot.tsx} is the most complex single component in the application.
-Three toggle buttons at the top of the chat panel select the active mode (General,
-Coder, Scanner); the active mode determines which API model is used on the backend.
+The chatbot component provides a conversational interface to the AI assistant.
+Toggle buttons at the top of the panel select the active mode, which
+determines which model variant the backend queries. When no conversation is
+active, a grid of starter prompts suggests questions appropriate for each mode,
+helping new users understand the assistant's capabilities.
 
-When no conversation is active, a grid of starter-prompt buttons provides suggested
-questions appropriate for each mode, helping new users understand the assistant's
-capabilities.
+Messages are submitted through a form that supports both text input and file
+attachment. The component opens a streaming connection to the backend for each
+new message and appends incoming token chunks to the current message bubble as
+they arrive, providing a real-time typing effect. When the stream closes, the
+final assembled message is rendered with Markdown formatting and syntax-highlighted
+code blocks.
 
-Messages are submitted via a form that supports both text and a single file attachment
-(triggered by a paperclip icon).
-The component opens an \texttt{EventSource} connection to the SSE endpoint for each
-new message and appends incoming token chunks to the current assistant message bubble
-as they arrive.
-When the SSE stream closes, the final assembled message is rendered through
-\texttt{react-markdown} with syntax-highlighted code blocks.
-
-A collapsible sidebar lists all saved conversations, sorted by most-recently-updated.
-Each conversation displays its AI-generated title and a relative timestamp.
-Clicking a conversation loads its full message history from the backend.
+A collapsible sidebar lists all saved conversations, sorted by recency, with
+AI-generated titles and relative timestamps. Clicking a conversation loads its
+full message history from the backend.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Desktop Packaging}\label{sec:meth_electron}
+\section{Desktop Packaging}\label{sec:meth_desktop}
 % ─────────────────────────────────────────────────────────────────────────────
 
-The production build of Task~Flow is a self-contained desktop installer that bundles
-three components: the Electron shell, the compiled .NET backend, and the Webpack-built
-React frontend assets.
+The production build of TaskFlow is a self-contained desktop installer that
+bundles three components: the native shell, the compiled backend, and the
+frontend assets.
 
-\textbf{Electron main process.}
-\texttt{public/electron.js} is the entry point for the desktop application.
-On startup it spawns the compiled .NET backend executable as a child process, capturing
-its standard output.
-The main process watches for the line matching \texttt{TASKFLOW\_BACKEND\_READY:\{address\}}
-to appear.
-Once detected, it extracts the port number, constructs the backend URL, and calls
-\texttt{mainWindow.loadURL()} to load the React SPA from the local Kestrel server.
-If the backend process exits unexpectedly, the main process terminates the Electron
-application with an error dialog.
+\subsection{Native Shell}
 
-\textbf{CORS configuration.}
-Because Electron loads the frontend from a \texttt{file://} origin (for the production
-build) or from \texttt{localhost} (during development), the ASP.NET Core CORS policy
-uses \texttt{SetIsOriginAllowed(\_ => true)} combined with \texttt{AllowCredentials()}
-to permit the SignalR connection from either origin without hard-coding specific URLs.
+The desktop shell is built with a framework that uses the operating system's
+native webview rather than bundling a browser engine. This approach was chosen
+over alternative desktop-application frameworks --- such as Electron, which
+bundles a full Chromium instance --- because it reduces the application's
+distribution size by approximately 150~MB and its runtime memory footprint by
+several hundred megabytes, while still providing access to native OS
+capabilities through a plugin architecture.
 
-\textbf{JWT key management.}
-The Kestrel server listens on \texttt{http://127.0.0.1:0} (a random available port).
-The JWT signing key is resolved in order of priority:
-(1)~\texttt{TASKFLOW\_JWT\_KEY} environment variable;
-(2)~\texttt{Jwt:Key} value in \texttt{appsettings.json};
-(3)~an automatically generated 32-byte random hex string persisted for the duration of
-the process.
-This means the application works out-of-the-box without any configuration while still
-allowing a stable key to be injected for production deployments.
+The Rust source code is organised into three modules: plugin registration and
+application setup, spawned-child-process management, and inter-process
+communication commands accessible from the frontend.
 
-\textbf{electron-builder configuration.}
-\texttt{electron-builder.json} configures the following target artefacts:
+\subsection{Sidecar Backend Management}
 
-\begin{itemize}
-    \item \textbf{Windows} --- NSIS installer with \texttt{oneClick: false}, allowing
-          the user to choose the installation directory and optionally create desktop
-          and Start Menu shortcuts.
-    \item \textbf{macOS} --- DMG image and ZIP archive (for notarisation-free
-          distribution).
-    \item \textbf{Linux} --- AppImage (portable, no installation required) and DEB
-          package (for Debian/Ubuntu-based distributions).
-\end{itemize}
+The backend is declared as a managed child process. On startup, the native
+shell sets environment variables for the backend's runtime configuration and
+launches the process. The backend announces its dynamically assigned port by
+printing a well-known string to standard output. The shell parses this output,
+stores the address in shared state, and signals the frontend.
 
-The application ID is \texttt{com.taskflow.desktop}.
-The .NET backend self-contained publish output (\texttt{win-x64}, \texttt{osx-x64},
-\texttt{linux-x64}) is included as an extra resource so that electron-builder packages
-the correct native binary for each target platform.
+The communication between the shell and the frontend is handled through
+inter-process command invocations. These commands expose backend metadata
+(dynamically assigned port, startup phase, application version, platform-
+specific data directory), bridge the password-reset flow to the filesystem
+context, and implement a custom window title-bar with native window controls
+(minimise, maximise, close).
+
+\subsection{Window Lifecycle}
+
+Two windows are declared: a small, undecorated splashscreen shown while the
+backend starts, and the main application window. Both start invisible. The
+splashscreen is displayed during backend startup; when the backend signals
+readiness, the main window is revealed and the splashscreen is closed. This
+design prevents the user from interacting with a non-functional UI.
+
+\subsection{Plugin Architecture}
+
+A set of plugins provide the bridge between the web frontend and native OS
+capabilities: process management for the sidecar lifecycle, single-instance
+enforcement to prevent duplicate application processes, filesystem access for
+password-reset codes and the application data directory, native file dialogs,
+and HTTP access reserved for future use.
+
+\subsection{Security Configuration}
+
+The shell's security model is centred on a Content Security Policy that
+restricts network connections to the local backend address and its WebSocket
+endpoint, while allowing external font resources. A declarative capabilities
+system grants granular permissions to individual plugins --- for example,
+read access to specific files for password recovery and the ability to open
+URLs in the system browser. The security configuration allows the application
+to comply with the principle of least privilege: only the minimum set of
+capabilities needed by each feature is granted.
+
+\subsection{Build Pipeline}
+
+The production build is orchestrated by a script that executes a sequential
+pipeline: deterministic dependency installation, TypeScript type checking,
+frontend asset bundling, self-contained backend compilation targeting the
+current platform, staging of the compiled backend as a sidecar binary, and
+final shell build producing an installer. The resulting installer is
+self-contained: no .NET runtime, Node.js, or Rust toolchain is required on
+the target machine.
+
+The webview runtime is handled by the installer configuration, which downloads
+and installs it only if it is not already present on the system. On modern
+versions of Windows, the webview is integrated into the operating system, so
+this step is typically skipped.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Testing Strategy}\label{sec:meth_testing}
@@ -578,33 +589,25 @@ the correct native binary for each target platform.
 Testing was conducted at three levels throughout the development process.
 
 \textbf{Unit-level verification.}
-Service-layer methods were verified by constructing the service with an in-memory
-SQLite database (using EF Core's \texttt{UseInMemoryDatabase} provider) and asserting
-the expected state after each operation.
-JWT claim extraction and bcrypt hash/verify round-trips were tested in isolation.
+Service-layer logic was verified by constructing services with an in-memory
+database provider and asserting expected state after each operation.
+Authentication middleware resolution and credential hash round-trips were tested
+in isolation.
 
 \textbf{API integration testing.}
-Each of the 14 controllers was exercised against a running Kestrel instance using
-\texttt{HttpClient} requests constructed with valid and invalid JWT tokens.
-The tests verified: (a)~that protected endpoints return~401 when no token is supplied;
-(b)~that ownership checks return~403 for resources belonging to a different user;
-and (c)~that create, read, update, and delete operations produce the expected HTTP
-status codes and response bodies.
+Each controller was exercised against a running server instance. The tests
+verified: (a) that the authentication middleware resolves the user correctly
+in all cases; (b) that ownership checks return appropriate error codes for
+resources belonging to a different user; and (c) that create, read, update, and
+delete operations produce the expected HTTP status codes and response bodies.
 
 \textbf{Offline synchronisation testing.}
-The offline sync pipeline was validated using the \texttt{ConnectivityBar}'s manual
-offline toggle.
-With \texttt{IsManualOffline = true}, a series of task create and update operations was
-performed; the outbox was inspected to confirm that \texttt{SyncOutboxEntry} rows were
-created with status \texttt{Pending}.
-On toggling back online, the sync replay was observed via the progress bar and the
-MongoDB collection was inspected to confirm all entries were promoted to
-\texttt{Synced}.
+The synchronisation pipeline was validated by toggling the application into
+manual-offline mode, performing a series of operations, confirming that outbox
+entries were created, then toggling back online and observing the replay
+process complete successfully.
 
-\textbf{Cross-platform packaging.}
-The NSIS installer was tested on Windows~11 and Windows~10.
-The macOS DMG was verified on macOS~14 (Sonoma) with both Intel and Apple Silicon
-(via Rosetta~2 emulation).
-The AppImage was tested on Ubuntu~22.04.
-In all cases the application launched, authenticated, and performed offline task
-creation and synchronisation without errors.
+\textbf{Desktop packaging.}
+The installer was tested on multiple versions of Windows. In all cases the
+application launched, authenticated, and performed offline task creation and
+synchronisation without errors.

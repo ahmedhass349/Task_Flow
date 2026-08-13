@@ -1,6 +1,6 @@
 namespace taskflow.Data.Entities
 {
-    public enum TeamRole { Member, Admin }
+    public enum TeamRole { Member, Leader }
 
     public class TeamMember
     {

@@ -1,7 +1,3 @@
-// FILE: Services/TaskCommentService.cs
-// STATUS: NEW
-// CHANGES: Created for fully exposing TaskComment entity (#21)
-
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

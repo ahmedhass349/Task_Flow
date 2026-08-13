@@ -12,13 +12,15 @@ Table~\ref{tab:api_controllers} lists all REST API controllers, their base route
 and the primary endpoints they expose.
 All routes are prefixed with \texttt{/api}.
 Every endpoint except the authentication endpoints and the connectivity check requires
-a valid JWT Bearer token in the \texttt{Authorization} header.
+a valid \texttt{X-User-Email} header, resolved by the local-identity middleware
+described in Section~\ref{sec:meth_backend}.
 
 \begin{table}[H]
 \centering
 \caption{REST API controllers and primary endpoints.}
 \label{tab:api_controllers}
-\begin{tabular}{p{3.2cm}p{3.5cm}p{6.8cm}}
+\footnotesize
+\begin{tabular}{>{\raggedright\arraybackslash}p{4.0cm}>{\raggedright\arraybackslash}p{4.0cm}>{\raggedright\arraybackslash}p{6.0cm}}
 \toprule
 \textbf{Controller} & \textbf{Base route} & \textbf{Key endpoints} \\
 \midrule
@@ -56,41 +58,42 @@ MessagesController
     POST \texttt{/},
     DELETE \texttt{/conversation/\{userId\}} \\
 \addlinespace
-GroupChatsController
+Group\-Chats\-Controller
   & \texttt{/api/groupchats}
   & GET, POST \texttt{/},
     GET, PUT, DELETE \texttt{/\{id\}},
     POST \texttt{/\{id\}/members},
     POST \texttt{/\{id\}/messages} \\
 \addlinespace
-NotificationsController
-  & \texttt{/api/notifications}
+Notifi\-cations\-Controller
+  & \texttt{/api/}\cbrk\texttt{notifications}
   & GET \texttt{/},
-    PUT \texttt{/\{id\}/read},
-    PUT \texttt{/mark-all-read},
+    GET \texttt{/unread-count},
+    PATCH \texttt{/\{id\}/read},
+    PATCH \texttt{/read-all},
     DELETE \texttt{/\{id\}} \\
 \addlinespace
-CalendarEventsController
-  & \texttt{/api/calendarevents}
+Calendar\-Events\-Controller
+  & \texttt{/api/}\cbrk\texttt{calendarevents}
   & GET, POST \texttt{/},
     GET, PUT, DELETE \texttt{/\{id\}} \\
 \addlinespace
-ChatbotController
+Chatbot\-Controller
   & \texttt{/api/chatbot}
   & GET \texttt{/conversations},
     POST \texttt{/conversations},
-    GET \texttt{/conversations/\{id\}/messages},
-    POST \texttt{/conversations/\{id\}/messages},
+    GET \texttt{/conversations/}\cbrk\texttt{\{id\}/messages},
+    POST \texttt{/conversations/}\cbrk\texttt{\{id\}/messages},
     POST \texttt{/scan} \\
 \addlinespace
-DashboardController
+Dash\-board\-Controller
   & \texttt{/api/dashboard}
   & GET \texttt{/stats},
     GET \texttt{/due-this-week},
     GET \texttt{/recent-activity} \\
 \addlinespace
-TaskCommentsController
-  & \texttt{/api/tasks/\{taskId\}/comments}
+Task\-Comments\-Controller
+  & \texttt{/api/}\cbrk\texttt{tasks/}\cbrk\texttt{\{taskId\}/comments}
   & GET, POST \texttt{/},
     DELETE \texttt{/\{id\}} \\
 \addlinespace
@@ -99,8 +102,8 @@ SettingsController
   & GET, PUT \texttt{/profile},
     PUT \texttt{/password} \\
 \addlinespace
-ConnectivityController
-  & \texttt{/api/connectivity}
+Connec\-tivity\-Controller
+  & \texttt{/api/}\cbrk\texttt{connectivity}
   & GET \texttt{/ping},
     POST \texttt{/bulk-sync} \\
 \addlinespace
@@ -126,7 +129,8 @@ participation.
 \centering
 \caption{SQLite entity summary.}
 \label{tab:sqlite_entities}
-\begin{tabular}{p{3.0cm}lp{8.0cm}}
+\footnotesize
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.5cm}l>{\raggedright\arraybackslash}p{8.0cm}}
 \toprule
 \textbf{Entity} & \textbf{PK} & \textbf{Key fields} \\
 \midrule
@@ -178,7 +182,7 @@ participation.
   & OwnerId, Title, Description, StartAt, EndAt,
     Color, MeetingLink \\
 \addlinespace
-\texttt{ChatbotConversation}
+\texttt{Chatbot}\cbrk\texttt{Conversation}
   & \texttt{int Id}
   & UserId, Title, Mode, CreatedAt, UpdatedAt \\
 \addlinespace
@@ -217,25 +221,24 @@ participation.
 
 \section*{MongoDB Collections}
 
-Table~\ref{tab:mongo_appendix} lists the five MongoDB collections used as the relay
-layer.
+Table~\ref{tab:mongo_appendix} lists the MongoDB collections used as the relay
+and mirror layer (fifteen in total).
 
-\begin{table}[H]
-\centering
+\begin{longtable}{p{3.8cm}p{9.2cm}}
 \caption{MongoDB collection descriptions.}
-\label{tab:mongo_appendix}
-\begin{tabular}{p{3.5cm}p{9.5cm}}
+\label{tab:mongo_appendix}\\
 \toprule
 \textbf{Collection} & \textbf{Description and key fields} \\
 \midrule
-\texttt{tasks}
-  & Mirror of \texttt{TaskItem}. Documents keyed by \texttt{syncId} (GUID).
-    Fields: syncId, title, description, status, priority, dueDate, ownerId,
-    projectId, isStarred, updatedAt. \\
-\addlinespace
-\texttt{notifications}
-  & Mirror of \texttt{Notification}. Fields: syncId, userId, title, message,
-    notificationType, isRead, actionUrl, relatedTaskId, updatedAt. \\
+\endfirsthead
+\toprule
+\textbf{Collection} & \textbf{Description and key fields} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\texttt{user\_presence}
+  & Optional online-status documents. Fields: userId, lastSeenAt, isOnline. \\
 \addlinespace
 \texttt{team\_invitations}
   & Cross-device invitation relay. Fields: inviterEmail, inviteeEmail,
@@ -245,11 +248,56 @@ layer.
   & Mirror of accepted team memberships. Fields: teamId, userId,
     userEmail, role, joinedAt. \\
 \addlinespace
-\texttt{user\_presence}
-  & Optional online-status documents. Fields: userId, lastSeenAt, isOnline. \\
-\bottomrule
-\end{tabular}
-\end{table}
+\texttt{cross\_}\cbrk\texttt{notifications}
+  & Cross-device notification relay for multi-machine alerts.
+    Fields: recipientEmail, title, message, notificationType,
+    relatedTaskId, createdAt. \\
+\addlinespace
+\texttt{user\_accounts}
+  & Encrypted password-hash backup for account restoration after reinstall.
+    Fields: email, passwordHash, userId, backedUpAt. \\
+\addlinespace
+\texttt{team\_}\cbrk\texttt{announcements}
+  & Team-wide announcement storage. Fields: teamId, authorEmail, title,
+    message, createdAt, readBy. \\
+\addlinespace
+\texttt{app\_settings}
+  & Key-value configuration store. Documents keyed by \texttt{\_id}. \\
+\addlinespace
+\texttt{users}
+  & Mirror of \texttt{AppUser} profile data (Company, Country, Phone,
+    Timezone). Fields: email, fullName, avatarUrl, company, country,
+    phone, timezone. \\
+\addlinespace
+\texttt{teams}
+  & Mirror of \texttt{Team} entity. Fields: name, description, color,
+    ownerId, createdAt. \\
+\addlinespace
+\texttt{team\_member\_}\cbrk\texttt{records}
+  & Mirror of per-member team metadata (distinct from
+    \texttt{team\_members}). Fields: teamId, userId, role, joinedAt. \\
+\addlinespace
+\texttt{messages}
+  & Mirror of \texttt{Message} entity. Fields: senderId, receiverId,
+    text, fileUrl, mimeType, fileSize, readAt, soft-delete flags. \\
+\addlinespace
+\texttt{chatbot\_}\cbrk\texttt{conversations}
+  & Mirror of AI chatbot conversation records.
+    Fields: userId, title, mode (General/Coder/Scanner), createdAt. \\
+\addlinespace
+\texttt{chatbot\_messages}
+  & Mirror of individual AI chat messages.
+    Fields: conversationId, role (user/assistant), content, createdAt. \\
+\addlinespace
+\texttt{tasks}
+  & Mirror of \texttt{TaskItem}. Documents keyed by \texttt{syncId} (GUID).
+    Fields: syncId, title, description, status, priority, dueDate, ownerId,
+    projectId, isStarred, updatedAt. \\
+\addlinespace
+\texttt{notifications}
+  & Mirror of \texttt{Notification}. Fields: syncId, userId, title, message,
+    notificationType, isRead, actionUrl, relatedTaskId, updatedAt. \\
+\end{longtable}
 
 % ═════════════════════════════════════════════════════════════════════════════
 \chapter{Configuration Reference}\label{app:config}
@@ -261,11 +309,13 @@ The application is configured via \texttt{appsettings.json}
 (overridden by \texttt{appsettings.Development.json} in development).
 Table~\ref{tab:appsettings} describes each configuration section.
 
+\enlargethispage{\baselineskip}
 \begin{table}[H]
 \centering
+\small
 \caption{\texttt{appsettings.json} section reference.}
 \label{tab:appsettings}
-\begin{tabular}{p{3.8cm}p{9.2cm}}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.5cm}>{\raggedright\arraybackslash}p{7.5cm}}
 \toprule
 \textbf{Section / key} & \textbf{Description} \\
 \midrule
@@ -273,40 +323,37 @@ Table~\ref{tab:appsettings} describes each configuration section.
   & \texttt{"SQLite"} (default) or \texttt{"SqlServer"}.
     Selects the EF Core provider at startup. \\
 \addlinespace
-\texttt{ConnectionStrings.DefaultConnection}
+\texttt{ConnectionStrings.}\cbrk\texttt{DefaultConnection}
   & SQLite connection string, e.g.\ \texttt{Data Source=taskflow.db}.
     Relative paths are resolved against the executable directory. \\
 \addlinespace
-\texttt{MongoDB.ConnectionString}
+\texttt{MongoDB.}\cbrk\texttt{ConnectionString}
   & Full MongoDB connection string including credentials.
     Leave empty to run in SQLite-only mode without sync. \\
 \addlinespace
 \texttt{Jwt.Key}
-  & HMAC-SHA256 signing key (minimum 32 characters).
-    If empty, the application generates a random 32-byte key at startup
-    (stored only in memory; invalidated on restart).
-    Set \texttt{TASKFLOW\_JWT\_KEY} environment variable to override. \\
+  & HMAC-SHA256 signing key (minimum 32 characters) \emph{(vestigial ---
+    the local-identity middleware does not issue or validate JWT tokens)}. \\
 \addlinespace
 \texttt{Jwt.Issuer} / \texttt{.Audience}
-  & Token issuer and audience strings.
-    Defaults: \texttt{TaskFlow} / \texttt{TaskFlowApp}. \\
+  & Token issuer and audience strings \emph{(vestigial)}. \\
 \addlinespace
-\texttt{Jwt.ExpiresInMinutes}
-  & Token lifetime in minutes. Default: 1440 (24 hours). \\
+\texttt{Jwt.}\cbrk\texttt{ExpiresInMinutes}
+  & Token lifetime in minutes \emph{(vestigial)}. \\
 \addlinespace
 \texttt{Mistral.Model}
   & Model ID for the General chatbot mode.
     Default: \texttt{mistral-small-latest}. \\
 \addlinespace
-\texttt{Mistral.CoderModel}
+\texttt{Mistral.}\cbrk\texttt{CoderModel}
   & Model ID for the Coder mode.
     Default: \texttt{codestral-latest}. \\
 \addlinespace
-\texttt{Mistral.OcrModel}
+\texttt{Mistral.}\cbrk\texttt{OcrModel}
   & Model ID for the Scanner (OCR) mode.
     Default: \texttt{mistral-ocr-latest}. \\
 \addlinespace
-\texttt{Mistral.HistoryWindow}
+\texttt{Mistral.}\cbrk\texttt{HistoryWindow}
   & Number of prior messages included in the Mistral context.
     Default: 20. \\
 \addlinespace
@@ -315,10 +362,10 @@ Table~\ref{tab:appsettings} describes each configuration section.
     SmtpHost, SmtpPort (587), UseSsl (false for STARTTLS),
     SenderEmail, SenderName, Username, Password. \\
 \addlinespace
-\texttt{Kestrel.Endpoints.Http.Url}
+\texttt{Kestrel.}\cbrk\texttt{Endpoints.}\cbrk\texttt{Http.Url}
   & \texttt{http://127.0.0.1:0} — binds to a random available port.
     The chosen port is printed to stdout as
-    \texttt{TASKFLOW\_BACKEND\_READY:\{address\}}. \\
+    \texttt{TASKFLOW\_}\cbrk\texttt{BACKEND\_READY:\{address\}}. \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -332,17 +379,11 @@ at startup.
 \centering
 \caption{Supported environment variables.}
 \label{tab:env_vars}
-\begin{tabular}{p{5.2cm}p{7.8cm}}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.2cm}>{\raggedright\arraybackslash}p{7.8cm}}
 \toprule
 \textbf{Variable} & \textbf{Effect} \\
 \midrule
-\texttt{TASKFLOW\_JWT\_KEY}
-  & Overrides \texttt{Jwt:Key} in \texttt{appsettings.json}.
-    Must be at least 32 characters.
-    Set by the Electron main process to a randomly generated 32-byte
-    hex value on each launch. \\
-\addlinespace
-\texttt{ASPNETCORE\_ENVIRONMENT}
+\texttt{ASPNETCORE\_}\cbrk\texttt{ENVIRONMENT}
   & Standard ASP.NET Core environment selector.
     Set to \texttt{Development} to enable Swagger UI and verbose logging. \\
 \addlinespace
@@ -353,31 +394,39 @@ at startup.
 \end{tabular}
 \end{table}
 
-\section*{electron-builder.json Summary}
+\section*{tauri.conf.json Summary}
 
-Table~\ref{tab:electron_builder} summarises the key \texttt{electron-builder.json}
-settings used to produce the cross-platform installers.
+Table~\ref{tab:tauri_config} summarises the key \texttt{tauri.conf.json}
+settings for the Tauri-based installer.
 
 \begin{table}[H]
 \centering
-\caption{Key \texttt{electron-builder.json} configuration.}
-\label{tab:electron_builder}
-\begin{tabular}{p{3.8cm}p{9.2cm}}
+\caption{Key \texttt{tauri.conf.json} configuration (Tauri build).}
+\label{tab:tauri_config}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.5cm}>{\raggedright\arraybackslash}p{7.5cm}}
 \toprule
 \textbf{Key} & \textbf{Value / description} \\
 \midrule
-\texttt{appId}          & \texttt{com.taskflow.desktop} \\
-\texttt{productName}    & \texttt{Task Flow} \\
-\texttt{win.target}     & NSIS (Windows installer) \\
-\texttt{nsis.oneClick}  & \texttt{false} — user selects installation directory \\
-\texttt{nsis.createDesktopShortcut} & \texttt{true} \\
-\texttt{nsis.createStartMenuShortcut} & \texttt{true} \\
-\texttt{mac.target}     & DMG + ZIP \\
-\texttt{linux.target}   & AppImage + DEB \\
-\texttt{files}          & Bundled assets include \texttt{public/}, \texttt{wwwroot/},
-                          the compiled .NET binary under \texttt{bin/Release/},
-                          and \texttt{node\_modules/} \\
-\texttt{extraResources} & .NET self-contained runtime and backend binary \\
+\texttt{productName}  & \texttt{TaskFlow} \\
+\texttt{identifier}   & \texttt{com.taskflow.desktop} \\
+\texttt{build.}\cbrk\texttt{frontendDist} & \texttt{../wwwroot} — directory containing \texttt{index.html}
+                              and Webpack output bundles. \\
+\texttt{app.}\cbrk\texttt{windows[0]} & Main window: $1280\times800$, centred, initially hidden,
+                          show on backend-ready signal. \\
+\texttt{app.}\cbrk\texttt{windows[1]} & Splashscreen: $400\times300$, undecorated, initially hidden,
+                          shown during backend startup. \\
+\texttt{app.}\cbrk\texttt{security.csp} & Content Security Policy allowing localhost API and
+                            SignalR WebSocket connections. \\
+\texttt{bundle.}\cbrk\texttt{targets}
+  & \texttt{["nsis", "msi"]} — Windows installer formats. \\
+\texttt{bundle.}\cbrk\texttt{externalBin}
+  & \texttt{["binaries/taskflow-backend"]} — sidecar path. \\
+\texttt{bundle.windows.}\cbrk\texttt{webview}\cbrk\texttt{InstallMode}
+  & \texttt{downloadBootstrapper} — download WebView2 runtime if absent. \\
+\texttt{bundle.windows.}\cbrk\texttt{nsis.}\cbrk\texttt{installMode}
+  & \texttt{currentUser} — no administrator privileges required. \\
+\texttt{plugins.}\cbrk\texttt{shell.open}
+  & \texttt{true} — permits opening URLs in the default browser. \\
 \bottomrule
 \end{tabular}
 \end{table}

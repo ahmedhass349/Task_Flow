@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useReducer, ReactNode, useEffect, useRef, useCallback } from "react";
+﻿import React, { createContext, useContext, useReducer, ReactNode, useEffect, useRef, useCallback, useState } from "react";
 import { HubConnectionBuilder, LogLevel, HubConnection } from "@microsoft/signalr";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./ToastContext";
@@ -109,9 +109,13 @@ interface NotificationProviderProps {
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(notificationReducer, initialState);
-  const { token, isLoading } = useAuth();
+  const { isInitialized, isAuthenticated } = useAuth();
   const { addToast, clearAllToasts } = useToast();
   const connectionRef = useRef<HubConnection | null>(null);
+
+  const [reconnectEpoch, setReconnectEpoch] = useState(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasShownStaleNotificationsRef = useRef(false);
 
   useEffect(() => {
     if (connectionRef.current) {
@@ -119,23 +123,29 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       connectionRef.current = null;
     }
 
-    if (!token || isLoading) {
+    if (!isInitialized) return;
+
+    if (!isAuthenticated) {
+      hasShownStaleNotificationsRef.current = false;
       dispatch({ type: "SET_CONNECTION_STATUS", payload: false });
-      if (!token) {
-        dispatch({ type: "SET_NOTIFICATIONS", payload: [] });
-        dispatch({ type: "SET_UNREAD_COUNT", payload: 0 });
-        dispatch({ type: "SET_LATEST_NOTIFICATION", payload: null });
-        clearAllToasts();
-      }
+      dispatch({ type: "SET_NOTIFICATIONS", payload: [] });
+      dispatch({ type: "SET_UNREAD_COUNT", payload: 0 });
+      dispatch({ type: "SET_LATEST_NOTIFICATION", payload: null });
+      clearAllToasts();
       return;
     }
 
     const baseUrl = getApiBaseUrl();
     const connection = new HubConnectionBuilder()
-      .withUrl(`${baseUrl || ""}/hubs/notifications`, {
-        accessTokenFactory: () => token,
+      .withUrl(`${baseUrl || ""}/hubs/notifications`)
+      .withAutomaticReconnect({
+        nextRetryDelayInMilliseconds: (ctx) => {
+          const delays = [1000, 3000, 7000, 15000, 30000, 60000];
+          return ctx.previousRetryCount < delays.length
+            ? delays[ctx.previousRetryCount]
+            : null;
+        },
       })
-      .withAutomaticReconnect()
       .configureLogging(LogLevel.Warning)
       .build();
 
@@ -143,12 +153,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
     connection.onreconnecting(() => dispatch({ type: "SET_CONNECTION_STATUS", payload: false }));
     connection.onreconnected(() => dispatch({ type: "SET_CONNECTION_STATUS", payload: true }));
-    connection.onclose(() => dispatch({ type: "SET_CONNECTION_STATUS", payload: false }));
+    connection.onclose(() => {
+      dispatch({ type: "SET_CONNECTION_STATUS", payload: false });
+      reconnectTimerRef.current = setTimeout(
+        () => setReconnectEpoch(e => e + 1),
+        30_000
+      );
+    });
 
     connection.on("ReceiveNotification", (notification: NotificationType) => {
-      // Message-received alerts are transient (not persisted) and belong only in the
-      // Messages tab — skip adding them to the notification bell/store/toast.
-      // Still fire the custom event so useMessages can refresh contacts in real time.
       if (notification.type?.toLowerCase() === "messagereceived") {
         window.dispatchEvent(new CustomEvent("taskflow:notification-received", { detail: notification }));
         return;
@@ -203,15 +216,16 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       .then(async () => {
         dispatch({ type: "SET_CONNECTION_STATUS", payload: true });
 
-        const sessionKey = `notif_popup_${token.slice(-16)}`;
-        if (!sessionStorage.getItem(sessionKey)) {
-          sessionStorage.setItem(sessionKey, "1");
+        // Only re-popup stale notifications on the very first connection (initial sign-in),
+        // not on every SignalR reconnect.  Once shown, they stay suppressed until the
+        // next time the effect is torn down (app restart or sign-out → sign-in).
+        if (!hasShownStaleNotificationsRef.current) {
+          hasShownStaleNotificationsRef.current = true;
           try {
             const unread = await api.get<NotificationType[]>("/api/notifications?page=1&pageSize=20");
             const pending = (unread ?? []).filter(n => !n.isRead).slice(0, 7);
             pending.forEach((notif, idx) => {
               setTimeout(() => {
-                // Don't show startup toasts on auth pages
                 const path = window.location.pathname;
                 if (path === "/login" || path === "/signup" || path === "/forgot-password") return;
                 const priority = notif.priority.toLowerCase();
@@ -229,11 +243,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       .catch(() => dispatch({ type: "SET_CONNECTION_STATUS", payload: false }));
 
     return () => {
+      if (reconnectTimerRef.current !== null) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
       connection.stop();
       connectionRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isLoading]);
+  }, [isInitialized, isAuthenticated, reconnectEpoch]);
 
   const markAsRead = useCallback(async (id: number) => {
     if (connectionRef.current) await connectionRef.current.invoke("MarkAsRead", id);

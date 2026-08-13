@@ -4,7 +4,7 @@
 // Provides loading, error, data, and refetch states.
 
 import { useState, useEffect, useCallback } from "react";
-import { api, ApiRequestError } from "../services/api";
+import { api, extractErrorMessage } from "../services/api";
 
 // Project interface matching backend DTO
 interface Project {
@@ -52,53 +52,29 @@ export const useProjects = (): UseProjectsReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    let cancelled = false;
     setIsLoading(true);
     setError(null);
 
     try {
       const data = await api.get<Project[]>("/api/projects");
-      if (!cancelled) {
-        setProjects(data);
-      }
+      setProjects(data ?? []);
     } catch (err) {
-      if (!cancelled) {
-        const message =
-          err instanceof ApiRequestError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : "Failed to load projects";
-        setError(message);
-      }
+      setError(extractErrorMessage(err, "Failed to load projects"));
     } finally {
-      if (!cancelled) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const toggleStar = useCallback(async (id: string) => {
     try {
       await api.patch(`/api/projects/${id}/star`);
-      // Update local state to reflect change
       setProjects(prev =>
         prev.map(project =>
           project.id === id ? { ...project, isStarred: !project.isStarred } : project
         )
       );
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to toggle project star";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to toggle project star"));
     }
   }, []);
 
@@ -107,13 +83,7 @@ export const useProjects = (): UseProjectsReturn => {
       const newProject = await api.post<Project>("/api/projects", data);
       setProjects(prev => [...prev, newProject]);
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to create project";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to create project"));
       throw err;
     }
   }, []);
@@ -127,13 +97,7 @@ export const useProjects = (): UseProjectsReturn => {
         )
       );
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to update project";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to update project"));
       throw err;
     }
   }, []);
@@ -143,20 +107,23 @@ export const useProjects = (): UseProjectsReturn => {
       await api.delete(`/api/projects/${id}`);
       setProjects(prev => prev.filter(project => project.id !== id));
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to delete project";
-      setError(message);
+      setError(extractErrorMessage(err, "Failed to delete project"));
       throw err;
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+    api.get<Project[]>("/api/projects")
+      .then(data => { if (!cancelled) setProjects(data ?? []); })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(extractErrorMessage(err, "Failed to load projects"));
+      })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   return {
     projects,
